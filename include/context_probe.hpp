@@ -9,6 +9,7 @@ struct ProbeResult {
     bool context_initialized = false;
     bool first_handoff_ok = false;
     bool continuation_ok = false;
+    bool register_preservation_ok = false;
     bool stress_ok = false;
     std::uint32_t completed_switches = 0;
     std::uint64_t elapsed_ticks = 0;

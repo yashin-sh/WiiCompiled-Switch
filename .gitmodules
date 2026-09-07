@@ -1,0 +1,2 @@
+# Upstream is intentionally not pinned as a submodule yet.
+# Run scripts/bootstrap-upstream.sh for the audit phase, then pin a known-good commit.

@@ -1,0 +1,20 @@
+name: build-switch
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  nro:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkita64:latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build NRO
+        run: make -j2
+      - name: Verify artifact
+        run: test -f WiiCompiled-Switch.nro
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WiiCompiled-Switch-nro
+          path: WiiCompiled-Switch.nro

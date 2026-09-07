@@ -1,3 +1,4 @@
+#include "context_probe.hpp"
 #include "switch_platform.hpp"
 #include "vm_probe.hpp"
 
@@ -14,6 +15,16 @@ int main(int, char**) {
         std::printf("WARNING: could not write vm-probe.txt to the app folder.\n");
         consoleUpdate(nullptr);
     }
+
+    const auto context_result = mkw::context_probe::run();
+    mkw::context_probe::print(context_result);
+    if (!mkw::context_probe::append_report(context_result)) {
+        std::printf("WARNING: could not append context results to vm-probe.txt.\n");
+        consoleUpdate(nullptr);
+    }
+
+    std::printf("All probes complete. Press + to exit.\n");
+    consoleUpdate(nullptr);
 
     while (!mkw::switch_platform::should_exit()) {
         svcSleepThread(16'000'000); // ~16 ms; bootstrap only, not final frame pacing.

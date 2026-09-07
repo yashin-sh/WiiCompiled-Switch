@@ -5,13 +5,13 @@
 - [x] Atmosphère/hbmenu launch loop
 - [x] Joy-Con / controller input smoke test
 - [x] SD-card filesystem smoke test
-- [ ] CI build with devkitA64
+- [x] CI build with devkitA64
 
 ## M1 — WiiCompiled platform audit
-- [ ] Pin a known-good WiiCompiled commit
-- [ ] Inventory OS/platform abstractions used by Windows/Linux/macOS
-- [ ] Identify POSIX assumptions incompatible with Horizon/libnx
-- [ ] Produce compile-failure matrix for AArch64 Switch target
+- [x] Pin a known-good WiiCompiled commit
+- [x] Inventory OS/platform abstractions used by Windows/Linux/macOS
+- [x] Identify POSIX assumptions incompatible with Horizon/libnx
+- [x] Produce portability/blocker matrix for AArch64 Switch target
 
 ## M2 — runtime bring-up
 - [ ] HostContext / coroutine backend

@@ -1,0 +1,28 @@
+# devkitPro build output
+/build/
+*.elf
+*.nro
+*.nacp
+*.map
+
+# Local generated/game data — NEVER COMMIT
+/game/
+/game-data/
+/generated-game/
+/dumps/
+/assets-local/
+*.iso
+*.wbfs
+*.rvz
+*.wad
+prod.keys
+title.keys
+keys.txt
+
+# WiiCompiled local checkout/build
+/third_party/Wiicompiled/
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/

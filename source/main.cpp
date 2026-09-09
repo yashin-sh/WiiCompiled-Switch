@@ -8,9 +8,28 @@
 #include <switch.h>
 #include <cstdio>
 
+namespace {
+
+constexpr const char* kReportPath = "sdmc:/switch/WiiCompiled-Switch/vm-probe.txt";
+constexpr const char* kBuildStamp = "memory-init-diag-v1";
+
+bool append_marker(const char* marker) {
+    std::FILE* file = std::fopen(kReportPath, "a");
+    if (!file) {
+        return false;
+    }
+    std::fprintf(file, "\n%s\n", marker);
+    std::fclose(file);
+    return true;
+}
+
+} // namespace
+
 int main(int, char**) {
     auto info = mkw::switch_platform::initialize();
     mkw::switch_platform::present_bootstrap_screen(info);
+    std::printf("Build stamp: %s\n", kBuildStamp);
+    consoleUpdate(nullptr);
 
     const auto vm_result = mkw::vm_probe::run();
     mkw::vm_probe::print(vm_result);
@@ -18,6 +37,7 @@ int main(int, char**) {
         std::printf("WARNING: could not write vm-probe.txt to the app folder.\n");
         consoleUpdate(nullptr);
     }
+    append_marker("Build stamp: memory-init-diag-v1");
 
     const auto context_result = mkw::context_probe::run();
     mkw::context_probe::print(context_result);
@@ -40,12 +60,17 @@ int main(int, char**) {
         consoleUpdate(nullptr);
     }
 
+    append_marker("Memory::Init START");
+    std::printf("Memory::Init START\n");
+    consoleUpdate(nullptr);
+
     const auto memory_init_result = mkw::memory_init_probe::run();
     mkw::memory_init_probe::print(memory_init_result);
     if (!mkw::memory_init_probe::append_report(memory_init_result)) {
         std::printf("WARNING: could not append Memory::Init results to vm-probe.txt.\n");
         consoleUpdate(nullptr);
     }
+    append_marker("Memory::Init END");
 
     std::printf("All probes complete. Press + to exit.\n");
     consoleUpdate(nullptr);

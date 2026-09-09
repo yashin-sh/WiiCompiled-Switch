@@ -11,6 +11,17 @@
 
 namespace {
 
+constexpr const char* kDiagReportPath = "sdmc:/switch/WiiCompiled-Switch/vm-probe.txt";
+
+void append_diag(const char* text) {
+    std::FILE* file = std::fopen(kDiagReportPath, "a");
+    if (!file) {
+        return;
+    }
+    std::fprintf(file, "Memory::Init stage: %s\n", text);
+    std::fclose(file);
+}
+
 struct Region {
     Memory::RegionConfig config;
     std::uint8_t* storage = nullptr;
@@ -78,7 +89,9 @@ Memory::Config Memory::Config::WiiDefaults() {
 }
 
 void Memory::Init(const Config& config) {
+    append_diag("enter");
     Reset();
+    append_diag("reset complete");
 
     std::vector<GuestFlat::RegionRequest> requests;
     requests.reserve(config.regions.size());
@@ -86,8 +99,11 @@ void Memory::Init(const Config& config) {
         requests.push_back({region.baseAddress, region.sizeBytes,
                             classify_backing(region.baseAddress)});
     }
+    append_diag("requests built");
 
+    append_diag("GuestFlat initialize begin");
     GuestFlat::Initialize(requests);
+    append_diag("GuestFlat initialize complete");
 
     auto& active_regions = regions();
     active_regions.clear();
@@ -98,6 +114,7 @@ void Memory::Init(const Config& config) {
         if (config_region.sizeBytes != 0) {
             host = GuestFlat::HostPointer(config_region.baseAddress);
             if (host == nullptr) {
+                append_diag("HostPointer failure");
                 std::printf("FATAL: GuestFlat has no host view for %s at 0x%08x\n",
                             config_region.name.c_str(), config_region.baseAddress);
                 std::abort();
@@ -105,8 +122,10 @@ void Memory::Init(const Config& config) {
         }
         active_regions.push_back({config_region, host, config_region.sizeBytes});
     }
+    append_diag("host views bound");
 
     initialized() = true;
+    append_diag("initialized");
 }
 
 void Memory::Reset() noexcept {

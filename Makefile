@@ -18,7 +18,7 @@ APP_VERSION := 0.0.1
 
 ARCH        := -march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
 CFLAGS      := -g -Wall -Wextra -O2 -ffunction-sections $(ARCH) $(DEFINES)
-CFLAGS      += $(INCLUDE) -D__SWITCH__
+CFLAGS      += $(INCLUDE) -D__SWITCH__ -DMKW_PLATFORM_SWITCH=1
 CXXFLAGS    := $(CFLAGS) -std=gnu++20 -fno-rtti -fno-exceptions
 ASFLAGS     := -g $(ARCH)
 LDFLAGS     := -specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)

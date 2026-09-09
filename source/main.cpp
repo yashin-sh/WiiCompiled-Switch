@@ -1,9 +1,6 @@
-#include "context_probe.hpp"
-#include "guest_flat_api_probe.hpp"
-#include "horizon_guest_flat.hpp"
 #include "memory_init_probe.hpp"
+#include "memory_switch_slice.hpp"
 #include "switch_platform.hpp"
-#include "vm_probe.hpp"
 
 #include <switch.h>
 #include <cstdio>
@@ -11,16 +8,51 @@
 namespace {
 
 constexpr const char* kReportPath = "sdmc:/switch/WiiCompiled-Switch/vm-probe.txt";
-constexpr const char* kBuildStamp = "memory-init-diag-v1";
+constexpr const char* kBuildStamp = "memory-init-isolation-v2";
 
-bool append_marker(const char* marker) {
-    std::FILE* file = std::fopen(kReportPath, "a");
+void write_marker(const char* marker, bool truncate = false) {
+    std::FILE* file = std::fopen(kReportPath, truncate ? "w" : "a");
     if (!file) {
-        return false;
+        return;
     }
-    std::fprintf(file, "\n%s\n", marker);
+    std::fprintf(file, "%s\n", marker);
     std::fclose(file);
-    return true;
+    std::printf("%s\n", marker);
+    consoleUpdate(nullptr);
+}
+
+void run_preflight(const char* name, const Memory::Config& config) {
+    char marker[128]{};
+    std::snprintf(marker, sizeof(marker), "PRECHECK %s START", name);
+    write_marker(marker);
+    Memory::Init(config);
+    std::snprintf(marker, sizeof(marker), "PRECHECK %s INIT OK", name);
+    write_marker(marker);
+    Memory::Reset();
+    std::snprintf(marker, sizeof(marker), "PRECHECK %s RESET OK", name);
+    write_marker(marker);
+}
+
+Memory::Config mem1_config() {
+    Memory::Config config;
+    config.regions.push_back({"MEM1_PHYS", Memory::kMem1PhysicalBase, Memory::kMem1Size});
+    config.regions.push_back({"MEM1_CACHED", Memory::kMem1CachedBase, Memory::kMem1Size});
+    config.regions.push_back({"MEM1_UNCACHED", Memory::kMem1UncachedBase, Memory::kMem1Size});
+    return config;
+}
+
+Memory::Config mem2_config() {
+    Memory::Config config;
+    config.regions.push_back({"MEM2_PHYS", Memory::kMem2PhysicalBase, Memory::kMem2Size});
+    config.regions.push_back({"MEM2_CACHED", Memory::kMem2CachedBase, Memory::kMem2Size});
+    config.regions.push_back({"MEM2_UNCACHED", Memory::kMem2UncachedBase, Memory::kMem2Size});
+    return config;
+}
+
+Memory::Config locked_cache_config() {
+    Memory::Config config;
+    config.regions.push_back({"LOCKED_CACHE", Memory::kLockedCacheBase, Memory::kLockedCacheSize});
+    return config;
 }
 
 } // namespace
@@ -28,55 +60,28 @@ bool append_marker(const char* marker) {
 int main(int, char**) {
     auto info = mkw::switch_platform::initialize();
     mkw::switch_platform::present_bootstrap_screen(info);
-    std::printf("Build stamp: %s\n", kBuildStamp);
-    consoleUpdate(nullptr);
 
-    const auto vm_result = mkw::vm_probe::run();
-    mkw::vm_probe::print(vm_result);
-    if (!mkw::vm_probe::write_report(vm_result)) {
-        std::printf("WARNING: could not write vm-probe.txt to the app folder.\n");
-        consoleUpdate(nullptr);
-    }
-    append_marker("Build stamp: memory-init-diag-v1");
+    write_marker("WiiCompiled-Switch Memory isolation diagnostic", true);
+    write_marker("Build stamp: memory-init-isolation-v2");
+    write_marker("Run in hbmenu application/full-memory mode");
 
-    const auto context_result = mkw::context_probe::run();
-    mkw::context_probe::print(context_result);
-    if (!mkw::context_probe::append_report(context_result)) {
-        std::printf("WARNING: could not append context results to vm-probe.txt.\n");
-        consoleUpdate(nullptr);
-    }
+    run_preflight("MEM1_24MiB", mem1_config());
+    run_preflight("MEM2_128MiB", mem2_config());
+    run_preflight("LOCKED_CACHE", locked_cache_config());
 
-    const auto guest_flat_result = mkw::horizon_guest_flat::run_smoke_test();
-    mkw::horizon_guest_flat::print_smoke_result(guest_flat_result);
-    if (!mkw::horizon_guest_flat::append_smoke_report(guest_flat_result)) {
-        std::printf("WARNING: could not append GuestFlat results to vm-probe.txt.\n");
-        consoleUpdate(nullptr);
-    }
-
-    const auto guest_flat_api_result = mkw::guest_flat_api_probe::run();
-    mkw::guest_flat_api_probe::print(guest_flat_api_result);
-    if (!mkw::guest_flat_api_probe::append_report(guest_flat_api_result)) {
-        std::printf("WARNING: could not append GuestFlat API results to vm-probe.txt.\n");
-        consoleUpdate(nullptr);
-    }
-
-    append_marker("Memory::Init START");
-    std::printf("Memory::Init START\n");
-    consoleUpdate(nullptr);
-
+    write_marker("FULL Memory::Init START");
     const auto memory_init_result = mkw::memory_init_probe::run();
+    write_marker("FULL Memory::Init RETURNED");
     mkw::memory_init_probe::print(memory_init_result);
     if (!mkw::memory_init_probe::append_report(memory_init_result)) {
-        std::printf("WARNING: could not append Memory::Init results to vm-probe.txt.\n");
-        consoleUpdate(nullptr);
+        write_marker("FULL report append FAILED");
     }
-    append_marker("Memory::Init END");
+    write_marker("ALL MEMORY DIAGNOSTICS COMPLETE");
 
-    std::printf("All probes complete. Press + to exit.\n");
+    std::printf("Press + to exit.\n");
     consoleUpdate(nullptr);
-
     while (!mkw::switch_platform::should_exit()) {
-        svcSleepThread(16'000'000); // ~16 ms; bootstrap only, not final frame pacing.
+        svcSleepThread(16'000'000);
     }
 
     mkw::switch_platform::shutdown();

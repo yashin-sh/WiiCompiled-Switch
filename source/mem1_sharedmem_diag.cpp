@@ -1,4 +1,5 @@
 #include "mem1_sharedmem_diag.hpp"
+#include "heap_runtime_diag.hpp"
 
 #include <switch.h>
 
@@ -37,10 +38,33 @@ void marker_ptr(const char* label, const void* ptr) {
     marker(line);
 }
 
+void marker_u64(const char* label, std::uint64_t value) {
+    char line[128]{};
+    std::snprintf(line, sizeof(line), "%s: 0x%016llx (%llu MiB)", label,
+                  static_cast<unsigned long long>(value),
+                  static_cast<unsigned long long>(value / (1024ull * 1024ull)));
+    marker(line);
+}
+
+void emit_heap_state() {
+    const auto& heap = mkw::heap_runtime_diag::state();
+    marker(heap.env_override ? "HEAP env override: YES" : "HEAP env override: NO");
+    marker_ptr("HEAP env addr", reinterpret_cast<const void*>(heap.env_addr));
+    marker_u64("HEAP env size", heap.env_size);
+    marker_rc("HEAP svcSetHeapSize(512MiB) rc", static_cast<Result>(heap.set_heap_rc));
+    marker_ptr("HEAP selected addr", reinterpret_cast<const void*>(heap.selected_heap_addr));
+    marker_u64("HEAP selected size", heap.selected_heap_size);
+    marker_u64("MEM total before", heap.total_before);
+    marker_u64("MEM used before", heap.used_before);
+    marker_u64("MEM total after", heap.total_after);
+    marker_u64("MEM used after", heap.used_after);
+}
+
 } // namespace
 
 void run() {
     marker("MEM1 RAW DIAG START");
+    emit_heap_state();
 
     Handle handle = INVALID_HANDLE;
     marker("MEM1 RAW create SharedMemory begin");

@@ -28,8 +28,8 @@ bool range_contains(std::uint64_t region_base,
 }
 
 void emit(FILE* out, const ProbeResult& r) {
-    std::fprintf(out, "WiiCompiled-Switch VM probe\n");
-    std::fprintf(out, "===========================\n");
+    std::fprintf(out, "WiiCompiled-Switch VM probe v2\n");
+    std::fprintf(out, "==============================\n");
     std::fprintf(out, "guest-space target : 0x%llx bytes (4 GiB)\n",
                  static_cast<unsigned long long>(kGuestSpaceSize));
     std::fprintf(out, "upstream AArch64 base: 0x%llx\n\n",
@@ -60,24 +60,46 @@ void emit(FILE* out, const ProbeResult& r) {
     }
     std::fprintf(out, "\n\n");
 
-    std::fprintf(out, "alias source alloc : %s\n", r.alias_source_allocated ? "OK" : "FAILED");
-    std::fprintf(out, "alias destination  : %s\n", r.alias_destination_found ? "FOUND" : "NOT FOUND");
-    std::fprintf(out, "svcMapMemory       : 0x%08x\n", r.alias_map_result);
-    std::fprintf(out, "alias initial read : %s\n", r.alias_initial_data_visible ? "OK" : "FAILED/NOT RUN");
-    std::fprintf(out, "permission -> R    : 0x%08x\n", r.permission_read_result);
-    std::fprintf(out, "permission -> RW   : 0x%08x\n", r.permission_rw_result);
-    std::fprintf(out, "svcUnmapMemory     : 0x%08x\n", r.alias_unmap_result);
-    std::fprintf(out, "alias writeback    : %s\n", r.alias_writeback_verified ? "OK" : "FAILED/NOT RUN");
+    std::fprintf(out, "Path A: svcMapMemory heap -> stack region\n");
+    std::fprintf(out, "  source alloc      : %s\n", r.stack_alias_source_allocated ? "OK" : "FAILED");
+    std::fprintf(out, "  destination       : %s\n", r.stack_alias_destination_found ? "FOUND" : "NOT FOUND");
+    std::fprintf(out, "  map result        : 0x%08x\n", r.stack_alias_map_result);
+    std::fprintf(out, "  initial read      : %s\n", r.stack_alias_initial_data_visible ? "OK" : "FAILED/NOT RUN");
+    std::fprintf(out, "  unmap result      : 0x%08x\n", r.stack_alias_unmap_result);
+    std::fprintf(out, "  writeback         : %s\n\n", r.stack_alias_writeback_verified ? "OK" : "FAILED/NOT RUN");
+
+    std::fprintf(out, "Path B: SharedMemory dual mapping\n");
+    std::fprintf(out, "  create            : 0x%08x\n", r.shmem_create_result);
+    std::fprintf(out, "  guest fixed map   : 0x%08x\n", r.shmem_guest_map_result);
+    std::fprintf(out, "  host map          : 0x%08x", r.shmem_host_map_result);
+    if (r.shmem_host_base != 0) {
+        std::fprintf(out, " at 0x%016llx",
+                     static_cast<unsigned long long>(r.shmem_host_base));
+    }
+    std::fprintf(out, "\n");
+    std::fprintf(out, "  initial alias read: %s\n", r.shmem_initial_data_visible ? "OK" : "FAILED/NOT RUN");
+    std::fprintf(out, "  permission -> R   : 0x%08x\n", r.shmem_permission_read_result);
+    std::fprintf(out, "  permission -> RW  : 0x%08x\n", r.shmem_permission_rw_result);
+    std::fprintf(out, "  writeback         : %s\n", r.shmem_writeback_verified ? "OK" : "FAILED/NOT RUN");
+    std::fprintf(out, "  guest unmap       : 0x%08x\n", r.shmem_guest_unmap_result);
+    std::fprintf(out, "  host unmap        : 0x%08x\n", r.shmem_host_unmap_result);
+    std::fprintf(out, "  close             : 0x%08x\n", r.shmem_close_result);
 }
 
 } // namespace
 
 ProbeResult run() {
     ProbeResult r{};
-    r.alias_map_result = kNotAttempted;
-    r.permission_read_result = kNotAttempted;
-    r.permission_rw_result = kNotAttempted;
-    r.alias_unmap_result = kNotAttempted;
+    r.stack_alias_map_result = kNotAttempted;
+    r.stack_alias_unmap_result = kNotAttempted;
+    r.shmem_create_result = kNotAttempted;
+    r.shmem_guest_map_result = kNotAttempted;
+    r.shmem_host_map_result = kNotAttempted;
+    r.shmem_permission_read_result = kNotAttempted;
+    r.shmem_permission_rw_result = kNotAttempted;
+    r.shmem_guest_unmap_result = kNotAttempted;
+    r.shmem_host_unmap_result = kNotAttempted;
+    r.shmem_close_result = kNotAttempted;
 
     u64 aslr_base = 0;
     u64 aslr_size = 0;
@@ -105,9 +127,7 @@ ProbeResult run() {
                            kUpstreamAarch64GuestBase, kGuestSpaceSize);
     }
 
-    // Ask libnx's address-space manager whether any 4 GiB slice is currently
-    // available. This reserves no physical memory and is safe to release
-    // immediately after the probe.
+    // This checks only VA availability; no 4 GiB physical allocation occurs.
     virtmemLock();
     void* candidate = virtmemFindAslr(static_cast<std::size_t>(kGuestSpaceSize), kGuardSize);
     VirtmemReservation* reservation = nullptr;
@@ -121,60 +141,105 @@ ProbeResult run() {
     }
     virtmemUnlock();
 
-    // Small dual-alias test. We intentionally test only 64 KiB of backing;
-    // the 4 GiB check above is virtual-address-space-only and allocates no
-    // giant physical buffer.
+    // Path A: validate svcMapMemory in the region libnx itself uses for thread
+    // stack mirrors. This isolates the v1 probe's InvalidMemoryRange result.
     void* source = memalign(0x1000, kAliasProbeSize);
-    if (!source) {
-        return r;
-    }
-    r.alias_source_allocated = true;
-    std::memset(source, 0x5A, kAliasProbeSize);
+    if (source) {
+        r.stack_alias_source_allocated = true;
+        std::memset(source, 0x5A, kAliasProbeSize);
 
-    void* alias = nullptr;
-    virtmemLock();
-    alias = virtmemFindAslr(kAliasProbeSize, kGuardSize);
-    if (alias) {
-        r.alias_destination_found = true;
-        const Result map_rc = svcMapMemory(alias, source, kAliasProbeSize);
-        r.alias_map_result = map_rc;
-    }
-    virtmemUnlock();
+        void* alias = nullptr;
+        virtmemLock();
+        alias = virtmemFindStack(kAliasProbeSize, kGuardSize);
+        if (alias) {
+            r.stack_alias_destination_found = true;
+            r.stack_alias_map_result = svcMapMemory(alias, source, kAliasProbeSize);
+        }
+        virtmemUnlock();
 
-    if (!alias || R_FAILED(static_cast<Result>(r.alias_map_result))) {
+        if (alias && R_SUCCEEDED(static_cast<Result>(r.stack_alias_map_result))) {
+            const auto* alias_bytes = static_cast<const volatile std::uint8_t*>(alias);
+            r.stack_alias_initial_data_visible =
+                alias_bytes[0] == 0x5A && alias_bytes[kAliasProbeSize - 1] == 0x5A;
+
+            auto* writable_alias = static_cast<volatile std::uint8_t*>(alias);
+            writable_alias[0] = 0xA5;
+            writable_alias[kAliasProbeSize - 1] = 0x3C;
+
+            r.stack_alias_unmap_result = svcUnmapMemory(alias, source, kAliasProbeSize);
+            if (R_SUCCEEDED(static_cast<Result>(r.stack_alias_unmap_result))) {
+                const auto* source_bytes = static_cast<const std::uint8_t*>(source);
+                r.stack_alias_writeback_verified =
+                    source_bytes[0] == 0xA5 && source_bytes[kAliasProbeSize - 1] == 0x3C;
+            }
+        }
+
         std::free(source);
+    }
+
+    // Path B: SharedMemory is more interesting for WiiCompiled because Horizon
+    // permits it in ASLR space. We map the same kernel object once at the exact
+    // upstream guest base and once at a separate host VA.
+    Handle shmem = INVALID_HANDLE;
+    const Result create_rc = svcCreateSharedMemory(&shmem, kAliasProbeSize, Perm_Rw, Perm_Rw);
+    r.shmem_create_result = create_rc;
+    if (R_FAILED(create_rc)) {
         return r;
     }
 
-    const auto* alias_bytes = static_cast<const volatile std::uint8_t*>(alias);
-    r.alias_initial_data_visible =
-        alias_bytes[0] == 0x5A && alias_bytes[kAliasProbeSize - 1] == 0x5A;
+    void* guest = reinterpret_cast<void*>(kUpstreamAarch64GuestBase);
+    const Result guest_map_rc = svcMapSharedMemory(shmem, guest, kAliasProbeSize, Perm_Rw);
+    r.shmem_guest_map_result = guest_map_rc;
 
-    const Result read_rc = svcSetMemoryPermission(alias, kAliasProbeSize, Perm_R);
-    r.permission_read_result = read_rc;
-
-    bool alias_is_writable = R_FAILED(read_rc);
-    if (R_SUCCEEDED(read_rc)) {
-        const Result rw_rc = svcSetMemoryPermission(alias, kAliasProbeSize, Perm_Rw);
-        r.permission_rw_result = rw_rc;
-        alias_is_writable = R_SUCCEEDED(rw_rc);
+    void* host = nullptr;
+    if (R_SUCCEEDED(guest_map_rc)) {
+        virtmemLock();
+        host = virtmemFindAslr(kAliasProbeSize, kGuardSize);
+        if (host) {
+            r.shmem_host_base = reinterpret_cast<std::uintptr_t>(host);
+            r.shmem_host_map_result = svcMapSharedMemory(shmem, host, kAliasProbeSize, Perm_Rw);
+        }
+        virtmemUnlock();
     }
 
-    if (alias_is_writable) {
-        auto* writable_alias = static_cast<volatile std::uint8_t*>(alias);
-        writable_alias[0] = 0xA5;
-        writable_alias[kAliasProbeSize - 1] = 0x3C;
+    const bool dual_mapped =
+        R_SUCCEEDED(static_cast<Result>(r.shmem_guest_map_result)) &&
+        R_SUCCEEDED(static_cast<Result>(r.shmem_host_map_result)) && host != nullptr;
+
+    if (dual_mapped) {
+        auto* guest_bytes = static_cast<volatile std::uint8_t*>(guest);
+        const auto* host_bytes = static_cast<const volatile std::uint8_t*>(host);
+        guest_bytes[0] = 0xC3;
+        guest_bytes[kAliasProbeSize - 1] = 0x7E;
+        r.shmem_initial_data_visible =
+            host_bytes[0] == 0xC3 && host_bytes[kAliasProbeSize - 1] == 0x7E;
+
+        const Result read_rc = svcSetMemoryPermission(guest, kAliasProbeSize, Perm_R);
+        r.shmem_permission_read_result = read_rc;
+        if (R_SUCCEEDED(read_rc)) {
+            r.shmem_permission_rw_result =
+                svcSetMemoryPermission(guest, kAliasProbeSize, Perm_Rw);
+        }
+
+        // This verifies that the two mappings remain coherent independently of
+        // whether Horizon permits permission changes on SharedMemory mappings.
+        auto* host_writable = static_cast<volatile std::uint8_t*>(host);
+        host_writable[0] = 0x42;
+        host_writable[kAliasProbeSize - 1] = 0x24;
+        r.shmem_writeback_verified =
+            guest_bytes[0] == 0x42 && guest_bytes[kAliasProbeSize - 1] == 0x24;
     }
 
-    const Result unmap_rc = svcUnmapMemory(alias, source, kAliasProbeSize);
-    r.alias_unmap_result = unmap_rc;
-    if (R_SUCCEEDED(unmap_rc) && alias_is_writable) {
-        const auto* source_bytes = static_cast<const std::uint8_t*>(source);
-        r.alias_writeback_verified =
-            source_bytes[0] == 0xA5 && source_bytes[kAliasProbeSize - 1] == 0x3C;
+    if (R_SUCCEEDED(static_cast<Result>(r.shmem_guest_map_result))) {
+        r.shmem_guest_unmap_result =
+            svcUnmapSharedMemory(shmem, guest, kAliasProbeSize);
+    }
+    if (R_SUCCEEDED(static_cast<Result>(r.shmem_host_map_result)) && host) {
+        r.shmem_host_unmap_result =
+            svcUnmapSharedMemory(shmem, host, kAliasProbeSize);
     }
 
-    std::free(source);
+    r.shmem_close_result = svcCloseHandle(shmem);
     return r;
 }
 

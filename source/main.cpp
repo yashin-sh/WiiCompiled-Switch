@@ -24,8 +24,8 @@ int main(int, char**) {
     auto info = mkw::switch_platform::initialize();
     mkw::switch_platform::present_bootstrap_screen(info);
 
-    write_marker("WiiCompiled-Switch MEM1 raw SharedMemory diagnostic", true);
-    write_marker("Build stamp: mem1-raw-shmem-v3");
+    write_marker("WiiCompiled-Switch heap override + MEM1 diagnostic", true);
+    write_marker("Build stamp: heap-override-resize-v4");
     write_marker("Run in hbmenu application/full-memory mode");
 
     mkw::mem1_sharedmem_diag::run();

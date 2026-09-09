@@ -31,21 +31,24 @@ struct InitReport {
     std::uint32_t failed_guest_address = 0;
 };
 
-// Reserves one contiguous 4 GiB guest VA window and maps only the requested
-// backing storage into it. The 4 GiB reservation consumes virtual address
-// space only; physical memory is allocated per backing section.
+// Reserves one contiguous 4 GiB guest VA window for the translated-address
+// contract, while storing MEM1/MEM2/Owned backing inside the loader-provided
+// heap. Horizon full-size Wii backings intentionally use checked HostPointer
+// access rather than large SharedMemory objects: hbloader's mandatory heap
+// override already owns the process memory budget and svcCreateSharedMemory
+// for a 24 MiB MEM1 object can hit Kernel LimitReached.
 bool initialize(const RegionRequest* regions, std::size_t count, InitReport* report = nullptr);
 
 bool is_active();
 std::uint8_t* guest_base();
 
-// Returns the always-accessible host view for a requested guest address, or
-// nullptr if the address does not belong to a requested region.
+// Returns the always-accessible host view for a requested Wii guest address,
+// folding physical/cached/uncached aliases onto the same backing store.
 std::uint8_t* host_pointer(std::uint32_t guest_address);
 
-// Horizon SharedMemory mappings cannot be reprotected with
-// svcSetMemoryPermission. WiiCompiled's Switch integration must therefore keep
-// MMIO/deferred/executable-guard accesses on the checked path.
+// Switch currently runs the translated memory path in correctness-first checked
+// mode. The reserved guest base is an address-space token, not a directly
+// dereferenceable 4 GiB mirror.
 constexpr bool requires_checked_access_for_special_ranges() noexcept { return true; }
 
 void shutdown();
@@ -75,8 +78,8 @@ struct SmokeResult {
     }
 };
 
-// Hardware smoke test using synthetic data only. It exercises the Wii MEM1 and
-// MEM2 physical/cached/uncached alias families plus an Owned region.
+// Hardware smoke test using synthetic data only. It validates checked alias
+// resolution for Wii MEM1/MEM2 plus an Owned region without Nintendo data.
 SmokeResult run_smoke_test();
 void print_smoke_result(const SmokeResult& result);
 bool append_smoke_report(const SmokeResult& result);

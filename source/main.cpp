@@ -1,4 +1,5 @@
 #include "context_probe.hpp"
+#include "guest_flat_api_probe.hpp"
 #include "horizon_guest_flat.hpp"
 #include "switch_platform.hpp"
 #include "vm_probe.hpp"
@@ -28,6 +29,13 @@ int main(int, char**) {
     mkw::horizon_guest_flat::print_smoke_result(guest_flat_result);
     if (!mkw::horizon_guest_flat::append_smoke_report(guest_flat_result)) {
         std::printf("WARNING: could not append GuestFlat results to vm-probe.txt.\n");
+        consoleUpdate(nullptr);
+    }
+
+    const auto guest_flat_api_result = mkw::guest_flat_api_probe::run();
+    mkw::guest_flat_api_probe::print(guest_flat_api_result);
+    if (!mkw::guest_flat_api_probe::append_report(guest_flat_api_result)) {
+        std::printf("WARNING: could not append GuestFlat API results to vm-probe.txt.\n");
         consoleUpdate(nullptr);
     }
 

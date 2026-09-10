@@ -8,7 +8,9 @@ Run a legally-owned Mario Kart Wii dump through the WiiCompiled static-recompila
 
 ## Status
 
-**Milestone 0 — platform bootstrap.** The repository currently builds a minimal libnx application and establishes the Switch platform boundary. The actual WiiCompiled runtime is not wired in yet.
+**M2 — Horizon runtime bootstrap.** Guest virtual memory, heap-backed checked GuestFlat, Wii `Memory::Init`, and the custom AArch64 cooperative-context primitive have hardware evidence in the M2 reports. The next integration slice now consumes the audited WiiCompiled source as a pinned submodule, compiles its SDL-free `RuntimePlatform` host layer into the NRO, implements the real upstream `HostContext` API on Horizon, and adds native libnx lifecycle/filesystem/timing/HID services.
+
+Graphics and audio remain explicit stubs in this milestone. The runtime bootstrap intentionally stops at `WAITING_FOR_USER_DATA`; it does not yet claim translated Mario Kart Wii execution or rendering.
 
 ## Legal / content policy
 
@@ -23,9 +25,10 @@ WiiCompiled is GPL-3.0; derivative code in this repository is therefore GPL-3.0 
 - devkitPro with `devkitA64` and `libnx`
 - GNU Make
 
-On a devkitPro shell:
+Initialize the pinned WiiCompiled source and build:
 
 ```sh
+git submodule update --init --recursive
 make
 ```
 
@@ -41,7 +44,7 @@ Copy it to:
 /switch/WiiCompiled-Switch/WiiCompiled-Switch.nro
 ```
 
-and launch it from hbmenu.
+Launch it from hbmenu in application/title-override mode with full memory rather than Album applet mode.
 
 ## Current architecture
 
@@ -69,8 +72,8 @@ WiiCompiled translated game/runtime
 
 ## Roadmap
 
-See `ROADMAP.md`.
+See `ROADMAP.md` and `docs/M2_RUNTIME_BOOTSTRAP.md`.
 
 ## Upstream
 
-The long-term aim is to keep Switch-specific changes narrow enough that they can eventually be proposed upstream to WiiCompiled rather than maintaining a permanent fork.
+The long-term aim is to keep Switch-specific changes narrow enough that they can eventually be proposed upstream to WiiCompiled rather than maintaining a permanent fork. The audited upstream revision is recorded in `UPSTREAM.md` and enforced by CI.

@@ -9,17 +9,26 @@ include $(DEVKITPRO)/libnx/switch_rules
 
 TARGET      := WiiCompiled-Switch
 BUILD       := build
-SOURCES     := source
-INCLUDES    := include
+UPSTREAM    := third_party/WiiCompiled
+UPSTREAM_RUNTIME := $(UPSTREAM)/runtime
+SOURCES     := source $(UPSTREAM_RUNTIME)/src/platform
+INCLUDES    := include $(UPSTREAM_RUNTIME)/include
+
+ifeq ($(wildcard $(UPSTREAM_RUNTIME)/include/host_context.h),)
+$(error "Pinned WiiCompiled submodule is missing. Run: git submodule update --init --recursive")
+endif
 
 APP_TITLE   := WiiCompiled-Switch
 APP_AUTHOR  := Community homebrew port
-APP_VERSION := 0.0.1
+APP_VERSION := 0.0.2
 
 ARCH        := -march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
 CFLAGS      := -g -Wall -Wextra -O2 -ffunction-sections $(ARCH) $(DEFINES)
 CFLAGS      += $(INCLUDE) -D__SWITCH__ -DMKW_PLATFORM_SWITCH=1
-CXXFLAGS    := $(CFLAGS) -std=gnu++20 -fno-rtti -fno-exceptions
+# The real WiiCompiled runtime uses C++ exceptions for checked guest-memory
+# faults and other host boundaries. Keep RTTI disabled, but do not compile the
+# Horizon integration with -fno-exceptions now that upstream code is consumed.
+CXXFLAGS    := $(CFLAGS) -std=gnu++20 -fno-rtti
 ASFLAGS     := -g $(ARCH)
 LDFLAGS     := -specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 LIBS        := -lnx

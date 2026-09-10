@@ -10,6 +10,10 @@ jobs:
     container: devkitpro/devkita64:latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Verify WiiCompiled pin
+        run: test "$(git -C third_party/WiiCompiled rev-parse HEAD)" = "a135beb201042b20f390c6695ca6b26768820fb4"
       - name: Build NRO
         run: make -j2
       - name: Verify artifact

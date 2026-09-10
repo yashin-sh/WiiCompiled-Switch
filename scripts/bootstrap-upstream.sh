@@ -2,12 +2,16 @@
 set -eu
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-DEST="$ROOT/third_party/Wiicompiled"
+PIN=a135beb201042b20f390c6695ca6b26768820fb4
+DEST="$ROOT/third_party/WiiCompiled"
 
-if [ -e "$DEST/.git" ]; then
-  echo "WiiCompiled already present: $DEST"
-  exit 0
+git -C "$ROOT" submodule update --init --recursive third_party/WiiCompiled
+
+ACTUAL=$(git -C "$DEST" rev-parse HEAD)
+if [ "$ACTUAL" != "$PIN" ]; then
+  echo "Unexpected WiiCompiled revision: $ACTUAL" >&2
+  echo "Expected repository pin: $PIN" >&2
+  exit 1
 fi
 
-git clone https://github.com/patchzyy/Wiicompiled.git "$DEST"
-echo "Cloned upstream WiiCompiled. Pin a commit before beginning integration."
+echo "WiiCompiled ready at pinned revision $PIN"

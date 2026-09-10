@@ -19,8 +19,8 @@ prod.keys
 title.keys
 keys.txt
 
-# WiiCompiled local checkout/build
-/third_party/Wiicompiled/
+# Local WiiCompiled build/output beside the pinned source submodule
+/third_party/WiiCompiled-build/
 
 # OS/editor
 .DS_Store

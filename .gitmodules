@@ -1,2 +1,3 @@
-# Upstream is intentionally not pinned as a submodule yet.
-# Run scripts/bootstrap-upstream.sh for the audit phase, then pin a known-good commit.
+[submodule "third_party/WiiCompiled"]
+	path = third_party/WiiCompiled
+	url = https://github.com/patchzyy/Wiicompiled.git

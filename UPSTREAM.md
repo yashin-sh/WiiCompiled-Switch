@@ -1,11 +1,27 @@
 # Upstream pin
 
-The initial Nintendo Switch portability audit targets WiiCompiled commit:
+The Nintendo Switch port consumes WiiCompiled from the repository submodule at `third_party/WiiCompiled`.
+
+Pinned WiiCompiled commit:
 
 `a135beb201042b20f390c6695ca6b26768820fb4`
 
 Upstream repository: `patchzyy/Wiicompiled`
 
-Reason for pinning: this was the latest upstream `main` commit when the M1 audit started on 2026-09-07. Porting work should remain reproducible against this SHA until we intentionally rebase onto a newer upstream revision.
+This was the latest upstream `main` commit when the M1 audit started on 2026-09-07. Porting work remains reproducible against this SHA until an intentional upstream rebase is reviewed and regression-tested.
 
-Do not commit game-generated output from a local WiiCompiled build into this repository.
+Initialize the exact pinned source with:
+
+```sh
+./scripts/bootstrap-upstream.sh
+```
+
+or:
+
+```sh
+git submodule update --init --recursive
+```
+
+CI verifies that the checked-out submodule HEAD equals the pinned SHA before building the Switch NRO.
+
+Do not commit locally generated game-derived output into this repository.

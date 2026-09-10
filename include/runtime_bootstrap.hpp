@@ -1,10 +1,13 @@
 #pragma once
 
+#include <cstdint>
+
 namespace mkw::runtime_bootstrap {
 
 enum class StopPoint {
     Failed,
-    WaitingForUserData,
+    WaitingForTranslatedProduct,
+    TranslatedProductLinked,
 };
 
 struct Result {
@@ -18,7 +21,11 @@ struct Result {
     bool host_context_continuation = false;
     bool audio_stubbed = true;
     bool graphics_stubbed = true;
-    bool user_game_data_present = false;
+    bool translated_product_linked = false;
+    bool translated_product_abi_compatible = false;
+    std::uint32_t translated_product_reported_abi = 0;
+    const char* translated_product_id = "<none>";
+    const char* translated_product_build = "Nintendo-data-free stub";
     StopPoint stop_point = StopPoint::Failed;
 };
 

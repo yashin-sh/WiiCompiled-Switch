@@ -7,12 +7,23 @@ endif
 TOPDIR ?= $(CURDIR)
 include $(DEVKITPRO)/libnx/switch_rules
 
+MKW_SYNTHETIC_PRODUCT ?= 0
+
 TARGET      := WiiCompiled-Switch
 BUILD       := build
 UPSTREAM    := third_party/WiiCompiled
 UPSTREAM_RUNTIME := $(UPSTREAM)/runtime
 SOURCES     := source $(UPSTREAM_RUNTIME)/src/platform
 INCLUDES    := include $(UPSTREAM_RUNTIME)/include
+APP_VERSION := 0.0.3
+
+ifeq ($(MKW_SYNTHETIC_PRODUCT),1)
+TARGET      := WiiCompiled-Switch-synthetic-product
+BUILD       := build-synthetic-product
+SOURCES     += synthetic-product
+DEFINES     += -DMKW_SYNTHETIC_PRODUCT=1
+APP_VERSION := 0.0.3-synthetic
+endif
 
 ifeq ($(wildcard $(TOPDIR)/$(UPSTREAM_RUNTIME)/include/host_context.h),)
 $(error "Pinned WiiCompiled submodule is missing. Run: git submodule update --init --recursive")
@@ -20,7 +31,6 @@ endif
 
 APP_TITLE   := WiiCompiled-Switch
 APP_AUTHOR  := Community homebrew port
-APP_VERSION := 0.0.3
 
 ARCH        := -march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
 CFLAGS      := -g -Wall -Wextra -O2 -ffunction-sections $(ARCH) $(DEFINES)
@@ -62,7 +72,10 @@ $(BUILD):
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 clean:
-	@rm -fr $(BUILD) $(TARGET).nro $(TARGET).nacp $(TARGET).elf $(TARGET).map
+	@rm -fr build build-synthetic-product \
+		WiiCompiled-Switch.nro WiiCompiled-Switch.nacp WiiCompiled-Switch.elf WiiCompiled-Switch.map \
+		WiiCompiled-Switch-synthetic-product.nro WiiCompiled-Switch-synthetic-product.nacp \
+		WiiCompiled-Switch-synthetic-product.elf WiiCompiled-Switch-synthetic-product.map
 
 else
 

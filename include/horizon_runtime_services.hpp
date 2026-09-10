@@ -51,8 +51,14 @@ std::uint64_t monotonic_ticks() noexcept;
 std::uint64_t tick_frequency() noexcept;
 void sleep_for_ns(std::int64_t nanoseconds) noexcept;
 
+// Runtime SD-card data is distinct from the build-time translated product.
+// These roots contain only host/runtime state and must never be interpreted as
+// a location from which translated game code is loaded.
 std::filesystem::path application_root();
-std::filesystem::path user_game_data_root();
+std::filesystem::path logs_root();
+std::filesystem::path cache_root();
+std::filesystem::path config_root();
+std::filesystem::path nand_root();
 
 bool submit_audio(const AudioBufferView& buffer) noexcept;
 

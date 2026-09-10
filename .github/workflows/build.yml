@@ -19,6 +19,8 @@ jobs:
         run: |
           bash -n scripts/prepare-local-data-init.sh
           bash -n scripts/prepare-local-function-shards.sh
+          bash -n scripts/build-local-function-link.sh
+          python3 -m py_compile scripts/normalize-gcc-statefree-returns.py
           grep -Fq 'a135beb201042b20f390c6695ca6b26768820fb4' scripts/prepare-local-function-shards.sh
           grep -Fq 'ENTRY="0x800060A4"' scripts/prepare-local-function-shards.sh
           grep -Fq -- '--output-metadata "$METADATA"' scripts/prepare-local-function-shards.sh
@@ -27,12 +29,37 @@ jobs:
           grep -Fq -- '--native-source-dir "$NATIVE_SOURCES"' scripts/prepare-local-function-shards.sh
           grep -Fq -- '--out "$SHARD_ROOT"' scripts/prepare-local-function-shards.sh
 
-      - name: Locate AArch64 nm
+      - name: Locate AArch64 tools
         run: |
           NM_TOOL="$(find "$DEVKITPRO" -type f -name 'aarch64-none-elf-nm' -print -quit)"
+          CXX_TOOL="$(find "$DEVKITPRO" -type f -name 'aarch64-none-elf-g++' -print -quit)"
           test -n "$NM_TOOL"
           test -x "$NM_TOOL"
+          test -n "$CXX_TOOL"
+          test -x "$CXX_TOOL"
           echo "NM_TOOL=$NM_TOOL" >> "$GITHUB_ENV"
+          echo "CXX_TOOL=$CXX_TOOL" >> "$GITHUB_ENV"
+
+      - name: Verify GCC state-free return normalization
+        run: |
+          cat > /tmp/statefree-return-probe.cpp <<'EOF'
+          #include <cstdint>
+          #include "devkita64_gcc_compat.hpp"
+          #define MKW_PPC_NO_INLINE __attribute__((noinline))
+          using MkwStateFreeResult2 = std::uint64_t __attribute__((ext_vector_type(2)));
+          extern "C" MKW_PPC_NO_INLINE MkwStateFreeResult2 synthetic_statefree_return(
+              std::uint64_t a, std::uint64_t b)
+          {
+              if (a == 0) {
+                  return { b, a };
+              }
+              return { a, b };
+          }
+          EOF
+          python3 scripts/normalize-gcc-statefree-returns.py /tmp/statefree-return-probe.cpp
+          grep -Fq 'return MkwStateFreeResult2{ b, a };' /tmp/statefree-return-probe.cpp
+          grep -Fq 'return MkwStateFreeResult2{ a, b };' /tmp/statefree-return-probe.cpp
+          "$CXX_TOOL" -std=gnu++20 -Iinclude -c /tmp/statefree-return-probe.cpp -o /tmp/statefree-return-probe.o
 
       - name: Build Nintendo-data-free NRO
         run: make -j2
@@ -80,6 +107,7 @@ jobs:
           test -f WiiCompiled-Switch-synthetic-function-link.nro
           test -f WiiCompiled-Switch-synthetic-function-link.elf
           "$NM_TOOL" WiiCompiled-Switch-synthetic-function-link.elf | grep -E ' T synthetic_translated_leaf$'
+          "$NM_TOOL" WiiCompiled-Switch-synthetic-function-link.elf | grep -E ' T GX_HLE_FIFO_Write8$'
       - uses: actions/upload-artifact@v4
         with:
           name: WiiCompiled-Switch-synthetic-function-link-nro

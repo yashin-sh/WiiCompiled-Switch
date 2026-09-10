@@ -14,11 +14,27 @@ jobs:
           submodules: recursive
       - name: Verify WiiCompiled pin
         run: test "$(git -C third_party/WiiCompiled rev-parse HEAD)" = "a135beb201042b20f390c6695ca6b26768820fb4"
-      - name: Build NRO
+
+      - name: Build Nintendo-data-free NRO
         run: make -j2
-      - name: Verify artifact
-        run: test -f WiiCompiled-Switch.nro
+      - name: Verify default artifact and weak product seam
+        run: |
+          test -f WiiCompiled-Switch.nro
+          test -f WiiCompiled-Switch.elf
+          aarch64-none-elf-nm WiiCompiled-Switch.elf | grep -E ' W mkw_switch_get_translated_product_api$'
       - uses: actions/upload-artifact@v4
         with:
           name: WiiCompiled-Switch-nro
           path: WiiCompiled-Switch.nro
+
+      - name: Build synthetic strong-product probe
+        run: make -j2 MKW_SYNTHETIC_PRODUCT=1
+      - name: Verify synthetic artifact and strong override
+        run: |
+          test -f WiiCompiled-Switch-synthetic-product.nro
+          test -f WiiCompiled-Switch-synthetic-product.elf
+          aarch64-none-elf-nm WiiCompiled-Switch-synthetic-product.elf | grep -E ' T mkw_switch_get_translated_product_api$'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WiiCompiled-Switch-synthetic-product-nro
+          path: WiiCompiled-Switch-synthetic-product.nro

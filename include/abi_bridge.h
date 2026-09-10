@@ -25,10 +25,12 @@ void mkw_switch_report_unsupported_translated_dispatch(
 
 inline void ApplyRuntimeCallOptions(std::uint32_t, CpuContext*) noexcept {}
 
+inline constexpr std::uint32_t kPpcAllNonvolatileFprMask = 0xFFFFC000u;
+
 template <std::uint32_t Target>
 struct KnownTranslatedCpuCall {
     static constexpr bool kAvailable = false;
-    static constexpr std::uint32_t kNonvolatileFprWriteMask = 0xFFFFC000u;
+    static constexpr std::uint32_t kNonvolatileFprWriteMask = kPpcAllNonvolatileFprMask;
     static constexpr bool kMustRemainDynamicallyDispatchable = true;
     static constexpr void (*Entry)(CpuContext*) = nullptr;
 };
@@ -43,6 +45,45 @@ struct KnownTranslatedCpuCall {
         static constexpr void (*Entry)(CpuContext*) = &winner;                            \
     }
 
+// Keep the translated PPC ABI rule used by WiiCompiled: a callee may write
+// f14..f31 internally, but those registers are nonvolatile to its caller.
+// Generated trait headers provide the exact write mask for each direct target.
+class PpcNonvolatileFprGuard {
+public:
+    explicit PpcNonvolatileFprGuard(
+        CpuContext* cpu,
+        std::uint32_t mask = kPpcAllNonvolatileFprMask) noexcept
+        : cpu_(cpu), mask_(mask & kPpcAllNonvolatileFprMask) {
+        if (!cpu_) {
+            return;
+        }
+        for (std::uint32_t reg = 14; reg <= 31; ++reg) {
+            if ((mask_ & (1u << reg)) != 0u) {
+                saved_[reg - 14] = cpu_->fpr[reg];
+            }
+        }
+    }
+
+    ~PpcNonvolatileFprGuard() noexcept {
+        if (!cpu_) {
+            return;
+        }
+        for (std::uint32_t reg = 14; reg <= 31; ++reg) {
+            if ((mask_ & (1u << reg)) != 0u) {
+                cpu_->fpr[reg] = saved_[reg - 14];
+            }
+        }
+    }
+
+    PpcNonvolatileFprGuard(const PpcNonvolatileFprGuard&) = delete;
+    PpcNonvolatileFprGuard& operator=(const PpcNonvolatileFprGuard&) = delete;
+
+private:
+    CpuContext* cpu_ = nullptr;
+    std::uint32_t mask_ = 0u;
+    PPC_FPR saved_[18]{};
+};
+
 template <std::uint32_t Target>
 inline bool IsBaseTranslatedCpuTargetActive() noexcept {
     (void)Target;
@@ -50,7 +91,33 @@ inline bool IsBaseTranslatedCpuTargetActive() noexcept {
 }
 
 template <std::uint32_t Target>
-[[noreturn]] inline void InvokeDirectCpu(CpuContext* cpu) {
+inline void DispatchKnownTranslatedCpuTargetStatic(CpuContext* cpu) {
+    static_assert(KnownTranslatedCpuCall<Target>::kAvailable);
+    if constexpr (KnownTranslatedCpuCall<Target>::kNonvolatileFprWriteMask == 0u) {
+        KnownTranslatedCpuCall<Target>::Entry(cpu);
+    } else {
+        PpcNonvolatileFprGuard fpr_guard(
+            cpu, KnownTranslatedCpuCall<Target>::kNonvolatileFprWriteMask);
+        KnownTranslatedCpuCall<Target>::Entry(cpu);
+    }
+}
+
+template <std::uint32_t Target>
+inline void InvokeDirectCpu(CpuContext* cpu) {
+    static_assert(Target != 0u, "InvokeDirectCpu cannot target address 0");
+
+    // The generated aggregate shard includes a sibling trait header containing
+    // every translated direct-call dependency visible to that shard. Use it.
+    // This keeps the fast-track on the real translated call graph without
+    // requiring registration/static constructors or one-off address patches.
+    if constexpr (KnownTranslatedCpuCall<Target>::kAvailable) {
+        ApplyRuntimeCallOptions(Target, cpu);
+        DispatchKnownTranslatedCpuTargetStatic<Target>(cpu);
+        return;
+    }
+
+    // A target not represented by a translated trait is a genuine boundary for
+    // the current Switch port (HLE/native/dynamic/etc.). Record it durably.
     mkw_switch_report_unsupported_translated_dispatch("DIRECT", Target, cpu);
     std::abort();
 }

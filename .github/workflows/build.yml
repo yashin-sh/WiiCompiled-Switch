@@ -45,13 +45,19 @@ jobs:
           cat > /tmp/statefree-return-probe.cpp <<'EOF'
           #include <cstdint>
           #include "devkita64_gcc_compat.hpp"
+          #define MKW_PPC_NO_INLINE __attribute__((noinline))
           using MkwStateFreeResult2 = std::uint64_t __attribute__((ext_vector_type(2)));
-          MkwStateFreeResult2 synthetic_statefree_return(std::uint64_t a, std::uint64_t b)
+          extern "C" MKW_PPC_NO_INLINE MkwStateFreeResult2 synthetic_statefree_return(
+              std::uint64_t a, std::uint64_t b)
           {
+              if (a == 0) {
+                  return { b, a };
+              }
               return { a, b };
           }
           EOF
           python3 scripts/normalize-gcc-statefree-returns.py /tmp/statefree-return-probe.cpp
+          grep -Fq 'return MkwStateFreeResult2{ b, a };' /tmp/statefree-return-probe.cpp
           grep -Fq 'return MkwStateFreeResult2{ a, b };' /tmp/statefree-return-probe.cpp
           "$CXX_TOOL" -std=gnu++20 -Iinclude -c /tmp/statefree-return-probe.cpp -o /tmp/statefree-return-probe.o
 

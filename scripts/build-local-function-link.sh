@@ -48,6 +48,15 @@ rm -f "$ELF" "$NRO" "$MAP_ROOT" "$MAP_BUILD"
 cd "$ROOT"
 make -j"$JOBS" MKW_LOCAL_FUNCTION_SHARDS=1 TRANSLATED_RETAIN_SYMBOL="$RETAIN_SYMBOL"
 
+# With `set -o pipefail`, piping `nm` into `grep -q` is unsafe: grep exits as
+# soon as it finds a match, nm can then receive SIGPIPE, and the pipeline is
+# reported as failed even though the symbol was present. Always materialize nm
+# output first and grep the completed file instead.
+NM_SCAN_DIR="$(mktemp -d)"
+trap 'rm -rf "$NM_SCAN_DIR"' EXIT
+OBJECT_NM="$NM_SCAN_DIR/object.nm"
+ELF_NM="$NM_SCAN_DIR/final-elf.nm"
+
 echo "[3/4] Verifying $RETAIN_SYMBOL is defined by a translated shard object..."
 mapfile -t shard_objects < <(find "$BUILD_DIR" -maxdepth 1 -type f -name 'shard_*.o' -print | sort)
 if [[ ${#shard_objects[@]} -eq 0 ]]; then
@@ -57,7 +66,8 @@ fi
 
 object_hit=""
 for obj in "${shard_objects[@]}"; do
-  if "$NM_TOOL" "$obj" 2>/dev/null | grep -Eq "[[:space:]]T[[:space:]]${RETAIN_SYMBOL}$"; then
+  if "$NM_TOOL" "$obj" >"$OBJECT_NM" 2>/dev/null && \
+     grep -Eq "[[:space:]]T[[:space:]]${RETAIN_SYMBOL}$" "$OBJECT_NM"; then
     object_hit="$obj"
     break
   fi
@@ -73,12 +83,16 @@ if [[ ! -f "$ELF" ]]; then
   echo "error: expected ELF not found: $ELF" >&2
   exit 5
 fi
-if ! "$NM_TOOL" "$ELF" | grep -Eq "[[:space:]]T[[:space:]]${RETAIN_SYMBOL}$"; then
+if ! "$NM_TOOL" "$ELF" >"$ELF_NM"; then
+  echo "error: failed to read symbols from final ELF" >&2
+  exit 5
+fi
+if ! grep -Eq "[[:space:]]T[[:space:]]${RETAIN_SYMBOL}$" "$ELF_NM"; then
   echo "error: $RETAIN_SYMBOL is not retained as T in the final ELF" >&2
-  "$NM_TOOL" "$ELF" | grep -E "[[:space:]][UT][[:space:]]${RETAIN_SYMBOL}$" || true
+  grep -E "[[:space:]][UT][[:space:]]${RETAIN_SYMBOL}$" "$ELF_NM" || true
   exit 6
 fi
-if "$NM_TOOL" "$ELF" | grep -Eq "[[:space:]]U[[:space:]]${RETAIN_SYMBOL}$"; then
+if grep -Eq "[[:space:]]U[[:space:]]${RETAIN_SYMBOL}$" "$ELF_NM"; then
   echo "error: $RETAIN_SYMBOL remains undefined in the final ELF" >&2
   exit 7
 fi

@@ -56,10 +56,17 @@ int main(int, char**) {
         consoleUpdate(nullptr);
     }
 
-    if (runtime_result.stop_point == mkw::runtime_bootstrap::StopPoint::WaitingForUserData) {
-        std::printf("Runtime core reached the user-data boundary.\n");
-    } else {
-        std::printf("Runtime core stopped before the user-data boundary.\n");
+    switch (runtime_result.stop_point) {
+    case mkw::runtime_bootstrap::StopPoint::WaitingForTranslatedProduct:
+        std::printf("Runtime core reached WAITING_FOR_TRANSLATED_PRODUCT.\n");
+        break;
+    case mkw::runtime_bootstrap::StopPoint::TranslatedProductLinked:
+        std::printf("Translated product is linked; execution handoff is not enabled yet.\n");
+        break;
+    case mkw::runtime_bootstrap::StopPoint::Failed:
+    default:
+        std::printf("Runtime core stopped before the translated-product boundary.\n");
+        break;
     }
     std::printf("Press + to exit.\n");
     consoleUpdate(nullptr);

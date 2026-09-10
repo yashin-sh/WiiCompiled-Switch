@@ -11,7 +11,9 @@ constexpr std::uint32_t kSyntheticSda2 = 0x81234560u;
 constexpr std::uint32_t kSyntheticSda1 = 0x87654320u;
 constexpr std::uint32_t kR3Sentinel = 0xA5A5A5A5u;
 
-extern "C" __attribute__((noinline))
+} // namespace
+
+extern "C" __attribute__((noinline, used))
 void synthetic_translated_execution_leaf(CpuContext* ctx) {
     if (!ctx) {
         return;
@@ -29,6 +31,8 @@ void synthetic_translated_execution_leaf(CpuContext* ctx) {
             ? 0u
             : 1u;
 }
+
+namespace {
 
 bool run_synthetic_first_function(MkwSwitchTranslatedExecutionProbeResult* out) noexcept {
     if (!out) {

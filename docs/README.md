@@ -13,4 +13,5 @@
 - `TRANSLATED_PRODUCT_BOUNDARY.md` — build-time translated-product seam and runtime SD-data separation
 - `HARDWARE_RESULTS_2026-09-09.md` — first recorded hardware evidence
 - `HARDWARE_RESULTS_2026-09-10.md` — hardware-validated runtime bootstrap, memory and translated-product results
+- `HARDWARE_DATA_INIT_PASS_2026-09-10.md` — real-Switch synthetic data-init handoff PASS
 - `GRAPHICS_NOTES.md` — graphics backend notes and deferred M3 direction

@@ -14,7 +14,7 @@ UPSTREAM_RUNTIME := $(UPSTREAM)/runtime
 SOURCES     := source $(UPSTREAM_RUNTIME)/src/platform
 INCLUDES    := include $(UPSTREAM_RUNTIME)/include
 
-ifeq ($(wildcard $(UPSTREAM_RUNTIME)/include/host_context.h),)
+ifeq ($(wildcard $(TOPDIR)/$(UPSTREAM_RUNTIME)/include/host_context.h),)
 $(error "Pinned WiiCompiled submodule is missing. Run: git submodule update --init --recursive")
 endif
 

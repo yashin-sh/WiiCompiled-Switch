@@ -28,6 +28,9 @@ jobs:
           grep -Fq -- '--base-functions-dir "$FUNCTIONS"' scripts/prepare-local-function-shards.sh
           grep -Fq -- '--native-source-dir "$NATIVE_SOURCES"' scripts/prepare-local-function-shards.sh
           grep -Fq -- '--out "$SHARD_ROOT"' scripts/prepare-local-function-shards.sh
+          grep -Fq 'TRANSLATED_RETAIN_SYMBOL := func_8000609C' Makefile
+          ! grep -Fq 'TRANSLATED_RETAIN_SYMBOL := __get_debug_bba' Makefile
+          grep -Fq 'PASS: final ELF contains T $RETAIN_SYMBOL' scripts/build-local-function-link.sh
 
       - name: Locate AArch64 tools
         run: |

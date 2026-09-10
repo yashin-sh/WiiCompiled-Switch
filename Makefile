@@ -8,6 +8,8 @@ TOPDIR ?= $(CURDIR)
 include $(DEVKITPRO)/libnx/switch_rules
 
 MKW_SYNTHETIC_PRODUCT ?= 0
+MKW_SYNTHETIC_DATA_INIT ?= 0
+MKW_LOCAL_PRODUCT ?= 0
 
 TARGET      := WiiCompiled-Switch
 BUILD       := build
@@ -15,14 +17,46 @@ UPSTREAM    := third_party/WiiCompiled
 UPSTREAM_RUNTIME := $(UPSTREAM)/runtime
 SOURCES     := source $(UPSTREAM_RUNTIME)/src/platform
 INCLUDES    := include $(UPSTREAM_RUNTIME)/include
-APP_VERSION := 0.0.3
+APP_VERSION := 0.0.4
 
 ifeq ($(MKW_SYNTHETIC_PRODUCT),1)
+ifneq ($(MKW_SYNTHETIC_DATA_INIT)$(MKW_LOCAL_PRODUCT),00)
+$(error "Select only one product mode")
+endif
 TARGET      := WiiCompiled-Switch-synthetic-product
 BUILD       := build-synthetic-product
 SOURCES     += synthetic-product
 DEFINES     += -DMKW_SYNTHETIC_PRODUCT=1
-APP_VERSION := 0.0.3-synthetic
+APP_VERSION := 0.0.4-synthetic
+endif
+
+ifeq ($(MKW_SYNTHETIC_DATA_INIT),1)
+ifneq ($(MKW_SYNTHETIC_PRODUCT)$(MKW_LOCAL_PRODUCT),00)
+$(error "Select only one product mode")
+endif
+TARGET      := WiiCompiled-Switch-synthetic-data-init
+BUILD       := build-synthetic-data-init
+SOURCES     += synthetic-data-init
+DEFINES     += -DMKW_SYNTHETIC_DATA_INIT=1 -DMKW_ENABLE_DATA_INIT_HANDOFF=1
+APP_VERSION := 0.0.4-data-init
+endif
+
+LOCAL_GENERATED_DIR := local-product/generated
+ifeq ($(MKW_LOCAL_PRODUCT),1)
+ifneq ($(MKW_SYNTHETIC_PRODUCT)$(MKW_SYNTHETIC_DATA_INIT),00)
+$(error "Select only one product mode")
+endif
+ifeq ($(wildcard $(TOPDIR)/$(LOCAL_GENERATED_DIR)/data_sections_init.cpp),)
+$(error "Missing local-product/generated/data_sections_init.cpp. Run scripts/prepare-local-data-init.sh first")
+endif
+ifeq ($(wildcard $(TOPDIR)/$(LOCAL_GENERATED_DIR)/data_sections_init_blobs.S),)
+$(error "Missing local-product/generated/data_sections_init_blobs.S. Run scripts/prepare-local-data-init.sh first")
+endif
+TARGET      := WiiCompiled-Switch-local-product
+BUILD       := build-local-product
+SOURCES     += local-product-support $(LOCAL_GENERATED_DIR)
+DEFINES     += -DMKW_LOCAL_PRODUCT=1 -DMKW_ENABLE_DATA_INIT_HANDOFF=1
+APP_VERSION := 0.0.4-local
 endif
 
 ifeq ($(wildcard $(TOPDIR)/$(UPSTREAM_RUNTIME)/include/host_context.h),)
@@ -51,12 +85,13 @@ export TOPDIR  := $(CURDIR)
 export VPATH   := $(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
 export DEPSDIR := $(CURDIR)/$(BUILD)
 
-CFILES   := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
-CPPFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
-SFILES   := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
+CFILES       := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
+CPPFILES     := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+SFILES       := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
+SFILES_UPPER := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.S)))
 
 export LD := $(CXX)
-export OFILES_SRC := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
+export OFILES_SRC := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o) $(SFILES_UPPER:.S=.o)
 export OFILES := $(OFILES_SRC)
 export INCLUDE := $(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
                   $(foreach dir,$(LIBDIRS),-I$(dir)/include) \
@@ -72,10 +107,14 @@ $(BUILD):
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 clean:
-	@rm -fr build build-synthetic-product \
+	@rm -fr build build-synthetic-product build-synthetic-data-init build-local-product \
 		WiiCompiled-Switch.nro WiiCompiled-Switch.nacp WiiCompiled-Switch.elf WiiCompiled-Switch.map \
 		WiiCompiled-Switch-synthetic-product.nro WiiCompiled-Switch-synthetic-product.nacp \
-		WiiCompiled-Switch-synthetic-product.elf WiiCompiled-Switch-synthetic-product.map
+		WiiCompiled-Switch-synthetic-product.elf WiiCompiled-Switch-synthetic-product.map \
+		WiiCompiled-Switch-synthetic-data-init.nro WiiCompiled-Switch-synthetic-data-init.nacp \
+		WiiCompiled-Switch-synthetic-data-init.elf WiiCompiled-Switch-synthetic-data-init.map \
+		WiiCompiled-Switch-local-product.nro WiiCompiled-Switch-local-product.nacp \
+		WiiCompiled-Switch-local-product.elf WiiCompiled-Switch-local-product.map
 
 else
 

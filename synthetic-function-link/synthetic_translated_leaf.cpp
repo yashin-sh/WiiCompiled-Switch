@@ -8,7 +8,11 @@ MKW_TRANSLATED_TRAIT(80001000, synthetic_translated_leaf, 0x00000000u);
 
 // Synthetic-only implementation so the retained probe can exercise the same
 // generated GX FIFO call shape without enabling graphics/HLE in the runtime.
-extern "C" void GX_HLE_FIFO_Write8(std::uint8_t) {}
+// Keep it out-of-line and observable so linker-GC/nm verification proves the
+// retained translated leaf really resolves the GX hook declaration.
+extern "C" __attribute__((noinline, used)) void GX_HLE_FIFO_Write8(std::uint8_t value) {
+    asm volatile("" : : "r"(value) : "memory");
+}
 
 extern "C" void synthetic_translated_leaf(CpuContext* ctx) {
     if (!ctx) return;

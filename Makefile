@@ -109,10 +109,11 @@ DEFINES     += -DMKW_LOCAL_PRODUCT=1 -DMKW_LOCAL_FUNCTION_SHARDS=1 \
                -DMKW_ENABLE_DATA_INIT_HANDOFF=1 -DMKW_TRANSLATED_LINK_ONLY=1
 APP_VERSION := 0.0.5-local-link
 TRANSLATED_LINK_MODE := 1
-# PAL RMCP01 function map names 0x8000609C as __get_debug_bba. It has no native
-# override at the pinned revision and is retained only so --gc-sections cannot
-# discard every translated function. The Switch runtime never calls it here.
-TRANSLATED_RETAIN_SYMBOL := __get_debug_bba
+# The pinned PAL RMCP01 map names 0x8000609C as __get_debug_bba, while the
+# translator emits the actual C++ symbol func_8000609C. Retain the emitted
+# symbol so --gc-sections keeps a real translated function in the final ELF.
+# The Switch runtime never calls it at this checkpoint.
+TRANSLATED_RETAIN_SYMBOL := func_8000609C
 endif
 
 ifeq ($(wildcard $(TOPDIR)/$(UPSTREAM_RUNTIME)/include/host_context.h),)

@@ -45,33 +45,44 @@ Result run() {
     r.runtime_base_available = GuestFlat::Base() != nullptr && MKW_FLAT_GUEST_BASE == GuestFlat::Base();
     r.checked_access_policy = GuestFlat::RequiresCheckedAccess();
 
-    auto* mem1_host = GuestFlat::HostPointer(0x80000000u);
-    auto* mem2_host = GuestFlat::HostPointer(0x90000000u);
-    auto* owned_host = GuestFlat::HostPointer(0x01800000u);
-    r.host_pointer_available = mem1_host != nullptr && mem2_host != nullptr && owned_host != nullptr;
+    auto* mem1_phys = GuestFlat::HostPointer(0x00000000u);
+    auto* mem1_cached = GuestFlat::HostPointer(0x80000000u);
+    auto* mem1_uncached = GuestFlat::HostPointer(0xC0000000u);
+    auto* mem2_phys = GuestFlat::HostPointer(0x10000000u);
+    auto* mem2_cached = GuestFlat::HostPointer(0x90000000u);
+    auto* mem2_uncached = GuestFlat::HostPointer(0xD0000000u);
+    auto* owned = GuestFlat::HostPointer(0x01800000u);
 
-    auto* guest = GuestFlat::Base();
-    if (guest && mem1_host) {
-        mem1_host[5] = 0x51;
-        const bool cached = guest[0x80000005u] == 0x51;
-        const bool uncached = guest[0xC0000005u] == 0x51;
-        guest[0x00000006u] = 0xA6;
-        const bool physical_to_host = mem1_host[6] == 0xA6;
-        r.mem1_alias_coherent = cached && uncached && physical_to_host;
+    r.host_pointer_available =
+        mem1_phys && mem1_cached && mem1_uncached &&
+        mem2_phys && mem2_cached && mem2_uncached && owned;
+
+    if (mem1_phys && mem1_cached && mem1_uncached) {
+        mem1_phys[5] = 0x51;
+        const bool phys_to_aliases = mem1_cached[5] == 0x51 && mem1_uncached[5] == 0x51;
+        mem1_uncached[6] = 0xA6;
+        const bool alias_to_phys = mem1_phys[6] == 0xA6;
+        r.mem1_alias_coherent =
+            mem1_phys == mem1_cached &&
+            mem1_phys == mem1_uncached &&
+            phys_to_aliases && alias_to_phys;
     }
 
-    if (guest && mem2_host) {
-        mem2_host[9] = 0x92;
-        const bool cached = guest[0x90000009u] == 0x92;
-        const bool uncached = guest[0xD0000009u] == 0x92;
-        guest[0x1000000Au] = 0x2A;
-        const bool physical_to_host = mem2_host[10] == 0x2A;
-        r.mem2_alias_coherent = cached && uncached && physical_to_host;
+    if (mem2_phys && mem2_cached && mem2_uncached) {
+        mem2_phys[9] = 0x92;
+        const bool phys_to_aliases = mem2_cached[9] == 0x92 && mem2_uncached[9] == 0x92;
+        mem2_uncached[10] = 0x2A;
+        const bool alias_to_phys = mem2_phys[10] == 0x2A;
+        r.mem2_alias_coherent =
+            mem2_phys == mem2_cached &&
+            mem2_phys == mem2_uncached &&
+            phys_to_aliases && alias_to_phys;
     }
 
-    if (guest && owned_host) {
-        owned_host[3] = 0x18;
-        r.owned_visible = guest[0x01800003u] == 0x18;
+    if (owned) {
+        owned[3] = 0x18;
+        auto* checked = GuestFlat::HostPointer(0x01800003u);
+        r.owned_visible = checked != nullptr && *checked == 0x18;
     }
 
     GuestFlat::Shutdown();

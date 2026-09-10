@@ -11,6 +11,9 @@ enum class StopPoint {
     WaitingForDataInitializer,
     DataSectionsInitialized,
     DataSectionInitializationFailed,
+    WaitingForTranslatedExecution,
+    TranslatedFunctionExecuted,
+    TranslatedFunctionExecutionFailed,
 };
 
 struct Result {
@@ -38,6 +41,20 @@ struct Result {
     std::uint32_t data_init_handoff_reported_abi = 0;
     bool data_sections_init_attempted = false;
     bool data_sections_initialized = false;
+
+    bool translated_execution_handoff_enabled = false;
+    bool translated_execution_handoff_linked = false;
+    bool translated_execution_handoff_abi_compatible = false;
+    bool translated_execution_runner_available = false;
+    std::uint32_t translated_execution_handoff_reported_abi = 0;
+    bool translated_execution_attempted = false;
+    bool translated_execution_passed = false;
+    std::uint32_t translated_execution_guest_address = 0;
+    std::uint32_t translated_execution_r1 = 0;
+    std::uint32_t translated_execution_r2 = 0;
+    std::uint32_t translated_execution_r13 = 0;
+    std::uint32_t translated_execution_r3_before = 0;
+    std::uint32_t translated_execution_r3_after = 0;
 
     StopPoint stop_point = StopPoint::Failed;
 };

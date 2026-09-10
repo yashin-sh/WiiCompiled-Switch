@@ -7,6 +7,9 @@ COMMON="$SHARD_ROOT/base_common"
 SENSITIVE="$SHARD_ROOT/base_portable_sensitive"
 BUILD_DIR="$ROOT/build-local-function-link"
 ELF="$ROOT/WiiCompiled-Switch-local-function-link.elf"
+NRO="$ROOT/WiiCompiled-Switch-local-function-link.nro"
+MAP_ROOT="$ROOT/WiiCompiled-Switch-local-function-link.map"
+MAP_BUILD="$BUILD_DIR/WiiCompiled-Switch-local-function-link.map"
 RETAIN_SYMBOL="${MKW_TRANSLATED_RETAIN_SYMBOL:-func_8000609C}"
 JOBS="${MKW_JOBS:-2}"
 
@@ -37,7 +40,11 @@ fi
 echo "[1/4] Normalizing pinned WiiCompiled state-free vector returns for devkitA64 GCC..."
 python3 "$ROOT/scripts/normalize-gcc-statefree-returns.py" "${paths[@]}"
 
-echo "[2/4] Building local translated-function link-only NRO..."
+echo "[2/4] Relinking local translated-function link-only NRO with retained $RETAIN_SYMBOL..."
+# The previous link-only ELF may still be timestamp-fresh even though only the
+# linker retain symbol changed. Remove final link products so make reuses the
+# compiled shard objects but must run the linker again with the current flags.
+rm -f "$ELF" "$NRO" "$MAP_ROOT" "$MAP_BUILD"
 cd "$ROOT"
 make -j"$JOBS" MKW_LOCAL_FUNCTION_SHARDS=1 TRANSLATED_RETAIN_SYMBOL="$RETAIN_SYMBOL"
 

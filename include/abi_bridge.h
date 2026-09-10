@@ -9,6 +9,10 @@
 // this checkpoint, and the runtime never calls a translated function yet.
 
 #include "ppc_runtime.h"
+// Pinned upstream abi_bridge.h exposes the CR-resident helpers separately from
+// ppc_runtime.h. Generated function shards call SetCRResident directly, so the
+// Switch link-only seam must preserve that same header contract.
+#include "isa/ppc_isa_cr.h"
 
 #include <cstdint>
 #include <cstdlib>

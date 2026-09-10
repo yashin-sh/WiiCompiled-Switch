@@ -134,7 +134,7 @@ bool run_local_bootstrap_register_prelude(MkwSwitchTranslatedExecutionProbeResul
     // runtime report for hardware validation.
     const bool stack_looks_valid =
         cpu.gpr[1] >= 0x80000000u && cpu.gpr[1] < 0x81800000u &&
-        (cpu.gpr[1] & 0xFu) == 0u && cpu.gpr[1] != kRegisterSentinel;
+        (cpu.gpr[1] & 0x7u) == 0u && cpu.gpr[1] != kRegisterSentinel;
     const bool sda_matches =
         cpu.gpr[2] == RuntimeConfig::SDA2_BASE &&
         cpu.gpr[13] == RuntimeConfig::SDA1_BASE;

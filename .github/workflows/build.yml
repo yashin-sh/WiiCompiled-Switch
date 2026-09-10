@@ -20,6 +20,7 @@ jobs:
           bash -n scripts/prepare-local-data-init.sh
           bash -n scripts/prepare-local-function-shards.sh
           bash -n scripts/build-local-function-link.sh
+          bash -n scripts/build-local-first-execution.sh
           python3 -m py_compile scripts/normalize-gcc-statefree-returns.py
           grep -Fq 'a135beb201042b20f390c6695ca6b26768820fb4' scripts/prepare-local-function-shards.sh
           grep -Fq 'ENTRY="0x800060A4"' scripts/prepare-local-function-shards.sh
@@ -34,6 +35,8 @@ jobs:
           grep -Fq 'NM_SCAN_DIR="$(mktemp -d)"' scripts/build-local-function-link.sh
           grep -Fq '"$NM_TOOL" "$ELF" >"$ELF_NM"' scripts/build-local-function-link.sh
           ! grep -Eq '\$NM_TOOL.*\|.*grep[[:space:]].*-[A-Za-z]*q' scripts/build-local-function-link.sh
+          grep -Fq 'MKW_LOCAL_FUNCTION_EXECUTION=1' scripts/build-local-first-execution.sh
+          grep -Fq 'RETAIN_SYMBOL="func_8000609C"' scripts/build-local-first-execution.sh
 
       - name: Locate AArch64 tools
         run: |
@@ -75,6 +78,7 @@ jobs:
           test -f WiiCompiled-Switch.elf
           "$NM_TOOL" WiiCompiled-Switch.elf | grep -E ' W mkw_switch_get_translated_product_api$'
           "$NM_TOOL" WiiCompiled-Switch.elf | grep -E ' W mkw_switch_get_translated_product_handoff_api$'
+          "$NM_TOOL" WiiCompiled-Switch.elf | grep -E ' W mkw_switch_get_translated_execution_handoff_api$'
       - uses: actions/upload-artifact@v4
         with:
           name: WiiCompiled-Switch-nro
@@ -88,6 +92,7 @@ jobs:
           test -f WiiCompiled-Switch-synthetic-product.elf
           "$NM_TOOL" WiiCompiled-Switch-synthetic-product.elf | grep -E ' T mkw_switch_get_translated_product_api$'
           "$NM_TOOL" WiiCompiled-Switch-synthetic-product.elf | grep -E ' W mkw_switch_get_translated_product_handoff_api$'
+          "$NM_TOOL" WiiCompiled-Switch-synthetic-product.elf | grep -E ' W mkw_switch_get_translated_execution_handoff_api$'
       - uses: actions/upload-artifact@v4
         with:
           name: WiiCompiled-Switch-synthetic-product-nro
@@ -101,6 +106,7 @@ jobs:
           test -f WiiCompiled-Switch-synthetic-data-init.elf
           "$NM_TOOL" WiiCompiled-Switch-synthetic-data-init.elf | grep -E ' T mkw_switch_get_translated_product_api$'
           "$NM_TOOL" WiiCompiled-Switch-synthetic-data-init.elf | grep -E ' T mkw_switch_get_translated_product_handoff_api$'
+          "$NM_TOOL" WiiCompiled-Switch-synthetic-data-init.elf | grep -E ' W mkw_switch_get_translated_execution_handoff_api$'
       - uses: actions/upload-artifact@v4
         with:
           name: WiiCompiled-Switch-synthetic-data-init-nro
@@ -114,7 +120,23 @@ jobs:
           test -f WiiCompiled-Switch-synthetic-function-link.elf
           "$NM_TOOL" WiiCompiled-Switch-synthetic-function-link.elf | grep -E ' T synthetic_translated_leaf$'
           "$NM_TOOL" WiiCompiled-Switch-synthetic-function-link.elf | grep -E ' T GX_HLE_FIFO_Write8$'
+          "$NM_TOOL" WiiCompiled-Switch-synthetic-function-link.elf | grep -E ' W mkw_switch_get_translated_execution_handoff_api$'
       - uses: actions/upload-artifact@v4
         with:
           name: WiiCompiled-Switch-synthetic-function-link-nro
           path: WiiCompiled-Switch-synthetic-function-link.nro
+
+      - name: Build synthetic translated-execution handoff probe
+        run: make -j2 MKW_SYNTHETIC_EXECUTION=1
+      - name: Verify translated-execution seam and retained leaf
+        run: |
+          test -f WiiCompiled-Switch-synthetic-execution.nro
+          test -f WiiCompiled-Switch-synthetic-execution.elf
+          "$NM_TOOL" WiiCompiled-Switch-synthetic-execution.elf | grep -E ' T mkw_switch_get_translated_product_api$'
+          "$NM_TOOL" WiiCompiled-Switch-synthetic-execution.elf | grep -E ' T mkw_switch_get_translated_product_handoff_api$'
+          "$NM_TOOL" WiiCompiled-Switch-synthetic-execution.elf | grep -E ' T mkw_switch_get_translated_execution_handoff_api$'
+          "$NM_TOOL" WiiCompiled-Switch-synthetic-execution.elf | grep -E ' T synthetic_translated_execution_leaf$'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WiiCompiled-Switch-synthetic-execution-nro
+          path: WiiCompiled-Switch-synthetic-execution.nro

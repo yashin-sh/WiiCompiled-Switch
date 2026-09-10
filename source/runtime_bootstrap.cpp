@@ -2,6 +2,7 @@
 
 #include "horizon_runtime_services.hpp"
 #include "memory_switch_slice.hpp"
+#include "translated_execution_handoff.hpp"
 #include "translated_product.hpp"
 #include "translated_product_handoff.hpp"
 
@@ -20,6 +21,12 @@ constexpr std::size_t kWorkerStackSize = 256 * 1024;
 constexpr bool kDataInitHandoffEnabled = true;
 #else
 constexpr bool kDataInitHandoffEnabled = false;
+#endif
+
+#if defined(MKW_ENABLE_TRANSLATED_EXECUTION_HANDOFF) && MKW_ENABLE_TRANSLATED_EXECUTION_HANDOFF
+constexpr bool kTranslatedExecutionHandoffEnabled = true;
+#else
+constexpr bool kTranslatedExecutionHandoffEnabled = false;
 #endif
 
 HostContext::Handle g_scheduler = nullptr;
@@ -63,6 +70,24 @@ const char* data_init_state(const Result& result) {
     return result.data_sections_initialized ? "PASS" : "FAIL";
 }
 
+const char* execution_handoff_state(const Result& result) {
+    if (!result.translated_execution_handoff_linked) {
+        return "NOT LINKED";
+    }
+    return result.translated_execution_handoff_abi_compatible ? "LINKED" : "ABI MISMATCH";
+}
+
+const char* execution_runner_state(const Result& result) {
+    return result.translated_execution_runner_available ? "AVAILABLE" : "NOT AVAILABLE";
+}
+
+const char* execution_state(const Result& result) {
+    if (!result.translated_execution_attempted) {
+        return "NOT ATTEMPTED";
+    }
+    return result.translated_execution_passed ? "PASS" : "FAIL";
+}
+
 const char* stop_point_name(StopPoint stop_point) {
     switch (stop_point) {
     case StopPoint::WaitingForTranslatedProduct:
@@ -75,6 +100,12 @@ const char* stop_point_name(StopPoint stop_point) {
         return "DATA_SECTIONS_INITIALIZED";
     case StopPoint::DataSectionInitializationFailed:
         return "DATA_SECTION_INITIALIZATION_FAILED";
+    case StopPoint::WaitingForTranslatedExecution:
+        return "WAITING_FOR_TRANSLATED_EXECUTION";
+    case StopPoint::TranslatedFunctionExecuted:
+        return "TRANSLATED_FUNCTION_EXECUTED";
+    case StopPoint::TranslatedFunctionExecutionFailed:
+        return "TRANSLATED_FUNCTION_EXECUTION_FAILED";
     case StopPoint::Failed:
     default:
         return "FAILED_BEFORE_TRANSLATED_PRODUCT_BOUNDARY";
@@ -134,6 +165,22 @@ void emit(FILE* out, const Result& result) {
                  result.data_init_handoff_reported_abi);
     std::fprintf(out, "data initializer       : %s\n", initializer_state(result));
     std::fprintf(out, "data sections init     : %s\n", data_init_state(result));
+    std::fprintf(out, "translated exec handoff: %s\n", enabled(result.translated_execution_handoff_enabled));
+    std::fprintf(out, "translated exec provider: %s\n", execution_handoff_state(result));
+    std::fprintf(out, "translated exec ABI    : expected=%u reported=%u\n",
+                 translated_execution_handoff::kAbiVersion,
+                 result.translated_execution_handoff_reported_abi);
+    std::fprintf(out, "translated exec runner : %s\n", execution_runner_state(result));
+    std::fprintf(out, "translated exec result : %s\n", execution_state(result));
+    std::fprintf(out, "translated exec target : 0x%08x\n",
+                 result.translated_execution_guest_address);
+    std::fprintf(out, "translated exec ABI regs: r1=0x%08x r2=0x%08x r13=0x%08x\n",
+                 result.translated_execution_r1,
+                 result.translated_execution_r2,
+                 result.translated_execution_r13);
+    std::fprintf(out, "translated exec r3     : before=0x%08x after=0x%08x\n",
+                 result.translated_execution_r3_before,
+                 result.translated_execution_r3_after);
     std::fprintf(out, "runtime data root      : %s\n",
                  horizon_runtime_services::application_root().string().c_str());
     std::fprintf(out, "runtime logs root      : %s\n",
@@ -153,6 +200,7 @@ void emit(FILE* out, const Result& result) {
 Result start() {
     Result result{};
     result.data_init_handoff_enabled = kDataInitHandoffEnabled;
+    result.translated_execution_handoff_enabled = kTranslatedExecutionHandoffEnabled;
 
     const auto services = horizon_runtime_services::initialize();
     result.lifecycle_ready = services.lifecycle_ready;
@@ -213,6 +261,12 @@ Result start() {
     result.data_initializer_available = data_handoff.data_initializer_available;
     result.data_init_handoff_reported_abi = data_handoff.reported_abi;
 
+    const auto execution_handoff = translated_execution_handoff::inspect();
+    result.translated_execution_handoff_linked = execution_handoff.linked;
+    result.translated_execution_handoff_abi_compatible = execution_handoff.abi_compatible;
+    result.translated_execution_runner_available = execution_handoff.runner_available;
+    result.translated_execution_handoff_reported_abi = execution_handoff.reported_abi;
+
     if (core_ready(result)) {
         if (!result.translated_product_linked) {
             // Public builds deliberately stop here: translated game output is
@@ -233,6 +287,29 @@ Result start() {
                     result.stop_point = result.data_sections_initialized
                         ? StopPoint::DataSectionsInitialized
                         : StopPoint::DataSectionInitializationFailed;
+
+                    if (result.data_sections_initialized &&
+                        result.translated_execution_handoff_enabled) {
+                        if (!result.translated_execution_handoff_linked ||
+                            !result.translated_execution_handoff_abi_compatible ||
+                            !result.translated_execution_runner_available) {
+                            result.stop_point = StopPoint::WaitingForTranslatedExecution;
+                        } else {
+                            MkwSwitchTranslatedExecutionProbeResult probe{};
+                            result.translated_execution_attempted = true;
+                            result.translated_execution_passed =
+                                translated_execution_handoff::run_first_translated_function(probe);
+                            result.translated_execution_guest_address = probe.guest_address;
+                            result.translated_execution_r1 = probe.r1;
+                            result.translated_execution_r2 = probe.r2;
+                            result.translated_execution_r13 = probe.r13;
+                            result.translated_execution_r3_before = probe.r3_before;
+                            result.translated_execution_r3_after = probe.r3_after;
+                            result.stop_point = result.translated_execution_passed
+                                ? StopPoint::TranslatedFunctionExecuted
+                                : StopPoint::TranslatedFunctionExecutionFailed;
+                        }
+                    }
                 }
             }
         }

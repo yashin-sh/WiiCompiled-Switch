@@ -201,6 +201,13 @@ ifeq ($(TRANSLATED_LINK_MODE),1)
 # Force the selected translated proof function to remain auditable in the ELF.
 LDFLAGS     += -Wl,--gc-sections -Wl,-u,$(TRANSLATED_RETAIN_SYMBOL)
 endif
+ifneq ($(filter 1,$(MKW_LOCAL_FAST_TRACK) $(MKW_SYNTHETIC_FAST_TRACK)),)
+# libnx's exception trampoline and translated-dispatch fallbacks reach these
+# hooks indirectly. Force-retain them so --gc-sections cannot discard the
+# diagnostics that must survive a hard fast-track crash on real hardware.
+LDFLAGS     += -Wl,-u,mkw_switch_report_unsupported_translated_dispatch \
+               -Wl,-u,__libnx_exception_handler
+endif
 LIBS        := -lnx
 LIBDIRS     := $(PORTLIBS) $(LIBNX)
 

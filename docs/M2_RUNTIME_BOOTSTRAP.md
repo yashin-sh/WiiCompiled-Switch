@@ -1,19 +1,19 @@
 # M2 — Horizon runtime bootstrap / SDL decoupling
 
-Status: **hardware-validated on real Nintendo Switch (2026-09-10)**.
+Status: **core bootstrap hardware-validated on real Nintendo Switch (2026-09-10)**. The translated-product boundary added after that validation still requires its own hardware report.
 
 Upstream WiiCompiled pin: `a135beb201042b20f390c6695ca6b26768820fb4`.
 
 ## Goal
 
-Reach the first stable WiiCompiled runtime boundary on Horizon without constructing a desktop SDL window or starting Aurora graphics/audio. This slice intentionally stops before a translated Mario Kart Wii product is linked/executed.
+Reach a stable WiiCompiled runtime boundary on Horizon without constructing a desktop SDL window or starting Aurora graphics/audio, then expose the correct build-time seam for a translated Mario Kart Wii product.
 
-The validated sequence is:
+The validated core sequence is:
 
 1. initialize native Horizon host services;
 2. initialize the Wii guest memory model;
-3. exercise WiiCompiled's real `HostContext` public API through the Switch AArch64 context implementation;
-4. expose a stable SD-card application-data root;
+3. exercise WiiCompiled's real `HostContext` public API through the Switch AArch64 implementation;
+4. expose stable SD-card runtime-data roots;
 5. stop cleanly with graphics and audio explicitly stubbed.
 
 ## Upstream integration
@@ -55,8 +55,11 @@ The critical M2 Switch bootstrap deliberately links none of those SDL-dependent 
 - input: libnx `PadState`, buttons and both analog sticks;
 - timing: `armGetSystemTick()`, `armGetSystemTickFreq()`, `svcSleepThread()`;
 - filesystem: stable `sdmc:/switch/WiiCompiled-Switch` application root through upstream `RuntimePlatform`;
+- explicit runtime-data roots: `Logs/`, `Cache/`, `Config/`, `NAND/`;
 - audio: explicit unsupported/stub result (no silent SDL fallback);
 - graphics: explicit stub state (Aurora/Deko3D not initialized here).
+
+Runtime SD data is separate from translated code. None of these directories is used as a DOL or translated-product loader.
 
 ## Runtime smoke path
 
@@ -69,13 +72,23 @@ The NRO keeps the existing M2 probes, then runs `runtime_bootstrap::start()`:
 - first handoff verified;
 - continuation verified;
 - graphics/audio remain stubbed;
-- temporary stop point reaches `WAITING_FOR_USER_DATA` only if the core checks complete.
+- translated-product ABI seam inspected without side effects.
+
+The public Nintendo-data-free build supplies only the weak product stub, so the expected current stop point is:
+
+`WAITING_FOR_TRANSLATED_PRODUCT`
+
+If a future local build links an ABI-compatible strong product adapter, the current slice can report:
+
+`TRANSLATED_PRODUCT_LINKED`
+
+That state still does not initialize generated data sections or execute translated Mario Kart Wii code.
 
 The worker is destroyed after the two API-level context handoffs; the scheduler and Wii memory remain live until `runtime_bootstrap::stop()` at application shutdown.
 
 ## Hardware validation — 2026-09-10
 
-The returned real-hardware `runtime-bootstrap.txt` reported:
+The returned real-hardware report for the previous bootstrap revision reported:
 
 - critical SDL path: `NONE`;
 - lifecycle: `READY`;
@@ -88,15 +101,15 @@ The returned real-hardware `runtime-bootstrap.txt` reported:
 - continuation: `READY`;
 - audio: `STUBBED`;
 - graphics: `STUBBED`;
-- stop point: `WAITING_FOR_USER_DATA`.
+- historical temporary stop point: `WAITING_FOR_USER_DATA`.
 
 The accompanying VM regression report also passed the 4 GiB guest reservation, `svcMapMemory` regression path, SharedMemory dual mapping, 100000/100000 context-switch stress test, checked GuestFlat, upstream GuestFlat API, and `Memory::Init` smoke test.
 
-See `HARDWARE_RESULTS_2026-09-10.md` for the recorded evidence.
+See `HARDWARE_RESULTS_2026-09-10.md` for that recorded evidence.
 
-## Architecture correction: translated product is build-time
+The new translated-product boundary intentionally changes the stop-point/report contract and therefore requires a fresh hardware run before issue #18 can close.
 
-The `WAITING_FOR_USER_DATA` name is only a temporary bootstrap marker and must **not** become a runtime DOL loader design.
+## Correct architecture: translated product is build-time
 
 At the pinned upstream revision, WiiCompiled's translator performs:
 
@@ -107,7 +120,7 @@ At the pinned upstream revision, WiiCompiled's translator performs:
 
 For the MKWii project, the upstream manifest reads locally supplied `Assets/main.dol` / `Assets/StaticR.rel` and writes generated output under `generated/`.
 
-Therefore the Switch port must keep three concepts distinct:
+Therefore the Switch port keeps three concepts distinct:
 
 - **build-time user-owned source inputs** used locally by the translator;
 - **build-time generated translated product** linked into the NRO;
@@ -115,19 +128,33 @@ Therefore the Switch port must keep three concepts distinct:
 
 Game-derived source inputs and generated translated output remain excluded from this repository and CI.
 
+The concrete ABI seam and validation rules are documented in `TRANSLATED_PRODUCT_BOUNDARY.md`.
+
 ## Diagnostics
 
 The runtime writes:
 
 `sdmc:/switch/WiiCompiled-Switch/runtime-bootstrap.txt`
 
-CI success proves the pin and native build/link path. The 2026-09-10 returned report additionally proves this bootstrap path on real hardware.
+For the public build, the new report should include:
+
+```text
+translated product     : NOT LINKED
+translated product ABI : expected=1 reported=0
+translated product id  : <none>
+translated build       : Nintendo-data-free stub
+stop point             : WAITING_FOR_TRANSLATED_PRODUCT
+hardware validation    : REQUIRED (attach runtime-bootstrap.txt)
+```
+
+CI proves only the source pin and native compile/link path. A fresh returned Switch report is required to validate this new boundary on hardware.
 
 ## Next slices
 
-1. define the translated-product boundary and replace the misleading `WAITING_FOR_USER_DATA` runtime assumption (#18);
-2. port guest timing/thread/synchronization dependencies;
-3. complete filesystem/NAND runtime-data abstractions;
-4. replace remaining runtime input SDL consumers with the libnx provider;
-5. implement Audren audio;
-6. only then begin the Deko3D/Aurora GX graphics spike.
+1. hardware-validate the translated-product boundary and close #18;
+2. create the local-only generated-product adapter/build path;
+3. initialize generated data sections and reach the first translated entry-point handoff;
+4. port guest timing/thread/synchronization dependencies exposed by real execution;
+5. complete filesystem/NAND runtime-data abstractions and replace remaining runtime input SDL consumers;
+6. implement Audren audio;
+7. begin the Deko3D/Aurora GX graphics spike only after the pre-graphics runtime path is stable.

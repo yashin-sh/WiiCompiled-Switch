@@ -31,6 +31,9 @@ jobs:
           grep -Fq 'TRANSLATED_RETAIN_SYMBOL := func_8000609C' Makefile
           ! grep -Fq 'TRANSLATED_RETAIN_SYMBOL := __get_debug_bba' Makefile
           grep -Fq 'PASS: final ELF contains T $RETAIN_SYMBOL' scripts/build-local-function-link.sh
+          grep -Fq 'NM_SCAN_DIR="$(mktemp -d)"' scripts/build-local-function-link.sh
+          grep -Fq '"$NM_TOOL" "$ELF" >"$ELF_NM"' scripts/build-local-function-link.sh
+          ! grep -Eq '\$NM_TOOL.*\|.*grep[[:space:]].*-[A-Za-z]*q' scripts/build-local-function-link.sh
 
       - name: Locate AArch64 tools
         run: |

@@ -8,13 +8,17 @@ Run a legally-owned Mario Kart Wii dump through the WiiCompiled static-recompila
 
 ## Status
 
-**M2 — Horizon runtime bootstrap.** Guest virtual memory, heap-backed checked GuestFlat, Wii `Memory::Init`, and the custom AArch64 cooperative-context primitive have hardware evidence in the M2 reports. The next integration slice now consumes the audited WiiCompiled source as a pinned submodule, compiles its SDL-free `RuntimePlatform` host layer into the NRO, implements the real upstream `HostContext` API on Horizon, and adds native libnx lifecycle/filesystem/timing/HID services.
+**M2 — Horizon runtime bootstrap.** Guest virtual memory, heap-backed checked GuestFlat, Wii `Memory::Init`, the custom AArch64 cooperative-context primitive, and the SDL-free Horizon lifecycle/filesystem/timing/HID bootstrap have real-Switch hardware evidence.
 
-Graphics and audio remain explicit stubs in this milestone. The runtime bootstrap intentionally stops at `WAITING_FOR_USER_DATA`; it does not yet claim translated Mario Kart Wii execution or rendering.
+The current integration slice adds an explicit **build-time translated-product boundary**. Public CI builds contain only a Nintendo-data-free weak product stub, so after the validated runtime core initializes they intentionally stop at `WAITING_FOR_TRANSLATED_PRODUCT`.
+
+A real WiiCompiled game product is generated from a user-owned dump **before the Switch build** and linked into the same NRO. The runtime does not load translated game code from an arbitrary SD-card `game-data` directory. SD-card paths are reserved for runtime state such as logs, cache, configuration and NAND/save-compatible data.
+
+Graphics and audio remain explicit stubs in M2. No translated Mario Kart Wii entry point is executed yet.
 
 ## Legal / content policy
 
-This repository contains **no Nintendo game code, ROM, disc image, keys, firmware, copyrighted game assets, or decrypted content**. Users must provide their own legally obtained game dump locally. Do not commit generated game data or extracted assets.
+This repository contains **no Nintendo game code, ROM, disc image, keys, firmware, copyrighted game assets, decrypted content, or generated translated game output**. Users must provide their own legally obtained game dump locally. Do not commit generated game data or extracted assets.
 
 WiiCompiled is GPL-3.0; derivative code in this repository is therefore GPL-3.0 unless a file says otherwise. See `LEGAL.md`.
 
@@ -25,7 +29,7 @@ WiiCompiled is GPL-3.0; derivative code in this repository is therefore GPL-3.0 
 - devkitPro with `devkitA64` and `libnx`
 - GNU Make
 
-Initialize the pinned WiiCompiled source and build:
+Initialize the pinned WiiCompiled source and build the Nintendo-data-free runtime probe:
 
 ```sh
 git submodule update --init --recursive
@@ -46,22 +50,34 @@ Copy it to:
 
 Launch it from hbmenu in application/title-override mode with full memory rather than Album applet mode.
 
+The public probe should report `translated product: NOT LINKED` and stop at `WAITING_FOR_TRANSLATED_PRODUCT`. That is expected and is not an error.
+
 ## Current architecture
 
 ```text
-WiiCompiled translated game/runtime
+user-owned Wii dump (local build only)
             |
             v
-+------------------------------+
-| Switch platform adapter      |
-| - lifecycle / applet         |
-| - filesystem                 |
-| - input                      |
-| - audio                      |
-| - graphics                   |
-| - threading / timing         |
-| - virtual memory             |
-+------------------------------+
+WiiCompiled translator
+            |
+            v
+generated C++ / RuntimeConfig / data init
+            |
+            +------ linked at build time ------+
+                                              |
+                                              v
++----------------------------------------------------------+
+| Native AArch64 NRO                                      |
+| WiiCompiled translated product + runtime                |
+| Switch platform adapter                                 |
+| - lifecycle / applet                                    |
+| - runtime filesystem                                    |
+| - input                                                 |
+| - audio (stubbed)                                       |
+| - graphics (stubbed)                                    |
+| - threading / timing                                    |
+| - virtual memory                                        |
++----------------------------------------------------------+
             |
             v
         libnx / Horizon
@@ -72,7 +88,7 @@ WiiCompiled translated game/runtime
 
 ## Roadmap
 
-See `ROADMAP.md` and `docs/M2_RUNTIME_BOOTSTRAP.md`.
+See `ROADMAP.md`, `docs/M2_RUNTIME_BOOTSTRAP.md`, and `docs/TRANSLATED_PRODUCT_BOUNDARY.md`.
 
 ## Upstream
 

@@ -9,8 +9,12 @@
 /game/
 /game-data/
 /generated-game/
+/generated/
+/local-product/
 /dumps/
 /assets-local/
+*.dol
+*.rel
 *.iso
 *.wbfs
 *.rvz

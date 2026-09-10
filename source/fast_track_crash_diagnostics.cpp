@@ -1,13 +1,20 @@
-#include "abi_bridge.h"
-
-#include <switch.h>
-
-#include <cstddef>
 #include <cstdint>
+
+#if (defined(MKW_LOCAL_FAST_TRACK) && MKW_LOCAL_FAST_TRACK) || \
+    (defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK)
+#define MKW_FAST_TRACK_DIAGNOSTICS 1
+#include "abi_bridge.h"
+#include <switch.h>
+#include <cstddef>
 #include <cstdio>
 #include <fcntl.h>
 #include <unistd.h>
+#else
+#define MKW_FAST_TRACK_DIAGNOSTICS 0
+struct CpuContext;
+#endif
 
+#if MKW_FAST_TRACK_DIAGNOSTICS
 namespace {
 
 constexpr const char* kDispatchPath =
@@ -34,13 +41,13 @@ void write_atomicish(const char* path, const char* data, std::size_t size) noexc
 }
 
 } // namespace
+#endif
 
 extern "C" void mkw_switch_report_unsupported_translated_dispatch(
     const char* kind,
     std::uint32_t target,
     CpuContext* cpu) noexcept {
-#if (defined(MKW_LOCAL_FAST_TRACK) && MKW_LOCAL_FAST_TRACK) || \
-    (defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK)
+#if MKW_FAST_TRACK_DIAGNOSTICS
     char buffer[1024];
     const std::uint32_t guest_pc = cpu ? cpu->pc : 0u;
     const std::uint32_t r1 = cpu ? cpu->gpr[1] : 0u;
@@ -81,9 +88,7 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
 #endif
 }
 
-#if (defined(MKW_LOCAL_FAST_TRACK) && MKW_LOCAL_FAST_TRACK) || \
-    (defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK)
-
+#if MKW_FAST_TRACK_DIAGNOSTICS
 extern "C" {
 // libnx defaults to a very small exception stack. Crash reporting uses only
 // fixed buffers/no heap, but give it enough room for libc formatting and FS I/O.
@@ -142,5 +147,4 @@ extern "C" void __libnx_exception_handler(ThreadExceptionDump* ctx) {
         write_atomicish(kExceptionPath, buffer, size);
     }
 }
-
 #endif

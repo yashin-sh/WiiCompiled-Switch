@@ -23,6 +23,8 @@ jobs:
           grep -Fq 'SETTER_SYMBOL="func_80006090"' scripts/build-local-stateful-sequence.sh
           grep -Fq 'GETTER_SYMBOL="func_8000609C"' scripts/build-local-stateful-sequence.sh
           grep -Fq 'after=0x00000001' scripts/build-local-stateful-sequence.sh
+          grep -Fq 'TRANSLATED_SEQUENCE_EXECUTED' source/runtime_bootstrap.cpp
+          grep -Fq 'translated sequence mode' source/runtime_bootstrap.cpp
 
       - name: Locate AArch64 nm
         run: |

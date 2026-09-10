@@ -14,6 +14,8 @@ enum class StopPoint {
     WaitingForTranslatedExecution,
     TranslatedFunctionExecuted,
     TranslatedFunctionExecutionFailed,
+    TranslatedSequenceExecuted,
+    TranslatedSequenceExecutionFailed,
 };
 
 struct Result {
@@ -49,6 +51,7 @@ struct Result {
     std::uint32_t translated_execution_handoff_reported_abi = 0;
     bool translated_execution_attempted = false;
     bool translated_execution_passed = false;
+    bool translated_sequence_mode = false;
     std::uint32_t translated_execution_guest_address = 0;
     std::uint32_t translated_execution_r1 = 0;
     std::uint32_t translated_execution_r2 = 0;

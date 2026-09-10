@@ -29,6 +29,13 @@ constexpr bool kTranslatedExecutionHandoffEnabled = true;
 constexpr bool kTranslatedExecutionHandoffEnabled = false;
 #endif
 
+#if (defined(MKW_LOCAL_FUNCTION_SEQUENCE) && MKW_LOCAL_FUNCTION_SEQUENCE) || \
+    (defined(MKW_SYNTHETIC_SEQUENCE) && MKW_SYNTHETIC_SEQUENCE)
+constexpr bool kTranslatedSequenceMode = true;
+#else
+constexpr bool kTranslatedSequenceMode = false;
+#endif
+
 HostContext::Handle g_scheduler = nullptr;
 HostContext::Handle g_worker = nullptr;
 volatile unsigned g_worker_phase = 0;
@@ -106,6 +113,10 @@ const char* stop_point_name(StopPoint stop_point) {
         return "TRANSLATED_FUNCTION_EXECUTED";
     case StopPoint::TranslatedFunctionExecutionFailed:
         return "TRANSLATED_FUNCTION_EXECUTION_FAILED";
+    case StopPoint::TranslatedSequenceExecuted:
+        return "TRANSLATED_SEQUENCE_EXECUTED";
+    case StopPoint::TranslatedSequenceExecutionFailed:
+        return "TRANSLATED_SEQUENCE_EXECUTION_FAILED";
     case StopPoint::Failed:
     default:
         return "FAILED_BEFORE_TRANSLATED_PRODUCT_BOUNDARY";
@@ -171,6 +182,7 @@ void emit(FILE* out, const Result& result) {
                  translated_execution_handoff::kAbiVersion,
                  result.translated_execution_handoff_reported_abi);
     std::fprintf(out, "translated exec runner : %s\n", execution_runner_state(result));
+    std::fprintf(out, "translated sequence mode: %s\n", enabled(result.translated_sequence_mode));
     std::fprintf(out, "translated exec result : %s\n", execution_state(result));
     std::fprintf(out, "translated exec target : 0x%08x\n",
                  result.translated_execution_guest_address);
@@ -201,6 +213,7 @@ Result start() {
     Result result{};
     result.data_init_handoff_enabled = kDataInitHandoffEnabled;
     result.translated_execution_handoff_enabled = kTranslatedExecutionHandoffEnabled;
+    result.translated_sequence_mode = kTranslatedSequenceMode;
 
     const auto services = horizon_runtime_services::initialize();
     result.lifecycle_ready = services.lifecycle_ready;
@@ -305,9 +318,15 @@ Result start() {
                             result.translated_execution_r13 = probe.r13;
                             result.translated_execution_r3_before = probe.r3_before;
                             result.translated_execution_r3_after = probe.r3_after;
-                            result.stop_point = result.translated_execution_passed
-                                ? StopPoint::TranslatedFunctionExecuted
-                                : StopPoint::TranslatedFunctionExecutionFailed;
+                            if (result.translated_sequence_mode) {
+                                result.stop_point = result.translated_execution_passed
+                                    ? StopPoint::TranslatedSequenceExecuted
+                                    : StopPoint::TranslatedSequenceExecutionFailed;
+                            } else {
+                                result.stop_point = result.translated_execution_passed
+                                    ? StopPoint::TranslatedFunctionExecuted
+                                    : StopPoint::TranslatedFunctionExecutionFailed;
+                            }
                         }
                     }
                 }

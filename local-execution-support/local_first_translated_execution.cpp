@@ -3,11 +3,16 @@
 #include "RuntimeConfig.h"
 
 #include <cstdint>
+#include <cstdio>
+#include <exception>
 
 extern "C" void func_80006090(CpuContext* ctx);
 extern "C" void func_8000609C(CpuContext* ctx);
 #if defined(MKW_LOCAL_BOOTSTRAP_PRELUDE) && MKW_LOCAL_BOOTSTRAP_PRELUDE
 extern "C" void func_80006210(CpuContext* ctx);
+#endif
+#if defined(MKW_LOCAL_FAST_TRACK) && MKW_LOCAL_FAST_TRACK
+extern "C" void func_800060A4(CpuContext* ctx);
 #endif
 
 namespace {
@@ -15,6 +20,7 @@ namespace {
 constexpr std::uint32_t kGetterGuestAddress = 0x8000609Cu;
 constexpr std::uint32_t kSetterGuestAddress = 0x80006090u;
 constexpr std::uint32_t kBootstrapRegistersGuestAddress = 0x80006210u;
+constexpr std::uint32_t kFastTrackStartGuestAddress = 0x800060A4u;
 constexpr std::uint32_t kGuestStack = 0x81700000u;
 constexpr std::uint32_t kR3Sentinel = 0xA5A5A5A5u;
 constexpr std::uint32_t kRegisterSentinel = 0xCDCDCDCDu;
@@ -89,10 +95,6 @@ bool run_local_bootstrap_register_prelude(MkwSwitchTranslatedExecutionProbeResul
         return false;
     }
 
-    // This is the first operation performed by PAL RMCP01 __start. Seed every
-    // GPR with a visible non-zero value so the translated routine must actually
-    // establish the PPC startup register contract. Do not execute
-    // __init_hardware or any later startup code at this checkpoint.
     CpuContext& cpu = GetPersistentCpuContext();
     cpu = {};
     cpu.pc = kBootstrapRegistersGuestAddress;
@@ -127,11 +129,6 @@ bool run_local_bootstrap_register_prelude(MkwSwitchTranslatedExecutionProbeResul
         cleared = cleared && cpu.gpr[i] == 0u;
     }
 
-    // SDA bases are generated from the user's local PAL RMCP01 translation and
-    // are therefore safe exact postconditions. The original stack symbol is not
-    // part of RuntimeConfig, so require the translated routine to replace the
-    // sentinel with an aligned MEM1 address and expose the exact value in the
-    // runtime report for hardware validation.
     const bool stack_looks_valid =
         cpu.gpr[1] >= 0x80000000u && cpu.gpr[1] < 0x81800000u &&
         (cpu.gpr[1] & 0x7u) == 0u && cpu.gpr[1] != kRegisterSentinel;
@@ -144,7 +141,85 @@ bool run_local_bootstrap_register_prelude(MkwSwitchTranslatedExecutionProbeResul
 }
 #endif
 
-#if defined(MKW_LOCAL_BOOTSTRAP_PRELUDE) && MKW_LOCAL_BOOTSTRAP_PRELUDE
+#if defined(MKW_LOCAL_FAST_TRACK) && MKW_LOCAL_FAST_TRACK
+void write_fast_track_progress(const char* state,
+                               const CpuContext& cpu,
+                               const char* detail = nullptr) noexcept {
+    std::FILE* out = std::fopen(
+        "sdmc:/switch/WiiCompiled-Switch/fast-track-progress.txt", "w");
+    if (!out) {
+        return;
+    }
+
+    std::fprintf(out, "WiiCompiled-Switch fast-track startup\n");
+    std::fprintf(out, "====================================\n");
+    std::fprintf(out, "state                 : %s\n", state ? state : "UNKNOWN");
+    std::fprintf(out, "start guest address   : 0x%08x\n", kFastTrackStartGuestAddress);
+    std::fprintf(out, "current guest pc      : 0x%08x\n", cpu.pc);
+    std::fprintf(out, "r1                    : 0x%08x\n", cpu.gpr[1]);
+    std::fprintf(out, "r2                    : 0x%08x\n", cpu.gpr[2]);
+    std::fprintf(out, "r3                    : 0x%08x\n", cpu.gpr[3]);
+    std::fprintf(out, "r13                   : 0x%08x\n", cpu.gpr[13]);
+    if (detail && *detail) {
+        std::fprintf(out, "detail                : %s\n", detail);
+    }
+    std::fprintf(out, "policy                : first-blocker fast track; no per-helper checkpoint\n");
+    std::fclose(out);
+}
+
+bool run_local_fast_track(MkwSwitchTranslatedExecutionProbeResult* out) noexcept {
+    if (!out) {
+        return false;
+    }
+
+    CpuContext& cpu = GetPersistentCpuContext();
+    cpu = {};
+    cpu.pc = kFastTrackStartGuestAddress;
+    for (auto& gpr : cpu.gpr) {
+        gpr = kRegisterSentinel;
+    }
+
+    out->guest_address = kFastTrackStartGuestAddress;
+    out->r3_before = cpu.gpr[3];
+    write_fast_track_progress("ENTERING_TRANSLATED_START", cpu);
+
+    try {
+        CpuContextScope scope(&cpu);
+        func_800060A4(&cpu);
+    } catch (const std::exception& ex) {
+        out->guest_address = cpu.pc;
+        out->r1 = cpu.gpr[1];
+        out->r2 = cpu.gpr[2];
+        out->r13 = cpu.gpr[13];
+        out->r3_after = cpu.gpr[3];
+        write_fast_track_progress("BLOCKED_STD_EXCEPTION", cpu, ex.what());
+        return false;
+    } catch (...) {
+        out->guest_address = cpu.pc;
+        out->r1 = cpu.gpr[1];
+        out->r2 = cpu.gpr[2];
+        out->r13 = cpu.gpr[13];
+        out->r3_after = cpu.gpr[3];
+        write_fast_track_progress("BLOCKED_UNKNOWN_EXCEPTION", cpu);
+        return false;
+    }
+
+    out->guest_address = cpu.pc;
+    out->r1 = cpu.gpr[1];
+    out->r2 = cpu.gpr[2];
+    out->r13 = cpu.gpr[13];
+    out->r3_after = cpu.gpr[3];
+    write_fast_track_progress("RETURNED_FROM_TRANSLATED_START", cpu);
+    return TryGetCpuContext() == nullptr;
+}
+#endif
+
+#if defined(MKW_LOCAL_FAST_TRACK) && MKW_LOCAL_FAST_TRACK
+constexpr MkwSwitchTranslatedExecutionHandoffApi kExecutionApi{
+    .abi_version = mkw::translated_execution_handoff::kAbiVersion,
+    .run_first_translated_function = run_local_fast_track,
+};
+#elif defined(MKW_LOCAL_BOOTSTRAP_PRELUDE) && MKW_LOCAL_BOOTSTRAP_PRELUDE
 constexpr MkwSwitchTranslatedExecutionHandoffApi kExecutionApi{
     .abi_version = mkw::translated_execution_handoff::kAbiVersion,
     .run_first_translated_function = run_local_bootstrap_register_prelude,

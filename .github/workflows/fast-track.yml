@@ -1,0 +1,59 @@
+name: fast-track-startup
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  synthetic-fast-track:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkita64:latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Verify WiiCompiled pin
+        run: test "$(git -C third_party/WiiCompiled rev-parse HEAD)" = "a135beb201042b20f390c6695ca6b26768820fb4"
+
+      - name: Validate fast-track helper
+        run: |
+          bash -n scripts/build-local-fast-track.sh
+          grep -Fq 'START_SYMBOL="func_800060A4"' scripts/build-local-fast-track.sh
+          grep -Fq 'MKW_LOCAL_FAST_TRACK=1' scripts/build-local-fast-track.sh
+          grep -Fq 'fast-track-progress.txt' scripts/build-local-fast-track.sh
+          grep -Fq 'func_800060A4' local-execution-support/local_first_translated_execution.cpp
+          grep -Fq 'BLOCKED_STD_EXCEPTION' local-execution-support/local_first_translated_execution.cpp
+
+      - name: Locate AArch64 nm
+        run: |
+          NM_TOOL="$(find "$DEVKITPRO" -type f -name 'aarch64-none-elf-nm' -print -quit)"
+          test -n "$NM_TOOL"
+          test -x "$NM_TOOL"
+          echo "NM_TOOL=$NM_TOOL" >> "$GITHUB_ENV"
+
+      - name: Build Nintendo-data-free fast-track control probe
+        run: |
+          make -j2 \
+            MKW_SYNTHETIC_EXECUTION=1 \
+            MKW_SYNTHETIC_FAST_TRACK=1 \
+            TARGET=WiiCompiled-Switch-synthetic-fast-track \
+            BUILD=build-synthetic-fast-track \
+            APP_VERSION=0.0.9-synthetic-fast-track \
+            TRANSLATED_RETAIN_SYMBOL=synthetic_translated_fast_track_start \
+            DEFINES='-DMKW_SYNTHETIC_EXECUTION=1 -DMKW_SYNTHETIC_FAST_TRACK=1 -DMKW_ENABLE_DATA_INIT_HANDOFF=1 -DMKW_ENABLE_TRANSLATED_EXECUTION_HANDOFF=1'
+
+      - name: Verify fast-track execution seam and retained synthetic start
+        run: |
+          test -f WiiCompiled-Switch-synthetic-fast-track.nro
+          test -f WiiCompiled-Switch-synthetic-fast-track.elf
+          "$NM_TOOL" WiiCompiled-Switch-synthetic-fast-track.elf > /tmp/fast-track.nm
+          grep -E ' T mkw_switch_get_translated_product_api$' /tmp/fast-track.nm
+          grep -E ' T mkw_switch_get_translated_product_handoff_api$' /tmp/fast-track.nm
+          grep -E ' T mkw_switch_get_translated_execution_handoff_api$' /tmp/fast-track.nm
+          grep -E ' T synthetic_translated_fast_track_start$' /tmp/fast-track.nm
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WiiCompiled-Switch-synthetic-fast-track-nro
+          path: WiiCompiled-Switch-synthetic-fast-track.nro

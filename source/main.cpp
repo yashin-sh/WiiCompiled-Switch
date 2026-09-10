@@ -1,7 +1,9 @@
 #include "context_probe.hpp"
 #include "guest_flat_api_probe.hpp"
 #include "horizon_guest_flat.hpp"
+#include "horizon_runtime_services.hpp"
 #include "memory_init_probe.hpp"
+#include "runtime_bootstrap.hpp"
 #include "switch_platform.hpp"
 #include "vm_probe.hpp"
 
@@ -47,13 +49,26 @@ int main(int, char**) {
         consoleUpdate(nullptr);
     }
 
-    std::printf("All probes complete. Press + to exit.\n");
+    const auto runtime_result = mkw::runtime_bootstrap::start();
+    mkw::runtime_bootstrap::print(runtime_result);
+    if (!mkw::runtime_bootstrap::write_report(runtime_result)) {
+        std::printf("WARNING: could not write runtime-bootstrap.txt.\n");
+        consoleUpdate(nullptr);
+    }
+
+    if (runtime_result.stop_point == mkw::runtime_bootstrap::StopPoint::WaitingForUserData) {
+        std::printf("Runtime core reached the user-data boundary.\n");
+    } else {
+        std::printf("Runtime core stopped before the user-data boundary.\n");
+    }
+    std::printf("Press + to exit.\n");
     consoleUpdate(nullptr);
 
     while (!mkw::switch_platform::should_exit()) {
-        svcSleepThread(16'000'000); // ~16 ms; bootstrap only, not final frame pacing.
+        mkw::horizon_runtime_services::sleep_for_ns(16'000'000); // bootstrap only
     }
 
+    mkw::runtime_bootstrap::stop();
     mkw::switch_platform::shutdown();
     return 0;
 }

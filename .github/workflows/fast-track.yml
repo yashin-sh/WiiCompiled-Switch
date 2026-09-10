@@ -27,7 +27,10 @@ jobs:
           grep -Fq 'fast-track-dispatch-blocker.txt' source/fast_track_crash_diagnostics.cpp
           grep -Fq 'fast-track-exception.txt' source/fast_track_crash_diagnostics.cpp
           grep -Fq '__libnx_exception_handler' source/fast_track_crash_diagnostics.cpp
-          grep -Fq 'mkw_switch_report_unsupported_translated_dispatch' include/abi_bridge.h
+          grep -Fq 'if constexpr (KnownTranslatedCpuCall<Target>::kAvailable)' include/abi_bridge.h
+          grep -Fq 'DispatchKnownTranslatedCpuTargetStatic<Target>(cpu)' include/abi_bridge.h
+          grep -Fq 'InvokeDirectCpu<0x7F0001A0u>(ctx)' synthetic-execution/synthetic_execution_probe.cpp
+          grep -Fq 'InvokeDirectCpu<0x7F0001C0u>(ctx)' synthetic-execution/synthetic_execution_probe.cpp
 
       - name: Locate AArch64 nm
         run: |
@@ -43,7 +46,7 @@ jobs:
             MKW_SYNTHETIC_FAST_TRACK=1 \
             TARGET=WiiCompiled-Switch-synthetic-fast-track \
             BUILD=build-synthetic-fast-track \
-            APP_VERSION=0.0.10-synthetic-fast-track-diag \
+            APP_VERSION=0.0.11-synthetic-fast-track-direct-dispatch \
             TRANSLATED_RETAIN_SYMBOL=synthetic_translated_fast_track_start \
             DEFINES='-DMKW_SYNTHETIC_EXECUTION=1 -DMKW_SYNTHETIC_FAST_TRACK=1 -DMKW_ENABLE_DATA_INIT_HANDOFF=1 -DMKW_ENABLE_TRANSLATED_EXECUTION_HANDOFF=1'
 
@@ -56,6 +59,8 @@ jobs:
           grep -E ' T mkw_switch_get_translated_product_handoff_api$' /tmp/fast-track.nm
           grep -E ' T mkw_switch_get_translated_execution_handoff_api$' /tmp/fast-track.nm
           grep -E ' T synthetic_translated_fast_track_start$' /tmp/fast-track.nm
+          grep -E ' T synthetic_translated_fast_track_stage2$' /tmp/fast-track.nm
+          grep -E ' T synthetic_translated_fast_track_stage3$' /tmp/fast-track.nm
           grep -E ' T mkw_switch_report_unsupported_translated_dispatch$' /tmp/fast-track.nm
           grep -E ' T __libnx_exception_handler$' /tmp/fast-track.nm
 

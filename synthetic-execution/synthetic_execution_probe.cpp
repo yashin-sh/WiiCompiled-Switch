@@ -21,6 +21,11 @@ std::uint32_t gSyntheticGuestState = 0;
 
 } // namespace
 
+#if defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK
+MKW_TRANSLATED_TRAIT(7F0001A0, synthetic_translated_fast_track_stage2, 0x00000000u);
+MKW_TRANSLATED_TRAIT(7F0001C0, synthetic_translated_fast_track_stage3, 0x00000000u);
+#endif
+
 extern "C" __attribute__((noinline, used))
 void synthetic_translated_execution_leaf(CpuContext* ctx) {
     if (!ctx) {
@@ -70,19 +75,43 @@ void synthetic_translated_bootstrap_registers(CpuContext* ctx) {
     ctx->gpr[13] = kSyntheticSda1;
 }
 
+#if defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK
+extern "C" __attribute__((noinline, used))
+void synthetic_translated_fast_track_stage3(CpuContext* ctx) {
+    if (!ctx || TryGetCpuContext() != ctx) {
+        return;
+    }
+    ctx->pc = kSyntheticFastTrackStage3;
+    ctx->gpr[3] = 0u;
+}
+
+extern "C" __attribute__((noinline, used))
+void synthetic_translated_fast_track_stage2(CpuContext* ctx) {
+    if (!ctx || TryGetCpuContext() != ctx) {
+        return;
+    }
+    ctx->pc = kSyntheticFastTrackStage2;
+    InvokeDirectCpu<0x7F0001C0u>(ctx);
+}
+#endif
+
 extern "C" __attribute__((noinline, used))
 void synthetic_translated_fast_track_start(CpuContext* ctx) {
     if (!ctx || TryGetCpuContext() != ctx) {
         return;
     }
 
-    // Model a broad startup attempt rather than one-helper-at-a-time testing.
-    ctx->pc = kSyntheticFastTrackStage2;
+    // Model a broad startup attempt with the same generic direct-call seam that
+    // real aggregate shards use for translated targets requiring the cold path.
     ctx->gpr[1] = kSyntheticStack;
     ctx->gpr[2] = kSyntheticSda2;
     ctx->gpr[13] = kSyntheticSda1;
+#if defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK
+    InvokeDirectCpu<0x7F0001A0u>(ctx);
+#else
     ctx->pc = kSyntheticFastTrackStage3;
     ctx->gpr[3] = 0u;
+#endif
 }
 
 namespace {

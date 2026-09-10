@@ -18,7 +18,11 @@ import pathlib
 import re
 import sys
 
-FUNC_START = re.compile(r"^\s*MkwStateFreeResult2\s+[A-Za-z_][A-Za-z0-9_]*\s*\(")
+# Pinned generator syntax is typically:
+#   extern "C" MKW_PPC_NO_INLINE MkwStateFreeResult2 func_xxx_statefree(...)
+# but keep this tolerant of other prefixes/attributes while anchoring on the
+# exact return type + function identifier pair.
+FUNC_START = re.compile(r"\bMkwStateFreeResult2\s+[A-Za-z_][A-Za-z0-9_]*\s*\(")
 BARE_RETURN = re.compile(r"\breturn\s*\{")
 
 
@@ -75,10 +79,11 @@ def normalize_file(path: pathlib.Path) -> tuple[int, int]:
     functions = 0
 
     for line in lines:
-        if not active and not pending and FUNC_START.match(line):
+        if not active and not pending and FUNC_START.search(line):
             pending = True
 
         if pending or active:
+            # A forward declaration/prototype is not a function body.
             if pending and ";" in line and "{" not in line:
                 pending = False
             else:

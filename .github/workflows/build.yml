@@ -15,16 +15,21 @@ jobs:
       - name: Verify WiiCompiled pin
         run: test "$(git -C third_party/WiiCompiled rev-parse HEAD)" = "a135beb201042b20f390c6695ca6b26768820fb4"
 
-      - name: Build Nintendo-data-free NRO
-        run: make -j2
-      - name: Verify default artifact and weak product seam
+      - name: Locate AArch64 nm
         run: |
-          test -f WiiCompiled-Switch.nro
-          test -f WiiCompiled-Switch.elf
           NM_TOOL="$(find "$DEVKITPRO" -type f -name 'aarch64-none-elf-nm' -print -quit)"
           test -n "$NM_TOOL"
           test -x "$NM_TOOL"
+          echo "NM_TOOL=$NM_TOOL" >> "$GITHUB_ENV"
+
+      - name: Build Nintendo-data-free NRO
+        run: make -j2
+      - name: Verify default weak seams
+        run: |
+          test -f WiiCompiled-Switch.nro
+          test -f WiiCompiled-Switch.elf
           "$NM_TOOL" WiiCompiled-Switch.elf | grep -E ' W mkw_switch_get_translated_product_api$'
+          "$NM_TOOL" WiiCompiled-Switch.elf | grep -E ' W mkw_switch_get_translated_product_handoff_api$'
       - uses: actions/upload-artifact@v4
         with:
           name: WiiCompiled-Switch-nro
@@ -32,15 +37,26 @@ jobs:
 
       - name: Build synthetic strong-product probe
         run: make -j2 MKW_SYNTHETIC_PRODUCT=1
-      - name: Verify synthetic artifact and strong override
+      - name: Verify metadata-only synthetic seam
         run: |
           test -f WiiCompiled-Switch-synthetic-product.nro
           test -f WiiCompiled-Switch-synthetic-product.elf
-          NM_TOOL="$(find "$DEVKITPRO" -type f -name 'aarch64-none-elf-nm' -print -quit)"
-          test -n "$NM_TOOL"
-          test -x "$NM_TOOL"
           "$NM_TOOL" WiiCompiled-Switch-synthetic-product.elf | grep -E ' T mkw_switch_get_translated_product_api$'
+          "$NM_TOOL" WiiCompiled-Switch-synthetic-product.elf | grep -E ' W mkw_switch_get_translated_product_handoff_api$'
       - uses: actions/upload-artifact@v4
         with:
           name: WiiCompiled-Switch-synthetic-product-nro
           path: WiiCompiled-Switch-synthetic-product.nro
+
+      - name: Build synthetic data-init handoff probe
+        run: make -j2 MKW_SYNTHETIC_DATA_INIT=1
+      - name: Verify executable synthetic handoff seams
+        run: |
+          test -f WiiCompiled-Switch-synthetic-data-init.nro
+          test -f WiiCompiled-Switch-synthetic-data-init.elf
+          "$NM_TOOL" WiiCompiled-Switch-synthetic-data-init.elf | grep -E ' T mkw_switch_get_translated_product_api$'
+          "$NM_TOOL" WiiCompiled-Switch-synthetic-data-init.elf | grep -E ' T mkw_switch_get_translated_product_handoff_api$'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WiiCompiled-Switch-synthetic-data-init-nro
+          path: WiiCompiled-Switch-synthetic-data-init.nro

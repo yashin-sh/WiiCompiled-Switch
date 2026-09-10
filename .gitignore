@@ -1,5 +1,6 @@
 # devkitPro build output
 /build/
+/build-*/
 *.elf
 *.nro
 *.nacp

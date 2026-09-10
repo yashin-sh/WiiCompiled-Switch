@@ -3,6 +3,7 @@
 #include "horizon_runtime_services.hpp"
 #include "memory_switch_slice.hpp"
 #include "translated_product.hpp"
+#include "translated_product_handoff.hpp"
 
 #include <host_context.h>
 #include <switch.h>
@@ -14,6 +15,12 @@ namespace {
 
 constexpr const char* kUpstreamCommit = "a135beb201042b20f390c6695ca6b26768820fb4";
 constexpr std::size_t kWorkerStackSize = 256 * 1024;
+
+#if defined(MKW_ENABLE_DATA_INIT_HANDOFF) && MKW_ENABLE_DATA_INIT_HANDOFF
+constexpr bool kDataInitHandoffEnabled = true;
+#else
+constexpr bool kDataInitHandoffEnabled = false;
+#endif
 
 HostContext::Handle g_scheduler = nullptr;
 HostContext::Handle g_worker = nullptr;
@@ -27,11 +34,33 @@ const char* stubbed(bool value) {
     return value ? "STUBBED" : "UNEXPECTEDLY ACTIVE";
 }
 
+const char* enabled(bool value) {
+    return value ? "ENABLED" : "DISABLED";
+}
+
 const char* product_state(const Result& result) {
     if (!result.translated_product_linked) {
         return "NOT LINKED";
     }
     return result.translated_product_abi_compatible ? "LINKED" : "ABI MISMATCH";
+}
+
+const char* handoff_state(const Result& result) {
+    if (!result.data_init_handoff_linked) {
+        return "NOT LINKED";
+    }
+    return result.data_init_handoff_abi_compatible ? "LINKED" : "ABI MISMATCH";
+}
+
+const char* initializer_state(const Result& result) {
+    return result.data_initializer_available ? "AVAILABLE" : "NOT AVAILABLE";
+}
+
+const char* data_init_state(const Result& result) {
+    if (!result.data_sections_init_attempted) {
+        return "NOT ATTEMPTED";
+    }
+    return result.data_sections_initialized ? "PASS" : "FAIL";
 }
 
 const char* stop_point_name(StopPoint stop_point) {
@@ -40,6 +69,12 @@ const char* stop_point_name(StopPoint stop_point) {
         return "WAITING_FOR_TRANSLATED_PRODUCT";
     case StopPoint::TranslatedProductLinked:
         return "TRANSLATED_PRODUCT_LINKED";
+    case StopPoint::WaitingForDataInitializer:
+        return "WAITING_FOR_DATA_INITIALIZER";
+    case StopPoint::DataSectionsInitialized:
+        return "DATA_SECTIONS_INITIALIZED";
+    case StopPoint::DataSectionInitializationFailed:
+        return "DATA_SECTION_INITIALIZATION_FAILED";
     case StopPoint::Failed:
     default:
         return "FAILED_BEFORE_TRANSLATED_PRODUCT_BOUNDARY";
@@ -92,6 +127,13 @@ void emit(FILE* out, const Result& result) {
                  result.translated_product_reported_abi);
     std::fprintf(out, "translated product id  : %s\n", result.translated_product_id);
     std::fprintf(out, "translated build       : %s\n", result.translated_product_build);
+    std::fprintf(out, "data-init handoff      : %s\n", enabled(result.data_init_handoff_enabled));
+    std::fprintf(out, "data-init provider     : %s\n", handoff_state(result));
+    std::fprintf(out, "data-init handoff ABI  : expected=%u reported=%u\n",
+                 translated_product_handoff::kAbiVersion,
+                 result.data_init_handoff_reported_abi);
+    std::fprintf(out, "data initializer       : %s\n", initializer_state(result));
+    std::fprintf(out, "data sections init     : %s\n", data_init_state(result));
     std::fprintf(out, "runtime data root      : %s\n",
                  horizon_runtime_services::application_root().string().c_str());
     std::fprintf(out, "runtime logs root      : %s\n",
@@ -110,6 +152,7 @@ void emit(FILE* out, const Result& result) {
 
 Result start() {
     Result result{};
+    result.data_init_handoff_enabled = kDataInitHandoffEnabled;
 
     const auto services = horizon_runtime_services::initialize();
     result.lifecycle_ready = services.lifecycle_ready;
@@ -164,15 +207,34 @@ Result start() {
     result.translated_product_id = product.product_id;
     result.translated_product_build = product.build_description;
 
+    const auto data_handoff = translated_product_handoff::inspect();
+    result.data_init_handoff_linked = data_handoff.linked;
+    result.data_init_handoff_abi_compatible = data_handoff.abi_compatible;
+    result.data_initializer_available = data_handoff.data_initializer_available;
+    result.data_init_handoff_reported_abi = data_handoff.reported_abi;
+
     if (core_ready(result)) {
         if (!result.translated_product_linked) {
             // Public builds deliberately stop here: translated game output is
             // produced and linked only by the user's local WiiCompiled build.
             result.stop_point = StopPoint::WaitingForTranslatedProduct;
         } else if (result.translated_product_abi_compatible) {
-            // The product is present and ABI-compatible, but this slice does
-            // not initialize its data sections or enter translated code yet.
             result.stop_point = StopPoint::TranslatedProductLinked;
+
+            if (result.data_init_handoff_enabled) {
+                if (!result.data_init_handoff_linked ||
+                    !result.data_init_handoff_abi_compatible ||
+                    !result.data_initializer_available) {
+                    result.stop_point = StopPoint::WaitingForDataInitializer;
+                } else {
+                    result.data_sections_init_attempted = true;
+                    result.data_sections_initialized =
+                        translated_product_handoff::run_data_initializer();
+                    result.stop_point = result.data_sections_initialized
+                        ? StopPoint::DataSectionsInitialized
+                        : StopPoint::DataSectionInitializationFailed;
+                }
+            }
         }
     }
 

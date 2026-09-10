@@ -11,6 +11,7 @@
 - `M2_SYNTHETIC_PRODUCT_PROBE.md` — hardware-validated weak/strong translated-product link seam
 - `M2_DATA_INIT_HANDOFF.md` — guarded data-section initialization and local-only generation path
 - `M2_LOCAL_DATA_INIT_HARDWARE_PASS.md` — real-Switch PASS for user-owned RMCP01 generated data sections
+- `M2_FUNCTION_SHARD_LINK.md` — local translated-function compile/link-only boundary
 - `TRANSLATED_PRODUCT_BOUNDARY.md` — build-time translated-product seam and runtime SD-data separation
 - `HARDWARE_RESULTS_2026-09-09.md` — first recorded hardware evidence
 - `HARDWARE_RESULTS_2026-09-10.md` — hardware-validated runtime bootstrap, memory and translated-product results

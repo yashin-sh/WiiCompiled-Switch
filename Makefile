@@ -9,7 +9,9 @@ include $(DEVKITPRO)/libnx/switch_rules
 
 MKW_SYNTHETIC_PRODUCT ?= 0
 MKW_SYNTHETIC_DATA_INIT ?= 0
+MKW_SYNTHETIC_FUNCTION_LINK ?= 0
 MKW_LOCAL_PRODUCT ?= 0
+MKW_LOCAL_FUNCTION_SHARDS ?= 0
 
 TARGET      := WiiCompiled-Switch
 BUILD       := build
@@ -17,33 +19,49 @@ UPSTREAM    := third_party/WiiCompiled
 UPSTREAM_RUNTIME := $(UPSTREAM)/runtime
 SOURCES     := source $(UPSTREAM_RUNTIME)/src/platform
 INCLUDES    := include $(UPSTREAM_RUNTIME)/include
-APP_VERSION := 0.0.4
+APP_VERSION := 0.0.5
+TRANSLATED_LINK_MODE := 0
+TRANSLATED_RETAIN_SYMBOL :=
 
 ifeq ($(MKW_SYNTHETIC_PRODUCT),1)
-ifneq ($(MKW_SYNTHETIC_DATA_INIT)$(MKW_LOCAL_PRODUCT),00)
+ifneq ($(MKW_SYNTHETIC_DATA_INIT)$(MKW_SYNTHETIC_FUNCTION_LINK)$(MKW_LOCAL_PRODUCT)$(MKW_LOCAL_FUNCTION_SHARDS),0000)
 $(error "Select only one product mode")
 endif
 TARGET      := WiiCompiled-Switch-synthetic-product
 BUILD       := build-synthetic-product
 SOURCES     += synthetic-product
 DEFINES     += -DMKW_SYNTHETIC_PRODUCT=1
-APP_VERSION := 0.0.4-synthetic
+APP_VERSION := 0.0.5-synthetic
 endif
 
 ifeq ($(MKW_SYNTHETIC_DATA_INIT),1)
-ifneq ($(MKW_SYNTHETIC_PRODUCT)$(MKW_LOCAL_PRODUCT),00)
+ifneq ($(MKW_SYNTHETIC_PRODUCT)$(MKW_SYNTHETIC_FUNCTION_LINK)$(MKW_LOCAL_PRODUCT)$(MKW_LOCAL_FUNCTION_SHARDS),0000)
 $(error "Select only one product mode")
 endif
 TARGET      := WiiCompiled-Switch-synthetic-data-init
 BUILD       := build-synthetic-data-init
 SOURCES     += synthetic-data-init
 DEFINES     += -DMKW_SYNTHETIC_DATA_INIT=1 -DMKW_ENABLE_DATA_INIT_HANDOFF=1
-APP_VERSION := 0.0.4-data-init
+APP_VERSION := 0.0.5-data-init
+endif
+
+ifeq ($(MKW_SYNTHETIC_FUNCTION_LINK),1)
+ifneq ($(MKW_SYNTHETIC_PRODUCT)$(MKW_SYNTHETIC_DATA_INIT)$(MKW_LOCAL_PRODUCT)$(MKW_LOCAL_FUNCTION_SHARDS),0000)
+$(error "Select only one product mode")
+endif
+TARGET      := WiiCompiled-Switch-synthetic-function-link
+BUILD       := build-synthetic-function-link
+SOURCES     += synthetic-function-link
+DEFINES     += -DMKW_SYNTHETIC_FUNCTION_LINK=1 -DMKW_TRANSLATED_LINK_ONLY=1
+APP_VERSION := 0.0.5-synthetic-link
+TRANSLATED_LINK_MODE := 1
+TRANSLATED_RETAIN_SYMBOL := synthetic_translated_leaf
 endif
 
 LOCAL_GENERATED_DIR := local-product/generated
+LOCAL_SHARD_ROOT := $(LOCAL_GENERATED_DIR)/build_shards
 ifeq ($(MKW_LOCAL_PRODUCT),1)
-ifneq ($(MKW_SYNTHETIC_PRODUCT)$(MKW_SYNTHETIC_DATA_INIT),00)
+ifneq ($(MKW_SYNTHETIC_PRODUCT)$(MKW_SYNTHETIC_DATA_INIT)$(MKW_SYNTHETIC_FUNCTION_LINK)$(MKW_LOCAL_FUNCTION_SHARDS),0000)
 $(error "Select only one product mode")
 endif
 ifeq ($(wildcard $(TOPDIR)/$(LOCAL_GENERATED_DIR)/data_sections_init.cpp),)
@@ -56,7 +74,45 @@ TARGET      := WiiCompiled-Switch-local-product
 BUILD       := build-local-product
 SOURCES     += local-product-support $(LOCAL_GENERATED_DIR)
 DEFINES     += -DMKW_LOCAL_PRODUCT=1 -DMKW_ENABLE_DATA_INIT_HANDOFF=1
-APP_VERSION := 0.0.4-local
+APP_VERSION := 0.0.5-local
+endif
+
+ifeq ($(MKW_LOCAL_FUNCTION_SHARDS),1)
+ifneq ($(MKW_SYNTHETIC_PRODUCT)$(MKW_SYNTHETIC_DATA_INIT)$(MKW_SYNTHETIC_FUNCTION_LINK)$(MKW_LOCAL_PRODUCT),0000)
+$(error "Select only one product mode")
+endif
+ifeq ($(wildcard $(TOPDIR)/$(LOCAL_GENERATED_DIR)/data_sections_init.cpp),)
+$(error "Missing local-product/generated/data_sections_init.cpp. Run scripts/prepare-local-data-init.sh first")
+endif
+ifeq ($(wildcard $(TOPDIR)/$(LOCAL_GENERATED_DIR)/data_sections_init_blobs.S),)
+$(error "Missing local-product/generated/data_sections_init_blobs.S. Run scripts/prepare-local-data-init.sh first")
+endif
+ifeq ($(wildcard $(TOPDIR)/$(LOCAL_GENERATED_DIR)/base_translation_output.json),)
+$(error "Missing local translated metadata. Run scripts/prepare-local-function-shards.sh first")
+endif
+ifeq ($(wildcard $(TOPDIR)/$(LOCAL_SHARD_ROOT)/shards.cmake),)
+$(error "Missing local translated shard graph. Run scripts/prepare-local-function-shards.sh first")
+endif
+ifeq ($(wildcard $(TOPDIR)/$(LOCAL_SHARD_ROOT)/base_common/*.cpp),)
+$(error "Missing base_common translated function shards. Run scripts/prepare-local-function-shards.sh first")
+endif
+TARGET      := WiiCompiled-Switch-local-function-link
+BUILD       := build-local-function-link
+SOURCES     += local-product-support $(LOCAL_GENERATED_DIR) $(LOCAL_SHARD_ROOT)/base_common
+ifneq ($(wildcard $(TOPDIR)/$(LOCAL_SHARD_ROOT)/base_portable_sensitive/*.cpp),)
+SOURCES     += $(LOCAL_SHARD_ROOT)/base_portable_sensitive
+endif
+# Deliberately DO NOT add base_registration or base_dispatch here: their
+# registrar objects execute static constructors before main. This checkpoint
+# proves compile/link only and still stops after generated data initialization.
+DEFINES     += -DMKW_LOCAL_PRODUCT=1 -DMKW_LOCAL_FUNCTION_SHARDS=1 \
+               -DMKW_ENABLE_DATA_INIT_HANDOFF=1 -DMKW_TRANSLATED_LINK_ONLY=1
+APP_VERSION := 0.0.5-local-link
+TRANSLATED_LINK_MODE := 1
+# PAL RMCP01 function map names 0x8000609C as __get_debug_bba. It has no native
+# override at the pinned revision and is retained only so --gc-sections cannot
+# discard every translated function. The Switch runtime never calls it here.
+TRANSLATED_RETAIN_SYMBOL := __get_debug_bba
 endif
 
 ifeq ($(wildcard $(TOPDIR)/$(UPSTREAM_RUNTIME)/include/host_context.h),)
@@ -73,8 +129,23 @@ CFLAGS      += $(INCLUDE) -D__SWITCH__ -DMKW_PLATFORM_SWITCH=1
 # faults and other host boundaries. Keep RTTI disabled, but do not compile the
 # Horizon integration with -fno-exceptions now that upstream code is consumed.
 CXXFLAGS    := $(CFLAGS) -std=gnu++20 -fno-rtti
+
+ifeq ($(TRANSLATED_LINK_MODE),1)
+# The pinned AArch64 translator runtime is Clang-oriented. devkitA64 uses GCC,
+# so preinclude the one required attribute compatibility shim and preserve the
+# PPC floating-point contraction policy used by upstream translated targets.
+CXXFLAGS    += -include $(TOPDIR)/include/devkita64_gcc_compat.hpp \
+               -fno-fast-math -ffp-contract=off -fno-tree-slp-vectorize
+endif
+
 ASFLAGS     := -g $(ARCH)
 LDFLAGS     := -specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
+ifeq ($(TRANSLATED_LINK_MODE),1)
+# All function shards are compiled, but link-time GC keeps only reachable code.
+# Force one known translated leaf to remain as an auditable proof that actual
+# translated code made it into the ELF/NRO without executing it.
+LDFLAGS     += -Wl,--gc-sections -Wl,-u,$(TRANSLATED_RETAIN_SYMBOL)
+endif
 LIBS        := -lnx
 LIBDIRS     := $(PORTLIBS) $(LIBNX)
 
@@ -107,14 +178,19 @@ $(BUILD):
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 clean:
-	@rm -fr build build-synthetic-product build-synthetic-data-init build-local-product \
+	@rm -fr build build-synthetic-product build-synthetic-data-init \
+		build-synthetic-function-link build-local-product build-local-function-link \
 		WiiCompiled-Switch.nro WiiCompiled-Switch.nacp WiiCompiled-Switch.elf WiiCompiled-Switch.map \
 		WiiCompiled-Switch-synthetic-product.nro WiiCompiled-Switch-synthetic-product.nacp \
 		WiiCompiled-Switch-synthetic-product.elf WiiCompiled-Switch-synthetic-product.map \
 		WiiCompiled-Switch-synthetic-data-init.nro WiiCompiled-Switch-synthetic-data-init.nacp \
 		WiiCompiled-Switch-synthetic-data-init.elf WiiCompiled-Switch-synthetic-data-init.map \
+		WiiCompiled-Switch-synthetic-function-link.nro WiiCompiled-Switch-synthetic-function-link.nacp \
+		WiiCompiled-Switch-synthetic-function-link.elf WiiCompiled-Switch-synthetic-function-link.map \
 		WiiCompiled-Switch-local-product.nro WiiCompiled-Switch-local-product.nacp \
-		WiiCompiled-Switch-local-product.elf WiiCompiled-Switch-local-product.map
+		WiiCompiled-Switch-local-product.elf WiiCompiled-Switch-local-product.map \
+		WiiCompiled-Switch-local-function-link.nro WiiCompiled-Switch-local-function-link.nacp \
+		WiiCompiled-Switch-local-function-link.elf WiiCompiled-Switch-local-function-link.map
 
 else
 

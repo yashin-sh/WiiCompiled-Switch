@@ -12,17 +12,32 @@ PadState g_pad{};
 bool g_initialized = false;
 Status g_status{};
 
+bool ensure_directory(const std::filesystem::path& path) {
+    std::error_code ec;
+    std::filesystem::create_directories(path, ec);
+    return !ec;
+}
+
 } // namespace
 
 std::filesystem::path application_root() {
     return RuntimePlatform::ApplicationDataDirectory("WiiCompiled-Switch");
 }
 
-std::filesystem::path user_game_data_root() {
-    // This directory is intentionally never populated by the project or CI.
-    // A user may place locally produced/game-owned inputs here when later
-    // milestones define the exact runtime layout.
-    return application_root() / "game-data";
+std::filesystem::path logs_root() {
+    return application_root() / "Logs";
+}
+
+std::filesystem::path cache_root() {
+    return application_root() / "Cache";
+}
+
+std::filesystem::path config_root() {
+    return application_root() / "Config";
+}
+
+std::filesystem::path nand_root() {
+    return application_root() / "NAND";
 }
 
 Status initialize() {
@@ -32,18 +47,21 @@ Status initialize() {
 
     // Make the unmodified upstream RuntimePlatform POSIX fallback resolve to a
     // stable SD-card root. It uses current_path()/applicationName on non-Win32,
-    // non-Apple hosts, which is sufficient for this first Horizon slice.
+    // non-Apple hosts, which is sufficient for this Horizon slice.
     std::error_code cwd_ec;
     std::filesystem::current_path("sdmc:/switch", cwd_ec);
 
     padConfigureInput(1, HidNpadStyleSet_NpadStandard);
     padInitializeDefault(&g_pad);
 
-    std::error_code dir_ec;
-    std::filesystem::create_directories(application_root() / "Logs", dir_ec);
+    bool runtime_dirs_ready = true;
+    runtime_dirs_ready &= ensure_directory(logs_root());
+    runtime_dirs_ready &= ensure_directory(cache_root());
+    runtime_dirs_ready &= ensure_directory(config_root());
+    runtime_dirs_ready &= ensure_directory(nand_root());
 
     g_status.lifecycle_ready = true;
-    g_status.filesystem_ready = !cwd_ec && !dir_ec;
+    g_status.filesystem_ready = !cwd_ec && runtime_dirs_ready;
     g_status.timing_ready = armGetSystemTickFreq() != 0;
     g_status.input_ready = true;
     g_status.audio = BackendState::Stubbed;

@@ -14,12 +14,14 @@
 - [x] Produce portability/blocker matrix for AArch64 Switch target
 
 ## M2 — runtime bring-up
-- [ ] HostContext / coroutine backend
-- [ ] monotonic clock + sleep/yield
+- [x] HostContext / coroutine backend
+- [x] monotonic clock + sleep/yield
 - [ ] threads, mutexes, condition variables
-- [ ] aligned allocation and guest-memory reservation strategy
+- [x] aligned allocation and guest-memory reservation strategy
 - [ ] filesystem/NAND abstraction on SD card
 - [ ] logging and fatal diagnostics
+
+Hardware validation of the current M2 bootstrap was completed on 2026-09-10. See `docs/HARDWARE_RESULTS_2026-09-10.md`.
 
 ## M3 — graphics
 - [ ] Select Switch graphics strategy compatible with WiiCompiled/Aurora

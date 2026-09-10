@@ -20,7 +20,7 @@ endif
 
 APP_TITLE   := WiiCompiled-Switch
 APP_AUTHOR  := Community homebrew port
-APP_VERSION := 0.0.2
+APP_VERSION := 0.0.3
 
 ARCH        := -march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
 CFLAGS      := -g -Wall -Wextra -O2 -ffunction-sections $(ARCH) $(DEFINES)

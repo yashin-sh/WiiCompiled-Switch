@@ -14,6 +14,14 @@ jobs:
           submodules: recursive
       - name: Verify WiiCompiled pin
         run: test "$(git -C third_party/WiiCompiled rev-parse HEAD)" = "a135beb201042b20f390c6695ca6b26768820fb4"
+      - name: Validate local-only helper scripts
+        run: |
+          bash -n scripts/prepare-local-data-init.sh
+          bash -n scripts/prepare-local-function-shards.sh
+          grep -Fq 'a135beb201042b20f390c6695ca6b26768820fb4' scripts/prepare-local-function-shards.sh
+          grep -Fq '0x800060A4' scripts/prepare-local-function-shards.sh
+          grep -Fq 'translate-recursive' scripts/prepare-local-function-shards.sh
+          grep -Fq 'emit-build-shards' scripts/prepare-local-function-shards.sh
 
       - name: Locate AArch64 nm
         run: |

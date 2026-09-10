@@ -9,6 +9,9 @@ constexpr std::uint32_t kSyntheticGuestAddress = 0x7F000100u;
 constexpr std::uint32_t kSyntheticSequenceSetter = 0x7F000120u;
 constexpr std::uint32_t kSyntheticSequenceGetter = 0x7F000140u;
 constexpr std::uint32_t kSyntheticBootstrapRegisters = 0x7F000160u;
+constexpr std::uint32_t kSyntheticFastTrackStart = 0x7F000180u;
+constexpr std::uint32_t kSyntheticFastTrackStage2 = 0x7F0001A0u;
+constexpr std::uint32_t kSyntheticFastTrackStage3 = 0x7F0001C0u;
 constexpr std::uint32_t kSyntheticStack = 0x81700000u;
 constexpr std::uint32_t kSyntheticSda2 = 0x81234560u;
 constexpr std::uint32_t kSyntheticSda1 = 0x87654320u;
@@ -65,6 +68,21 @@ void synthetic_translated_bootstrap_registers(CpuContext* ctx) {
     ctx->gpr[1] = kSyntheticStack;
     ctx->gpr[2] = kSyntheticSda2;
     ctx->gpr[13] = kSyntheticSda1;
+}
+
+extern "C" __attribute__((noinline, used))
+void synthetic_translated_fast_track_start(CpuContext* ctx) {
+    if (!ctx || TryGetCpuContext() != ctx) {
+        return;
+    }
+
+    // Model a broad startup attempt rather than one-helper-at-a-time testing.
+    ctx->pc = kSyntheticFastTrackStage2;
+    ctx->gpr[1] = kSyntheticStack;
+    ctx->gpr[2] = kSyntheticSda2;
+    ctx->gpr[13] = kSyntheticSda1;
+    ctx->pc = kSyntheticFastTrackStage3;
+    ctx->gpr[3] = 0u;
 }
 
 namespace {
@@ -166,7 +184,43 @@ bool run_synthetic_bootstrap_register_prelude(MkwSwitchTranslatedExecutionProbeR
            TryGetCpuContext() == nullptr;
 }
 
-#if defined(MKW_SYNTHETIC_BOOTSTRAP_PRELUDE) && MKW_SYNTHETIC_BOOTSTRAP_PRELUDE
+bool run_synthetic_fast_track(MkwSwitchTranslatedExecutionProbeResult* out) noexcept {
+    if (!out) {
+        return false;
+    }
+
+    CpuContext& cpu = GetPersistentCpuContext();
+    cpu = {};
+    cpu.pc = kSyntheticFastTrackStart;
+    for (auto& gpr : cpu.gpr) {
+        gpr = kRegisterSentinel;
+    }
+
+    out->guest_address = kSyntheticFastTrackStart;
+    out->r3_before = cpu.gpr[3];
+
+    {
+        CpuContextScope scope(&cpu);
+        synthetic_translated_fast_track_start(&cpu);
+    }
+
+    out->guest_address = cpu.pc;
+    out->r1 = cpu.gpr[1];
+    out->r2 = cpu.gpr[2];
+    out->r13 = cpu.gpr[13];
+    out->r3_after = cpu.gpr[3];
+
+    return cpu.pc == kSyntheticFastTrackStage3 && cpu.gpr[3] == 0u &&
+           cpu.gpr[1] == kSyntheticStack && cpu.gpr[2] == kSyntheticSda2 &&
+           cpu.gpr[13] == kSyntheticSda1 && TryGetCpuContext() == nullptr;
+}
+
+#if defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK
+constexpr MkwSwitchTranslatedExecutionHandoffApi kExecutionApi{
+    .abi_version = mkw::translated_execution_handoff::kAbiVersion,
+    .run_first_translated_function = run_synthetic_fast_track,
+};
+#elif defined(MKW_SYNTHETIC_BOOTSTRAP_PRELUDE) && MKW_SYNTHETIC_BOOTSTRAP_PRELUDE
 constexpr MkwSwitchTranslatedExecutionHandoffApi kExecutionApi{
     .abi_version = mkw::translated_execution_handoff::kAbiVersion,
     .run_first_translated_function = run_synthetic_bootstrap_register_prelude,

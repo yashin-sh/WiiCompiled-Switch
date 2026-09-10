@@ -17,6 +17,19 @@
 #include <cstdint>
 #include <cstdlib>
 
+// Pinned upstream memory_access.h normally exposes these GX FIFO hooks to
+// generated stores. The Switch link-only build intentionally does not include
+// memory_access.h because it would select the desktop flat-memory model, so
+// preserve just the declaration contract here. Implementations remain a later
+// graphics/HLE checkpoint; unreferenced translated sections are linker-GC'd.
+extern "C" {
+void GX_HLE_FIFO_WriteFloat(float value);
+void GX_HLE_FIFO_Write32(std::uint32_t value);
+void GX_HLE_FIFO_Write16(std::uint16_t value);
+void GX_HLE_FIFO_Write8(std::uint8_t value);
+void GX_HLE_FIFO_WriteBurst(const std::uint8_t* data, std::uint32_t sizeBytes);
+}
+
 inline void ApplyRuntimeCallOptions(std::uint32_t, CpuContext*) noexcept {
     // No game-facing runtime options are active in the link-only checkpoint.
 }

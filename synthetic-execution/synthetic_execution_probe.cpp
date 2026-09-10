@@ -8,10 +8,12 @@ namespace {
 constexpr std::uint32_t kSyntheticGuestAddress = 0x7F000100u;
 constexpr std::uint32_t kSyntheticSequenceSetter = 0x7F000120u;
 constexpr std::uint32_t kSyntheticSequenceGetter = 0x7F000140u;
+constexpr std::uint32_t kSyntheticBootstrapRegisters = 0x7F000160u;
 constexpr std::uint32_t kSyntheticStack = 0x81700000u;
 constexpr std::uint32_t kSyntheticSda2 = 0x81234560u;
 constexpr std::uint32_t kSyntheticSda1 = 0x87654320u;
 constexpr std::uint32_t kR3Sentinel = 0xA5A5A5A5u;
+constexpr std::uint32_t kRegisterSentinel = 0xCDCDCDCDu;
 std::uint32_t gSyntheticGuestState = 0;
 
 } // namespace
@@ -45,6 +47,24 @@ void synthetic_translated_sequence_get(CpuContext* ctx) {
         return;
     }
     ctx->gpr[3] = gSyntheticGuestState;
+}
+
+extern "C" __attribute__((noinline, used))
+void synthetic_translated_bootstrap_registers(CpuContext* ctx) {
+    if (!ctx || TryGetCpuContext() != ctx) {
+        return;
+    }
+
+    ctx->gpr[0] = 0u;
+    for (std::uint32_t i = 3; i <= 12; ++i) {
+        ctx->gpr[i] = 0u;
+    }
+    for (std::uint32_t i = 14; i <= 31; ++i) {
+        ctx->gpr[i] = 0u;
+    }
+    ctx->gpr[1] = kSyntheticStack;
+    ctx->gpr[2] = kSyntheticSda2;
+    ctx->gpr[13] = kSyntheticSda1;
 }
 
 namespace {
@@ -108,7 +128,50 @@ bool run_synthetic_stateful_sequence(MkwSwitchTranslatedExecutionProbeResult* ou
            TryGetCpuContext() == nullptr;
 }
 
-#if defined(MKW_SYNTHETIC_SEQUENCE) && MKW_SYNTHETIC_SEQUENCE
+bool run_synthetic_bootstrap_register_prelude(MkwSwitchTranslatedExecutionProbeResult* out) noexcept {
+    if (!out) {
+        return false;
+    }
+
+    CpuContext& cpu = GetPersistentCpuContext();
+    cpu = {};
+    cpu.pc = kSyntheticBootstrapRegisters;
+    for (auto& gpr : cpu.gpr) {
+        gpr = kRegisterSentinel;
+    }
+
+    out->guest_address = kSyntheticBootstrapRegisters;
+    out->r3_before = cpu.gpr[3];
+
+    {
+        CpuContextScope scope(&cpu);
+        synthetic_translated_bootstrap_registers(&cpu);
+    }
+
+    out->r1 = cpu.gpr[1];
+    out->r2 = cpu.gpr[2];
+    out->r13 = cpu.gpr[13];
+    out->r3_after = cpu.gpr[3];
+
+    bool cleared = cpu.gpr[0] == 0u;
+    for (std::uint32_t i = 3; i <= 12; ++i) {
+        cleared = cleared && cpu.gpr[i] == 0u;
+    }
+    for (std::uint32_t i = 14; i <= 31; ++i) {
+        cleared = cleared && cpu.gpr[i] == 0u;
+    }
+
+    return cleared && cpu.gpr[1] == kSyntheticStack &&
+           cpu.gpr[2] == kSyntheticSda2 && cpu.gpr[13] == kSyntheticSda1 &&
+           TryGetCpuContext() == nullptr;
+}
+
+#if defined(MKW_SYNTHETIC_BOOTSTRAP_PRELUDE) && MKW_SYNTHETIC_BOOTSTRAP_PRELUDE
+constexpr MkwSwitchTranslatedExecutionHandoffApi kExecutionApi{
+    .abi_version = mkw::translated_execution_handoff::kAbiVersion,
+    .run_first_translated_function = run_synthetic_bootstrap_register_prelude,
+};
+#elif defined(MKW_SYNTHETIC_SEQUENCE) && MKW_SYNTHETIC_SEQUENCE
 constexpr MkwSwitchTranslatedExecutionHandoffApi kExecutionApi{
     .abi_version = mkw::translated_execution_handoff::kAbiVersion,
     .run_first_translated_function = run_synthetic_stateful_sequence,

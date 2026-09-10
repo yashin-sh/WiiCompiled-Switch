@@ -36,6 +36,13 @@ constexpr bool kTranslatedSequenceMode = true;
 constexpr bool kTranslatedSequenceMode = false;
 #endif
 
+#if (defined(MKW_LOCAL_BOOTSTRAP_PRELUDE) && MKW_LOCAL_BOOTSTRAP_PRELUDE) || \
+    (defined(MKW_SYNTHETIC_BOOTSTRAP_PRELUDE) && MKW_SYNTHETIC_BOOTSTRAP_PRELUDE)
+constexpr bool kTranslatedBootstrapPreludeMode = true;
+#else
+constexpr bool kTranslatedBootstrapPreludeMode = false;
+#endif
+
 HostContext::Handle g_scheduler = nullptr;
 HostContext::Handle g_worker = nullptr;
 volatile unsigned g_worker_phase = 0;
@@ -117,6 +124,10 @@ const char* stop_point_name(StopPoint stop_point) {
         return "TRANSLATED_SEQUENCE_EXECUTED";
     case StopPoint::TranslatedSequenceExecutionFailed:
         return "TRANSLATED_SEQUENCE_EXECUTION_FAILED";
+    case StopPoint::TranslatedBootstrapPreludeExecuted:
+        return "TRANSLATED_BOOTSTRAP_PRELUDE_EXECUTED";
+    case StopPoint::TranslatedBootstrapPreludeExecutionFailed:
+        return "TRANSLATED_BOOTSTRAP_PRELUDE_EXECUTION_FAILED";
     case StopPoint::Failed:
     default:
         return "FAILED_BEFORE_TRANSLATED_PRODUCT_BOUNDARY";
@@ -130,8 +141,6 @@ void worker_entry(void*) {
     g_worker_phase = 2;
     HostContext::Switch(g_scheduler);
 
-    // The bootstrap owns this worker only to validate the real WiiCompiled
-    // HostContext contract. It must never return through the raw trampoline.
     for (;;) {
         HostContext::Switch(g_scheduler);
     }
@@ -183,6 +192,7 @@ void emit(FILE* out, const Result& result) {
                  result.translated_execution_handoff_reported_abi);
     std::fprintf(out, "translated exec runner : %s\n", execution_runner_state(result));
     std::fprintf(out, "translated sequence mode: %s\n", enabled(result.translated_sequence_mode));
+    std::fprintf(out, "translated bootstrap mode: %s\n", enabled(result.translated_bootstrap_prelude_mode));
     std::fprintf(out, "translated exec result : %s\n", execution_state(result));
     std::fprintf(out, "translated exec target : 0x%08x\n",
                  result.translated_execution_guest_address);
@@ -214,6 +224,7 @@ Result start() {
     result.data_init_handoff_enabled = kDataInitHandoffEnabled;
     result.translated_execution_handoff_enabled = kTranslatedExecutionHandoffEnabled;
     result.translated_sequence_mode = kTranslatedSequenceMode;
+    result.translated_bootstrap_prelude_mode = kTranslatedBootstrapPreludeMode;
 
     const auto services = horizon_runtime_services::initialize();
     result.lifecycle_ready = services.lifecycle_ready;
@@ -257,7 +268,6 @@ Result start() {
         result.host_context_continuation = g_worker_phase == 2;
     }
 
-    // The worker is suspended at a scheduler handoff and is no longer needed.
     HostContext::Destroy(g_worker);
     g_worker = nullptr;
 
@@ -282,8 +292,6 @@ Result start() {
 
     if (core_ready(result)) {
         if (!result.translated_product_linked) {
-            // Public builds deliberately stop here: translated game output is
-            // produced and linked only by the user's local WiiCompiled build.
             result.stop_point = StopPoint::WaitingForTranslatedProduct;
         } else if (result.translated_product_abi_compatible) {
             result.stop_point = StopPoint::TranslatedProductLinked;
@@ -318,7 +326,11 @@ Result start() {
                             result.translated_execution_r13 = probe.r13;
                             result.translated_execution_r3_before = probe.r3_before;
                             result.translated_execution_r3_after = probe.r3_after;
-                            if (result.translated_sequence_mode) {
+                            if (result.translated_bootstrap_prelude_mode) {
+                                result.stop_point = result.translated_execution_passed
+                                    ? StopPoint::TranslatedBootstrapPreludeExecuted
+                                    : StopPoint::TranslatedBootstrapPreludeExecutionFailed;
+                            } else if (result.translated_sequence_mode) {
                                 result.stop_point = result.translated_execution_passed
                                     ? StopPoint::TranslatedSequenceExecuted
                                     : StopPoint::TranslatedSequenceExecutionFailed;

@@ -1,6 +1,6 @@
 # M2 — Translated-product boundary
 
-Status: implementation slice for issue #18. CI and real-hardware validation are required before this boundary is considered complete.
+Status: **hardware-validated on real Nintendo Switch (2026-09-10)**. Issue #18 is complete.
 
 Upstream WiiCompiled pin: `a135beb201042b20f390c6695ca6b26768820fb4`.
 
@@ -62,7 +62,7 @@ The current API is intentionally metadata-only:
 - product identifier;
 - build description.
 
-Inspection has no side effects. It does **not** initialize generated data sections and does **not** enter translated code. Those actions belong to the next execution-handoff slice after this boundary is hardware validated.
+Inspection has no side effects. It does **not** initialize generated data sections and does **not** enter translated code. Those actions belong to the next execution-handoff slice.
 
 ## Bootstrap states
 
@@ -80,7 +80,7 @@ If a product is linked with the wrong ABI version, the bootstrap deliberately st
 
 ## Runtime report
 
-`runtime-bootstrap.txt` now records:
+`runtime-bootstrap.txt` records:
 
 - translated-product state;
 - expected and reported product ABI;
@@ -89,7 +89,7 @@ If a product is linked with the wrong ABI version, the bootstrap deliberately st
 - Logs/Cache/Config/NAND roots;
 - final translated-product stop point.
 
-For the public Nintendo-data-free build, the expected product lines are:
+The public Nintendo-data-free build reports:
 
 ```text
 translated product     : NOT LINKED
@@ -98,6 +98,26 @@ translated product id  : <none>
 translated build       : Nintendo-data-free stub
 stop point             : WAITING_FOR_TRANSLATED_PRODUCT
 ```
+
+## Hardware validation — 2026-09-10
+
+The `0.0.3` public NRO from `main` commit `8446eb8f16aa9b2f6d7486a2f25d3a8c29bc5ada` was run on a real Nintendo Switch through hbmenu application/title-override mode with full memory.
+
+The returned report confirmed:
+
+- critical SDL path: `NONE`;
+- lifecycle/filesystem/timing/libnx HID: `READY`;
+- `Memory::Init`: `READY`;
+- HostContext scheduler, first handoff and continuation: `READY`;
+- audio and graphics: `STUBBED` as intended;
+- translated product: `NOT LINKED`;
+- translated product ABI: `expected=1 reported=0`;
+- translated product id: `<none>`;
+- translated build: `Nintendo-data-free stub`;
+- runtime roots created under `sdmc:/switch/WiiCompiled-Switch` for `Logs`, `Cache`, `Config` and `NAND`;
+- stop point: `WAITING_FOR_TRANSLATED_PRODUCT`.
+
+This is the expected hardware result for the Nintendo-data-free boundary. No translated game code was linked, initialized or executed.
 
 ## Local-only content policy
 
@@ -114,23 +134,20 @@ Do not commit or upload:
 
 Only Nintendo-data-free runtime/platform code and synthetic probes belong in public CI.
 
-## Validation for this slice
+## Validation result
 
-CI must:
+- pinned WiiCompiled submodule: PASS in CI;
+- Nintendo-data-free NRO build: PASS in PR #20 and post-merge main CI;
+- real Switch core regression: PASS;
+- translated-product weak seam: PASS;
+- runtime SD-data separation: PASS;
+- final stop point: `WAITING_FOR_TRANSLATED_PRODUCT`.
 
-- build the NRO with the weak Nintendo-data-free stub;
-- verify the pinned WiiCompiled submodule;
-- contain no local translated product or game-derived input.
-
-Real Switch validation must then show the existing M2 core still READY/PASS and the new stop point:
-
-`WAITING_FOR_TRANSLATED_PRODUCT`
-
-Only after that hardware report is returned should issue #18 be considered complete.
+Issue #18 is complete.
 
 ## Next execution slice
 
-After this boundary passes on hardware, the next local-only path is:
+The next local-only path is:
 
 1. generate the MKWii translated product with the pinned WiiCompiled translator from a user-owned dump;
 2. provide a strong translated-product adapter in the local build;

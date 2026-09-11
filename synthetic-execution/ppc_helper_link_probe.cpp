@@ -6,6 +6,12 @@
 #if defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK
 extern "C" void synthetic_translated_fast_track_start(CpuContext* ctx);
 
+// Nintendo-data-free stand-in for the translated PAL OSInitAlarm body. Real
+// local fast-track builds resolve this symbol from the user's generated shards.
+extern "C" __attribute__((noinline, used)) void func_801A961C(CpuContext* ctx) {
+    (void)ctx;
+}
+
 // Link-only coverage for helper families emitted by real translated shards.
 // Use WiiCompiled's own ISA declarations so this probe cannot drift from the
 // pinned runtime ABI. Retaining this function forces the references through the
@@ -27,6 +33,11 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
     // __start graph uses for PAL __OSGetSystemTime (0x801AAD7C).
     if (ctx) {
         InvokeDirectCpu<0x801AAD7Cu>(ctx);
+
+        // REGISTER_NATIVE_FUNCTION_AS makes OSInitAlarm a native winner while
+        // retaining its original translated body. Verify that the Switch HLE
+        // catalogue forwards that boundary back into translated code.
+        InvokeDirectCpu<0x801A961Cu>(ctx);
 
         // Cover the full early interrupt-state trio in one pass so a real
         // startup run cannot immediately fall from Disable into an uncovered

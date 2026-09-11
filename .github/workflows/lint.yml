@@ -58,7 +58,12 @@ jobs:
       - name: GitHub Actions lint
         run: |
           set -euo pipefail
-          actionlint -color
+          cat > /tmp/actionlint-shellcheck <<'EOF'
+          #!/usr/bin/env bash
+          exec shellcheck --severity=warning "$@"
+          EOF
+          chmod +x /tmp/actionlint-shellcheck
+          actionlint -color -shellcheck=/tmp/actionlint-shellcheck
 
       - name: Python lint and format
         run: |

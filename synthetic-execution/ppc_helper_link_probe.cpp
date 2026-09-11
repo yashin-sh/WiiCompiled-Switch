@@ -47,6 +47,14 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         InvokeDirectCpu<0x801A2098u>(ctx);
         ctx->gpr[3] = savedClearContextR3;
 
+        // OSSetCurrentContext follows OSClearContext during early thread setup.
+        // The null-context path still proves the native dispatch is compiled and
+        // linked while keeping the public probe independent of Nintendo data.
+        const std::uint32_t savedSetCurrentContextR3 = ctx->gpr[3];
+        ctx->gpr[3] = 0u;
+        InvokeDirectCpu<0x801A1E70u>(ctx);
+        ctx->gpr[3] = savedSetCurrentContextR3;
+
         // Cover the full early interrupt-state trio in one pass so a real
         // startup run cannot immediately fall from Disable into an uncovered
         // Enable/Restore boundary on the next hardware iteration.

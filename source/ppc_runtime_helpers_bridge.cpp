@@ -14,6 +14,7 @@
 #include "timebase_contract.h"
 
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 
@@ -22,7 +23,11 @@ namespace {
 constexpr std::uint32_t kBroadwayPvr = 0x00087200u;
 constexpr std::uint32_t kSystemTimeBaseHi = 0x800030D8u;
 constexpr std::uint32_t kSystemTimeBaseLo = 0x800030DCu;
+constexpr std::uint32_t kOSCurrentContextAddr = 0x800000D4u;
+constexpr std::uint32_t kOSContextModeFlagsOffset = 0x1A2u;
+constexpr std::uint16_t kOSContextInterruptsEnabledBit = 0x0002u;
 std::array<std::uint32_t, 2048> g_sprShadow{};
+std::atomic<bool> g_interruptsEnabled{true};
 const auto g_timeBaseStart = std::chrono::steady_clock::now();
 
 std::uint64_t GetTimeBase() noexcept {
@@ -31,6 +36,31 @@ std::uint64_t GetTimeBase() noexcept {
         std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count();
     return TimeBaseContract::NanosecondsToTicks(
         static_cast<std::uint64_t>(nanoseconds));
+}
+
+void UpdateCurrentContextInterruptFlag(bool enabled) noexcept {
+    if (!Memory::IsInitialized() || !Memory::Contains(kOSCurrentContextAddr, 4u)) {
+        return;
+    }
+
+    const std::uint32_t currentContext = Memory::Read32(kOSCurrentContextAddr);
+    if (currentContext == 0u) {
+        return;
+    }
+
+    const std::uint32_t modeFlagsAddr = currentContext + kOSContextModeFlagsOffset;
+    if (!Memory::Contains(modeFlagsAddr, 2u)) {
+        return;
+    }
+
+    const std::uint16_t modeFlags = Memory::Read16(modeFlagsAddr);
+    const std::uint16_t updated = enabled
+        ? static_cast<std::uint16_t>(modeFlags | kOSContextInterruptsEnabledBit)
+        : static_cast<std::uint16_t>(modeFlags &
+              static_cast<std::uint16_t>(~kOSContextInterruptsEnabledBit));
+    if (updated != modeFlags) {
+        Memory::Write16(modeFlagsAddr, updated);
+    }
 }
 
 } // namespace
@@ -139,6 +169,34 @@ extern "C" void mkw_switch_hle_os_get_system_time(CpuContext* cpu) noexcept {
     const std::uint64_t now = base + timeBase;
     cpu->gpr[3] = static_cast<std::uint32_t>(now >> 32);
     cpu->gpr[4] = static_cast<std::uint32_t>(now);
+}
+
+// Basic RVL interrupt state overrides. These mirror the pinned WiiCompiled HLE:
+// Disable/Enable/Restore return the previous interrupt-enabled state in r3 and
+// update bit 1 in the current guest OSContext's mode flags when one exists.
+extern "C" void mkw_switch_hle_os_disable_interrupts(CpuContext* cpu) noexcept {
+    const bool previous = g_interruptsEnabled.exchange(false, std::memory_order_acq_rel);
+    UpdateCurrentContextInterruptFlag(false);
+    if (cpu) {
+        cpu->gpr[3] = previous ? 1u : 0u;
+    }
+}
+
+extern "C" void mkw_switch_hle_os_enable_interrupts(CpuContext* cpu) noexcept {
+    const bool previous = g_interruptsEnabled.exchange(true, std::memory_order_acq_rel);
+    UpdateCurrentContextInterruptFlag(true);
+    if (cpu) {
+        cpu->gpr[3] = previous ? 1u : 0u;
+    }
+}
+
+extern "C" void mkw_switch_hle_os_restore_interrupts(CpuContext* cpu) noexcept {
+    const bool enable = cpu && cpu->gpr[3] != 0u;
+    const bool previous = g_interruptsEnabled.exchange(enable, std::memory_order_acq_rel);
+    UpdateCurrentContextInterruptFlag(enable);
+    if (cpu) {
+        cpu->gpr[3] = previous ? 1u : 0u;
+    }
 }
 
 #endif

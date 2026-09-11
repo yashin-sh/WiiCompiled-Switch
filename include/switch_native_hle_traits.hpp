@@ -10,6 +10,21 @@
 // traits outside abi_bridge.h lets blocker-driven HLE coverage grow without
 // turning the core ABI seam into a monolithic address catalogue.
 
+// REGISTER_NATIVE_FUNCTION_AS keeps the original guest body translated while
+// making a native wrapper the runtime winner. The pinned OSInitAlarm wrapper
+// simply forwards to that translated body, so preserve that exact boundary.
+extern "C" void func_801A961C(CpuContext* ctx);
+
+template <>
+struct KnownNativeCpuCall<0x801A961Cu> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (cpu) {
+            func_801A961C(cpu);
+        }
+    }
+};
+
 // RVL__EXIImm / EXIImm (PAL 0x80167F68). Pinned WiiCompiled reports immediate
 // transfers as successful. Read/RW transfers also clear the guest destination
 // bytes before returning so callers never consume stale EXI data.

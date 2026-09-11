@@ -39,8 +39,7 @@ struct StaticIndirectDispatchTable {
 // no desktop registry, allocation, mutex, or Nintendo data is needed here.
 void RegisterStaticIndirectDispatchTable(const StaticIndirectDispatchTable* table) noexcept;
 
-class StaticIndirectDispatchTableRegistrar {
-public:
+struct StaticIndirectDispatchTableRegistrar {
     explicit StaticIndirectDispatchTableRegistrar(const StaticIndirectDispatchTable* table) noexcept {
         RegisterStaticIndirectDispatchTable(table);
     }

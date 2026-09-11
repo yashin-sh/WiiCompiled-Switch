@@ -174,6 +174,19 @@ MKW_NATIVE_NOOP_TRAIT(801A165C); // DCStoreRange
 MKW_NATIVE_NOOP_TRAIT(801A168C); // DCFlushRangeNoSync
 MKW_NATIVE_NOOP_TRAIT(801A16B8); // DCStoreRangeNoSync
 
+// PAL cache-control entry points whose pinned WiiCompiled HLE is the shared
+// Cache_Maintenance_Stub. These have no guest-visible state change on the host.
+// Keep DCZeroRange and LC transfer/queue helpers out of this list: those have
+// real guest-memory or return-value semantics and must be ported faithfully.
+MKW_NATIVE_NOOP_TRAIT(801A15EC); // DCEnable
+MKW_NATIVE_NOOP_TRAIT(801A1710); // ICInvalidateRange
+MKW_NATIVE_NOOP_TRAIT(801A1744); // ICFlashInvalidate
+MKW_NATIVE_NOOP_TRAIT(801A1754); // ICEnable
+MKW_NATIVE_NOOP_TRAIT(801A1768); // __LCEnable
+MKW_NATIVE_NOOP_TRAIT(801A1834); // LCEnable
+MKW_NATIVE_NOOP_TRAIT(801A186C); // LCDisable
+MKW_NATIVE_NOOP_TRAIT(801A1AE4); // OS____CacheInit
+
 #undef MKW_NATIVE_NOOP_TRAIT
 
 // Keep the translated PPC ABI rule used by WiiCompiled: a callee may write

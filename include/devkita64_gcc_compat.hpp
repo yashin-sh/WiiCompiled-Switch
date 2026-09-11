@@ -61,3 +61,8 @@ inline void WriteStack64(std::uint32_t address, std::uint64_t value) {
     Memory::Write64(address, value);
 }
 } // namespace MemoryInline
+
+// Translated Switch builds preinclude this file before generated shards. Load
+// the small extension catalogue here so native/HLE target traits are visible
+// before any InvokeDirectCpu<Target> instantiation in generated code.
+#include "switch_native_hle_traits.hpp"

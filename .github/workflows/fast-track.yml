@@ -31,7 +31,9 @@ jobs:
           grep -Fq 'DispatchKnownTranslatedCpuTargetStatic<Target>(cpu)' include/abi_bridge.h
           grep -Fq 'InvokeDirectCpu<0x7F0001A0u>(ctx)' synthetic-execution/synthetic_execution_probe.cpp
           grep -Fq 'InvokeDirectCpu<0x7F0001C0u>(ctx)' synthetic-execution/synthetic_execution_probe.cpp
-          grep -Fq 'runtime/src/ppc_helpers.cpp' source/ppc_runtime_helpers_bridge.cpp
+          grep -Fq 'TimeBaseContract::NanosecondsToTicks' source/ppc_runtime_helpers_bridge.cpp
+          grep -Fq 'PPC_ReadSpr(std::uint32_t spr)' source/ppc_runtime_helpers_bridge.cpp
+          grep -Fq 'PPC_WriteSpr(std::uint32_t spr, std::uint32_t value)' source/ppc_runtime_helpers_bridge.cpp
           grep -Fq 'PPC_Mftb()' synthetic-execution/ppc_helper_link_probe.cpp
           grep -Fq 'PPC_Mftbu()' synthetic-execution/ppc_helper_link_probe.cpp
           grep -Fq 'PPC_ReadSpr(9u)' synthetic-execution/ppc_helper_link_probe.cpp

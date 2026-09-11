@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Normalize WiiCompiled two-word state-free returns for devkitA64 GCC.
 
 Pinned WiiCompiled emits `return { a, b };` from functions returning

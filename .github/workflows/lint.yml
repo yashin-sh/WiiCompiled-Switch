@@ -1,0 +1,102 @@
+name: lint
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install lint tools
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y shellcheck clang-format python3-venv
+
+          python3 -m venv /tmp/wc-lint-venv
+          /tmp/wc-lint-venv/bin/pip install --disable-pip-version-check ruff==0.16.7
+          echo "/tmp/wc-lint-venv/bin" >> "$GITHUB_PATH"
+
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL \
+            https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz \
+            | tar -xz -C "$HOME/.local/bin" actionlint
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Bash syntax
+        run: |
+          set -euo pipefail
+          mapfile -d '' scripts < <(find scripts -type f -name '*.sh' -print0)
+          if ((${#scripts[@]} == 0)); then
+            echo "No shell scripts found"
+            exit 0
+          fi
+          for script in "${scripts[@]}"; do
+            bash -n "$script"
+          done
+
+      - name: ShellCheck
+        run: |
+          set -euo pipefail
+          mapfile -d '' scripts < <(find scripts -type f -name '*.sh' -print0)
+          if ((${#scripts[@]} == 0)); then
+            echo "No shell scripts found"
+            exit 0
+          fi
+          shellcheck --severity=warning "${scripts[@]}"
+
+      - name: GitHub Actions lint
+        run: |
+          set -euo pipefail
+          cat > /tmp/actionlint-shellcheck <<'EOF'
+          #!/usr/bin/env bash
+          exec shellcheck --severity=warning "$@"
+          EOF
+          chmod +x /tmp/actionlint-shellcheck
+          actionlint -color -shellcheck=/tmp/actionlint-shellcheck
+
+      - name: Python lint and format
+        run: |
+          set -euo pipefail
+          mapfile -t python_files < <(git ls-files 'scripts/*.py')
+          if ((${#python_files[@]} == 0)); then
+            echo "No Python scripts found"
+            exit 0
+          fi
+          ruff check "${python_files[@]}"
+          ruff format --check "${python_files[@]}"
+
+      - name: C and C++ format for changed first-party files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${BASE_SHA:-}" || "$BASE_SHA" =~ ^0+$ ]]; then
+            BASE_SHA="$(git rev-list --max-parents=0 HEAD | tail -n1)"
+          fi
+
+          mapfile -t cpp_files < <(
+            git diff --name-only --diff-filter=ACMRT "$BASE_SHA" HEAD -- \
+              '*.c' '*.cc' '*.cpp' '*.h' '*.hh' '*.hpp' \
+              | grep -Ev '^(third_party/|local-product/generated/)' \
+              || true
+          )
+
+          if ((${#cpp_files[@]} == 0)); then
+            echo "No changed first-party C/C++ files to format-check"
+            exit 0
+          fi
+
+          printf 'clang-format checking %s\n' "${cpp_files[@]}"
+          clang-format --dry-run --Werror "${cpp_files[@]}"

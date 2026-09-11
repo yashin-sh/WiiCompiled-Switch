@@ -23,6 +23,16 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
     // __start graph uses for PAL __OSGetSystemTime (0x801AAD7C).
     if (ctx) {
         InvokeDirectCpu<0x801AAD7Cu>(ctx);
+
+        // Cover the full early interrupt-state trio in one pass so a real
+        // startup run cannot immediately fall from Disable into an uncovered
+        // Enable/Restore boundary on the next hardware iteration.
+        const std::uint32_t savedR3 = ctx->gpr[3];
+        InvokeDirectCpu<0x801A65ACu>(ctx);
+        InvokeDirectCpu<0x801A65C0u>(ctx);
+        ctx->gpr[3] = 1u;
+        InvokeDirectCpu<0x801A65D4u>(ctx);
+        ctx->gpr[3] = savedR3;
     }
 
     // Keep the existing synthetic startup graph auditable in the same ELF.

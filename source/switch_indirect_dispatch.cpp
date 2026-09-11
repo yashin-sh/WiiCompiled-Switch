@@ -1,5 +1,9 @@
-#include "abi_bridge.h"
 #include "switch_indirect_dispatch.hpp"
+
+#if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
+    (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
+
+#include "abi_bridge.h"
 
 #include <atomic>
 #include <cstddef>
@@ -45,72 +49,63 @@ const RawDispatchRecord* FindStaticIndirectDispatchEntry(
         }
     }
 
-    return lower < first + count && table->entries[lower].address == address
-        ? &table->entries[lower]
-        : nullptr;
+    if (lower < first + count && table->entries[lower].address == address) {
+        return &table->entries[lower];
+    }
+    return nullptr;
 }
 
-class NonvolatileFprGuard {
-public:
+struct NonvolatileFprGuard {
     NonvolatileFprGuard(CpuContext* cpu, std::uint32_t mask) noexcept
-        : cpu_(cpu), mask_(mask & kPpcAllNonvolatileFprMask) {
-        if (!cpu_) {
+        : cpu(cpu), mask(mask & kPpcAllNonvolatileFprMask) {
+        if (!cpu) {
             return;
         }
         for (std::uint32_t reg = 14u; reg <= 31u; ++reg) {
-            if ((mask_ & (1u << reg)) != 0u) {
-                saved_[reg - 14u] = cpu_->fpr[reg];
+            if ((this->mask & (1u << reg)) != 0u) {
+                saved[reg - 14u] = cpu->fpr[reg];
             }
         }
     }
 
     ~NonvolatileFprGuard() noexcept {
-        if (!cpu_) {
+        if (!cpu) {
             return;
         }
         for (std::uint32_t reg = 14u; reg <= 31u; ++reg) {
-            if ((mask_ & (1u << reg)) != 0u) {
-                cpu_->fpr[reg] = saved_[reg - 14u];
+            if ((mask & (1u << reg)) != 0u) {
+                cpu->fpr[reg] = saved[reg - 14u];
             }
         }
     }
 
-    NonvolatileFprGuard(const NonvolatileFprGuard&) = delete;
-    NonvolatileFprGuard& operator=(const NonvolatileFprGuard&) = delete;
-
-private:
-    CpuContext* cpu_ = nullptr;
-    std::uint32_t mask_ = 0u;
-    PPC_FPR saved_[18]{};
+    CpuContext* cpu = nullptr;
+    std::uint32_t mask = 0u;
+    PPC_FPR saved[18]{};
 };
 
-class NonvolatileGprGuard {
-public:
+struct NonvolatileGprGuard {
     NonvolatileGprGuard(CpuContext* cpu, bool enabled) noexcept
-        : cpu_(enabled ? cpu : nullptr) {
-        if (!cpu_) {
+        : cpu(enabled ? cpu : nullptr) {
+        if (!this->cpu) {
             return;
         }
         for (std::uint32_t reg = 14u; reg <= 31u; ++reg) {
-            saved_[reg - 14u] = cpu_->gpr[reg];
+            saved[reg - 14u] = this->cpu->gpr[reg];
         }
     }
 
     ~NonvolatileGprGuard() noexcept {
-        if (!cpu_) {
+        if (!cpu) {
             return;
         }
         for (std::uint32_t reg = 14u; reg <= 31u; ++reg) {
-            cpu_->gpr[reg] = saved_[reg - 14u];
+            cpu->gpr[reg] = saved[reg - 14u];
         }
     }
 
-    NonvolatileGprGuard(const NonvolatileGprGuard&) = delete;
-    NonvolatileGprGuard& operator=(const NonvolatileGprGuard&) = delete;
-
-private:
-    CpuContext* cpu_ = nullptr;
-    std::uint32_t saved_[18]{};
+    CpuContext* cpu = nullptr;
+    std::uint32_t saved[18]{};
 };
 } // namespace
 
@@ -134,3 +129,13 @@ bool mkw_switch_try_dispatch_indirect(std::uint32_t target, CpuContext* cpu) {
     record->entry(cpu);
     return true;
 }
+
+#else
+
+void RegisterStaticIndirectDispatchTable(const StaticIndirectDispatchTable*) noexcept {}
+
+bool mkw_switch_try_dispatch_indirect(std::uint32_t, CpuContext*) {
+    return false;
+}
+
+#endif

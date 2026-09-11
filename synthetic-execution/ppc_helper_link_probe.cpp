@@ -77,6 +77,12 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         InvokeDirectCpu<0x80167E78u>(ctx); // SetExiInterruptMask
         ctx->gpr[3] = savedR3;
 
+        // SI initialization and sampling-rate setup are host no-ops upstream;
+        // they skip Wii controller-port MMIO while preserving guest CPU state.
+        InvokeDirectCpu<0x801B2DE0u>(ctx); // SIInit
+        InvokeDirectCpu<0x801B3ACCu>(ctx); // SISetSamplingRate
+        ctx->gpr[3] = savedR3;
+
         // PPC SDK startup clears/configures the performance monitor through
         // MMCR0/MMCR1 and PMC1..PMC4. WiiCompiled's pinned HLE treats these
         // writes as no-ops on the host, so compile all six through the same

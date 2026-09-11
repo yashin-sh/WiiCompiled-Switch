@@ -39,6 +39,14 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         // catalogue forwards that boundary back into translated code.
         InvokeDirectCpu<0x801A961Cu>(ctx);
 
+        // OSClearContext is a real guest-memory bookkeeping HLE in the pinned
+        // runtime. Exercise its null-context path here so public CI validates
+        // compile/link/dispatch without assuming a synthetic guest allocation.
+        const std::uint32_t savedClearContextR3 = ctx->gpr[3];
+        ctx->gpr[3] = 0u;
+        InvokeDirectCpu<0x801A2098u>(ctx);
+        ctx->gpr[3] = savedClearContextR3;
+
         // Cover the full early interrupt-state trio in one pass so a real
         // startup run cannot immediately fall from Disable into an uncovered
         // Enable/Restore boundary on the next hardware iteration.

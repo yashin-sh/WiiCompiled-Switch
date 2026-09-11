@@ -25,6 +25,37 @@ struct KnownNativeCpuCall<0x801A961Cu> {
     }
 };
 
+// OSClearContext (PAL 0x801A2098). Match pinned WiiCompiled's guest OSContext
+// bookkeeping: clear the saved-state/mode halfwords and drop the global
+// exception-context pointer when it references the context being cleared.
+template <>
+struct KnownNativeCpuCall<0x801A2098u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        const std::uint32_t contextAddr = cpu->gpr[3];
+        if (contextAddr == 0u) {
+            return;
+        }
+
+        try {
+            Memory::Write16(contextAddr + 0x1A0u, 0u);
+            Memory::Write16(contextAddr + 0x1A2u, 0u);
+
+            constexpr std::uint32_t kOSExceptionContextAddr = 0x800000D8u;
+            if (Memory::Read32(kOSExceptionContextAddr) == contextAddr) {
+                Memory::Write32(kOSExceptionContextAddr, 0u);
+            }
+        } catch (...) {
+            // Pinned WiiCompiled treats invalid guest bookkeeping as a logged
+            // memory fault and returns; the Switch fast-track has no logger here.
+        }
+    }
+};
+
 // RVL__EXIImm / EXIImm (PAL 0x80167F68). Pinned WiiCompiled reports immediate
 // transfers as successful. Read/RW transfers also clear the guest destination
 // bytes before returning so callers never consume stale EXI data.

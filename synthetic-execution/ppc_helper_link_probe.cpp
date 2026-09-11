@@ -47,6 +47,15 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         InvokeDirectCpu<0x801A65D4u>(ctx);
         ctx->gpr[3] = savedR3;
 
+        // WiiCompiled native-overrides the whole early data-cache range family.
+        // The Switch port has no GX RAM tracker yet, so these preserve the guest
+        // CPU context while host cache coherency is handled by Horizon/AArch64.
+        InvokeDirectCpu<0x801A1600u>(ctx); // DCInvalidateRange
+        InvokeDirectCpu<0x801A162Cu>(ctx); // DCFlushRange
+        InvokeDirectCpu<0x801A165Cu>(ctx); // DCStoreRange
+        InvokeDirectCpu<0x801A168Cu>(ctx); // DCFlushRangeNoSync
+        InvokeDirectCpu<0x801A16B8u>(ctx); // DCStoreRangeNoSync
+
         // PPC SDK startup clears/configures the performance monitor through
         // MMCR0/MMCR1 and PMC1..PMC4. WiiCompiled's pinned HLE treats these
         // writes as no-ops on the host, so compile all six through the same

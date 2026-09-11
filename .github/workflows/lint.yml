@@ -76,7 +76,7 @@ jobs:
           ruff check "${python_files[@]}"
           ruff format --check "${python_files[@]}"
 
-      - name: C and C++ format for changed first-party files
+      - name: C and C++ format for changed first-party lines
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
@@ -86,17 +86,24 @@ jobs:
             BASE_SHA="$(git rev-list --max-parents=0 HEAD | tail -n1)"
           fi
 
-          mapfile -t cpp_files < <(
-            git diff --name-only --diff-filter=ACMRT "$BASE_SHA" HEAD -- \
-              '*.c' '*.cc' '*.cpp' '*.h' '*.hh' '*.hpp' \
-              | grep -Ev '^(third_party/|local-product/generated/)' \
-              || true
-          )
-
-          if ((${#cpp_files[@]} == 0)); then
-            echo "No changed first-party C/C++ files to format-check"
-            exit 0
+          if command -v clang-format-diff >/dev/null 2>&1; then
+            format_diff=(clang-format-diff -p1 -binary clang-format)
+          else
+            format_script="$(find /usr -type f -name 'clang-format-diff.py' -print -quit 2>/dev/null || true)"
+            test -n "$format_script"
+            format_diff=(python3 "$format_script" -p1 -binary clang-format)
           fi
 
-          printf 'clang-format checking %s\n' "${cpp_files[@]}"
-          clang-format --dry-run --Werror "${cpp_files[@]}"
+          git diff -U0 --no-color "$BASE_SHA" HEAD -- \
+            '*.c' '*.cc' '*.cpp' '*.h' '*.hh' '*.hpp' \
+            ':(exclude)third_party/**' \
+            ':(exclude)local-product/generated/**' \
+            | "${format_diff[@]}" > /tmp/clang-format.diff
+
+          if [[ -s /tmp/clang-format.diff ]]; then
+            cat /tmp/clang-format.diff
+            echo "Changed first-party C/C++ lines are not clang-formatted" >&2
+            exit 1
+          fi
+
+          echo "Changed first-party C/C++ lines are clang-formatted"

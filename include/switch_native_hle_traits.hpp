@@ -30,7 +30,7 @@ struct KnownNativeCpuCall<0x80167F68u> {
                 for (std::uint32_t i = 0; i < length; ++i) {
                     Memory::Write8(buffer + i, 0u);
                 }
-            } catch (const Memory::AccessViolation&) {
+            } catch (...) {
                 // Match the pinned host HLE: an unmapped guest buffer is a
                 // best-effort write failure, not an EXI transaction failure.
             }

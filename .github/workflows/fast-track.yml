@@ -29,15 +29,20 @@ jobs:
           grep -Fq '__libnx_exception_handler' source/fast_track_crash_diagnostics.cpp
           grep -Fq 'if constexpr (KnownTranslatedCpuCall<Target>::kAvailable)' include/abi_bridge.h
           grep -Fq 'DispatchKnownTranslatedCpuTargetStatic<Target>(cpu)' include/abi_bridge.h
+          grep -Fq 'KnownNativeCpuCall<0x801AAD7Cu>' include/abi_bridge.h
+          grep -Fq 'mkw_switch_hle_os_get_system_time(cpu)' include/abi_bridge.h
           grep -Fq 'InvokeDirectCpu<0x7F0001A0u>(ctx)' synthetic-execution/synthetic_execution_probe.cpp
           grep -Fq 'InvokeDirectCpu<0x7F0001C0u>(ctx)' synthetic-execution/synthetic_execution_probe.cpp
           grep -Fq 'TimeBaseContract::NanosecondsToTicks' source/ppc_runtime_helpers_bridge.cpp
           grep -Fq 'PPC_ReadSpr(std::uint32_t spr)' source/ppc_runtime_helpers_bridge.cpp
           grep -Fq 'PPC_WriteSpr(std::uint32_t spr, std::uint32_t value)' source/ppc_runtime_helpers_bridge.cpp
+          grep -Fq 'mkw_switch_hle_os_get_system_time(CpuContext* cpu)' source/ppc_runtime_helpers_bridge.cpp
+          grep -Fq 'Memory::Read32(kSystemTimeBaseHi)' source/ppc_runtime_helpers_bridge.cpp
           grep -Fq 'PPC_Mftb()' synthetic-execution/ppc_helper_link_probe.cpp
           grep -Fq 'PPC_Mftbu()' synthetic-execution/ppc_helper_link_probe.cpp
           grep -Fq 'PPC_ReadSpr(9u)' synthetic-execution/ppc_helper_link_probe.cpp
           grep -Fq 'PPC_WriteSpr(9u, ctr)' synthetic-execution/ppc_helper_link_probe.cpp
+          grep -Fq 'InvokeDirectCpu<0x801AAD7Cu>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
 
       - name: Locate AArch64 nm
         run: |
@@ -53,7 +58,7 @@ jobs:
             MKW_SYNTHETIC_FAST_TRACK=1 \
             TARGET=WiiCompiled-Switch-synthetic-fast-track \
             BUILD=build-synthetic-fast-track \
-            APP_VERSION=0.0.12-synthetic-fast-track-ppc-helpers \
+            APP_VERSION=0.0.13-synthetic-fast-track-os-time-hle \
             TRANSLATED_RETAIN_SYMBOL=synthetic_ppc_helper_link_probe \
             DEFINES='-DMKW_SYNTHETIC_EXECUTION=1 -DMKW_SYNTHETIC_FAST_TRACK=1 -DMKW_ENABLE_DATA_INIT_HANDOFF=1 -DMKW_ENABLE_TRANSLATED_EXECUTION_HANDOFF=1'
 
@@ -73,6 +78,7 @@ jobs:
           grep -E ' T PPC_Mftbu$' /tmp/fast-track.nm
           grep -E ' T PPC_ReadSpr$' /tmp/fast-track.nm
           grep -E ' T PPC_WriteSpr$' /tmp/fast-track.nm
+          grep -E ' T mkw_switch_hle_os_get_system_time$' /tmp/fast-track.nm
           grep -E ' T mkw_switch_report_unsupported_translated_dispatch$' /tmp/fast-track.nm
           grep -E ' T __libnx_exception_handler$' /tmp/fast-track.nm
 

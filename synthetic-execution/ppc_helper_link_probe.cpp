@@ -1,4 +1,4 @@
-#include "ppc_runtime.h"
+#include "abi_bridge.h"
 #include "isa/ppc_isa_int.h"
 
 #include <cstdint>
@@ -18,6 +18,12 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
     const std::uint32_t ctr = ctx ? ctx->ctr : 0u;
     PPC_WriteSpr(9u, ctr);
     (void)PPC_ReadSpr(9u);
+
+    // Exercise the same static native-dispatch path that the real translated
+    // __start graph uses for PAL __OSGetSystemTime (0x801AAD7C).
+    if (ctx) {
+        InvokeDirectCpu<0x801AAD7Cu>(ctx);
+    }
 
     // Keep the existing synthetic startup graph auditable in the same ELF.
     if (ctx) {

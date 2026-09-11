@@ -6,10 +6,10 @@
 #if defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK
 extern "C" void synthetic_translated_fast_track_start(CpuContext* ctx);
 
-// Link-only coverage for the helper family emitted by real translated shards.
+// Link-only coverage for helper families emitted by real translated shards.
 // Use WiiCompiled's own ISA declarations so this probe cannot drift from the
-// pinned runtime ABI. Retaining this function forces all four helper references
-// through the devkitA64 linker while remaining Nintendo-data-free.
+// pinned runtime ABI. Retaining this function forces the references through the
+// devkitA64 linker while remaining Nintendo-data-free.
 extern "C" __attribute__((noinline, used))
 void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
     volatile auto timebase = PPC_Mftb() ^ PPC_Mftbu();
@@ -18,6 +18,10 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
     const std::uint32_t ctr = ctx ? ctx->ctr : 0u;
     PPC_WriteSpr(9u, ctr);
     (void)PPC_ReadSpr(9u);
+
+    // OS::Init emits mtfsb1 while configuring FPSCR. Force the exact helper
+    // through the public AArch64 link so a missing Switch bridge is caught by CI.
+    PPC_Mtfsb1(31u);
 
     // Exercise the same static native-dispatch path that the real translated
     // __start graph uses for PAL __OSGetSystemTime (0x801AAD7C).

@@ -113,10 +113,9 @@ struct KnownNativeCpuCall<0x801A65D4u> {
     }
 };
 
-// Broadway performance-monitor SPR writes used during SDK startup. The pinned
-// WiiCompiled runtime deliberately replaces MMCR0/MMCR1 and PMC1..PMC4 writes
-// with native no-ops because host execution has no guest-visible PPC performance
-// monitor. Preserve the CpuContext exactly and continue the translated graph.
+// Broadway hardware-register helpers that the pinned WiiCompiled runtime
+// intentionally replaces with host no-ops. Keep the catalogue narrowly scoped
+// to helpers whose upstream HLE has no guest-visible state change.
 #define MKW_NATIVE_NOOP_TRAIT(addr)            \
     template <>                                \
     struct KnownNativeCpuCall<0x##addr##u> {   \
@@ -124,12 +123,20 @@ struct KnownNativeCpuCall<0x801A65D4u> {
         static inline void Invoke(CpuContext*) noexcept {} \
     }
 
+// Performance-monitor writes.
 MKW_NATIVE_NOOP_TRAIT(8012E5B8); // PPCMtmmcr0
 MKW_NATIVE_NOOP_TRAIT(8012E5C0); // PPCMtmmcr1
 MKW_NATIVE_NOOP_TRAIT(8012E5C8); // PPCMtpmc1
 MKW_NATIVE_NOOP_TRAIT(8012E5D0); // PPCMtpmc2
 MKW_NATIVE_NOOP_TRAIT(8012E5D8); // PPCMtpmc3
 MKW_NATIVE_NOOP_TRAIT(8012E5E0); // PPCMtpmc4
+
+// Write-pipe/speculation/HID4 helpers. The pinned runtime stubs these exact
+// entry points; do not fold HID2 here because its HLE updates CpuContext::hid2.
+MKW_NATIVE_NOOP_TRAIT(8012E640); // PPCMfwpar
+MKW_NATIVE_NOOP_TRAIT(8012E64C); // PPCMtwpar
+MKW_NATIVE_NOOP_TRAIT(8012E654); // PPCDisableSpeculation
+MKW_NATIVE_NOOP_TRAIT(8012E684); // PPCMthid4
 
 #undef MKW_NATIVE_NOOP_TRAIT
 

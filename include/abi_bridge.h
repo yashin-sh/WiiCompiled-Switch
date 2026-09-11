@@ -187,7 +187,43 @@ MKW_NATIVE_NOOP_TRAIT(801A1834); // LCEnable
 MKW_NATIVE_NOOP_TRAIT(801A186C); // LCDisable
 MKW_NATIVE_NOOP_TRAIT(801A1AE4); // OS____CacheInit
 
+// EXI interrupt masking has no host-side effect in the pinned HLE. Real EXI
+// transactions are deliberately not folded into this no-op family.
+MKW_NATIVE_NOOP_TRAIT(80167E78); // SetExiInterruptMask
+
 #undef MKW_NATIVE_NOOP_TRAIT
+
+// Early EXI control calls are explicit native overrides in pinned WiiCompiled.
+// They skip Hollywood MMIO and publish the same constant results in guest r3.
+template <>
+struct KnownNativeCpuCall<0x80168FA0u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (cpu) {
+            cpu->gpr[3] = 0u;
+        }
+    }
+};
+
+template <>
+struct KnownNativeCpuCall<0x801689D0u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (cpu) {
+            cpu->gpr[3] = 1u;
+        }
+    }
+};
+
+template <>
+struct KnownNativeCpuCall<0x80168B00u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (cpu) {
+            cpu->gpr[3] = 1u;
+        }
+    }
+};
 
 // Keep the translated PPC ABI rule used by WiiCompiled: a callee may write
 // f14..f31 internally, but those registers are nonvolatile to its caller.

@@ -68,6 +68,15 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         InvokeDirectCpu<0x801A186Cu>(ctx); // LCDisable
         InvokeDirectCpu<0x801A1AE4u>(ctx); // OS____CacheInit
 
+        // Early EXI setup is native/HLE in pinned WiiCompiled. Init skips all
+        // Hollywood MMIO and returns 0; Select/Deselect are stubbed successful,
+        // while EXI interrupt masking is a host no-op.
+        InvokeDirectCpu<0x80168FA0u>(ctx); // EXIInit -> 0
+        InvokeDirectCpu<0x801689D0u>(ctx); // EXISelect -> 1
+        InvokeDirectCpu<0x80168B00u>(ctx); // EXIDeselect -> 1
+        InvokeDirectCpu<0x80167E78u>(ctx); // SetExiInterruptMask
+        ctx->gpr[3] = savedR3;
+
         // PPC SDK startup clears/configures the performance monitor through
         // MMCR0/MMCR1 and PMC1..PMC4. WiiCompiled's pinned HLE treats these
         // writes as no-ops on the host, so compile all six through the same

@@ -3,6 +3,7 @@
 #include "abi_bridge.h"
 #include "memory.h"
 
+#include <atomic>
 #include <cstdint>
 
 // Switch-side native/HLE extensions for translated targets that the pinned
@@ -53,6 +54,84 @@ struct KnownNativeCpuCall<0x801A2098u> {
             // Pinned WiiCompiled treats invalid guest bookkeeping as a logged
             // memory fault and returns; the Switch fast-track has no logger here.
         }
+    }
+};
+
+// Query the shared Switch interrupt state without introducing a second mirror.
+// DisableInterrupts publishes the previous value; restoring it immediately
+// leaves both the host atomic and the current guest-context bit unchanged.
+inline bool MkwSwitchQueryInterruptsEnabled(CpuContext* cpu) noexcept {
+    if (!cpu) {
+        return false;
+    }
+
+    const std::uint32_t savedR3 = cpu->gpr[3];
+    mkw_switch_hle_os_disable_interrupts(cpu);
+    const bool enabled = cpu->gpr[3] != 0u;
+    cpu->gpr[3] = enabled ? 1u : 0u;
+    mkw_switch_hle_os_restore_interrupts(cpu);
+    cpu->gpr[3] = savedR3;
+    return enabled;
+}
+
+// OSSetCurrentContext (PAL 0x801A1E70). Preserve pinned WiiCompiled semantics:
+// publish the physical/current context globals, synchronize the exception-state
+// flag, and mirror the current interrupt-enabled state into OSContext mode bit 1.
+template <>
+struct KnownNativeCpuCall<0x801A1E70u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu || !Memory::IsInitialized()) {
+            return;
+        }
+
+        constexpr std::uint32_t kOSPhysicalContextAddr = 0x800000C0u;
+        constexpr std::uint32_t kOSCurrentContextAddr = 0x800000D4u;
+        constexpr std::uint32_t kOSExceptionContextAddr = 0x800000D8u;
+        constexpr std::uint32_t kStateFlagsOffset = 0x19Cu;
+        constexpr std::uint32_t kModeFlagsOffset = 0x1A2u;
+        constexpr std::uint16_t kInterruptsEnabledBit = 0x0002u;
+
+        const std::uint32_t contextAddr = cpu->gpr[3];
+        if (!Memory::Contains(kOSPhysicalContextAddr, 4u) ||
+            !Memory::Contains(kOSCurrentContextAddr, 4u)) {
+            return;
+        }
+
+        if (contextAddr == 0u) {
+            Memory::Write32(kOSPhysicalContextAddr, 0u);
+            Memory::Write32(kOSCurrentContextAddr, 0u);
+            return;
+        }
+
+        Memory::Write32(kOSPhysicalContextAddr, contextAddr & 0x3FFFFFFFu);
+        Memory::Write32(kOSCurrentContextAddr, contextAddr);
+
+        const std::uint32_t stateFlagsAddr = contextAddr + kStateFlagsOffset;
+        const std::uint32_t modeFlagsAddr = contextAddr + kModeFlagsOffset;
+        if (!Memory::Contains(kOSExceptionContextAddr, 4u) ||
+            !Memory::Contains(stateFlagsAddr, 4u) ||
+            !Memory::Contains(modeFlagsAddr, 2u)) {
+            return;
+        }
+
+        const std::uint32_t exceptionContext = Memory::Read32(kOSExceptionContextAddr);
+        std::uint32_t stateFlags = Memory::Read32(stateFlagsAddr);
+        if (exceptionContext == contextAddr) {
+            stateFlags |= 0x2000u;
+        } else {
+            stateFlags &= ~0x2000u;
+            std::atomic_thread_fence(std::memory_order_seq_cst);
+        }
+        Memory::Write32(stateFlagsAddr, stateFlags);
+
+        std::uint16_t modeFlags = Memory::Read16(modeFlagsAddr);
+        if (MkwSwitchQueryInterruptsEnabled(cpu)) {
+            modeFlags |= kInterruptsEnabledBit;
+        } else {
+            modeFlags &= static_cast<std::uint16_t>(~kInterruptsEnabledBit);
+        }
+        Memory::Write16(modeFlagsAddr, modeFlags);
     }
 };
 

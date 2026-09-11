@@ -61,3 +61,11 @@ inline void WriteStack64(std::uint32_t address, std::uint64_t value) {
     Memory::Write64(address, value);
 }
 } // namespace MemoryInline
+
+// Only real translated execution builds have WiiCompiled's runtime ABI include
+// paths and need the blocker-driven native/HLE trait extension catalogue. Keep
+// generic GCC compatibility probes independent of ppc_runtime.h.
+#if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
+    (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
+#include "switch_native_hle_traits.hpp"
+#endif

@@ -26,6 +26,12 @@ void mkw_switch_report_unsupported_translated_dispatch(
 // The pinned WiiCompiled runtime treats this address as a native override and
 // publishes the 64-bit result in guest r3:r4.
 void mkw_switch_hle_os_get_system_time(CpuContext* cpu) noexcept;
+
+// Switch-native early OS interrupt-state overrides. These mirror the pinned
+// WiiCompiled HLE and publish the previous interrupt state in guest r3.
+void mkw_switch_hle_os_disable_interrupts(CpuContext* cpu) noexcept;
+void mkw_switch_hle_os_enable_interrupts(CpuContext* cpu) noexcept;
+void mkw_switch_hle_os_restore_interrupts(CpuContext* cpu) noexcept;
 }
 
 inline void ApplyRuntimeCallOptions(std::uint32_t, CpuContext*) noexcept {}
@@ -77,6 +83,33 @@ struct KnownNativeCpuCall<0x801AAD7Cu> {
     static constexpr bool kAvailable = true;
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_os_get_system_time(cpu);
+    }
+};
+
+// PAL OSDisableInterrupts/OSEnableInterrupts/OSRestoreInterrupts. WiiCompiled
+// provides native overrides for the interrupt-state bookkeeping rather than
+// touching Broadway/Hollywood interrupt hardware directly.
+template <>
+struct KnownNativeCpuCall<0x801A65ACu> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_os_disable_interrupts(cpu);
+    }
+};
+
+template <>
+struct KnownNativeCpuCall<0x801A65C0u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_os_enable_interrupts(cpu);
+    }
+};
+
+template <>
+struct KnownNativeCpuCall<0x801A65D4u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_os_restore_interrupts(cpu);
     }
 };
 

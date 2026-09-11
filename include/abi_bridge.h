@@ -45,6 +45,25 @@ struct KnownTranslatedCpuCall {
         static constexpr void (*Entry)(CpuContext*) = &winner;                            \
     }
 
+// Minimal native/HLE catalog for guest entry points that WiiCompiled itself
+// deliberately excludes from translation. Keep these semantics aligned with
+// the pinned upstream runtime instead of attempting to execute raw Wii
+// hardware setup on Horizon.
+template <std::uint32_t Target>
+struct KnownNativeCpuCall {
+    static constexpr bool kAvailable = false;
+    static inline void Invoke(CpuContext*) noexcept {}
+};
+
+// PAL __init_hardware. The pinned WiiCompiled runtime replaces this entire
+// routine with a native no-op, avoiding PPC machine-state/cache/FPU hardware
+// initialization that has no meaning on Switch. Preserve the guest CpuContext.
+template <>
+struct KnownNativeCpuCall<0x80006348u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext*) noexcept {}
+};
+
 // Keep the translated PPC ABI rule used by WiiCompiled: a callee may write
 // f14..f31 internally, but those registers are nonvolatile to its caller.
 // Generated trait headers provide the exact write mask for each direct target.
@@ -106,6 +125,14 @@ template <std::uint32_t Target>
 inline void InvokeDirectCpu(CpuContext* cpu) {
     static_assert(Target != 0u, "InvokeDirectCpu cannot target address 0");
 
+    // Native/HLE overrides win first because their guest entry points are
+    // intentionally excluded from the translated graph by WiiCompiled.
+    if constexpr (KnownNativeCpuCall<Target>::kAvailable) {
+        ApplyRuntimeCallOptions(Target, cpu);
+        KnownNativeCpuCall<Target>::Invoke(cpu);
+        return;
+    }
+
     // The generated aggregate shard includes a sibling trait header containing
     // every translated direct-call dependency visible to that shard. Use it.
     // This keeps the fast-track on the real translated call graph without
@@ -116,8 +143,8 @@ inline void InvokeDirectCpu(CpuContext* cpu) {
         return;
     }
 
-    // A target not represented by a translated trait is a genuine boundary for
-    // the current Switch port (HLE/native/dynamic/etc.). Record it durably.
+    // A target not represented by a translated trait or native HLE is a genuine
+    // boundary for the current Switch port. Record it durably before stopping.
     mkw_switch_report_unsupported_translated_dispatch("DIRECT", Target, cpu);
     std::abort();
 }

@@ -101,8 +101,15 @@ void synthetic_translated_fast_track_start(CpuContext* ctx) {
         return;
     }
 
-    // Model a broad startup attempt with the same generic direct-call seam that
-    // real aggregate shards use for translated targets requiring the cold path.
+    // Model the real startup boundary first: __init_hardware is a native HLE
+    // override in WiiCompiled and must return without falling into the
+    // unsupported-dispatch abort path.
+#if defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK
+    InvokeDirectCpu<0x80006348u>(ctx);
+#endif
+
+    // Then traverse translated direct-call edges through the same generic seam
+    // used by aggregate shards in the real fast-track build.
     ctx->gpr[1] = kSyntheticStack;
     ctx->gpr[2] = kSyntheticSda2;
     ctx->gpr[13] = kSyntheticSda1;

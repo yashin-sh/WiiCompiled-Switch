@@ -33,6 +33,17 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         ctx->gpr[3] = 1u;
         InvokeDirectCpu<0x801A65D4u>(ctx);
         ctx->gpr[3] = savedR3;
+
+        // PPC SDK startup clears/configures the performance monitor through
+        // MMCR0/MMCR1 and PMC1..PMC4. WiiCompiled's pinned HLE treats these
+        // writes as no-ops on the host, so compile all six through the same
+        // KnownNativeCpuCall path used by the real fast-track graph.
+        InvokeDirectCpu<0x8012E5B8u>(ctx);
+        InvokeDirectCpu<0x8012E5C0u>(ctx);
+        InvokeDirectCpu<0x8012E5C8u>(ctx);
+        InvokeDirectCpu<0x8012E5D0u>(ctx);
+        InvokeDirectCpu<0x8012E5D8u>(ctx);
+        InvokeDirectCpu<0x8012E5E0u>(ctx);
     }
 
     // Keep the existing synthetic startup graph auditable in the same ELF.

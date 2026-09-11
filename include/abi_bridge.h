@@ -113,6 +113,26 @@ struct KnownNativeCpuCall<0x801A65D4u> {
     }
 };
 
+// Broadway performance-monitor SPR writes used during SDK startup. The pinned
+// WiiCompiled runtime deliberately replaces MMCR0/MMCR1 and PMC1..PMC4 writes
+// with native no-ops because host execution has no guest-visible PPC performance
+// monitor. Preserve the CpuContext exactly and continue the translated graph.
+#define MKW_NATIVE_NOOP_TRAIT(addr)            \
+    template <>                                \
+    struct KnownNativeCpuCall<0x##addr##u> {   \
+        static constexpr bool kAvailable = true; \
+        static inline void Invoke(CpuContext*) noexcept {} \
+    }
+
+MKW_NATIVE_NOOP_TRAIT(8012E5B8); // PPCMtmmcr0
+MKW_NATIVE_NOOP_TRAIT(8012E5C0); // PPCMtmmcr1
+MKW_NATIVE_NOOP_TRAIT(8012E5C8); // PPCMtpmc1
+MKW_NATIVE_NOOP_TRAIT(8012E5D0); // PPCMtpmc2
+MKW_NATIVE_NOOP_TRAIT(8012E5D8); // PPCMtpmc3
+MKW_NATIVE_NOOP_TRAIT(8012E5E0); // PPCMtpmc4
+
+#undef MKW_NATIVE_NOOP_TRAIT
+
 // Keep the translated PPC ABI rule used by WiiCompiled: a callee may write
 // f14..f31 internally, but those registers are nonvolatile to its caller.
 // Generated trait headers provide the exact write mask for each direct target.

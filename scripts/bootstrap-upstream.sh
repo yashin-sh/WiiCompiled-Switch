@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 PIN=a135beb201042b20f390c6695ca6b26768820fb4
 DEST="$ROOT/third_party/WiiCompiled"
 

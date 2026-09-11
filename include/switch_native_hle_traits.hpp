@@ -42,19 +42,32 @@ struct KnownNativeCpuCall<0x80167F68u> {
 
 // The pinned host HLE treats DMA completion, sync, and unlock as immediate
 // success while no physical EXI device is emulated on the host.
-#define MKW_NATIVE_SUCCESS_TRAIT(addr)          \
-    template <>                                 \
-    struct KnownNativeCpuCall<0x##addr##u> {    \
-        static constexpr bool kAvailable = true; \
-        static inline void Invoke(CpuContext* cpu) noexcept { \
-            if (cpu) {                          \
-                cpu->gpr[3] = 1u;               \
-            }                                   \
-        }                                       \
+template <>
+struct KnownNativeCpuCall<0x80168288u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (cpu) {
+            cpu->gpr[3] = 1u;
+        }
     }
+};
 
-MKW_NATIVE_SUCCESS_TRAIT(80168288); // EXIDma
-MKW_NATIVE_SUCCESS_TRAIT(80168380); // EXISync
-MKW_NATIVE_SUCCESS_TRAIT(80169260); // EXIUnlock
+template <>
+struct KnownNativeCpuCall<0x80168380u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (cpu) {
+            cpu->gpr[3] = 1u;
+        }
+    }
+};
 
-#undef MKW_NATIVE_SUCCESS_TRAIT
+template <>
+struct KnownNativeCpuCall<0x80169260u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (cpu) {
+            cpu->gpr[3] = 1u;
+        }
+    }
+};

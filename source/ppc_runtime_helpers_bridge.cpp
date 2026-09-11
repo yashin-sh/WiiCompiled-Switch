@@ -26,8 +26,14 @@ constexpr std::uint32_t kSystemTimeBaseLo = 0x800030DCu;
 constexpr std::uint32_t kOSCurrentContextAddr = 0x800000D4u;
 constexpr std::uint32_t kOSContextModeFlagsOffset = 0x1A2u;
 constexpr std::uint16_t kOSContextInterruptsEnabledBit = 0x0002u;
+constexpr std::uint32_t kInterruptHandlerTablePtrAddr = 0x803868F8u;
+constexpr std::uint32_t kInterruptHandlerTableAddr = 0x80003040u;
+constexpr std::uint32_t kInterruptHandlerTableBytes = 0x80u;
+constexpr std::uint32_t kInterruptMaskLoAddr = 0x800000C4u;
+constexpr std::uint32_t kInterruptMaskHiAddr = 0x800000C8u;
 std::array<std::uint32_t, 2048> g_sprShadow{};
 std::atomic<bool> g_interruptsEnabled{true};
+std::atomic<std::uint32_t> g_interruptMask{0u};
 const auto g_timeBaseStart = std::chrono::steady_clock::now();
 
 std::uint64_t GetTimeBase() noexcept {
@@ -196,6 +202,46 @@ extern "C" void mkw_switch_hle_os_restore_interrupts(CpuContext* cpu) noexcept {
     UpdateCurrentContextInterruptFlag(enable);
     if (cpu) {
         cpu->gpr[3] = previous ? 1u : 0u;
+    }
+}
+
+// PAL OS__ExceptionInit (0x801A00E0). The pinned WiiCompiled HLE deliberately
+// skips installing Wii exception vectors on the host and simply returns 0.
+extern "C" void mkw_switch_hle_os_exception_init(CpuContext* cpu) noexcept {
+    if (cpu) {
+        cpu->gpr[3] = 0u;
+    }
+}
+
+// PAL OS____InterruptInit (0x801A661C). Preserve the upstream guest-visible
+// bookkeeping while avoiding the Hollywood interrupt-controller MMIO: keep
+// interrupts disabled, initialize and clear the 32-entry handler table, and
+// reset both guest mask words plus the host mirror.
+extern "C" void mkw_switch_hle_os_interrupt_init(CpuContext* cpu) noexcept {
+    g_interruptsEnabled.store(false, std::memory_order_release);
+    g_interruptMask.store(0u, std::memory_order_release);
+
+    if (Memory::IsInitialized()) {
+        if (Memory::Contains(kInterruptHandlerTablePtrAddr, 4u)) {
+            Memory::Write32(kInterruptHandlerTablePtrAddr, kInterruptHandlerTableAddr);
+        }
+
+        if (Memory::Contains(kInterruptHandlerTableAddr, kInterruptHandlerTableBytes)) {
+            for (std::uint32_t offset = 0u; offset < kInterruptHandlerTableBytes; offset += 4u) {
+                Memory::Write32(kInterruptHandlerTableAddr + offset, 0u);
+            }
+        }
+
+        if (Memory::Contains(kInterruptMaskLoAddr, 4u)) {
+            Memory::Write32(kInterruptMaskLoAddr, 0u);
+        }
+        if (Memory::Contains(kInterruptMaskHiAddr, 4u)) {
+            Memory::Write32(kInterruptMaskHiAddr, 0u);
+        }
+    }
+
+    if (cpu) {
+        cpu->gpr[3] = 0u;
     }
 }
 

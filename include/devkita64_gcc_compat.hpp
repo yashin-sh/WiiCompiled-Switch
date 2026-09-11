@@ -62,7 +62,10 @@ inline void WriteStack64(std::uint32_t address, std::uint64_t value) {
 }
 } // namespace MemoryInline
 
-// Translated Switch builds preinclude this file before generated shards. Load
-// the small extension catalogue here so native/HLE target traits are visible
-// before any InvokeDirectCpu<Target> instantiation in generated code.
+// Only real translated execution builds have WiiCompiled's runtime ABI include
+// paths and need the blocker-driven native/HLE trait extension catalogue. Keep
+// generic GCC compatibility probes independent of ppc_runtime.h.
+#if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
+    (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 #include "switch_native_hle_traits.hpp"
+#endif

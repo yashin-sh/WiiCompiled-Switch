@@ -23,8 +23,7 @@ extern "C" std::uint32_t OSSystemCall() {
     return 0u;
 }
 
-extern "C" void PPC_TrapWord(std::uint32_t trapOptions, std::uint32_t lhs,
-                              std::uint32_t rhs) {
+extern "C" void PPC_TrapWord(std::uint32_t trapOptions, std::uint32_t lhs, std::uint32_t rhs) {
     const bool trap =
         ((trapOptions & 0x10u) != 0u && static_cast<std::int32_t>(lhs) < static_cast<std::int32_t>(rhs)) ||
         ((trapOptions & 0x08u) != 0u && static_cast<std::int32_t>(lhs) > static_cast<std::int32_t>(rhs)) ||
@@ -72,8 +71,7 @@ extern "C" double PPC_PsqL(std::uint32_t addr, std::uint32_t w, std::uint32_t i)
                    : PPC_PsqLStateFallback<1u, 0u, false>(gqr, addr);
 }
 
-extern "C" void PPC_PsqSt(std::uint32_t addr, double value, std::uint32_t w,
-                           std::uint32_t i) {
+extern "C" void PPC_PsqSt(std::uint32_t addr, double value, std::uint32_t w, std::uint32_t i) {
     CpuContext* cpu = TryGetCpuContext();
     if (!cpu) {
         std::abort();

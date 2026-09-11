@@ -38,6 +38,15 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         InvokeDirectCpu<0x801A65D4u>(ctx);
         ctx->gpr[3] = savedR3;
 
+        // OS::Init also enters the native exception/interrupt initialization
+        // pair. The pinned HLE skips Wii exception vectors and keeps only safe
+        // guest interrupt bookkeeping, so force both through the static catalog.
+        InvokeDirectCpu<0x801A00E0u>(ctx);
+        InvokeDirectCpu<0x801A661Cu>(ctx);
+        ctx->gpr[3] = 1u;
+        InvokeDirectCpu<0x801A65D4u>(ctx);
+        ctx->gpr[3] = savedR3;
+
         // PPC SDK startup clears/configures the performance monitor through
         // MMCR0/MMCR1 and PMC1..PMC4. WiiCompiled's pinned HLE treats these
         // writes as no-ops on the host, so compile all six through the same

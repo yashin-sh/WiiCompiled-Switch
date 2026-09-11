@@ -44,6 +44,14 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         InvokeDirectCpu<0x8012E5D0u>(ctx);
         InvokeDirectCpu<0x8012E5D8u>(ctx);
         InvokeDirectCpu<0x8012E5E0u>(ctx);
+
+        // These adjacent PPC architecture helpers are also explicit no-op
+        // native overrides upstream. Keep them separate from HID2, whose HLE
+        // has real CpuContext state semantics.
+        InvokeDirectCpu<0x8012E640u>(ctx); // PPCMfwpar
+        InvokeDirectCpu<0x8012E64Cu>(ctx); // PPCMtwpar
+        InvokeDirectCpu<0x8012E654u>(ctx); // PPCDisableSpeculation
+        InvokeDirectCpu<0x8012E684u>(ctx); // PPCMthid4
     }
 
     // Keep the existing synthetic startup graph auditable in the same ELF.

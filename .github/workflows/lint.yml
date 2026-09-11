@@ -86,22 +86,43 @@ jobs:
             BASE_SHA="$(git rev-list --max-parents=0 HEAD | tail -n1)"
           fi
 
-          if command -v clang-format-diff >/dev/null 2>&1; then
-            format_diff=(clang-format-diff -p1 -binary clang-format)
-          else
-            format_script="$(find /usr -type f -name 'clang-format-diff.py' -print -quit 2>/dev/null || true)"
-            test -n "$format_script"
-            format_diff=(python3 "$format_script" -p1 -binary clang-format)
+          mapfile -t cpp_files < <(
+            git diff --name-only --diff-filter=ACMRT "$BASE_SHA" HEAD -- \
+              '*.c' '*.cc' '*.cpp' '*.h' '*.hh' '*.hpp' \
+              ':(exclude)third_party/**' \
+              ':(exclude)local-product/generated/**'
+          )
+
+          if ((${#cpp_files[@]} == 0)); then
+            echo "No changed first-party C/C++ files to format-check"
+            exit 0
           fi
 
-          git diff -U0 --no-color "$BASE_SHA" HEAD -- \
-            '*.c' '*.cc' '*.cpp' '*.h' '*.hh' '*.hpp' \
-            ':(exclude)third_party/**' \
-            ':(exclude)local-product/generated/**' \
-            | "${format_diff[@]}" > /tmp/clang-format.diff
+          failed=0
+          for file in "${cpp_files[@]}"; do
+            ranges=()
+            while IFS= read -r hunk; do
+              if [[ "$hunk" =~ ^@@\ -[0-9]+(,[0-9]+)?\ \+([0-9]+)(,([0-9]+))?\ @@ ]]; then
+                start="${BASH_REMATCH[2]}"
+                count="${BASH_REMATCH[4]:-1}"
+                if ((count > 0)); then
+                  end=$((start + count - 1))
+                  ranges+=("--lines=${start}:${end}")
+                fi
+              fi
+            done < <(git diff -U0 --no-color "$BASE_SHA" HEAD -- "$file" | grep '^@@' || true)
 
-          if [[ -s /tmp/clang-format.diff ]]; then
-            cat /tmp/clang-format.diff
+            if ((${#ranges[@]} == 0)); then
+              continue
+            fi
+
+            echo "clang-format checking changed lines in $file: ${ranges[*]}"
+            if ! clang-format --dry-run --Werror --style=file "${ranges[@]}" "$file"; then
+              failed=1
+            fi
+          done
+
+          if ((failed != 0)); then
             echo "Changed first-party C/C++ lines are not clang-formatted" >&2
             exit 1
           fi

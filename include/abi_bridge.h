@@ -191,6 +191,11 @@ MKW_NATIVE_NOOP_TRAIT(801A1AE4); // OS____CacheInit
 // transactions are deliberately not folded into this no-op family.
 MKW_NATIVE_NOOP_TRAIT(80167E78); // SetExiInterruptMask
 
+// Serial Interface initialization/poll timing are host-side no-ops in pinned
+// WiiCompiled. They only avoid Wii SI MMIO/controller-port setup during boot.
+MKW_NATIVE_NOOP_TRAIT(801B2DE0); // SIInit
+MKW_NATIVE_NOOP_TRAIT(801B3ACC); // SISetSamplingRate
+
 #undef MKW_NATIVE_NOOP_TRAIT
 
 // Early EXI control calls are explicit native overrides in pinned WiiCompiled.

@@ -31,6 +31,11 @@ jobs:
           grep -Fq 'DispatchKnownTranslatedCpuTargetStatic<Target>(cpu)' include/abi_bridge.h
           grep -Fq 'InvokeDirectCpu<0x7F0001A0u>(ctx)' synthetic-execution/synthetic_execution_probe.cpp
           grep -Fq 'InvokeDirectCpu<0x7F0001C0u>(ctx)' synthetic-execution/synthetic_execution_probe.cpp
+          grep -Fq 'runtime/src/ppc_helpers.cpp' source/ppc_runtime_helpers_bridge.cpp
+          grep -Fq 'PPC_Mftb()' synthetic-execution/ppc_helper_link_probe.cpp
+          grep -Fq 'PPC_Mftbu()' synthetic-execution/ppc_helper_link_probe.cpp
+          grep -Fq 'PPC_ReadSpr(9u)' synthetic-execution/ppc_helper_link_probe.cpp
+          grep -Fq 'PPC_WriteSpr(9u, ctr)' synthetic-execution/ppc_helper_link_probe.cpp
 
       - name: Locate AArch64 nm
         run: |
@@ -46,11 +51,11 @@ jobs:
             MKW_SYNTHETIC_FAST_TRACK=1 \
             TARGET=WiiCompiled-Switch-synthetic-fast-track \
             BUILD=build-synthetic-fast-track \
-            APP_VERSION=0.0.11-synthetic-fast-track-direct-dispatch \
-            TRANSLATED_RETAIN_SYMBOL=synthetic_translated_fast_track_start \
+            APP_VERSION=0.0.12-synthetic-fast-track-ppc-helpers \
+            TRANSLATED_RETAIN_SYMBOL=synthetic_ppc_helper_link_probe \
             DEFINES='-DMKW_SYNTHETIC_EXECUTION=1 -DMKW_SYNTHETIC_FAST_TRACK=1 -DMKW_ENABLE_DATA_INIT_HANDOFF=1 -DMKW_ENABLE_TRANSLATED_EXECUTION_HANDOFF=1'
 
-      - name: Verify fast-track execution seam and crash diagnostics
+      - name: Verify fast-track execution seam and PPC runtime helpers
         run: |
           test -f WiiCompiled-Switch-synthetic-fast-track.nro
           test -f WiiCompiled-Switch-synthetic-fast-track.elf
@@ -58,9 +63,14 @@ jobs:
           grep -E ' T mkw_switch_get_translated_product_api$' /tmp/fast-track.nm
           grep -E ' T mkw_switch_get_translated_product_handoff_api$' /tmp/fast-track.nm
           grep -E ' T mkw_switch_get_translated_execution_handoff_api$' /tmp/fast-track.nm
+          grep -E ' T synthetic_ppc_helper_link_probe$' /tmp/fast-track.nm
           grep -E ' T synthetic_translated_fast_track_start$' /tmp/fast-track.nm
           grep -E ' T synthetic_translated_fast_track_stage2$' /tmp/fast-track.nm
           grep -E ' T synthetic_translated_fast_track_stage3$' /tmp/fast-track.nm
+          grep -E ' T PPC_Mftb$' /tmp/fast-track.nm
+          grep -E ' T PPC_Mftbu$' /tmp/fast-track.nm
+          grep -E ' T PPC_ReadSpr$' /tmp/fast-track.nm
+          grep -E ' T PPC_WriteSpr$' /tmp/fast-track.nm
           grep -E ' T mkw_switch_report_unsupported_translated_dispatch$' /tmp/fast-track.nm
           grep -E ' T __libnx_exception_handler$' /tmp/fast-track.nm
 

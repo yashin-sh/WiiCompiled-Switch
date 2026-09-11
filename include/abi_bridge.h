@@ -32,6 +32,12 @@ void mkw_switch_hle_os_get_system_time(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_disable_interrupts(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_enable_interrupts(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_restore_interrupts(CpuContext* cpu) noexcept;
+
+// Switch-native early OS exception/interrupt initialization. WiiCompiled
+// replaces both guest entry points with host HLE to avoid installing Wii
+// exception vectors or touching the Hollywood interrupt controller.
+void mkw_switch_hle_os_exception_init(CpuContext* cpu) noexcept;
+void mkw_switch_hle_os_interrupt_init(CpuContext* cpu) noexcept;
 }
 
 inline void ApplyRuntimeCallOptions(std::uint32_t, CpuContext*) noexcept {}
@@ -110,6 +116,25 @@ struct KnownNativeCpuCall<0x801A65D4u> {
     static constexpr bool kAvailable = true;
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_os_restore_interrupts(cpu);
+    }
+};
+
+// PAL OS__ExceptionInit/OS____InterruptInit. The pinned runtime replaces both
+// with host HLE: exception-vector setup is skipped, while interrupt init keeps
+// only the guest-visible handler table/mask state and avoids Wii MMIO.
+template <>
+struct KnownNativeCpuCall<0x801A00E0u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_os_exception_init(cpu);
+    }
+};
+
+template <>
+struct KnownNativeCpuCall<0x801A661Cu> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_os_interrupt_init(cpu);
     }
 };
 

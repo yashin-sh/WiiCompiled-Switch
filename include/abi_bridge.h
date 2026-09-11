@@ -163,6 +163,17 @@ MKW_NATIVE_NOOP_TRAIT(8012E64C); // PPCMtwpar
 MKW_NATIVE_NOOP_TRAIT(8012E654); // PPCDisableSpeculation
 MKW_NATIVE_NOOP_TRAIT(8012E684); // PPCMthid4
 
+// PAL data-cache range maintenance. WiiCompiled native-overrides this whole
+// five-function family because host CPUs own cache coherency. Upstream also
+// validates the guest range and notifies its GX RAM tracker; the Switch port
+// does not have that GX tracker yet, so preserving CpuContext is the complete
+// guest-visible CPU behavior for this stage of startup.
+MKW_NATIVE_NOOP_TRAIT(801A1600); // DCInvalidateRange
+MKW_NATIVE_NOOP_TRAIT(801A162C); // DCFlushRange
+MKW_NATIVE_NOOP_TRAIT(801A165C); // DCStoreRange
+MKW_NATIVE_NOOP_TRAIT(801A168C); // DCFlushRangeNoSync
+MKW_NATIVE_NOOP_TRAIT(801A16B8); // DCStoreRangeNoSync
+
 #undef MKW_NATIVE_NOOP_TRAIT
 
 // Keep the translated PPC ABI rule used by WiiCompiled: a callee may write

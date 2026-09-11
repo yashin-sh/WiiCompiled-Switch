@@ -56,6 +56,18 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         InvokeDirectCpu<0x801A168Cu>(ctx); // DCFlushRangeNoSync
         InvokeDirectCpu<0x801A16B8u>(ctx); // DCStoreRangeNoSync
 
+        // Pinned WiiCompiled routes these cache-control entry points through one
+        // shared no-op host stub. Cover the whole true no-op family together;
+        // memory-mutating DCZeroRange and LC transfer helpers stay excluded.
+        InvokeDirectCpu<0x801A15ECu>(ctx); // DCEnable
+        InvokeDirectCpu<0x801A1710u>(ctx); // ICInvalidateRange
+        InvokeDirectCpu<0x801A1744u>(ctx); // ICFlashInvalidate
+        InvokeDirectCpu<0x801A1754u>(ctx); // ICEnable
+        InvokeDirectCpu<0x801A1768u>(ctx); // __LCEnable
+        InvokeDirectCpu<0x801A1834u>(ctx); // LCEnable
+        InvokeDirectCpu<0x801A186Cu>(ctx); // LCDisable
+        InvokeDirectCpu<0x801A1AE4u>(ctx); // OS____CacheInit
+
         // PPC SDK startup clears/configures the performance monitor through
         // MMCR0/MMCR1 and PMC1..PMC4. WiiCompiled's pinned HLE treats these
         // writes as no-ops on the host, so compile all six through the same

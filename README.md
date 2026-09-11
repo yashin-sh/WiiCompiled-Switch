@@ -6,15 +6,63 @@ Experimental Nintendo Switch (Horizon OS / Atmosphère) homebrew porting layer f
 
 Run a legally-owned Mario Kart Wii dump through the WiiCompiled static-recompilation runtime as a native AArch64 Nintendo Switch homebrew application (`.nro`), without Dolphin at runtime.
 
+## Project progress
+
+**Estimated progress toward first rendered frame: ~25%**
+
+```text
+█████░░░░░░░░░░░░░ 25%
+```
+
+> This percentage is an engineering estimate, not a function-count metric. It tracks progress toward the first rendered Mario Kart Wii frame on real Switch hardware.
+
+| Milestone | Status |
+| --- | --- |
+| Native Horizon/libnx runtime boots | ✅ Done |
+| WiiCompiled PPC → AArch64 translated code executes on Switch | ✅ Done |
+| Guest memory/data initialization | ✅ Done |
+| Wii SDK OS/cache/timing/interrupt bootstrap | 🟡 In progress |
+| EXI/SI bootstrap and basic EXI transaction HLE | 🟡 In progress |
+| Reach Mario Kart Wii `main()` | ⬜ Next major milestone |
+| Game/resource initialization | ⬜ Pending |
+| GX → Switch graphics backend / first frame | ⬜ Pending |
+| Input, audio, filesystem completeness and gameplay | ⬜ Pending |
+
+Current execution path:
+
+```text
+__start
+  ↓
+Wii SDK / OS bootstrap
+  ↓
+cache / timing / interrupts
+  ↓
+EXI / SI initialization      ← current area
+  ↓
+__init_user
+  ↓
+main()                       ← next major target
+  ↓
+Mario Kart Wii initialization
+  ↓
+GX / resources / input
+  ↓
+first rendered frame
+  ↓
+playable game
+```
+
 ## Status
 
-**M2 — Horizon runtime bootstrap.** Guest virtual memory, heap-backed checked GuestFlat, Wii `Memory::Init`, the custom AArch64 cooperative-context primitive, and the SDL-free Horizon lifecycle/filesystem/timing/HID bootstrap have real-Switch hardware evidence.
+**M2 — Fast-track translated startup toward `main()`.** The project now executes real WiiCompiled-translated Mario Kart Wii startup code as AArch64 under Horizon/libnx on real Switch hardware.
 
-The current integration slice adds an explicit **build-time translated-product boundary**. Public CI builds contain only a Nintendo-data-free weak product stub, so after the validated runtime core initializes they intentionally stop at `WAITING_FOR_TRANSLATED_PRODUCT`.
+Validated hardware/runtime work includes GuestFlat memory, Wii `Memory::Init`, translated data initialization, translated `__start`, register bootstrap, timebase/SPR/FPSCR helpers, OS timing and interrupt state, exception/interrupt initialization, Wii cache-control HLE, EXI initialization/basic transactions, and SI initialization.
 
-A real WiiCompiled game product is generated from a user-owned dump **before the Switch build** and linked into the same NRO. The runtime does not load translated game code from an arbitrary SD-card `game-data` directory. SD-card paths are reserved for runtime state such as logs, cache, configuration and NAND/save-compatible data.
+The latest real-hardware run reached `EXIImm` (`0x80167F68`). Its pinned WiiCompiled HLE semantics, together with `EXIDma`, `EXISync`, and `EXIUnlock`, are now implemented in `main`; the next hardware run is expected to advance beyond that boundary.
 
-Graphics and audio remain explicit stubs in M2. No translated Mario Kart Wii entry point is executed yet.
+Public CI remains Nintendo-data-free. A real WiiCompiled game product is generated from a user-owned dump **before the Switch build** and linked into the same NRO. Generated game-derived code/data and local game NRO/ELF outputs are never committed or uploaded by CI.
+
+Graphics and audio remain explicit stubs in M2. The project has **not yet proven entry into Mario Kart Wii `main()` or rendered a frame**.
 
 ## Legal / content policy
 

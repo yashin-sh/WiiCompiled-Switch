@@ -84,15 +84,15 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         const std::uint32_t savedR5 = ctx->gpr[5];
         const std::uint32_t savedR6 = ctx->gpr[6];
         const std::uint32_t savedR7 = ctx->gpr[7];
-        ctx->gpr[3] = 0u; // channel
-        ctx->gpr[4] = 0u; // buffer unused for write-only probe
-        ctx->gpr[5] = 4u; // length
-        ctx->gpr[6] = 1u; // type = Write
-        ctx->gpr[7] = 0u; // callback
-        InvokeDirectCpu<0x80167F68u>(ctx); // EXIImm -> 1
-        InvokeDirectCpu<0x80168288u>(ctx); // EXIDma -> 1
-        InvokeDirectCpu<0x80168380u>(ctx); // EXISync -> 1
-        InvokeDirectCpu<0x80169260u>(ctx); // EXIUnlock -> 1
+        ctx->gpr[3] = 0u;
+        ctx->gpr[4] = 0u;
+        ctx->gpr[5] = 4u;
+        ctx->gpr[6] = 1u;
+        ctx->gpr[7] = 0u;
+        InvokeDirectCpu<0x80167F68u>(ctx);
+        InvokeDirectCpu<0x80168288u>(ctx);
+        InvokeDirectCpu<0x80168380u>(ctx);
+        InvokeDirectCpu<0x80169260u>(ctx);
         ctx->gpr[3] = savedR3;
         ctx->gpr[4] = savedR4;
         ctx->gpr[5] = savedR5;

@@ -11,13 +11,24 @@
 
 #include <cstdint>
 
-// Exact pinned WiiCompiled semantics for mtfsb1 (a135beb...):
+// Pinned WiiCompiled mtfsb1 semantics (a135beb...) for an active translated
+// CpuContext:
 // - PowerPC bit numbering is MSB-first, hence shift = 31 - bit.
 // - FEX (bit 1) and VX (bit 2) are read-only summary bits and cannot be set.
 // - FPSCR[NI] changes are mirrored into the host FP environment. On AArch64,
 //   MkwApplyHostNiMode maps NI to FPCR.FZ, which the pinned ISA layer supports.
+//
+// The desktop helper obtains the context through CurrentCpuContext(), whose
+// no-context fatal path pulls desktop UI diagnostics into the link. The Switch
+// bridge uses the dependency-free TryGetCpuContext() seam already used by the
+// SPR bridge. Real translated execution always has an active context; a probe
+// call outside translated execution simply becomes a no-op instead of invoking
+// unavailable desktop fatal UI.
 extern "C" void PPC_Mtfsb1(std::uint32_t bit) {
-    CpuContext* cpu = CurrentCpuContext();
+    CpuContext* cpu = TryGetCpuContext();
+    if (!cpu) {
+        return;
+    }
 
     bit &= 31u;
     if (bit == 1u || bit == 2u) {

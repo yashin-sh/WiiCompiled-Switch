@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SHARD_ROOT="$ROOT/local-product/generated/build_shards"
 COMMON="$SHARD_ROOT/base_common"
 SENSITIVE="$SHARD_ROOT/base_portable_sensitive"
+DISPATCH="$SHARD_ROOT/base_dispatch"
 TARGET="WiiCompiled-Switch-local-fast-track"
 ELF="$ROOT/$TARGET.elf"
 NRO="$ROOT/$TARGET.nro"
@@ -42,6 +43,11 @@ if [[ ! -d "$COMMON" ]]; then
   echo "error: missing $COMMON; run scripts/prepare-local-function-shards.sh first" >&2
   exit 2
 fi
+if [[ ! -d "$DISPATCH" ]] || ! compgen -G "$DISPATCH/*.cpp" >/dev/null; then
+  echo "error: missing generated base indirect dispatch under $DISPATCH" >&2
+  echo "error: run scripts/prepare-local-function-shards.sh first" >&2
+  exit 2
+fi
 
 paths=("$COMMON")
 if [[ -d "$SENSITIVE" ]]; then
@@ -61,17 +67,38 @@ printf '  PASS: local generated shards contain %s\n' "$START_SYMBOL"
 echo "[2/4] Normalizing pinned WiiCompiled state-free vector returns for devkitA64 GCC..."
 python3 "$ROOT/scripts/normalize-gcc-statefree-returns.py" "${paths[@]}"
 
-echo "[3/4] Building fast-track translated startup candidate..."
+echo "[3/4] Building fast-track translated startup candidate with indirect dispatch..."
 rm -rf "$BUILD_DIR"
 rm -f "$ELF" "$NRO" "$ROOT/$TARGET.map"
 cd "$ROOT"
+
+# The generic MKW_LOCAL_FUNCTION_EXECUTION checkpoint intentionally excludes
+# registration/dispatch constructors. Fast-track now needs WiiCompiled's
+# immutable base_dispatch table for real bctrl/bctr execution, so override the
+# source list only for this hardware runner while continuing to exclude the
+# heavier base_registration registry shards.
+source_dirs=(
+  source
+  third_party/WiiCompiled/runtime/src/platform
+  local-product-support
+  local-execution-support
+  local-product/generated
+  local-product/generated/build_shards/base_common
+  local-product/generated/build_shards/base_dispatch
+)
+if [[ -d "$SENSITIVE" ]]; then
+  source_dirs+=(local-product/generated/build_shards/base_portable_sensitive)
+fi
+LOCAL_FAST_TRACK_SOURCES="${source_dirs[*]}"
+
 make -j"$JOBS" \
   MKW_LOCAL_FUNCTION_EXECUTION=1 \
   MKW_LOCAL_FAST_TRACK=1 \
   TARGET="$TARGET" \
   BUILD="build-local-fast-track" \
-  APP_VERSION="0.0.9-local-fast-track" \
+  APP_VERSION="0.0.10-local-fast-track" \
   TRANSLATED_RETAIN_SYMBOL="$START_SYMBOL" \
+  SOURCES="$LOCAL_FAST_TRACK_SOURCES" \
   DEFINES='-DMKW_LOCAL_PRODUCT=1 -DMKW_LOCAL_FUNCTION_EXECUTION=1 -DMKW_LOCAL_FAST_TRACK=1 -DMKW_ENABLE_DATA_INIT_HANDOFF=1 -DMKW_ENABLE_TRANSLATED_EXECUTION_HANDOFF=1'
 
 echo "[4/4] Verifying translated __start in final ELF..."

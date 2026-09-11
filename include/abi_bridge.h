@@ -21,6 +21,11 @@ void mkw_switch_report_unsupported_translated_dispatch(
     const char* kind,
     std::uint32_t target,
     CpuContext* cpu) noexcept;
+
+// Switch-native implementation of Wii SDK __OSGetSystemTime (PAL 0x801AAD7C).
+// The pinned WiiCompiled runtime treats this address as a native override and
+// publishes the 64-bit result in guest r3:r4.
+void mkw_switch_hle_os_get_system_time(CpuContext* cpu) noexcept;
 }
 
 inline void ApplyRuntimeCallOptions(std::uint32_t, CpuContext*) noexcept {}
@@ -62,6 +67,17 @@ template <>
 struct KnownNativeCpuCall<0x80006348u> {
     static constexpr bool kAvailable = true;
     static inline void Invoke(CpuContext*) noexcept {}
+};
+
+// PAL __OSGetSystemTime. WiiCompiled's pinned runtime supplies a native HLE for
+// this address rather than translating the SDK routine. Keep that same boundary
+// on Horizon so startup does not fall into the unsupported translated dispatcher.
+template <>
+struct KnownNativeCpuCall<0x801AAD7Cu> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_os_get_system_time(cpu);
+    }
 };
 
 // Keep the translated PPC ABI rule used by WiiCompiled: a callee may write

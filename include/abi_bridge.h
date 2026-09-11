@@ -3,6 +3,7 @@
 // Minimal Horizon ABI seam for translated-function checkpoints.
 #include "ppc_runtime.h"
 #include "isa/ppc_isa_cr.h"
+#include "switch_indirect_dispatch.hpp"
 
 #include <cstdint>
 #include <cstdlib>
@@ -315,13 +316,21 @@ inline void InvokeDirectCpu(CpuContext* cpu) {
     std::abort();
 }
 
-[[noreturn]] inline void InvokeIndirectCpu(std::uint32_t target, CpuContext* cpu) {
-    mkw_switch_report_unsupported_translated_dispatch("INDIRECT_CALL", target, cpu);
+inline void InvokeIndirectCpu(std::uint32_t target, CpuContext* cpu) {
+    ApplyRuntimeCallOptions(target, cpu);
+    if (mkw_switch_try_dispatch_indirect(target, cpu)) {
+        return;
+    }
+    mkw_switch_report_unsupported_translated_dispatch("INDIRECT_CALL_MISS", target, cpu);
     std::abort();
 }
 
-[[noreturn]] inline void InvokeIndirectJump(std::uint32_t target, CpuContext* cpu) {
-    mkw_switch_report_unsupported_translated_dispatch("INDIRECT_JUMP", target, cpu);
+inline void InvokeIndirectJump(std::uint32_t target, CpuContext* cpu) {
+    ApplyRuntimeCallOptions(target, cpu);
+    if (mkw_switch_try_dispatch_indirect(target, cpu)) {
+        return;
+    }
+    mkw_switch_report_unsupported_translated_dispatch("INDIRECT_JUMP_MISS", target, cpu);
     std::abort();
 }
 

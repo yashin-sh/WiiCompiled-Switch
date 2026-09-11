@@ -12,6 +12,33 @@ extern "C" __attribute__((noinline, used)) void func_801A961C(CpuContext* ctx) {
     (void)ctx;
 }
 
+namespace {
+constexpr std::uint32_t kSyntheticIndirectTarget = 0x00000004u;
+
+void SyntheticIndirectTarget(CpuContext* ctx) {
+    if (ctx) {
+        ctx->gpr[3] = 0x1AD1BEEFu;
+    }
+}
+
+const RawDispatchRecord kSyntheticIndirectEntries[] = {
+    {kSyntheticIndirectTarget, &SyntheticIndirectTarget, 0u, false},
+};
+const StaticIndirectDispatchPage kSyntheticIndirectPages[] = {
+    {0u, 1u, 0u},
+};
+const StaticIndirectDispatchSegment kSyntheticIndirectSegments[256] = {
+    {kSyntheticIndirectPages, 0u, 1u},
+};
+const StaticIndirectDispatchTable kSyntheticIndirectTable{
+    "synthetic-fast-track",
+    kSyntheticIndirectSegments,
+    kSyntheticIndirectEntries,
+    1u,
+};
+const StaticIndirectDispatchTableRegistrar kSyntheticIndirectRegistrar(&kSyntheticIndirectTable);
+} // namespace
+
 // Link-only coverage for helper families emitted by real translated shards.
 // Use WiiCompiled's own ISA declarations so this probe cannot drift from the
 // pinned runtime ABI. Retaining this function forces the references through the
@@ -33,6 +60,14 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
     // __start graph uses for PAL __OSGetSystemTime (0x801AAD7C).
     if (ctx) {
         InvokeDirectCpu<0x801AAD7Cu>(ctx);
+
+        // Prove both dynamic PPC branch forms against an immutable generated-
+        // table-shaped fixture. The real local build publishes WiiCompiled's
+        // base_dispatch table instead of this Nintendo-data-free one.
+        const std::uint32_t savedIndirectR3 = ctx->gpr[3];
+        InvokeIndirectCpu(kSyntheticIndirectTarget, ctx);
+        InvokeIndirectJump(kSyntheticIndirectTarget, ctx);
+        ctx->gpr[3] = savedIndirectR3;
 
         // REGISTER_NATIVE_FUNCTION_AS makes OSInitAlarm a native winner while
         // retaining its original translated body. Verify that the Switch HLE
@@ -126,7 +161,7 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         ctx->gpr[6] = savedR6;
         ctx->gpr[7] = savedR7;
 
-        // SI initialization and sampling-rate setup are host no-ops upstream;
+        // SI initialization and sampling-rate setup are host-side no-ops upstream;
         // they skip Wii controller-port MMIO while preserving guest CPU state.
         InvokeDirectCpu<0x801B2DE0u>(ctx); // SIInit
         InvokeDirectCpu<0x801B3ACCu>(ctx); // SISetSamplingRate

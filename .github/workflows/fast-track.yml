@@ -39,6 +39,10 @@ jobs:
           grep -Fq 'MKW_NATIVE_NOOP_TRAIT(8012E5D0)' include/abi_bridge.h
           grep -Fq 'MKW_NATIVE_NOOP_TRAIT(8012E5D8)' include/abi_bridge.h
           grep -Fq 'MKW_NATIVE_NOOP_TRAIT(8012E5E0)' include/abi_bridge.h
+          grep -Fq 'MKW_NATIVE_NOOP_TRAIT(8012E640)' include/abi_bridge.h
+          grep -Fq 'MKW_NATIVE_NOOP_TRAIT(8012E64C)' include/abi_bridge.h
+          grep -Fq 'MKW_NATIVE_NOOP_TRAIT(8012E654)' include/abi_bridge.h
+          grep -Fq 'MKW_NATIVE_NOOP_TRAIT(8012E684)' include/abi_bridge.h
           grep -Fq 'mkw_switch_hle_os_get_system_time(cpu)' include/abi_bridge.h
           grep -Fq 'mkw_switch_hle_os_disable_interrupts(cpu)' include/abi_bridge.h
           grep -Fq 'mkw_switch_hle_os_enable_interrupts(cpu)' include/abi_bridge.h
@@ -67,6 +71,10 @@ jobs:
           grep -Fq 'InvokeDirectCpu<0x8012E5D0u>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
           grep -Fq 'InvokeDirectCpu<0x8012E5D8u>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
           grep -Fq 'InvokeDirectCpu<0x8012E5E0u>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
+          grep -Fq 'InvokeDirectCpu<0x8012E640u>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
+          grep -Fq 'InvokeDirectCpu<0x8012E64Cu>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
+          grep -Fq 'InvokeDirectCpu<0x8012E654u>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
+          grep -Fq 'InvokeDirectCpu<0x8012E684u>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
 
       - name: Locate AArch64 nm
         run: |
@@ -82,7 +90,7 @@ jobs:
             MKW_SYNTHETIC_FAST_TRACK=1 \
             TARGET=WiiCompiled-Switch-synthetic-fast-track \
             BUILD=build-synthetic-fast-track \
-            APP_VERSION=0.0.15-synthetic-fast-track-ppc-perf-hle \
+            APP_VERSION=0.0.16-synthetic-fast-track-ppc-arch-stubs \
             TRANSLATED_RETAIN_SYMBOL=synthetic_ppc_helper_link_probe \
             DEFINES='-DMKW_SYNTHETIC_EXECUTION=1 -DMKW_SYNTHETIC_FAST_TRACK=1 -DMKW_ENABLE_DATA_INIT_HANDOFF=1 -DMKW_ENABLE_TRANSLATED_EXECUTION_HANDOFF=1'
 

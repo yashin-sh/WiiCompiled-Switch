@@ -209,3 +209,14 @@ struct KnownNativeCpuCall<0x80169260u> {
         }
     }
 };
+
+// OSReport (PAL 0x801A25D0) is a native override in pinned WiiCompiled. Its
+// implementation only formats/prints guest arguments on the host and leaves
+// CpuContext and guest memory unchanged. The Switch fast-track intentionally
+// sinks that host-only logging side effect while preserving exact guest-visible
+// state so startup can continue without importing the desktop printf runtime.
+template <>
+struct KnownNativeCpuCall<0x801A25D0u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext*) noexcept {}
+};

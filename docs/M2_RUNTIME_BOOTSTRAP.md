@@ -25,7 +25,8 @@ The following pieces have been validated through CI and/or real Switch hardware:
 9. headless local platform initialization that bypasses the unrelated PrintConsole/NV framebuffer path;
 10. early Wii SDK cache/timing/interrupt/exception HLE;
 11. EXI/SI startup coverage and basic EXI transaction HLE;
-12. mixed native-HLE → translated dispatch, including `IPCCltInit` → `IPCInit`.
+12. mixed native-HLE → translated dispatch, including `IPCCltInit` → `IPCInit`;
+13. SDA-backed host HLE state publication, including `__OSInitSTM`.
 
 The local fast-track now runs real WiiCompiled-translated Mario Kart Wii code on hardware rather than stopping at the old metadata-only translated-product boundary.
 
@@ -52,7 +53,7 @@ early Wii SDK / OS initialization
   ↓
 OSReport → OSGetConsoleType → OSGetResetCode
   ↓
-DCZeroRange → IPCCltInit
+DCZeroRange → IPCCltInit → __OSInitSTM
   ↓
 remaining blockers
   ↓
@@ -92,8 +93,6 @@ The HLE now checks the returned pointer before entering libc. Valid ranges are s
 
 ### `IPCCltInit` — `0x80193478`
 
-This is the latest hardware-captured `DIRECT` blocker.
-
 Pinned WiiCompiled does **not** simply return success. Its HLE:
 
 1. calls translated `IPCInit` at `0x80192F7C` so IPC buffer globals are initialized;
@@ -103,6 +102,19 @@ Pinned WiiCompiled does **not** simply return success. Its HLE:
 5. returns success.
 
 The Switch HLE mirrors that mixed native→translated sequence. Nintendo-data-free CI validates the dispatch/link seam.
+
+### `__OSInitSTM` — `0x801AB848`
+
+This is the latest hardware-captured `DIRECT` blocker.
+
+Pinned WiiCompiled avoids opening real Wii `/dev/stm/*` IOS devices on the host. Instead its HLE publishes the guest-visible STM bookkeeping that later reset logic checks through the SDA block relative to `r13`:
+
+- `r13 - 0x62CC` = initialized flag `1`;
+- `r13 - 0x62C8` = stable non-zero immediate handle `0x00535401`;
+- `r13 - 0x62C4` = stable non-zero event-hook handle `0x00535402`;
+- return value = success (`r3 = 1`).
+
+The Switch HLE mirrors those values. If the SDA base/range is invalid it returns failure (`r3 = 0`) without touching unmapped guest memory. Wii STM Power/Reset callback pointers remain unset because the Switch fast-track does not generate the corresponding Wii hardware interrupt.
 
 ## Headless platform validation
 

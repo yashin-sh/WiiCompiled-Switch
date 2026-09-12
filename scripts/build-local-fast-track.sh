@@ -10,9 +10,11 @@ TARGET="WiiCompiled-Switch-local-fast-track"
 ELF="$ROOT/$TARGET.elf"
 NRO="$ROOT/$TARGET.nro"
 BUILD_DIR="$ROOT/build-local-fast-track"
+STAMP="$BUILD_DIR/.source-head"
 START_SYMBOL="func_800060A4"
 START_GUEST_ADDRESS="0x800060A4"
 JOBS="${MKW_JOBS:-2}"
+SOURCE_HEAD="$(git -C "$ROOT" rev-parse HEAD)"
 
 command -v python3 >/dev/null 2>&1 || {
   echo "error: python3 is required for the devkitA64 GCC shard compatibility pass" >&2
@@ -54,6 +56,7 @@ if [[ -d "$SENSITIVE" ]]; then
   paths+=("$SENSITIVE")
 fi
 
+echo "source HEAD: $SOURCE_HEAD"
 echo "[1/4] Verifying local WiiCompiled mapping for PAL RMCP01 __start..."
 MATCHES="$(grep -RIl --include='*.cpp' "$START_SYMBOL" "${paths[@]}" 2>/dev/null || true)"
 if [[ -z "$MATCHES" ]]; then
@@ -101,7 +104,7 @@ make -j"$JOBS" \
   SOURCES="$LOCAL_FAST_TRACK_SOURCES" \
   DEFINES='-DMKW_LOCAL_PRODUCT=1 -DMKW_LOCAL_FUNCTION_EXECUTION=1 -DMKW_LOCAL_FAST_TRACK=1 -DMKW_ENABLE_DATA_INIT_HANDOFF=1 -DMKW_ENABLE_TRANSLATED_EXECUTION_HANDOFF=1'
 
-echo "[4/4] Verifying translated __start in final ELF..."
+echo "[4/4] Verifying translated __start and headless fast-track marker in final ELF..."
 NM_SCAN="$(mktemp)"
 trap 'rm -f "$NM_SCAN"' EXIT
 "$NM_TOOL" "$ELF" >"$NM_SCAN"
@@ -114,11 +117,21 @@ if grep -Eq "[[:space:]]U[[:space:]]${START_SYMBOL}$" "$NM_SCAN"; then
   echo "error: final ELF still has unresolved $START_SYMBOL" >&2
   exit 5
 fi
+if ! strings "$ELF" | grep -Fq 'PLATFORM_CONSOLE_SKIPPED_FAST_TRACK'; then
+  echo "error: final ELF does not contain the headless fast-track platform marker" >&2
+  echo "error: refusing to provide a hardware-test NRO from a stale/misconfigured build" >&2
+  exit 6
+fi
+
+NRO_SHA256="$(sha256sum "$NRO" | awk '{print $1}')"
+printf '%s\n' "$SOURCE_HEAD" >"$STAMP"
 
 echo "  PASS: final ELF contains T $START_SYMBOL"
+echo "  PASS: final ELF contains PLATFORM_CONSOLE_SKIPPED_FAST_TRACK"
 echo "fast-track translated startup build: PASS"
+echo "source HEAD: $SOURCE_HEAD"
 echo "output: $TARGET.nro"
-echo "Hardware: launch via title override, then collect BOTH runtime-bootstrap.txt and fast-track-progress.txt."
-echo "fast-track-progress.txt is written before entering __start and rewritten on caught blocker/return."
-echo "If this build fails at link time, send the linker errors instead: they are the first blockers to fix."
+echo "NRO SHA-256: $NRO_SHA256"
+echo "Hardware: copy THIS exact NRO; do not reuse an older local-function-exec/local-fast-track file."
+echo "Hardware: launch via title override, then collect runtime-bootstrap.txt and fast-track-progress.txt / fast-track diagnostics."
 echo "This NRO contains locally generated game-derived code; never upload it."

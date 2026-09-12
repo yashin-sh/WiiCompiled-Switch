@@ -109,6 +109,13 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         InvokeDirectCpu<0x801A65D4u>(ctx);
         ctx->gpr[3] = savedR3;
 
+        // WiiCompiled host-overrides OS memory-protection setup because the real
+        // routine programs Broadway MMU/Hollywood state. It returns 0 on host;
+        // preserve and verify that guest-visible result here.
+        ctx->gpr[3] = 0x10000000u;
+        InvokeDirectCpu<0x801A7DFCu>(ctx);
+        ctx->gpr[3] = savedR3;
+
         // WiiCompiled native-overrides the whole early data-cache range family.
         // The Switch port has no GX RAM tracker yet, so these preserve the guest
         // CPU context while host cache coherency is handled by Horizon/AArch64.

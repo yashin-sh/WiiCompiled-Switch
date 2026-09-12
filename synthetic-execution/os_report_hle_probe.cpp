@@ -68,4 +68,19 @@ extern "C" __attribute__((used)) void synthetic_ipc_clt_init_hle_probe(CpuContex
     InvokeDirectCpu<0x80193478u>(ctx);
 }
 
+// Nintendo-data-free compile coverage for PAL __OSInitSTM (0x801AB848).
+// The HLE writes only fabricated STM bookkeeping into the guest SDA block and
+// never opens Nintendo IOS devices on the host. A zero r13 intentionally
+// exercises the safe failure path without requiring game-derived memory data.
+extern "C" __attribute__((used)) void synthetic_os_init_stm_hle_probe(CpuContext* ctx) {
+    if (!ctx) {
+        return;
+    }
+
+    const std::uint32_t savedR13 = ctx->gpr[13];
+    ctx->gpr[13] = 0u;
+    InvokeDirectCpu<0x801AB848u>(ctx);
+    ctx->gpr[13] = savedR13;
+}
+
 #endif

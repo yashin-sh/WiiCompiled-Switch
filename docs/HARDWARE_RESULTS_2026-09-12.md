@@ -22,6 +22,7 @@ Real hardware confirms that the local NRO can:
 - maintain an active guest context through `TRANSLATED_EXEC_ENTER`;
 - execute through multiple Wii SDK/native runtime boundaries;
 - execute a mixed native-HLE → translated call path (`IPCCltInit` → `IPCInit`);
+- preserve required guest SDA bookkeeping through host HLE (`__OSInitSTM`);
 - emit durable unsupported-dispatch and host-exception diagnostics to SD.
 
 The screen remains black because the current GX FIFO bridge is deliberately a sink. No rendered Mario Kart Wii frame has been proven.
@@ -59,8 +60,6 @@ Result after fix: hardware advanced beyond this boundary.
 Captured blocker:
 
 ```text
-WiiCompiled-Switch unsupported translated dispatch
-=================================================
 kind                  : DIRECT
 target                : 0x801a8a50
 guest pc              : 0x800060a4
@@ -69,7 +68,6 @@ r2                    : 0x8038efa0
 r3                    : 0x00000000
 r13                   : 0x8038cc00
 fast-track stage      : TRANSLATED_EXEC_ENTER
-action                : abort after durable blocker record
 ```
 
 Pinned WiiCompiled behavior: avoid the Wii reset MMIO register and always return `0` (`Cold Boot`).
@@ -99,16 +97,13 @@ A later hardware run exposed the contract mismatch with this signature:
 ```text
 fast-track stage      : TRANSLATED_EXEC_ENTER
 fault address (FAR)   : 0x0000000000000000
-ESR                   : 0x92000045
 x0                    : 0x0000000000000000
 x2                    : 0x0000000000000020
-x4                    : 0x0000000000000020
 x5                    : 0x00000000ffffffe0
 guest context active  : YES
 guest context source  : TLS
 guest pc              : 0x800060a4
 guest r3              : 0xffffffff
-guest flat base       : nonzero
 FAR in guest window   : NO
 ```
 
@@ -120,23 +115,19 @@ Interpretation:
 4. the old HLE entered `memset(nullptr, 0, 0x20)`;
 5. Horizon raised the AArch64 Data Abort at FAR `0x0`.
 
-The important difference is that pinned WiiCompiled's full memory runtime reports invalid accesses through `Memory::AccessViolation`, while the smaller Switch slice returns `nullptr`.
-
 Switch fix: explicitly test the returned guest pointer before `memset`. Valid-range zeroing and the GX/DMA notification remain unchanged; invalid ranges are skipped.
 
 PR: #82
 
 CI result before merge: 5/5 workflows green, including a Nintendo-data-free synthetic case reproducing `address = 0xFFFFFFFF`, `length = 1`.
 
-Result after fix: the next hardware run advanced beyond `DCZeroRange` and produced a new explicit blocker instead of crashing.
+Result after fix: hardware advanced beyond `DCZeroRange` and produced a new explicit blocker instead of crashing.
 
 ### 5. `IPCCltInit` — `0x80193478`
 
-Captured next blocker:
+Captured blocker:
 
 ```text
-WiiCompiled-Switch unsupported translated dispatch
-=================================================
 kind                  : DIRECT
 target                : 0x80193478
 guest pc              : 0x800060a4
@@ -145,7 +136,6 @@ r2                    : 0x8038efa0
 r3                    : 0x00000000
 r13                   : 0x8038cc00
 fast-track stage      : TRANSLATED_EXEC_ENTER
-action                : abort after durable blocker record
 ```
 
 Pinned WiiCompiled maps `0x80193478` to `IPCCltInit`.
@@ -158,80 +148,83 @@ Its HLE is not a simple success stub. It:
 4. skips the Wii-specific interrupt handler/MMIO portion;
 5. returns success.
 
-Skipping the translated `IPCInit` call would leave the IPC arena globals unset and later filesystem/ISFS initialization would fail.
-
 Switch fix: reproduce the same mixed native-HLE → translated call sequence and `0x1000` guest-memory adjustment.
 
 PR: #83
 
 CI result before merge: 5/5 workflows green, including the native→translated dispatch/link seam.
 
-Current status: this is the latest hardware-captured guest blocker fixed in `main`. A post-#83 hardware run is required to identify the next boundary or prove PAL `main()`.
+Result after fix: hardware advanced beyond `IPCCltInit` and produced the next explicit blocker at `__OSInitSTM`.
+
+### 6. `__OSInitSTM` — `0x801AB848`
+
+Captured blocker:
+
+```text
+WiiCompiled-Switch unsupported translated dispatch
+=================================================
+kind                  : DIRECT
+target                : 0x801ab848
+guest pc              : 0x800060a4
+r1                    : 0x80399168
+r2                    : 0x8038efa0
+r3                    : 0x00000000
+r13                   : 0x8038cc00
+fast-track stage      : TRANSLATED_EXEC_ENTER
+action                : abort after durable blocker record
+```
+
+Pinned WiiCompiled maps `0x801AB848` to `__OSInitSTM_HLE_801ab848`.
+
+The host HLE does not open real Wii `/dev/stm/*` IOS devices. It instead publishes the guest-visible state that later reset logic expects through the SDA block relative to `r13`:
+
+- `r13 - 0x62CC` = STM initialized flag `1`;
+- `r13 - 0x62C8` = non-zero immediate handle `0x00535401`;
+- `r13 - 0x62C4` = non-zero event-hook handle `0x00535402`;
+- return value = success (`r3 = 1`).
+
+Power/Reset callback pointers are intentionally left unset because the Switch fast-track never fires the Wii STM hardware interrupt that would invoke them.
+
+Switch fix: mirror the three guest-memory writes and success value, but first validate all three SDA addresses with the Switch memory slice. A zero or invalid SDA returns failure (`r3 = 0`) instead of becoming a host memory fault.
+
+PR: #85
+
+CI result before merge: 5/5 workflows green, including Nintendo-data-free synthetic fast-track coverage of the `0x801AB848` native dispatch seam.
+
+Merge commit: `a97e3b5e4bac0f0e72e3d832ab0b4d8f47a0b485`.
+
+Current status: this is the latest hardware-captured guest blocker fixed in `main`. A post-#85 hardware run is required to identify the next boundary or prove PAL `main()`.
 
 ## Diagnostic-path issue discovered during hardware testing
 
 One non-crashing black-screen run produced no `.txt` files even though the NRO itself was valid. The fast-track diagnostic path assumed `sdmc:/switch/WiiCompiled-Switch/` already existed and silently ignored file-open failure.
 
-PR #75 changed the local fast-track to:
-
-- create the application diagnostic directory before entering translated startup;
-- keep the normal progress path under `/switch/WiiCompiled-Switch/`;
-- fall back to `/switch/fast-track-progress.txt` if needed.
-
-After that change, hardware successfully produced durable blocker records.
+PR #75 changed the local fast-track to create the diagnostic directory and retain a fallback progress file under `sdmc:/switch/`. Later runs successfully produced durable blocker records.
 
 ## Pre-guest host crash during platform initialization
 
-A later run crashed before guest execution with this signature:
+A run before the headless change crashed during `MAIN_PLATFORM_INIT` with no guest context, no GuestFlat mapping, and a host clear of exactly `0x800000` bytes. The signature matched the libnx PrintConsole/NV transfer-memory path rather than translated PPC execution.
 
-```text
-fast-track stage      : MAIN_PLATFORM_INIT
-fault address (FAR)   : host address
-ESR                   : 0x92000047
-x2                    : 0x0000000000800000
-guest context active  : NO
-guest pc              : 0x00000000
-guest flat base       : 0x0000000000000000
-FAR in guest window   : NO
-```
-
-This was not a translated PPC blocker. The guest had not started, GuestFlat was not initialized, and the faulting host operation covered exactly `0x800000` bytes (8 MiB).
-
-That register pattern strongly matched the libnx default PrintConsole/NV initialization path:
-
-1. `consoleInit()` selects the software framebuffer renderer;
-2. the renderer creates a libnx framebuffer;
-3. NV initialization uses an 8 MiB transfer-memory allocation by default;
-4. `tmemCreate()` clears that allocation before creating the transfer-memory handle.
-
-The M2 local fast-track does not need a text console, framebuffer or NV service because graphics are not yet being rendered and actionable diagnostics are persisted to SD.
-
-The fast-track was therefore changed to start **headless**:
+The local fast-track was therefore changed to start **headless**:
 
 - no `consoleInit()` in `MKW_LOCAL_FAST_TRACK` builds;
 - no fast-track `printf`/`consoleUpdate` dependency;
-- public/default Nintendo-data-free builds keep the existing PrintConsole path;
-- platform initialization exposes finer exception stages such as `PLATFORM_SERVICES_INIT`, `PLATFORM_ROMFS_INIT` and `PLATFORM_READY`.
+- public/default Nintendo-data-free builds keep the PrintConsole path;
+- actionable progress/blocker/exception state is written to SD.
 
-Later hardware evidence validated this change directly: the process reached `TRANSLATED_EXEC_ENTER` with an active TLS guest context and nonzero GuestFlat base. The headless path is therefore confirmed in the actual local hardware fast-track, not only in CI.
+Later hardware evidence validated this change directly: the process reached `TRANSLATED_EXEC_ENTER` with an active TLS guest context and nonzero GuestFlat base.
 
 ## Local build provenance / verification issue
 
-After the headless change, an incremental local build correctly produced a valid ELF/NRO but the final helper verification falsely failed.
-
-The old check used a pipeline equivalent to:
+After the headless change, a valid ELF/NRO was initially rejected by the final local helper check. The old check used:
 
 ```sh
 strings "$ELF" | grep -Fq 'PLATFORM_CONSOLE_SKIPPED_FAST_TRACK'
 ```
 
-with `set -o pipefail` enabled. Because `grep -q` exits as soon as it finds the marker, `strings` can receive SIGPIPE, making the overall pipeline nonzero even though the marker is present.
+under `set -o pipefail`. `grep -q` can close the pipe after the first match, causing `strings` to receive SIGPIPE and making the pipeline nonzero despite a valid match.
 
-The helper now performs a direct binary-safe grep on the ELF instead of using the SIGPIPE-prone pipeline.
-
-The local incremental helper also tracks the source HEAD, invalidates stale objects when the commit changes, verifies the headless marker in the ELF, and prints the NRO SHA-256 so the exact hardware-test artifact can be identified.
-
-This tooling issue did not invalidate the already-built NRO; it only produced a false-negative post-build verification result.
+The helper now performs a direct binary-safe grep on the ELF. It also tracks source HEAD, invalidates stale incremental objects when the commit changes, and prints the NRO SHA-256 so the exact hardware-test artifact can be identified.
 
 ## Current diagnostic files
 
@@ -257,7 +250,8 @@ Specifically, hardware has now proven that:
 - PAL translated `__start` continues across multiple pinned WiiCompiled native/HLE boundaries;
 - host-vs-guest faults can be distinguished through durable exception context;
 - invalid guest-memory behavior at HLE seams must match the Switch memory slice contract as well as upstream intent;
-- native HLE may legitimately call translated guest code and must preserve that dependency.
+- native HLE may legitimately call translated guest code and must preserve that dependency;
+- hardware-facing host HLE may skip Wii I/O while still publishing mandatory guest SDA state.
 
 It does **not** prove:
 

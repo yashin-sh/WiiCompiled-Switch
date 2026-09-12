@@ -30,6 +30,7 @@
 - [x] hardware-cross `OSGetResetCode` (`0x801A8A50`)
 - [x] hardware-cross `DCZeroRange` (`0x801A16E4`), including invalid-range/null-pointer handling
 - [x] hardware-cross `IPCCltInit` (`0x80193478`) with translated `IPCInit` (`0x80192F7C`) handoff
+- [x] hardware-cross `__OSInitSTM` (`0x801AB848`) with guest SDA state and fake STM handles
 - [ ] reach PAL Mario Kart Wii `main` (`0x8000B6B0`)
 - [ ] identify and fix the first post-`main` runtime blocker
 - [ ] complete thread/mutex/condition-variable semantics required by the game

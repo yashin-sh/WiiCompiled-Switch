@@ -52,7 +52,8 @@ That path has now been hardware-validated beyond metadata inspection:
 - PAL `__start` (`0x800060A4`) executes on Switch;
 - the local headless platform path reaches `TRANSLATED_EXEC_ENTER` with an active TLS guest context;
 - real Wii SDK/native boundaries are reached and fixed iteratively;
-- native HLE can call back into translated code, as validated for `IPCCltInit` → `IPCInit`.
+- native HLE can call back into translated code, as validated for `IPCCltInit` → `IPCInit`;
+- native HLE can publish required guest SDA bookkeeping, as validated for `__OSInitSTM`.
 
 Therefore the previous `WAITING_FOR_TRANSLATED_PRODUCT` / `TRANSLATED_PRODUCT_LINKED` states are historical bootstrap milestones, not the current development stop point.
 
@@ -77,12 +78,12 @@ Wii SDK / OS bootstrap
   ↓
 OSReport → OSGetConsoleType → OSGetResetCode
   ↓
-DCZeroRange → IPCCltInit
+DCZeroRange → IPCCltInit → __OSInitSTM
   ↓
 PAL main (0x8000B6B0)  ← not yet proven
 ```
 
-As of 2026-09-12, real hardware has crossed the translated/native boundaries for `OSReport`, `OSGetConsoleType`, `OSGetResetCode`, `DCZeroRange`, and `IPCCltInit`.
+As of 2026-09-12, real hardware has crossed the translated/native boundaries for `OSReport`, `OSGetConsoleType`, `OSGetResetCode`, `DCZeroRange`, `IPCCltInit`, and `__OSInitSTM`.
 
 The project has **not yet emitted `fast-track-main-reached.txt`**, so `main()` must not be claimed as reached.
 
@@ -103,6 +104,12 @@ The hardware case `r3 = 0xFFFFFFFF` aligned to `0xFFFFFFE0` and previously cause
 Pinned WiiCompiled's `IPCCltInit` HLE calls translated `IPCInit` (`0x80192F7C`) before advancing the IPC buffer-low pointer by `0x1000`. The Switch port mirrors this behavior instead of treating every native HLE as an isolated leaf.
 
 This is important for later runtime work: a host/native override may still depend on translated guest code and guest-memory side effects.
+
+### Native HLE may publish guest SDA state
+
+Pinned WiiCompiled's `__OSInitSTM` HLE (`0x801AB848`) avoids real Wii `/dev/stm/*` IOS devices but still writes the guest-visible state expected by reset logic: an initialized flag plus two non-zero fake STM handles in the `r13` SDA block. The Switch port mirrors that state and guards the whole range before writing.
+
+This boundary reinforces that a hardware-facing HLE cannot automatically be reduced to a no-op: host I/O may be skipped while guest bookkeeping must still be preserved.
 
 ## Diagnostics at this boundary
 
@@ -138,7 +145,8 @@ The local generated-product path was exercised on hardware through real translat
 - `0x8019F33C` — `OSGetConsoleType`;
 - `0x801A8A50` — `OSGetResetCode`;
 - `0x801A16E4` — `DCZeroRange`;
-- `0x80193478` — `IPCCltInit`.
+- `0x80193478` — `IPCCltInit`;
+- `0x801AB848` — `__OSInitSTM`.
 
 The day also produced two useful non-dispatch diagnostics:
 
@@ -169,6 +177,7 @@ Only Nintendo-data-free runtime/platform code, documentation and synthetic probe
 - local translated `__start` execution: PASS;
 - headless local platform path reaching translated execution: PASS;
 - native HLE → translated dispatch seam: PASS;
+- native HLE guest-SDA state publication: PASS;
 - first-blocker durable diagnostics: PASS;
 - PAL `main()` reached: **NOT YET PROVEN**;
 - first rendered frame: **NOT YET PROVEN**.

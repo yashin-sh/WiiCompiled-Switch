@@ -125,9 +125,8 @@ extern "C" void __libnx_exception_handler(ThreadExceptionDump* ctx) {
     const bool far_in_guest_window =
         guest_base != 0u && far >= guest_base &&
         static_cast<std::uint64_t>(far - guest_base) < GuestFlat::kGuestSpaceSize;
-    const std::uint32_t derived_guest_address = far_in_guest_window
-        ? static_cast<std::uint32_t>(far - guest_base)
-        : 0u;
+    const std::uint32_t derived_guest_address =
+        far_in_guest_window ? static_cast<std::uint32_t>(far - guest_base) : 0u;
 
     char buffer[2048];
     const int n = std::snprintf(

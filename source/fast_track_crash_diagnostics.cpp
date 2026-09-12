@@ -4,6 +4,7 @@
     (defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK)
 #define MKW_FAST_TRACK_DIAGNOSTICS 1
 #include "abi_bridge.h"
+#include "guest_flat_memory.h"
 #include <switch.h>
 #include <cstddef>
 #include <cstdio>
@@ -101,12 +102,31 @@ extern "C" void __libnx_exception_handler(ThreadExceptionDump* ctx) {
         return;
     }
 
-    CpuContext* guest = TryGetCpuContext();
+    // libnx exception handling may observe a different TLS view than the code
+    // that entered translated execution. WiiCompiled's own fatal reporting uses
+    // the persistent context as a fallback for exactly this reason.
+    CpuContext* tls_guest = TryGetCpuContext();
+    CpuContext* guest = tls_guest;
+    bool persistent_fallback = false;
+    if (!guest) {
+        guest = &GetPersistentCpuContext();
+        persistent_fallback = true;
+    }
+
     const std::uint32_t guest_pc = guest ? guest->pc : 0u;
     const std::uint32_t guest_r1 = guest ? guest->gpr[1] : 0u;
     const std::uint32_t guest_r2 = guest ? guest->gpr[2] : 0u;
     const std::uint32_t guest_r3 = guest ? guest->gpr[3] : 0u;
     const std::uint32_t guest_r13 = guest ? guest->gpr[13] : 0u;
+
+    const std::uintptr_t guest_base =
+        reinterpret_cast<std::uintptr_t>(GuestFlat::Base());
+    const std::uintptr_t far = static_cast<std::uintptr_t>(ctx->far.x);
+    const bool far_in_guest_window =
+        guest_base != 0u && far >= guest_base &&
+        static_cast<std::uint64_t>(far - guest_base) < GuestFlat::kGuestSpaceSize;
+    const std::uint32_t derived_guest_address =
+        far_in_guest_window ? static_cast<std::uint32_t>(far - guest_base) : 0u;
 
     char buffer[2048];
     const int n = std::snprintf(
@@ -121,11 +141,15 @@ extern "C" void __libnx_exception_handler(ThreadExceptionDump* ctx) {
         "fault address (FAR)   : 0x%016llx\n"
         "ESR                   : 0x%08x\n"
         "guest context active  : %s\n"
+        "guest context source  : %s\n"
         "guest pc              : 0x%08x\n"
         "guest r1              : 0x%08x\n"
         "guest r2              : 0x%08x\n"
         "guest r3              : 0x%08x\n"
         "guest r13             : 0x%08x\n"
+        "guest flat base       : 0x%016llx\n"
+        "FAR in guest window   : %s\n"
+        "derived guest address : 0x%08x\n"
         "note                  : process will still terminate after this handler\n",
         ctx->error_desc,
         static_cast<unsigned long long>(ctx->pc.x),
@@ -133,12 +157,16 @@ extern "C" void __libnx_exception_handler(ThreadExceptionDump* ctx) {
         static_cast<unsigned long long>(ctx->sp.x),
         static_cast<unsigned long long>(ctx->far.x),
         ctx->esr,
-        guest ? "YES" : "NO",
+        tls_guest ? "YES" : "NO",
+        persistent_fallback ? "PERSISTENT_FALLBACK" : "TLS",
         guest_pc,
         guest_r1,
         guest_r2,
         guest_r3,
-        guest_r13);
+        guest_r13,
+        static_cast<unsigned long long>(guest_base),
+        far_in_guest_window ? "YES" : "NO",
+        derived_guest_address);
 
     if (n > 0) {
         const std::size_t size = static_cast<std::size_t>(n) < sizeof(buffer)

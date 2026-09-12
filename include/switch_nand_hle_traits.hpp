@@ -71,14 +71,19 @@ inline bool WriteGuestCString(std::uint32_t address, const std::string& value) n
 }
 
 inline void EnsureHostTitleDataDir(std::uint32_t gameCode) noexcept {
-    std::error_code ec;
-    const std::filesystem::path dataDir =
-        mkw::horizon_runtime_services::nand_root() /
-        "title" /
-        HexWord(kTitleIdHi) /
-        HexWord(gameCode) /
-        "data";
-    std::filesystem::create_directories(dataDir, ec);
+    try {
+        std::error_code ec;
+        const std::filesystem::path dataDir =
+            mkw::horizon_runtime_services::nand_root() /
+            "title" /
+            HexWord(kTitleIdHi) /
+            HexWord(gameCode) /
+            "data";
+        std::filesystem::create_directories(dataDir, ec);
+    } catch (...) {
+        // Pinned WiiCompiled treats host directory creation as bootstrap support,
+        // not as a guest-visible NANDInit failure. Keep it best-effort here too.
+    }
 }
 
 } // namespace mkw::switch_nand_hle

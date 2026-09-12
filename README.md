@@ -53,7 +53,9 @@ IPCCltInit
   ↓
 __OSInitSTM
   ↓
-NANDInit                   ← latest hardware blocker fixed in main
+NANDInit
+  ↓
+NANDPrivateOpenAsync        ← latest hardware blocker fixed in main
   ↓
 remaining early OS/runtime boundaries
   ↓
@@ -74,7 +76,7 @@ first rendered frame
 
 Validated work includes GuestFlat memory, Wii `Memory::Init`, generated data initialization, translated `__start`, register bootstrap, timebase/SPR/FPSCR helpers, OS timing and interrupt state, exception/interrupt initialization, Wii cache-control HLE, EXI initialization/basic transactions, SI initialization, generic indirect translated dispatch, and a growing set of Wii SDK native/HLE boundaries whose behavior is mirrored from the pinned WiiCompiled runtime.
 
-The hardware-driven guest blocker sequence has now crossed:
+The hardware-driven guest blocker sequence has now captured and fixed:
 
 - `OSReport` (`0x801A25D0`);
 - `OSGetConsoleType` (`0x8019F33C`);
@@ -82,7 +84,8 @@ The hardware-driven guest blocker sequence has now crossed:
 - `DCZeroRange` (`0x801A16E4`);
 - `IPCCltInit` (`0x80193478`);
 - `__OSInitSTM` (`0x801AB848`);
-- `NANDInit` (`0x8019E18C`).
+- `NANDInit` (`0x8019E18C`);
+- `NANDPrivateOpenAsync` (`0x8019C990`).
 
 `DCZeroRange` exposed an important Switch-runtime contract mismatch: pinned WiiCompiled catches an invalid guest-memory access, while the Switch `Memory::GetPointer` slice returns `nullptr`. A hardware call with `r3 = 0xFFFFFFFF` aligned to `0xFFFFFFE0`, and the old HLE called `memset(nullptr, 0, 0x20)`. The Switch HLE now checks the returned guest pointer before entering libc while preserving valid-range zeroing and the GX/DMA notification seam.
 
@@ -90,7 +93,9 @@ The hardware-driven guest blocker sequence has now crossed:
 
 `__OSInitSTM` avoids real Wii `/dev/stm/*` IOS devices but preserves the guest-visible reset bookkeeping in the SDA block: initialized flag `1` plus two stable non-zero fake handles. The Switch HLE mirrors those values and guards invalid SDA ranges.
 
-`NANDInit` is the latest captured guest `DIRECT` blocker. Matching the pinned WiiCompiled HLE requires host and guest state: derive the four-character game code from guest memory with PAL `RMCP` fallback, create the title data directory under the existing SD-backed Horizon `nand_root()`, publish `/title/00010004/<gamecode>/data` into guest `NANDHomeDir` at `0x80346D20`, write initialized state `2` at `0x80386848`, and return `NAND_RESULT_OK`. The Switch path deliberately does not open the Wii IOS `/dev/fs` device.
+`NANDInit` links the Wii-style guest NAND state to the SD-backed Horizon runtime: it derives the four-character game code from guest memory with PAL `RMCP` fallback, creates the title data directory under `nand_root()`, publishes `/title/00010004/<gamecode>/data` into guest `NANDHomeDir` at `0x80346D20`, writes initialized state `2` at `0x80386848`, and returns `NAND_RESULT_OK` without opening Wii IOS `/dev/fs`.
+
+`NANDPrivateOpenAsync` is the latest hardware-captured `DIRECT` blocker. The Switch bridge now performs a real SD-backed synchronous NAND open below `nand_root()`, normalizes/clamps Wii paths, supports modes 1/2/3, publishes a persistent host fd plus `NANDFileInfo::openFlag = 1`, and invokes the guest completion ABI as `(result, commandBlock)` on a scratch `CpuContext`. Pinned WiiCompiled normally drains queued NAND callbacks later from its alarm/IOS pump; the current fast-track drains the queued callback before the HLE returns. That scheduling difference is explicitly temporary and must be revisited if hardware shows ordering/reentrancy sensitivity.
 
 An earlier hardware run exposed a separate **pre-guest host crash** during `MAIN_PLATFORM_INIT`: no guest context was active, GuestFlat was not initialized, and the fault register state matched an 8 MiB host memory clear in the libnx PrintConsole/NV path. The M2 local fast-track therefore starts **headless** and relies on SD diagnostics until a real GX backend exists. Subsequent hardware runs have confirmed that this headless path reaches `TRANSLATED_EXEC_ENTER` with an active guest context.
 
@@ -181,7 +186,7 @@ generated C++ / RuntimeConfig / data init
 | WiiCompiled translated product + runtime                |
 | Switch platform adapter                                 |
 | - lifecycle / applet                                    |
-| - runtime filesystem + diagnostics                      |
+| - runtime filesystem + diagnostics / NAND backing       |
 | - input                                                 |
 | - audio (bootstrap/HLE incomplete)                      |
 | - graphics (GX FIFO sink; renderer pending)             |

@@ -22,8 +22,10 @@ The following pieces have been validated through CI and/or real Switch hardware:
 6. translated direct/indirect dispatch integration;
 7. host exception diagnostics with guest-context attribution;
 8. durable unsupported-dispatch diagnostics;
-9. early Wii SDK cache/timing/interrupt/exception HLE;
-10. EXI/SI startup coverage and basic EXI transaction HLE.
+9. headless local platform initialization that bypasses the unrelated PrintConsole/NV framebuffer path;
+10. early Wii SDK cache/timing/interrupt/exception HLE;
+11. EXI/SI startup coverage and basic EXI transaction HLE;
+12. mixed native-HLE → translated dispatch, including `IPCCltInit` → `IPCInit`.
 
 The local fast-track now runs real WiiCompiled-translated Mario Kart Wii code on hardware rather than stopping at the old metadata-only translated-product boundary.
 
@@ -34,7 +36,7 @@ The active path is conceptually:
 ```text
 Horizon/libnx entry
   ↓
-runtime services
+headless platform/runtime services
   ↓
 Memory::Init / GuestFlat
   ↓
@@ -48,6 +50,10 @@ PAL __start (0x800060A4)
   ↓
 early Wii SDK / OS initialization
   ↓
+OSReport → OSGetConsoleType → OSGetResetCode
+  ↓
+DCZeroRange → IPCCltInit
+  ↓
 remaining blockers
   ↓
 PAL main (0x8000B6B0)
@@ -57,7 +63,7 @@ PAL main (0x8000B6B0)
 
 ## Hardware-driven blocker sequence
 
-Recent real-Switch runs have provided concrete unsupported-dispatch boundaries inside translated startup. Each fix mirrors the exact semantics of the pinned WiiCompiled runtime rather than blindly no-oping guest-visible behavior.
+Recent real-Switch runs have provided concrete unsupported-dispatch boundaries and attributable host exceptions inside translated startup. Each fix mirrors the pinned WiiCompiled semantics rather than blindly no-oping guest-visible behavior.
 
 ### `OSReport` — `0x801A25D0`
 
@@ -74,22 +80,35 @@ The Switch HLE mirrors that behavior in guest `r3`.
 
 ### `OSGetResetCode` — `0x801A8A50`
 
-Pinned WiiCompiled deliberately avoids real Wii reset MMIO and returns `0` (`Cold Boot`). The Switch HLE now mirrors that result in guest `r3`.
+Pinned WiiCompiled deliberately avoids real Wii reset MMIO and returns `0` (`Cold Boot`). The Switch HLE mirrors that result in guest `r3`.
 
-The hardware run that exposed `OSGetResetCode` reported:
+### `DCZeroRange` — `0x801A16E4`
 
-```text
-kind             : DIRECT
-target           : 0x801a8a50
-guest pc         : 0x800060a4
-r1               : 0x80399158
-r2               : 0x8038efa0
-r3               : 0x00000000
-r13              : 0x8038cc00
-fast-track stage : TRANSLATED_EXEC_ENTER
-```
+The initial Switch port correctly mirrored the valid-range zeroing semantics but assumed an invalid guest lookup would throw like upstream WiiCompiled. The Switch `Memory::GetPointer` slice instead returns `nullptr`.
 
-That blocker is fixed in `main` after PR #76.
+Real hardware exposed the mismatch with guest `r3 = 0xFFFFFFFF`: the address aligned down to `0xFFFFFFE0`, the range length became `0x20`, `GetPointer` returned `nullptr`, and `memset(nullptr, 0, 0x20)` caused an AArch64 Data Abort at FAR `0x0` while the guest context was active.
+
+The HLE now checks the returned pointer before entering libc. Valid ranges are still zeroed and the GX/DMA notification seam is preserved; invalid ranges are skipped, matching the pinned best-effort behavior.
+
+### `IPCCltInit` — `0x80193478`
+
+This is the latest hardware-captured `DIRECT` blocker.
+
+Pinned WiiCompiled does **not** simply return success. Its HLE:
+
+1. calls translated `IPCInit` at `0x80192F7C` so IPC buffer globals are initialized;
+2. reads the r13-relative IPC buffer-low global;
+3. advances it by `0x1000` for the IOS heap;
+4. skips Wii-specific interrupt/MMIO setup;
+5. returns success.
+
+The Switch HLE mirrors that mixed native→translated sequence. Nintendo-data-free CI validates the dispatch/link seam.
+
+## Headless platform validation
+
+A pre-guest hardware crash was previously observed during `MAIN_PLATFORM_INIT`, with no guest context, no GuestFlat mapping, and an 8 MiB host clear matching the libnx PrintConsole/NV transfer-memory path.
+
+The local fast-track now skips `consoleInit()` and all fast-track PrintConsole output. Subsequent hardware runs reached `TRANSLATED_EXEC_ENTER` with an active TLS guest context, confirming that the headless path is not merely compiled but actually exercised on hardware.
 
 ## Diagnostics
 
@@ -137,6 +156,8 @@ git pull
 MKW_JOBS=8 bash scripts/build-local-fast-track-incremental.sh
 ```
 
+The helper invalidates stale incremental objects when Git HEAD changes, verifies the headless fast-track marker in the resulting ELF without a `pipefail`/SIGPIPE-prone pipeline, and prints the NRO SHA-256 so the tested hardware artifact can be identified exactly.
+
 The user-owned game inputs and generated translated product remain local-only. Do not commit or upload DOL/REL inputs, disc images, generated game-derived C++/objects, game-containing NRO/ELF files, keys, firmware, or extracted copyrighted assets.
 
 ## Public CI boundary
@@ -147,7 +168,7 @@ The local game-containing build is a separate private workflow that links the Wi
 
 ## Next slices
 
-1. run the current post-PR-#76 NRO on hardware;
+1. build the current `main` local fast-track and run it on hardware;
 2. capture the next `fast-track-dispatch-blocker.txt`, exception, heartbeat, or `fast-track-main-reached.txt`;
 3. if a blocker appears, map its PAL address against the pinned WiiCompiled runtime and preserve its actual guest semantics;
 4. repeat until PAL `main` (`0x8000B6B0`) is reached;

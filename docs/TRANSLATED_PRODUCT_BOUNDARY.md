@@ -1,6 +1,6 @@
 # M2 — Translated-product boundary
 
-Status: **hardware-validated and crossed on real Nintendo Switch**. The project now links and executes a locally generated WiiCompiled Mario Kart Wii product; the active milestone is no longer product discovery but translated boot toward PAL `main()`.
+Status: **hardware-validated and crossed on real Nintendo Switch**. The project links and executes a locally generated WiiCompiled Mario Kart Wii product; the active milestone is translated boot toward PAL `main()`.
 
 Upstream WiiCompiled pin: `a135beb201042b20f390c6695ca6b26768820fb4`.
 
@@ -50,7 +50,9 @@ That path has now been hardware-validated beyond metadata inspection:
 - generated data initialization executes;
 - translated execution handoff executes;
 - PAL `__start` (`0x800060A4`) executes on Switch;
-- real Wii SDK/native boundaries are reached and fixed iteratively.
+- the local headless platform path reaches `TRANSLATED_EXEC_ENTER` with an active TLS guest context;
+- real Wii SDK/native boundaries are reached and fixed iteratively;
+- native HLE can call back into translated code, as validated for `IPCCltInit` → `IPCInit`.
 
 Therefore the previous `WAITING_FOR_TRANSLATED_PRODUCT` / `TRANSLATED_PRODUCT_LINKED` states are historical bootstrap milestones, not the current development stop point.
 
@@ -73,10 +75,34 @@ PAL __start (0x800060A4)
   ↓
 Wii SDK / OS bootstrap
   ↓
+OSReport → OSGetConsoleType → OSGetResetCode
+  ↓
+DCZeroRange → IPCCltInit
+  ↓
 PAL main (0x8000B6B0)  ← not yet proven
 ```
 
-As of 2026-09-12, real hardware has crossed the translated/native boundaries for `OSReport`, `OSGetConsoleType`, and `OSGetResetCode`. The project has **not yet emitted `fast-track-main-reached.txt`**, so `main()` must not be claimed as reached.
+As of 2026-09-12, real hardware has crossed the translated/native boundaries for `OSReport`, `OSGetConsoleType`, `OSGetResetCode`, `DCZeroRange`, and `IPCCltInit`.
+
+The project has **not yet emitted `fast-track-main-reached.txt`**, so `main()` must not be claimed as reached.
+
+## Important boundary lessons from hardware
+
+### Headless host bootstrap
+
+A pre-guest `MAIN_PLATFORM_INIT` Data Abort with an 8 MiB host clear was attributable to the libnx PrintConsole/NV path, not to translated Mario Kart Wii code. The local fast-track now skips that path. Later runs reached translated execution with active guest state, validating that the headless product path is real on hardware.
+
+### Guest-memory contract at native HLE boundaries
+
+`DCZeroRange` exposed a difference between upstream WiiCompiled and the Switch memory slice. Upstream reports an invalid range through `Memory::AccessViolation`; the Switch `Memory::GetPointer` slice returns `nullptr`.
+
+The hardware case `r3 = 0xFFFFFFFF` aligned to `0xFFFFFFE0` and previously caused `memset(nullptr, 0, 0x20)`. The Switch HLE now treats a null guest pointer as the upstream best-effort invalid-range path rather than converting it into a host crash.
+
+### Native-to-translated calls are part of the product boundary
+
+Pinned WiiCompiled's `IPCCltInit` HLE calls translated `IPCInit` (`0x80192F7C`) before advancing the IPC buffer-low pointer by `0x1000`. The Switch port mirrors this behavior instead of treating every native HLE as an isolated leaf.
+
+This is important for later runtime work: a host/native override may still depend on translated guest code and guest-memory side effects.
 
 ## Diagnostics at this boundary
 
@@ -110,7 +136,14 @@ The local generated-product path was exercised on hardware through real translat
 
 - `0x801A25D0` — `OSReport`;
 - `0x8019F33C` — `OSGetConsoleType`;
-- `0x801A8A50` — `OSGetResetCode`.
+- `0x801A8A50` — `OSGetResetCode`;
+- `0x801A16E4` — `DCZeroRange`;
+- `0x80193478` — `IPCCltInit`.
+
+The day also produced two useful non-dispatch diagnostics:
+
+- a pre-guest PrintConsole/NV-related host crash, removed from the local fast-track by making it headless;
+- an active-guest `DCZeroRange` null-pointer crash, fixed by honoring the Switch memory slice's null-return contract.
 
 See `HARDWARE_RESULTS_2026-09-12.md`.
 
@@ -134,6 +167,8 @@ Only Nintendo-data-free runtime/platform code, documentation and synthetic probe
 - real Switch runtime/GuestFlat/HostContext foundation: PASS;
 - local generated data initialization: PASS;
 - local translated `__start` execution: PASS;
+- headless local platform path reaching translated execution: PASS;
+- native HLE → translated dispatch seam: PASS;
 - first-blocker durable diagnostics: PASS;
 - PAL `main()` reached: **NOT YET PROVEN**;
 - first rendered frame: **NOT YET PROVEN**.

@@ -117,7 +117,7 @@ if grep -Eq "[[:space:]]U[[:space:]]${START_SYMBOL}$" "$NM_SCAN"; then
   echo "error: final ELF still has unresolved $START_SYMBOL" >&2
   exit 5
 fi
-if ! strings "$ELF" | grep -Fq 'PLATFORM_CONSOLE_SKIPPED_FAST_TRACK'; then
+if ! grep -aFq 'PLATFORM_CONSOLE_SKIPPED_FAST_TRACK' "$ELF"; then
   echo "error: final ELF does not contain the headless fast-track platform marker" >&2
   echo "error: refusing to provide a hardware-test NRO from a stale/misconfigured build" >&2
   exit 6

@@ -27,7 +27,8 @@ The following pieces have been validated through CI and/or real Switch hardware:
 11. EXI/SI startup coverage and basic EXI transaction HLE;
 12. mixed native-HLE → translated dispatch, including `IPCCltInit` → `IPCInit`;
 13. SDA-backed host HLE state publication, including `__OSInitSTM`;
-14. initial NAND/ISFS bootstrap linking SD-backed host storage with required guest NAND path/state.
+14. initial NAND/ISFS bootstrap linking SD-backed host storage with required guest NAND path/state;
+15. SD-backed NAND file-open state plus guest callback ABI for `NANDPrivateOpenAsync`.
 
 The local fast-track now runs real WiiCompiled-translated Mario Kart Wii code on hardware rather than stopping at the old metadata-only translated-product boundary.
 
@@ -55,6 +56,8 @@ early Wii SDK / OS initialization
 OSReport → OSGetConsoleType → OSGetResetCode
   ↓
 DCZeroRange → IPCCltInit → __OSInitSTM → NANDInit
+  ↓
+NANDPrivateOpenAsync
   ↓
 remaining blockers
   ↓
@@ -117,8 +120,6 @@ The Switch HLE mirrors those values. If the SDA base/range is invalid it returns
 
 ### `NANDInit` — `0x8019E18C`
 
-This is the latest hardware-captured `DIRECT` blocker.
-
 Pinned WiiCompiled's synchronous NAND bootstrap performs host and guest setup rather than merely returning success:
 
 1. initialize its host-side ISFS/NAND support;
@@ -130,7 +131,22 @@ Pinned WiiCompiled's synchronous NAND bootstrap performs host and guest setup ra
 
 The Switch HLE mirrors those guest-visible semantics and maps the host directory onto the existing SD-backed `mkw::horizon_runtime_services::nand_root()`. Horizon never opens the Wii IOS `/dev/fs` device. Host directory creation is best-effort; guest address validation prevents a malformed fixed guest range from becoming a host fault.
 
-Nintendo-data-free CI covers `InvokeDirectCpu<0x8019E18C>` through the same translated-execution seam used by the local fast-track.
+### `NANDPrivateOpenAsync` — `0x8019C990`
+
+This is the latest hardware-captured `DIRECT` blocker. The captured state remained inside `TRANSLATED_EXEC_ENTER`, proving that the preceding `NANDInit` boundary had been crossed on hardware.
+
+Pinned WiiCompiled implements this boundary by:
+
+1. running the synchronous `NANDOpen` operation with guest `path`, `NANDFileInfo`, and mode;
+2. queuing the guest completion callback with `(result, commandBlock)`;
+3. returning the same NAND result immediately;
+4. draining the callback later from its alarm/IOS servicing path.
+
+The Switch bridge now implements the important storage and guest-ABI semantics rather than returning a fake success. Wii paths are normalized under the Horizon SD-backed `nand_root()` with `.`/`..` clamped at that root. Modes 1/2/3 map to read/read-write host opens, a persistent fd table starts at 100, and successful opens write the fd to `NANDFileInfo` plus `openFlag = 1` at offset `0x8A`. The fast-track preserves the pinned result family (`0`, `-8`, `-12`, `-64`).
+
+Guest completion runs as `(r3 = result, r4 = commandBlock)` on a scratch `CpuContext`, so callback register mutations cannot corrupt the translated caller. The current fast-track drains the queued callback before the HLE returns instead of waiting for the later alarm/IOS pump. This scheduling approximation is explicit: if hardware reveals ordering or reentrancy sensitivity, the next refinement is to move the drain to a verified runtime servicing point without changing the callback ABI or NAND result semantics.
+
+Nintendo-data-free CI resolves `InvokeDirectCpu<0x8019C990>` through the same fast-track seam using null synthetic guest pointers/callback values, so no game-derived pathname or callback target enters public CI.
 
 ## Headless platform validation
 
@@ -198,9 +214,10 @@ The local game-containing build is a separate private workflow that links the Wi
 
 1. build the current `main` local fast-track and run it on hardware;
 2. capture the next `fast-track-dispatch-blocker.txt`, exception, heartbeat, or `fast-track-main-reached.txt`;
-3. if a blocker appears, map its PAL address against the pinned WiiCompiled runtime and preserve its actual guest semantics;
-4. repeat until PAL `main` (`0x8000B6B0`) is reached;
-5. then attribute the first post-`main` blocker before expanding into game subsystem bring-up;
-6. begin the real GX → Switch graphics backend only when the pre-graphics runtime path is stable enough to make first-frame work meaningful.
+3. if `NANDPrivateOpenAsync` itself causes an ordering/reentrancy failure, move its callback drain to a verified alarm/IOS servicing point while retaining the same ABI;
+4. otherwise map the next PAL blocker against the pinned WiiCompiled runtime and preserve its actual guest semantics;
+5. repeat until PAL `main` (`0x8000B6B0`) is reached;
+6. then attribute the first post-`main` blocker before expanding into game subsystem bring-up;
+7. begin the real GX → Switch graphics backend only when the pre-graphics runtime path is stable enough to make first-frame work meaningful.
 
 See `HARDWARE_RESULTS_2026-09-12.md` for the current hardware evidence.

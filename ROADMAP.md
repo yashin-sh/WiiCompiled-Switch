@@ -32,6 +32,8 @@
 - [x] hardware-cross `IPCCltInit` (`0x80193478`) with translated `IPCInit` (`0x80192F7C`) handoff
 - [x] hardware-cross `__OSInitSTM` (`0x801AB848`) with guest SDA state and fake STM handles
 - [x] hardware-cross `NANDInit` (`0x8019E18C`) with SD-backed NAND root and guest home/init state
+- [x] capture/fix `NANDPrivateOpenAsync` (`0x8019C990`) with SD-backed open state and guest completion ABI
+- [ ] move NAND async completion draining from the fast-track HLE boundary to a verified alarm/IOS scheduling point if hardware ordering requires it
 - [ ] reach PAL Mario Kart Wii `main` (`0x8000B6B0`)
 - [ ] identify and fix the first post-`main` runtime blocker
 - [ ] complete thread/mutex/condition-variable semantics required by the game

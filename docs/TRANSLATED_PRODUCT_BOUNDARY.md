@@ -31,7 +31,7 @@ Generated C++ plus generated runtime configuration/data initialization compiled 
 
 ### 3. Runtime SD data
 
-Host/runtime state under `sdmc:/switch/WiiCompiled-Switch`, including logs, cache/configuration state and fast-track diagnostics.
+Host/runtime state under `sdmc:/switch/WiiCompiled-Switch`, including logs, cache/configuration state, NAND backing and fast-track diagnostics.
 
 The SD runtime directory is **not** a loader for translated executable code.
 
@@ -53,7 +53,8 @@ That path has now been hardware-validated beyond metadata inspection:
 - the local headless platform path reaches `TRANSLATED_EXEC_ENTER` with an active TLS guest context;
 - real Wii SDK/native boundaries are reached and fixed iteratively;
 - native HLE can call back into translated code, as validated for `IPCCltInit` → `IPCInit`;
-- native HLE can publish required guest SDA bookkeeping, as validated for `__OSInitSTM`.
+- native HLE can publish required guest SDA bookkeeping, as validated for `__OSInitSTM`;
+- native storage HLE can bridge required guest NAND state to an SD-backed Horizon data root, as validated for `NANDInit`.
 
 Therefore the previous `WAITING_FOR_TRANSLATED_PRODUCT` / `TRANSLATED_PRODUCT_LINKED` states are historical bootstrap milestones, not the current development stop point.
 
@@ -78,12 +79,12 @@ Wii SDK / OS bootstrap
   ↓
 OSReport → OSGetConsoleType → OSGetResetCode
   ↓
-DCZeroRange → IPCCltInit → __OSInitSTM
+DCZeroRange → IPCCltInit → __OSInitSTM → NANDInit
   ↓
 PAL main (0x8000B6B0)  ← not yet proven
 ```
 
-As of 2026-09-12, real hardware has crossed the translated/native boundaries for `OSReport`, `OSGetConsoleType`, `OSGetResetCode`, `DCZeroRange`, `IPCCltInit`, and `__OSInitSTM`.
+As of 2026-09-12, real hardware has crossed the translated/native boundaries for `OSReport`, `OSGetConsoleType`, `OSGetResetCode`, `DCZeroRange`, `IPCCltInit`, `__OSInitSTM`, and `NANDInit`.
 
 The project has **not yet emitted `fast-track-main-reached.txt`**, so `main()` must not be claimed as reached.
 
@@ -110,6 +111,12 @@ This is important for later runtime work: a host/native override may still depen
 Pinned WiiCompiled's `__OSInitSTM` HLE (`0x801AB848`) avoids real Wii `/dev/stm/*` IOS devices but still writes the guest-visible state expected by reset logic: an initialized flag plus two non-zero fake STM handles in the `r13` SDA block. The Switch port mirrors that state and guards the whole range before writing.
 
 This boundary reinforces that a hardware-facing HLE cannot automatically be reduced to a no-op: host I/O may be skipped while guest bookkeeping must still be preserved.
+
+### Storage HLE spans host and guest state
+
+Pinned WiiCompiled's `NANDInit` HLE (`0x8019E18C`) initializes host-side NAND/ISFS support and also publishes the guest-visible path/state expected by the RVL NAND library. The Switch port maps the host side to the existing SD-backed `nand_root()` while preserving the Wii-style guest path `/title/00010004/<gamecode>/data`, `NANDHomeDir` at `0x80346D20`, and initialized value `2` at `0x80386848`.
+
+This means later NAND/ISFS blockers should be treated as a filesystem-translation boundary, not as unconditional success stubs: host storage effects and guest bookkeeping may both matter.
 
 ## Diagnostics at this boundary
 
@@ -146,7 +153,8 @@ The local generated-product path was exercised on hardware through real translat
 - `0x801A8A50` — `OSGetResetCode`;
 - `0x801A16E4` — `DCZeroRange`;
 - `0x80193478` — `IPCCltInit`;
-- `0x801AB848` — `__OSInitSTM`.
+- `0x801AB848` — `__OSInitSTM`;
+- `0x8019E18C` — `NANDInit`.
 
 The day also produced two useful non-dispatch diagnostics:
 
@@ -178,6 +186,7 @@ Only Nintendo-data-free runtime/platform code, documentation and synthetic probe
 - headless local platform path reaching translated execution: PASS;
 - native HLE → translated dispatch seam: PASS;
 - native HLE guest-SDA state publication: PASS;
+- initial NAND/ISFS host+guest bootstrap: PASS;
 - first-blocker durable diagnostics: PASS;
 - PAL `main()` reached: **NOT YET PROVEN**;
 - first rendered frame: **NOT YET PROVEN**.

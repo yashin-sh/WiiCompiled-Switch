@@ -20,11 +20,9 @@ int main(int, char**) {
 #if defined(MKW_LOCAL_FAST_TRACK) && MKW_LOCAL_FAST_TRACK
     // The VM/context/GuestFlat smoke probes were hardware-validated earlier in
     // the port. Re-running them on every blocker adds startup noise and can hide
-    // failures in the real boot path. Local fast-track builds now go straight
-    // to the runtime bootstrap; public/default builds keep the probes intact.
+    // failures in the real boot path. The local fast-track is also intentionally
+    // headless, so do not depend on stdout/PrintConsole here.
     mkw_switch_set_fast_track_stage("FAST_TRACK_SKIP_VALIDATED_SMOKES");
-    std::printf("Local fast-track: skipping validated VM/context/GuestFlat smoke probes.\n");
-    consoleUpdate(nullptr);
 #else
     mkw_switch_set_fast_track_stage("VM_PROBE");
     const auto vm_result = mkw::vm_probe::run();
@@ -70,8 +68,14 @@ int main(int, char**) {
     mkw_switch_set_fast_track_stage("RUNTIME_BOOTSTRAP_START");
     const auto runtime_result = mkw::runtime_bootstrap::start();
     mkw_switch_set_fast_track_stage("RUNTIME_BOOTSTRAP_RETURNED");
+
+#if !(defined(MKW_LOCAL_FAST_TRACK) && MKW_LOCAL_FAST_TRACK)
     mkw::runtime_bootstrap::print(runtime_result);
-    if (!mkw::runtime_bootstrap::write_report(runtime_result)) {
+#endif
+    const bool report_written = mkw::runtime_bootstrap::write_report(runtime_result);
+
+#if !(defined(MKW_LOCAL_FAST_TRACK) && MKW_LOCAL_FAST_TRACK)
+    if (!report_written) {
         std::printf("WARNING: could not write runtime-bootstrap.txt.\n");
         consoleUpdate(nullptr);
     }
@@ -90,6 +94,9 @@ int main(int, char**) {
     }
     std::printf("Press + to exit.\n");
     consoleUpdate(nullptr);
+#else
+    (void)report_written;
+#endif
 
     mkw_switch_set_fast_track_stage("IDLE_AFTER_BOOTSTRAP");
     while (!mkw::switch_platform::should_exit()) {

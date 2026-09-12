@@ -135,6 +135,19 @@ struct KnownNativeCpuCall<0x801A1E70u> {
     }
 };
 
+// OS____InitMemoryProtection (PAL 0x801A7DFC). The pinned WiiCompiled runtime
+// deliberately skips Broadway MMU/Hollywood MMIO setup on the host and returns
+// 0. Preserve that exact guest-visible result on Horizon.
+template <>
+struct KnownNativeCpuCall<0x801A7DFCu> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (cpu) {
+            cpu->gpr[3] = 0u;
+        }
+    }
+};
+
 // RVL__EXIImm / EXIImm (PAL 0x80167F68). Pinned WiiCompiled reports immediate
 // transfers as successful. Read/RW transfers also clear the guest destination
 // bytes before returning so callers never consume stale EXI data.

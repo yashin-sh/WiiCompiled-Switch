@@ -88,7 +88,9 @@ std::string Normalize(std::string path) {
             continue;
         }
         if (part == "..") {
-            if (!parts.empty()) parts.pop_back();
+            if (!parts.empty()) {
+                parts.pop_back();
+            }
         } else if (!part.empty() && part != ".") {
             parts.push_back(part);
         }
@@ -108,8 +110,12 @@ std::filesystem::path HostPath(const std::string& guestPath) {
     while (cursor < guestPath.size()) {
         const std::size_t slash = guestPath.find('/', cursor);
         const std::size_t end = slash == std::string::npos ? guestPath.size() : slash;
-        if (end != cursor) host /= guestPath.substr(cursor, end - cursor);
-        if (slash == std::string::npos) break;
+        if (end != cursor) {
+            host /= guestPath.substr(cursor, end - cursor);
+        }
+        if (slash == std::string::npos) {
+            break;
+        }
         cursor = slash + 1u;
     }
     return host;
@@ -127,7 +133,9 @@ std::int32_t OpenSync(std::uint32_t pathPtr,
 
     try {
         std::string guestPath;
-        if (!ReadGuestCString(pathPtr, guestPath)) return kResultInvalid;
+        if (!ReadGuestCString(pathPtr, guestPath)) {
+            return kResultInvalid;
+        }
         const std::filesystem::path hostPath = HostPath(Normalize(guestPath));
 
         FILE* file = nullptr;
@@ -141,7 +149,9 @@ std::int32_t OpenSync(std::uint32_t pathPtr,
                 file = std::fopen(hostPath.c_str(), "w+b");
             }
         }
-        if (!file) return mode == 1u ? kResultNoExists : kResultUnknown;
+        if (!file) {
+            return mode == 1u ? kResultNoExists : kResultUnknown;
+        }
 
         std::int32_t fd = 0;
         {

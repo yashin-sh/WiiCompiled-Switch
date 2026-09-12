@@ -238,3 +238,16 @@ struct KnownNativeCpuCall<0x8019F33Cu> {
         cpu->gpr[3] = physicalMem2Size == kRetailMem2Size ? 0x00000012u : 0x10000012u;
     }
 };
+
+// OSGetResetCode (PAL 0x801A8A50). The Wii SDK implementation reads a
+// Hollywood MMIO reset register that does not exist on Horizon. Pinned
+// WiiCompiled replaces the whole entry point and always reports Cold Boot (0).
+template <>
+struct KnownNativeCpuCall<0x801A8A50u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (cpu) {
+            cpu->gpr[3] = 0u;
+        }
+    }
+};

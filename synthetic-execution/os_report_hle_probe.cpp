@@ -39,14 +39,21 @@ extern "C" __attribute__((used)) void synthetic_os_get_reset_code_hle_probe(CpuC
 }
 
 // Nintendo-data-free compile coverage for PAL DCZeroRange (0x801A16E4).
-// Use a synthetic cached-MEM1 address and one cache line. The CI probe validates
-// the native dispatch/link seam only; no game-derived bytes are embedded here.
+// Exercise both a normal cached-MEM1 request and the exact unmapped top-of-
+// address-space shape seen on real hardware. The Switch Memory slice returns
+// nullptr for the latter instead of throwing upstream's AccessViolation, so
+// DCZeroRange must return before calling memset.
 extern "C" __attribute__((used)) void synthetic_dc_zero_range_hle_probe(CpuContext* ctx) {
     if (!ctx) {
         return;
     }
+
     ctx->gpr[3] = 0x80001000u;
     ctx->gpr[4] = 32u;
+    InvokeDirectCpu<0x801A16E4u>(ctx);
+
+    ctx->gpr[3] = 0xFFFFFFFFu;
+    ctx->gpr[4] = 1u;
     InvokeDirectCpu<0x801A16E4u>(ctx);
 }
 

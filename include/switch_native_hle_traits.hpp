@@ -301,3 +301,30 @@ struct KnownNativeCpuCall<0x801A16E4u> {
         mkw_switch_gx_notify_guest_ram_dma_write(alignedAddress, alignedLength);
     }
 };
+
+// IPCCltInit (PAL 0x80193478). Pinned WiiCompiled keeps the guest-visible IPC
+// arena initialization but skips Wii interrupt/MMIO setup: call translated
+// IPCInit (0x80192F7C), reserve the first 4 KiB for iosHeap by advancing the
+// r13-relative IPC buffer-low global, then return success in r3.
+template <>
+struct KnownNativeCpuCall<0x80193478u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        InvokeIndirectCpu(0x80192F7Cu, cpu);
+
+        constexpr std::uint32_t kIpcBufferLoR13Offset = 0x6414u;
+        constexpr std::uint32_t kIosHeapSize = 0x1000u;
+        const std::uint32_t ipcBufferLoAddr =
+            static_cast<std::uint32_t>(cpu->gpr[13]) - kIpcBufferLoR13Offset;
+        if (Memory::Contains(ipcBufferLoAddr, 4u)) {
+            const std::uint32_t bufferLo = Memory::Read32(ipcBufferLoAddr);
+            Memory::Write32(ipcBufferLoAddr, bufferLo + kIosHeapSize);
+        }
+
+        cpu->gpr[3] = 0u;
+    }
+};

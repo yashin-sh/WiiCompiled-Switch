@@ -27,4 +27,15 @@ extern "C" __attribute__((used)) void synthetic_os_get_console_type_hle_probe(Cp
     InvokeDirectCpu<0x8019F33Cu>(ctx);
 }
 
+// Compile the PAL OSGetResetCode boundary through the same native dispatch
+// seam. Pinned WiiCompiled deliberately returns Cold Boot (0), avoiding Wii
+// reset MMIO on the host; use a nonzero sentinel so the result is observable.
+extern "C" __attribute__((used)) void synthetic_os_get_reset_code_hle_probe(CpuContext* ctx) {
+    if (!ctx) {
+        return;
+    }
+    ctx->gpr[3] = 0xA5A5A5A5u;
+    InvokeDirectCpu<0x801A8A50u>(ctx);
+}
+
 #endif

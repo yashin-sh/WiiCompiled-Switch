@@ -3,6 +3,7 @@
 #include "abi_bridge.h"
 #include "horizon_runtime_services.hpp"
 #include "memory.h"
+#include "switch_nand_runtime.hpp"
 
 #include <cctype>
 #include <cstdint>
@@ -116,5 +117,31 @@ struct KnownNativeCpuCall<0x8019E18Cu> {
         Memory::Write32(mkw::switch_nand_hle::kNandInitializedAddr,
                         mkw::switch_nand_hle::kNandInitializedValue);
         cpu->gpr[3] = mkw::switch_nand_hle::kNandResultOk;
+    }
+};
+
+// NANDPrivateOpenAsync (PAL 0x8019C990). Pinned WiiCompiled forwards the
+// request through the synchronous NANDOpen implementation, queues the guest
+// completion callback with (result, commandBlock), and returns the same result.
+// The Switch runtime keeps that split so callback code cannot clobber the live
+// translated caller's registers.
+template <>
+struct KnownNativeCpuCall<0x8019C990u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        const std::uint32_t pathPtr = cpu->gpr[3];
+        const std::uint32_t fileInfoPtr = cpu->gpr[4];
+        const std::uint32_t mode = cpu->gpr[5];
+        const std::uint32_t callbackPtr = cpu->gpr[6];
+        const std::uint32_t commandBlockPtr = cpu->gpr[7];
+
+        const std::int32_t result =
+            mkw::switch_nand_runtime::OpenSync(pathPtr, fileInfoPtr, mode);
+        mkw::switch_nand_runtime::QueueCallback(callbackPtr, result, commandBlockPtr);
+        cpu->gpr[3] = static_cast<std::uint32_t>(result);
     }
 };

@@ -33,7 +33,31 @@ void QueueCallback(std::uint32_t callbackPtr,
     }
 }
 
-void PumpCallbacks(CpuContext*) noexcept {}
+void PumpCallbacks(CpuContext* cpu) noexcept {
+    if (!cpu || g_callbackDrainDepth != 0) {
+        return;
+    }
+
+    ++g_callbackDrainDepth;
+    for (int processed = 0; processed < 64; ++processed) {
+        PendingCallback callback{};
+        {
+            std::lock_guard<std::mutex> lock(g_callbackMutex);
+            if (g_pendingCallbacks.empty()) {
+                break;
+            }
+            callback = g_pendingCallbacks.front();
+            g_pendingCallbacks.pop_front();
+        }
+
+        CpuContext callbackCpu = *cpu;
+        callbackCpu.gpr[3] = static_cast<std::uint32_t>(callback.result);
+        callbackCpu.gpr[4] = callback.commandBlockPtr;
+        CpuContextScope callbackScope(&callbackCpu);
+        InvokeIndirectCpu(callback.callbackPtr, &callbackCpu);
+    }
+    --g_callbackDrainDepth;
+}
 
 } // namespace mkw::switch_nand_runtime
 

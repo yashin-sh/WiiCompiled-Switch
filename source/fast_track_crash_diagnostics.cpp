@@ -22,6 +22,7 @@ constexpr const char* kDispatchPath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-dispatch-blocker.txt";
 constexpr const char* kExceptionPath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-exception.txt";
+const char* volatile g_fast_track_stage = "PROCESS_START";
 
 void write_atomicish(const char* path, const char* data, std::size_t size) noexcept {
     const int fd = ::open(path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
@@ -43,6 +44,14 @@ void write_atomicish(const char* path, const char* data, std::size_t size) noexc
 
 } // namespace
 #endif
+
+extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept {
+#if MKW_FAST_TRACK_DIAGNOSTICS
+    g_fast_track_stage = stage ? stage : "<null>";
+#else
+    (void)stage;
+#endif
+}
 
 extern "C" void mkw_switch_report_unsupported_translated_dispatch(
     const char* kind,
@@ -68,6 +77,7 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         "r2                    : 0x%08x\n"
         "r3                    : 0x%08x\n"
         "r13                   : 0x%08x\n"
+        "fast-track stage      : %s\n"
         "action                : abort after durable blocker record\n",
         kind ? kind : "UNKNOWN",
         target,
@@ -75,7 +85,8 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         r1,
         r2,
         r3,
-        r13);
+        r13,
+        g_fast_track_stage);
     if (n > 0) {
         const std::size_t size = static_cast<std::size_t>(n) < sizeof(buffer)
             ? static_cast<std::size_t>(n)
@@ -102,9 +113,6 @@ extern "C" void __libnx_exception_handler(ThreadExceptionDump* ctx) {
         return;
     }
 
-    // libnx exception handling may observe a different TLS view than the code
-    // that entered translated execution. WiiCompiled's own fatal reporting uses
-    // the persistent context as a fallback for exactly this reason.
     CpuContext* tls_guest = TryGetCpuContext();
     CpuContext* guest = tls_guest;
     bool persistent_fallback = false;
@@ -128,18 +136,28 @@ extern "C" void __libnx_exception_handler(ThreadExceptionDump* ctx) {
     const std::uint32_t derived_guest_address =
         far_in_guest_window ? static_cast<std::uint32_t>(far - guest_base) : 0u;
 
-    char buffer[2048];
+    char buffer[4096];
     const int n = std::snprintf(
         buffer,
         sizeof(buffer),
         "WiiCompiled-Switch libnx exception\n"
         "==================================\n"
         "error desc            : 0x%08x\n"
+        "fast-track stage      : %s\n"
         "aarch64 pc            : 0x%016llx\n"
         "aarch64 lr            : 0x%016llx\n"
         "aarch64 sp            : 0x%016llx\n"
         "fault address (FAR)   : 0x%016llx\n"
         "ESR                   : 0x%08x\n"
+        "x0                    : 0x%016llx\n"
+        "x1                    : 0x%016llx\n"
+        "x2                    : 0x%016llx\n"
+        "x3                    : 0x%016llx\n"
+        "x4                    : 0x%016llx\n"
+        "x5                    : 0x%016llx\n"
+        "x6                    : 0x%016llx\n"
+        "x7                    : 0x%016llx\n"
+        "x8                    : 0x%016llx\n"
         "guest context active  : %s\n"
         "guest context source  : %s\n"
         "guest pc              : 0x%08x\n"
@@ -152,11 +170,21 @@ extern "C" void __libnx_exception_handler(ThreadExceptionDump* ctx) {
         "derived guest address : 0x%08x\n"
         "note                  : process will still terminate after this handler\n",
         ctx->error_desc,
+        g_fast_track_stage,
         static_cast<unsigned long long>(ctx->pc.x),
         static_cast<unsigned long long>(ctx->lr.x),
         static_cast<unsigned long long>(ctx->sp.x),
         static_cast<unsigned long long>(ctx->far.x),
         ctx->esr,
+        static_cast<unsigned long long>(ctx->cpu_gprs[0].x),
+        static_cast<unsigned long long>(ctx->cpu_gprs[1].x),
+        static_cast<unsigned long long>(ctx->cpu_gprs[2].x),
+        static_cast<unsigned long long>(ctx->cpu_gprs[3].x),
+        static_cast<unsigned long long>(ctx->cpu_gprs[4].x),
+        static_cast<unsigned long long>(ctx->cpu_gprs[5].x),
+        static_cast<unsigned long long>(ctx->cpu_gprs[6].x),
+        static_cast<unsigned long long>(ctx->cpu_gprs[7].x),
+        static_cast<unsigned long long>(ctx->cpu_gprs[8].x),
         tls_guest ? "YES" : "NO",
         persistent_fallback ? "PERSISTENT_FALLBACK" : "TLS",
         guest_pc,

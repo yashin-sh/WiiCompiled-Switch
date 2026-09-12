@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
+
 namespace {
 
 struct Region {
@@ -78,8 +80,10 @@ Memory::Config Memory::Config::WiiDefaults() {
 }
 
 void Memory::Init(const Config& config) {
+    mkw_switch_set_fast_track_stage("MEMORY_RESET");
     Reset();
 
+    mkw_switch_set_fast_track_stage("MEMORY_BUILD_REQUESTS");
     std::vector<GuestFlat::RegionRequest> requests;
     requests.reserve(config.regions.size());
     for (const auto& region : config.regions) {
@@ -87,12 +91,15 @@ void Memory::Init(const Config& config) {
                             classify_backing(region.baseAddress)});
     }
 
+    mkw_switch_set_fast_track_stage("MEMORY_GUESTFLAT_INITIALIZE");
     GuestFlat::Initialize(requests);
+    mkw_switch_set_fast_track_stage("MEMORY_GUESTFLAT_READY");
 
     auto& active_regions = regions();
     active_regions.clear();
     active_regions.reserve(config.regions.size());
 
+    mkw_switch_set_fast_track_stage("MEMORY_BIND_REGIONS");
     for (const auto& config_region : config.regions) {
         std::uint8_t* host = nullptr;
         if (config_region.sizeBytes != 0) {
@@ -107,6 +114,7 @@ void Memory::Init(const Config& config) {
     }
 
     initialized() = true;
+    mkw_switch_set_fast_track_stage("MEMORY_READY");
 }
 
 void Memory::Reset() noexcept {

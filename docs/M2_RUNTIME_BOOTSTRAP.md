@@ -26,7 +26,8 @@ The following pieces have been validated through CI and/or real Switch hardware:
 10. early Wii SDK cache/timing/interrupt/exception HLE;
 11. EXI/SI startup coverage and basic EXI transaction HLE;
 12. mixed native-HLE → translated dispatch, including `IPCCltInit` → `IPCInit`;
-13. SDA-backed host HLE state publication, including `__OSInitSTM`.
+13. SDA-backed host HLE state publication, including `__OSInitSTM`;
+14. initial NAND/ISFS bootstrap linking SD-backed host storage with required guest NAND path/state.
 
 The local fast-track now runs real WiiCompiled-translated Mario Kart Wii code on hardware rather than stopping at the old metadata-only translated-product boundary.
 
@@ -53,7 +54,7 @@ early Wii SDK / OS initialization
   ↓
 OSReport → OSGetConsoleType → OSGetResetCode
   ↓
-DCZeroRange → IPCCltInit → __OSInitSTM
+DCZeroRange → IPCCltInit → __OSInitSTM → NANDInit
   ↓
 remaining blockers
   ↓
@@ -105,8 +106,6 @@ The Switch HLE mirrors that mixed native→translated sequence. Nintendo-data-fr
 
 ### `__OSInitSTM` — `0x801AB848`
 
-This is the latest hardware-captured `DIRECT` blocker.
-
 Pinned WiiCompiled avoids opening real Wii `/dev/stm/*` IOS devices on the host. Instead its HLE publishes the guest-visible STM bookkeeping that later reset logic checks through the SDA block relative to `r13`:
 
 - `r13 - 0x62CC` = initialized flag `1`;
@@ -115,6 +114,23 @@ Pinned WiiCompiled avoids opening real Wii `/dev/stm/*` IOS devices on the host.
 - return value = success (`r3 = 1`).
 
 The Switch HLE mirrors those values. If the SDA base/range is invalid it returns failure (`r3 = 0`) without touching unmapped guest memory. Wii STM Power/Reset callback pointers remain unset because the Switch fast-track does not generate the corresponding Wii hardware interrupt.
+
+### `NANDInit` — `0x8019E18C`
+
+This is the latest hardware-captured `DIRECT` blocker.
+
+Pinned WiiCompiled's synchronous NAND bootstrap performs host and guest setup rather than merely returning success:
+
+1. initialize its host-side ISFS/NAND support;
+2. derive the current four-character game code from guest memory at `0x80000000`, with PAL `RMCP` fallback;
+3. create the title data directory for `/title/00010004/<gamecode>/data`;
+4. write that Wii-style path into guest `NANDHomeDir` at `0x80346D20`;
+5. write initialized state `2` at `0x80386848`;
+6. return `NAND_RESULT_OK`.
+
+The Switch HLE mirrors those guest-visible semantics and maps the host directory onto the existing SD-backed `mkw::horizon_runtime_services::nand_root()`. Horizon never opens the Wii IOS `/dev/fs` device. Host directory creation is best-effort; guest address validation prevents a malformed fixed guest range from becoming a host fault.
+
+Nintendo-data-free CI covers `InvokeDirectCpu<0x8019E18C>` through the same translated-execution seam used by the local fast-track.
 
 ## Headless platform validation
 

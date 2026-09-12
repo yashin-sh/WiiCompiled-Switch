@@ -68,4 +68,5 @@ inline void WriteStack64(std::uint32_t address, std::uint64_t value) {
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 #include "switch_native_hle_traits.hpp"
+#include "switch_audio_hle_traits.hpp"
 #endif

@@ -17,4 +17,14 @@ extern "C" __attribute__((used)) void synthetic_os_report_hle_probe(CpuContext* 
     ctx->gpr[3] = savedR3;
 }
 
+// Compile the PAL OSGetConsoleType boundary through the exact static native
+// dispatch seam. Runtime semantics are sourced from guest memory at 0x80003118,
+// so this probe intentionally does not fabricate Nintendo/game data.
+extern "C" __attribute__((used)) void synthetic_os_get_console_type_hle_probe(CpuContext* ctx) {
+    if (!ctx) {
+        return;
+    }
+    InvokeDirectCpu<0x8019F33Cu>(ctx);
+}
+
 #endif

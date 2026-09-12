@@ -48,3 +48,6 @@ struct KnownNativeCpuCall<0x801AB848u> {
         cpu->gpr[3] = 1u;
     }
 };
+
+// Storage initialization is part of the same early OS bootstrap catalogue.
+#include "switch_nand_hle_traits.hpp"

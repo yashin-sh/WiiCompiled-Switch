@@ -178,9 +178,18 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         InvokeDirectCpu<0x8012E5D8u>(ctx);
         InvokeDirectCpu<0x8012E5E0u>(ctx);
 
-        // These adjacent PPC architecture helpers are also explicit no-op
-        // native overrides upstream. Keep them separate from HID2, whose HLE
-        // has real CpuContext state semantics.
+        // HID2 carries guest-visible state. The pinned mt-hid2 HLE writes r3 to
+        // CpuContext::hid2; preserve the synthetic context after proving the
+        // direct native dispatch path so later probes stay independent.
+        const std::uint32_t savedHid2 = ctx->hid2;
+        const std::uint32_t savedHid2R3 = ctx->gpr[3];
+        ctx->gpr[3] = 0x10000000u;
+        InvokeDirectCpu<0x8012E638u>(ctx); // PPCMthid2
+        ctx->hid2 = savedHid2;
+        ctx->gpr[3] = savedHid2R3;
+
+        // These adjacent PPC architecture helpers are explicit no-op native
+        // overrides upstream and remain separate from the stateful HID2 path.
         InvokeDirectCpu<0x8012E640u>(ctx); // PPCMfwpar
         InvokeDirectCpu<0x8012E64Cu>(ctx); // PPCMtwpar
         InvokeDirectCpu<0x8012E654u>(ctx); // PPCDisableSpeculation

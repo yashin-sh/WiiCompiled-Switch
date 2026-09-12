@@ -287,13 +287,17 @@ struct KnownNativeCpuCall<0x801A16E4u> {
             return;
         }
 
-        try {
-            auto* destination = Memory::GetPointer(alignedAddress, alignedLength);
-            std::memset(destination, 0, alignedLength);
-            mkw_switch_gx_notify_guest_ram_dma_write(alignedAddress, alignedLength);
-        } catch (...) {
-            // Pinned WiiCompiled logs and returns for an invalid guest range.
-            // The Switch fast-track intentionally omits host-side logging here.
+        // Upstream Memory::GetPointer throws AccessViolation for an unmapped
+        // guest range; the Switch memory slice deliberately returns nullptr.
+        // Preserve the upstream best-effort semantics by checking that result
+        // before entering libc, otherwise memset(nullptr, ...) becomes a host
+        // Data Abort instead of a skipped invalid guest cache operation.
+        auto* destination = Memory::GetPointer(alignedAddress, alignedLength);
+        if (!destination) {
+            return;
         }
+
+        std::memset(destination, 0, alignedLength);
+        mkw_switch_gx_notify_guest_ram_dma_write(alignedAddress, alignedLength);
     }
 };

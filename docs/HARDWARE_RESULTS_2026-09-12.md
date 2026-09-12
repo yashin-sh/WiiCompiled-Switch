@@ -23,6 +23,7 @@ Real hardware confirms that the local NRO can:
 - execute through multiple Wii SDK/native runtime boundaries;
 - execute a mixed native-HLE → translated call path (`IPCCltInit` → `IPCInit`);
 - preserve required guest SDA bookkeeping through host HLE (`__OSInitSTM`);
+- initialize the first NAND/ISFS host+guest state through `NANDInit`;
 - emit durable unsupported-dispatch and host-exception diagnostics to SD.
 
 The screen remains black because the current GX FIFO bridge is deliberately a sink. No rendered Mario Kart Wii frame has been proven.
@@ -161,8 +162,6 @@ Result after fix: hardware advanced beyond `IPCCltInit` and produced the next ex
 Captured blocker:
 
 ```text
-WiiCompiled-Switch unsupported translated dispatch
-=================================================
 kind                  : DIRECT
 target                : 0x801ab848
 guest pc              : 0x800060a4
@@ -171,7 +170,6 @@ r2                    : 0x8038efa0
 r3                    : 0x00000000
 r13                   : 0x8038cc00
 fast-track stage      : TRANSLATED_EXEC_ENTER
-action                : abort after durable blocker record
 ```
 
 Pinned WiiCompiled maps `0x801AB848` to `__OSInitSTM_HLE_801ab848`.
@@ -193,7 +191,43 @@ CI result before merge: 5/5 workflows green, including Nintendo-data-free synthe
 
 Merge commit: `a97e3b5e4bac0f0e72e3d832ab0b4d8f47a0b485`.
 
-Current status: this is the latest hardware-captured guest blocker fixed in `main`. A post-#85 hardware run is required to identify the next boundary or prove PAL `main()`.
+Result after fix: hardware advanced beyond `__OSInitSTM` and produced the next explicit blocker at `NANDInit`.
+
+### 7. `NANDInit` — `0x8019E18C`
+
+Captured blocker:
+
+```text
+kind                  : DIRECT
+target                : 0x8019e18c
+guest pc              : 0x800060a4
+r1                    : 0x80399158
+r2                    : 0x8038efa0
+r3                    : 0x10000012
+r13                   : 0x8038cc00
+fast-track stage      : TRANSLATED_EXEC_ENTER
+```
+
+Pinned WiiCompiled maps `0x8019E18C` to `NANDInit_HLE`.
+
+The HLE performs both host-side storage bootstrap and guest-visible NAND initialization:
+
+1. initialize host-side ISFS/NAND support;
+2. derive the current four-character game code from guest memory at `0x80000000`, falling back to PAL `RMCP` when the value is unavailable/invalid;
+3. create the title data directory corresponding to `/title/00010004/<gamecode>/data`;
+4. write that Wii-style path into guest `NANDHomeDir` at `0x80346D20`;
+5. write initialized state `2` at `0x80386848`;
+6. return `NAND_RESULT_OK`.
+
+Switch fix: map the host-side title directory below the existing SD-backed Horizon `nand_root()`, preserve the same Wii-style guest path and initialization state, and skip the real Wii IOS `/dev/fs` device. Host directory creation is best-effort; guest fixed-address writes are range-checked.
+
+PR: #87
+
+CI result before merge: 5/5 workflows green, including Nintendo-data-free fast-track coverage for `InvokeDirectCpu<0x8019E18C>` and the full Switch build.
+
+Merge commit: `56e778ce7a5e8ac678763fd00bc6922f904884ea`.
+
+Current status: `NANDInit` is the latest hardware-captured guest blocker fixed in `main`. A post-#87 hardware run is required to identify the next boundary or prove PAL `main()`.
 
 ## Diagnostic-path issue discovered during hardware testing
 
@@ -251,7 +285,8 @@ Specifically, hardware has now proven that:
 - host-vs-guest faults can be distinguished through durable exception context;
 - invalid guest-memory behavior at HLE seams must match the Switch memory slice contract as well as upstream intent;
 - native HLE may legitimately call translated guest code and must preserve that dependency;
-- hardware-facing host HLE may skip Wii I/O while still publishing mandatory guest SDA state.
+- hardware-facing host HLE may skip Wii I/O while still publishing mandatory guest SDA state;
+- storage HLE may require both host filesystem effects and guest path/state publication.
 
 It does **not** prove:
 

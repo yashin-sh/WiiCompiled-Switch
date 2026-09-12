@@ -51,7 +51,9 @@ DCZeroRange
   ↓
 IPCCltInit
   ↓
-__OSInitSTM                ← latest hardware blocker fixed in main
+__OSInitSTM
+  ↓
+NANDInit                   ← latest hardware blocker fixed in main
   ↓
 remaining early OS/runtime boundaries
   ↓
@@ -79,13 +81,16 @@ The hardware-driven guest blocker sequence has now crossed:
 - `OSGetResetCode` (`0x801A8A50`);
 - `DCZeroRange` (`0x801A16E4`);
 - `IPCCltInit` (`0x80193478`);
-- `__OSInitSTM` (`0x801AB848`).
+- `__OSInitSTM` (`0x801AB848`);
+- `NANDInit` (`0x8019E18C`).
 
 `DCZeroRange` exposed an important Switch-runtime contract mismatch: pinned WiiCompiled catches an invalid guest-memory access, while the Switch `Memory::GetPointer` slice returns `nullptr`. A hardware call with `r3 = 0xFFFFFFFF` aligned to `0xFFFFFFE0`, and the old HLE called `memset(nullptr, 0, 0x20)`. The Switch HLE now checks the returned guest pointer before entering libc while preserving valid-range zeroing and the GX/DMA notification seam.
 
 `IPCCltInit` required more than returning success: the Switch HLE calls translated `IPCInit` at `0x80192F7C`, advances the r13-relative IPC buffer-low global by `0x1000` for `iosHeap`, skips Wii-specific interrupt/MMIO setup, and returns success.
 
-`__OSInitSTM` is the latest captured guest `DIRECT` blocker. Pinned WiiCompiled does not open real Wii `/dev/stm/*` IOS devices on the host; it writes guest-visible STM bookkeeping into the SDA block relative to `r13`: initialized flag `1`, two stable non-zero fake handles, then returns success. The Switch HLE mirrors those values and returns failure without writing if the SDA range is invalid.
+`__OSInitSTM` avoids real Wii `/dev/stm/*` IOS devices but preserves the guest-visible reset bookkeeping in the SDA block: initialized flag `1` plus two stable non-zero fake handles. The Switch HLE mirrors those values and guards invalid SDA ranges.
+
+`NANDInit` is the latest captured guest `DIRECT` blocker. Matching the pinned WiiCompiled HLE requires host and guest state: derive the four-character game code from guest memory with PAL `RMCP` fallback, create the title data directory under the existing SD-backed Horizon `nand_root()`, publish `/title/00010004/<gamecode>/data` into guest `NANDHomeDir` at `0x80346D20`, write initialized state `2` at `0x80386848`, and return `NAND_RESULT_OK`. The Switch path deliberately does not open the Wii IOS `/dev/fs` device.
 
 An earlier hardware run exposed a separate **pre-guest host crash** during `MAIN_PLATFORM_INIT`: no guest context was active, GuestFlat was not initialized, and the fault register state matched an 8 MiB host memory clear in the libnx PrintConsole/NV path. The M2 local fast-track therefore starts **headless** and relies on SD diagnostics until a real GX backend exists. Subsequent hardware runs have confirmed that this headless path reaches `TRANSLATED_EXEC_ENTER` with an active guest context.
 

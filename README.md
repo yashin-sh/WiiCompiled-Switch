@@ -14,55 +14,93 @@ Run a legally-owned Mario Kart Wii dump through the WiiCompiled static-recompila
 █████░░░░░░░░░░░░░ 25%
 ```
 
-> This percentage is an engineering estimate, not a function-count metric. It tracks progress toward the first rendered Mario Kart Wii frame on real Switch hardware.
+> This percentage is an engineering estimate, not a function-count metric. The pre-graphics runtime has advanced substantially, but a real GX → Switch renderer still does not exist, so the first-frame estimate is intentionally conservative.
 
 | Milestone | Status |
 | --- | --- |
 | Native Horizon/libnx runtime boots | ✅ Done |
 | WiiCompiled PPC → AArch64 translated code executes on Switch | ✅ Done |
 | Guest memory/data initialization | ✅ Done |
-| Wii SDK OS/cache/timing/interrupt bootstrap | 🟡 In progress |
-| EXI/SI bootstrap and basic EXI transaction HLE | 🟡 In progress |
+| HostContext / GuestFlat / translated handoff | ✅ Done |
+| Wii SDK early OS/cache/timing/interrupt bootstrap | 🟡 In progress |
+| EXI/SI bootstrap and basic EXI transaction HLE | ✅ Crossed in hardware fast-track |
+| Durable blocker / crash diagnostics on SD | ✅ Done |
 | Reach Mario Kart Wii `main()` | ⬜ Next major milestone |
 | Game/resource initialization | ⬜ Pending |
 | GX → Switch graphics backend / first frame | ⬜ Pending |
 | Input, audio, filesystem completeness and gameplay | ⬜ Pending |
 
-Current execution path:
+Current fast-track path:
 
 ```text
-__start
+__start (PAL 0x800060A4)
   ↓
 Wii SDK / OS bootstrap
   ↓
-cache / timing / interrupts
+cache / timing / interrupts / EXI / SI
   ↓
-EXI / SI initialization      ← current area
+OSReport
+  ↓
+OSGetConsoleType
+  ↓
+OSGetResetCode             ← latest hardware blocker fixed in main
+  ↓
+remaining early OS/runtime boundaries
   ↓
 __init_user
   ↓
-main()                       ← next major target
+main() (PAL 0x8000B6B0)    ← next major milestone
   ↓
 Mario Kart Wii initialization
   ↓
 GX / resources / input
   ↓
 first rendered frame
-  ↓
-playable game
 ```
 
 ## Status
 
-**M2 — Fast-track translated startup toward `main()`.** The project now executes real WiiCompiled-translated Mario Kart Wii startup code as AArch64 under Horizon/libnx on real Switch hardware.
+**M2 — Fast-track translated startup toward `main()`.** The project executes real WiiCompiled-translated Mario Kart Wii startup code as AArch64 under Horizon/libnx on real Switch hardware.
 
-Validated hardware/runtime work includes GuestFlat memory, Wii `Memory::Init`, translated data initialization, translated `__start`, register bootstrap, timebase/SPR/FPSCR helpers, OS timing and interrupt state, exception/interrupt initialization, Wii cache-control HLE, EXI initialization/basic transactions, and SI initialization.
+Validated work includes GuestFlat memory, Wii `Memory::Init`, generated data initialization, translated `__start`, register bootstrap, timebase/SPR/FPSCR helpers, OS timing and interrupt state, exception/interrupt initialization, Wii cache-control HLE, EXI initialization/basic transactions, SI initialization, generic indirect translated dispatch, and a growing set of Wii SDK native/HLE boundaries whose behavior is mirrored from the pinned WiiCompiled runtime.
 
-The latest real-hardware run reached `EXIImm` (`0x80167F68`). Its pinned WiiCompiled HLE semantics, together with `EXIDma`, `EXISync`, and `EXIUnlock`, are now implemented in `main`; the next hardware run is expected to advance beyond that boundary.
+The latest hardware-driven blocker sequence has crossed:
+
+- `OSReport` (`0x801A25D0`);
+- `OSGetConsoleType` (`0x8019F33C`);
+- `OSGetResetCode` (`0x801A8A50`).
+
+`OSGetResetCode` was the latest captured `DIRECT` blocker and is now fixed in `main` by matching the pinned WiiCompiled behavior: return `0` (`Cold Boot`) without touching Wii reset MMIO.
+
+The local fast-track build now writes durable diagnostics under `sdmc:/switch/WiiCompiled-Switch/` (with a progress-file fallback under `sdmc:/switch/`) so non-crashing black-screen stalls can be distinguished from explicit dispatch blockers and host exceptions.
+
+Important current limitation: the GX FIFO bridge is still a deliberate sink. A black screen is therefore expected even when translated startup is progressing. The project has **not yet proven entry into Mario Kart Wii `main()` and has not rendered a game frame**.
 
 Public CI remains Nintendo-data-free. A real WiiCompiled game product is generated from a user-owned dump **before the Switch build** and linked into the same NRO. Generated game-derived code/data and local game NRO/ELF outputs are never committed or uploaded by CI.
 
-Graphics and audio remain explicit stubs in M2. The project has **not yet proven entry into Mario Kart Wii `main()` or rendered a frame**.
+## Local fast-track hardware test
+
+After pulling `main`, build the private local translated product with:
+
+```sh
+git checkout main
+git pull
+MKW_JOBS=8 bash scripts/build-local-fast-track-incremental.sh
+```
+
+Copy the resulting local fast-track NRO to the Switch and launch it through hbmenu in application/title-override mode with full memory.
+
+Current diagnostics may include:
+
+```text
+/switch/WiiCompiled-Switch/fast-track-progress.txt
+/switch/WiiCompiled-Switch/fast-track-heartbeat.txt
+/switch/WiiCompiled-Switch/fast-track-main-reached.txt
+/switch/WiiCompiled-Switch/fast-track-dispatch-blocker.txt
+/switch/WiiCompiled-Switch/fast-track-exception.txt
+```
+
+`fast-track-main-reached.txt` is written only when the translated dispatcher reaches PAL `main` at `0x8000B6B0`.
 
 ## Legal / content policy
 
@@ -96,9 +134,7 @@ Copy it to:
 /switch/WiiCompiled-Switch/WiiCompiled-Switch.nro
 ```
 
-Launch it from hbmenu in application/title-override mode with full memory rather than Album applet mode.
-
-The public probe should report `translated product: NOT LINKED` and stop at `WAITING_FOR_TRANSLATED_PRODUCT`. That is expected and is not an error.
+The public probe contains no translated Mario Kart Wii product. Game-derived translation is a separate local-only build path.
 
 ## Current architecture
 
@@ -119,12 +155,11 @@ generated C++ / RuntimeConfig / data init
 | WiiCompiled translated product + runtime                |
 | Switch platform adapter                                 |
 | - lifecycle / applet                                    |
-| - runtime filesystem                                    |
+| - runtime filesystem + diagnostics                      |
 | - input                                                 |
-| - audio (stubbed)                                       |
-| - graphics (stubbed)                                    |
-| - threading / timing                                    |
-| - virtual memory                                        |
+| - audio (bootstrap/HLE incomplete)                      |
+| - graphics (GX FIFO sink; renderer pending)             |
+| - context switching / timing / guest memory             |
 +----------------------------------------------------------+
             |
             v
@@ -134,9 +169,14 @@ generated C++ / RuntimeConfig / data init
        Atmosphère / Switch
 ```
 
-## Roadmap
+## Roadmap and evidence
 
-See `ROADMAP.md`, `docs/M2_RUNTIME_BOOTSTRAP.md`, and `docs/TRANSLATED_PRODUCT_BOUNDARY.md`.
+See:
+
+- `ROADMAP.md`
+- `docs/M2_RUNTIME_BOOTSTRAP.md`
+- `docs/TRANSLATED_PRODUCT_BOUNDARY.md`
+- `docs/HARDWARE_RESULTS_2026-09-12.md`
 
 ## Upstream
 

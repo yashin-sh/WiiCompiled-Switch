@@ -20,7 +20,7 @@ Real hardware confirms that the local NRO can:
 - enter WiiCompiled-translated PAL `__start` at `0x800060A4`;
 - execute through multiple Wii SDK/native runtime boundaries;
 - remain responsive to HOME without freezing Horizon when the translated path stalls or continues on a black screen;
-- emit durable unsupported-dispatch diagnostics to SD after the diagnostic-path fix.
+- emit durable unsupported-dispatch and host-exception diagnostics to SD.
 
 The screen remains black because the current GX FIFO bridge is deliberately a sink. No rendered Mario Kart Wii frame has been proven.
 
@@ -52,7 +52,7 @@ Result after fix: hardware advanced beyond this boundary.
 
 ### 3. `OSGetResetCode` — `0x801A8A50`
 
-Latest captured blocker before this documentation update:
+Captured blocker:
 
 ```text
 WiiCompiled-Switch unsupported translated dispatch
@@ -80,7 +80,7 @@ CI result before merge: 5/5 workflows green.
 
 ## Diagnostic-path issue discovered during hardware testing
 
-One non-crashing black-screen run produced no `.txt` files even though the NRO itself was valid. The reason was that fast-track diagnostics assumed `sdmc:/switch/WiiCompiled-Switch/` already existed and silently ignored `fopen/open` failure.
+One non-crashing black-screen run produced no `.txt` files even though the NRO itself was valid. The fast-track diagnostic path assumed `sdmc:/switch/WiiCompiled-Switch/` already existed and silently ignored file-open failure.
 
 PR #75 changed the local fast-track to:
 
@@ -88,7 +88,49 @@ PR #75 changed the local fast-track to:
 - keep the normal progress path under `/switch/WiiCompiled-Switch/`;
 - fall back to `/switch/fast-track-progress.txt` if needed.
 
-After that change, the hardware run successfully produced the `OSGetResetCode` blocker record above.
+After that change, hardware successfully produced the `OSGetResetCode` blocker record above.
+
+## Pre-guest host crash during platform initialization
+
+A later run, after the `OSGetResetCode` HLE landed, crashed before guest execution with this signature:
+
+```text
+fast-track stage      : MAIN_PLATFORM_INIT
+fault address (FAR)   : 0x0000001442583000
+ESR                   : 0x92000047
+x0                    : 0x0000001442583000
+x2                    : 0x0000000000800000
+x4                    : 0x0000001442d83000
+guest context active  : NO
+guest pc              : 0x00000000
+guest flat base       : 0x0000000000000000
+FAR in guest window   : NO
+```
+
+This is not a translated PPC blocker. The guest had not started, GuestFlat was not initialized, and the faulting host operation covered exactly `0x800000` bytes (8 MiB).
+
+That register pattern strongly matches the libnx default PrintConsole/NV initialization path:
+
+1. `consoleInit()` selects the software framebuffer renderer;
+2. the renderer creates a libnx framebuffer;
+3. NV initialization uses an 8 MiB transfer-memory allocation by default;
+4. `tmemCreate()` clears that allocation with `memset(..., 0, 0x800000)` before creating the transfer-memory handle.
+
+The M2 local fast-track does not need a text console, framebuffer or NV service because graphics are not yet being rendered and all actionable diagnostics are persisted to SD.
+
+The fast-track is therefore changed to start **headless**:
+
+- no `consoleInit()` in `MKW_LOCAL_FAST_TRACK` builds;
+- no fast-track `printf`/`consoleUpdate` dependency;
+- public/default Nintendo-data-free builds keep the existing PrintConsole path;
+- platform initialization now exposes finer exception stages:
+  - `PLATFORM_CONSOLE_SKIPPED_FAST_TRACK`;
+  - `PLATFORM_SERVICES_INIT`;
+  - `PLATFORM_SERVICES_READY`;
+  - `PLATFORM_ROMFS_INIT`;
+  - `PLATFORM_READY`.
+
+This removes an unrelated pre-guest graphics/NV dependency from the blocker-driven translated-startup path while preserving it for public bootstrap/probe builds.
 
 ## Current diagnostic files
 
@@ -108,6 +150,8 @@ The local fast-track may create:
 
 The 2026-09-12 evidence proves real translated startup progress well beyond the original runtime bootstrap and metadata-only product boundary.
 
+It also proves that host-only bootstrap infrastructure can still introduce failures independently of guest execution. Those paths should be removed from the local fast-track when they are not required to reach `main()`.
+
 It does **not** prove:
 
 - entry into PAL `main()`;
@@ -116,10 +160,10 @@ It does **not** prove:
 - a rendered frame;
 - playable input/audio/gameplay.
 
-The correct next step is another real-hardware run from post-PR-#76 `main`. The result should be classified as one of:
+The next real-hardware run from the headless fast-track should be classified as one of:
 
 1. a new `fast-track-dispatch-blocker.txt` — map/fix the next pinned runtime boundary;
-2. a `fast-track-exception.txt` — attribute host vs guest memory/runtime fault;
+2. a `fast-track-exception.txt` — use the finer `PLATFORM_*`/runtime stage plus FAR/registers to attribute the failure;
 3. a heartbeat with no blocker — investigate a non-crashing loop/stall;
 4. `fast-track-main-reached.txt` — declare the PAL `main()` milestone reached and move to the first post-`main` blocker.
 

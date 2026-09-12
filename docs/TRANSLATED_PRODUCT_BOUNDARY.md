@@ -1,127 +1,120 @@
 # M2 — Translated-product boundary
 
-Status: **hardware-validated on real Nintendo Switch (2026-09-10)**. Issue #18 is complete.
+Status: **hardware-validated and crossed on real Nintendo Switch**. The project now links and executes a locally generated WiiCompiled Mario Kart Wii product; the active milestone is no longer product discovery but translated boot toward PAL `main()`.
 
 Upstream WiiCompiled pin: `a135beb201042b20f390c6695ca6b26768820fb4`.
 
 ## Why this boundary exists
 
-WiiCompiled is a static recompiler. A translated Mario Kart Wii product is not a DOL that the Horizon runtime discovers and loads from the SD card.
+WiiCompiled is a static recompiler. A translated Mario Kart Wii product is not a DOL dynamically loaded by the Horizon runtime from the SD card.
 
 At the pinned upstream revision the translator flow is:
 
-1. `translate-recursive` emits translated C++ from the locally supplied DOL;
-2. `generate-data-init` emits the embedded data-section initializer and `RuntimeConfig.h`;
+1. `translate-recursive` emits translated C++ from locally supplied game inputs;
+2. `generate-data-init` emits embedded data-section initialization and `RuntimeConfig.h`;
 3. `emit-build-shards` emits the generated native build graph;
 4. the generated output is compiled and linked together with the WiiCompiled runtime into one native executable.
 
-The upstream MKWii manifest expects user-owned source inputs such as `Assets/main.dol` and `Assets/StaticR.rel`, and writes generated output under `generated/`.
-
-Those source inputs and game-derived generated outputs are local build material. They are never part of this repository or its public CI artifacts.
+For the Switch port, that means the user-owned translated product is linked into the same AArch64 NRO as the Horizon runtime.
 
 ## Three separate data domains
 
-The Switch port keeps these concepts separate:
+The port keeps these concepts separate:
 
 ### 1. Build-time user-owned inputs
 
-Inputs used only by the WiiCompiled translator on the user's machine, for example the DOL/REL required by the pinned MKWii manifest.
+Local inputs used by WiiCompiled's translator, such as the DOL/REL required by the Mario Kart Wii manifest.
 
 ### 2. Build-time translated product
 
-Generated C++ plus generated runtime configuration/data initialization compiled into the same NRO as the runtime.
+Generated C++ plus generated runtime configuration/data initialization compiled into the NRO.
 
 ### 3. Runtime SD data
 
-Host/runtime state that may legitimately live under:
+Host/runtime state under `sdmc:/switch/WiiCompiled-Switch`, including logs, cache/configuration state and fast-track diagnostics.
 
-`sdmc:/switch/WiiCompiled-Switch`
+The SD runtime directory is **not** a loader for translated executable code.
 
-The current Horizon boundary creates explicit roots:
+## Public weak seam
 
-- `Logs/`
-- `Cache/`
-- `Config/`
-- `NAND/`
+`include/translated_product.hpp` defines the translated-product query ABI. The public Nintendo-data-free build supplies a weak definition that reports no linked game product.
 
-None of these directories is a translated-code loader.
+This preserves a public CI path that can validate the Horizon runtime without shipping or ingesting Nintendo game-derived content.
 
-## Link seam
+## Local strong product path
 
-`include/translated_product.hpp` defines ABI version 1 and the C-linkage query:
+The private local build replaces the public weak product seam with the generated WiiCompiled product and associated handoff/data initialization.
 
-`mkw_switch_get_translated_product_api()`
+That path has now been hardware-validated beyond metadata inspection:
 
-The repository build supplies a weak default definition that returns `nullptr`. That is the Nintendo-data-free CI stub.
+- generated data initialization executes;
+- translated execution handoff executes;
+- PAL `__start` (`0x800060A4`) executes on Switch;
+- real Wii SDK/native boundaries are reached and fixed iteratively.
 
-A future local translated-product adapter can provide a strong definition of the same symbol and return metadata describing the product linked into that NRO. The linker then replaces the weak public stub without changing common Horizon runtime code.
+Therefore the previous `WAITING_FOR_TRANSLATED_PRODUCT` / `TRANSLATED_PRODUCT_LINKED` states are historical bootstrap milestones, not the current development stop point.
 
-The current API is intentionally metadata-only:
+## Current execution milestone
 
-- ABI version;
-- product identifier;
-- build description.
-
-Inspection has no side effects. It does **not** initialize generated data sections and does **not** enter translated code. Those actions belong to the next execution-handoff slice.
-
-## Bootstrap states
-
-If the Horizon core is ready and no product overrides the weak stub:
-
-`WAITING_FOR_TRANSLATED_PRODUCT`
-
-If an ABI-compatible local product adapter is linked:
-
-`TRANSLATED_PRODUCT_LINKED`
-
-That second state still means only that the product seam is present. It is not yet a claim that Mario Kart Wii code was executed.
-
-If a product is linked with the wrong ABI version, the bootstrap deliberately stops as a failure instead of guessing compatibility.
-
-## Runtime report
-
-`runtime-bootstrap.txt` records:
-
-- translated-product state;
-- expected and reported product ABI;
-- product id/build description;
-- runtime data root;
-- Logs/Cache/Config/NAND roots;
-- final translated-product stop point.
-
-The public Nintendo-data-free build reports:
+The active local path is:
 
 ```text
-translated product     : NOT LINKED
-translated product ABI : expected=1 reported=0
-translated product id  : <none>
-translated build       : Nintendo-data-free stub
-stop point             : WAITING_FOR_TRANSLATED_PRODUCT
+local user-owned game inputs
+  ↓
+WiiCompiled generation
+  ↓
+AArch64 compile/link into NRO
+  ↓
+generated data initialization
+  ↓
+translated execution handoff
+  ↓
+PAL __start (0x800060A4)
+  ↓
+Wii SDK / OS bootstrap
+  ↓
+PAL main (0x8000B6B0)  ← not yet proven
 ```
 
-## Hardware validation — 2026-09-10
+As of 2026-09-12, real hardware has crossed the translated/native boundaries for `OSReport`, `OSGetConsoleType`, and `OSGetResetCode`. The project has **not yet emitted `fast-track-main-reached.txt`**, so `main()` must not be claimed as reached.
 
-The `0.0.3` public NRO from `main` commit `8446eb8f16aa9b2f6d7486a2f25d3a8c29bc5ada` was run on a real Nintendo Switch through hbmenu application/title-override mode with full memory.
+## Diagnostics at this boundary
 
-The returned report confirmed:
+The local translated path uses durable SD records rather than relying on visible output:
 
-- critical SDL path: `NONE`;
-- lifecycle/filesystem/timing/libnx HID: `READY`;
-- `Memory::Init`: `READY`;
-- HostContext scheduler, first handoff and continuation: `READY`;
-- audio and graphics: `STUBBED` as intended;
-- translated product: `NOT LINKED`;
-- translated product ABI: `expected=1 reported=0`;
-- translated product id: `<none>`;
-- translated build: `Nintendo-data-free stub`;
-- runtime roots created under `sdmc:/switch/WiiCompiled-Switch` for `Logs`, `Cache`, `Config` and `NAND`;
-- stop point: `WAITING_FOR_TRANSLATED_PRODUCT`.
+```text
+sdmc:/switch/WiiCompiled-Switch/fast-track-progress.txt
+sdmc:/switch/WiiCompiled-Switch/fast-track-heartbeat.txt
+sdmc:/switch/WiiCompiled-Switch/fast-track-main-reached.txt
+sdmc:/switch/WiiCompiled-Switch/fast-track-dispatch-blocker.txt
+sdmc:/switch/WiiCompiled-Switch/fast-track-exception.txt
+```
 
-This is the expected hardware result for the Nintendo-data-free boundary. No translated game code was linked, initialized or executed.
+These files make three states distinguishable:
+
+- translated startup is still alive/progressing;
+- a specific unsupported translated/native boundary stopped execution;
+- a host exception occurred with attributable AArch64/guest context.
+
+`fast-track-main-reached.txt` is the explicit proof marker for PAL `main` at `0x8000B6B0`.
+
+## Hardware history
+
+### 2026-09-10
+
+The public Nintendo-data-free boundary was validated on hardware: Horizon services, guest memory, HostContext, filesystem roots and the weak translated-product seam behaved as expected.
+
+### 2026-09-12
+
+The local generated-product path was exercised on hardware through real translated startup. Hardware blockers observed and subsequently fixed include:
+
+- `0x801A25D0` — `OSReport`;
+- `0x8019F33C` — `OSGetConsoleType`;
+- `0x801A8A50` — `OSGetResetCode`.
+
+See `HARDWARE_RESULTS_2026-09-12.md`.
 
 ## Local-only content policy
-
-The root `.gitignore` explicitly excludes local generated/product directories and DOL/REL inputs in addition to disc-image/key formats already excluded.
 
 Do not commit or upload:
 
@@ -129,31 +122,27 @@ Do not commit or upload:
 - disc images;
 - Nintendo keys or firmware;
 - extracted copyrighted assets;
-- generated translated game C++/data output;
-- a game-containing NRO artifact.
+- generated translated game C++/data/object output;
+- game-containing NRO/ELF artifacts.
 
-Only Nintendo-data-free runtime/platform code and synthetic probes belong in public CI.
+Only Nintendo-data-free runtime/platform code, documentation and synthetic probes belong in public CI.
 
 ## Validation result
 
-- pinned WiiCompiled submodule: PASS in CI;
-- Nintendo-data-free NRO build: PASS in PR #20 and post-merge main CI;
-- real Switch core regression: PASS;
-- translated-product weak seam: PASS;
-- runtime SD-data separation: PASS;
-- final stop point: `WAITING_FOR_TRANSLATED_PRODUCT`.
+- pinned WiiCompiled submodule: PASS;
+- Nintendo-data-free public NRO path: PASS;
+- real Switch runtime/GuestFlat/HostContext foundation: PASS;
+- local generated data initialization: PASS;
+- local translated `__start` execution: PASS;
+- first-blocker durable diagnostics: PASS;
+- PAL `main()` reached: **NOT YET PROVEN**;
+- first rendered frame: **NOT YET PROVEN**.
 
-Issue #18 is complete.
+## Next boundary
 
-## Next execution slice
+The next meaningful boundary is no longer "translated product linked". It is:
 
-The next local-only path is:
-
-1. generate the MKWii translated product with the pinned WiiCompiled translator from a user-owned dump;
-2. provide a strong translated-product adapter in the local build;
-3. cross-compile/link the generated product into the AArch64/libnx NRO;
-4. initialize the generated data sections;
-5. stop at the earliest safe point immediately before or after the first translated entry-point handoff;
-6. use the first real runtime failure to drive the next missing HLE/thread/filesystem dependency.
-
-Graphics/Aurora and Audren remain outside this slice.
+1. keep the local fast-track on PAL `__start`;
+2. fix each first unsupported boundary using the pinned WiiCompiled semantics;
+3. write `fast-track-main-reached.txt` when dispatch reaches `0x8000B6B0`;
+4. only then begin systematic post-`main` game-subsystem bring-up.

@@ -6,8 +6,7 @@
 // Pinned WiiCompiled handles this entry point as a host-only logging override;
 // it does not alter CpuContext or guest memory. The Switch fast-track therefore
 // preserves guest-visible state while intentionally sinking host formatting.
-extern "C" __attribute__((used))
-void synthetic_os_report_hle_probe(CpuContext* ctx) {
+extern "C" __attribute__((used)) void synthetic_os_report_hle_probe(CpuContext* ctx) {
     if (!ctx) {
         return;
     }

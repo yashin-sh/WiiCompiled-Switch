@@ -32,4 +32,15 @@ extern "C" void GX_HLE_FIFO_WriteBurst(const std::uint8_t* data, std::uint32_t s
     (void)sizeBytes;
 }
 
+// WiiCompiled's cache HLE notifies the desktop GX backend whenever a guest RAM
+// DMA-style write occurs. The Switch fast-track has no renderer yet, so retain
+// that semantic boundary as an explicit sink. The future GX backend can replace
+// this body without changing cache-HLE call sites.
+extern "C" void mkw_switch_gx_notify_guest_ram_dma_write(
+    std::uint32_t address,
+    std::uint32_t sizeBytes) noexcept {
+    (void)address;
+    (void)sizeBytes;
+}
+
 #endif

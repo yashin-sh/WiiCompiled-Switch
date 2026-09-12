@@ -57,4 +57,15 @@ extern "C" __attribute__((used)) void synthetic_dc_zero_range_hle_probe(CpuConte
     InvokeDirectCpu<0x801A16E4u>(ctx);
 }
 
+// Nintendo-data-free compile coverage for PAL IPCCltInit (0x80193478).
+// The native boundary internally dispatches translated IPCInit (0x80192F7C),
+// reserves 4 KiB in the r13-relative IPC arena, and returns success. The probe
+// exists to keep that mixed native->translated seam linkable in CI.
+extern "C" __attribute__((used)) void synthetic_ipc_clt_init_hle_probe(CpuContext* ctx) {
+    if (!ctx) {
+        return;
+    }
+    InvokeDirectCpu<0x80193478u>(ctx);
+}
+
 #endif

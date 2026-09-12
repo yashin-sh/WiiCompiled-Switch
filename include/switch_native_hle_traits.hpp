@@ -5,6 +5,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstring>
 
 // Switch-side native/HLE extensions for translated targets that the pinned
 // WiiCompiled runtime deliberately excludes from recompilation. Keeping these
@@ -15,6 +16,13 @@
 // making a native wrapper the runtime winner. The pinned OSInitAlarm wrapper
 // simply forwards to that translated body, so preserve that exact boundary.
 extern "C" void func_801A961C(CpuContext* ctx);
+
+// Renderer-side notification seam used by WiiCompiled cache/DMA HLE. The
+// current Switch fast-track implementation is an explicit sink until a real GX
+// backend replaces the FIFO sink.
+extern "C" void mkw_switch_gx_notify_guest_ram_dma_write(
+    std::uint32_t address,
+    std::uint32_t sizeBytes) noexcept;
 
 template <>
 struct KnownNativeCpuCall<0x801A961Cu> {
@@ -248,6 +256,44 @@ struct KnownNativeCpuCall<0x801A8A50u> {
     static inline void Invoke(CpuContext* cpu) noexcept {
         if (cpu) {
             cpu->gpr[3] = 0u;
+        }
+    }
+};
+
+// DCZeroRange (PAL 0x801A16E4). Match the pinned WiiCompiled HLE: align the
+// guest range to 32-byte cache lines, zero the full aligned range, and notify
+// the renderer-side DMA-write seam. Invalid guest ranges are best-effort and do
+// not change guest registers or abort startup.
+template <>
+struct KnownNativeCpuCall<0x801A16E4u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        constexpr std::uint32_t kCacheLineSize = 32u;
+        const std::uint32_t address = cpu->gpr[3];
+        const std::uint32_t length = cpu->gpr[4];
+        if (length == 0u) {
+            return;
+        }
+
+        const std::uint32_t alignedAddress = address & ~(kCacheLineSize - 1u);
+        const std::uint32_t alignedLength =
+            ((address - alignedAddress) + length + (kCacheLineSize - 1u)) &
+            ~(kCacheLineSize - 1u);
+        if (alignedLength == 0u) {
+            return;
+        }
+
+        try {
+            auto* destination = Memory::GetPointer(alignedAddress, alignedLength);
+            std::memset(destination, 0, alignedLength);
+            mkw_switch_gx_notify_guest_ram_dma_write(alignedAddress, alignedLength);
+        } catch (const Memory::AccessViolation&) {
+            // Pinned WiiCompiled logs and returns for an invalid guest range.
+            // The Switch fast-track intentionally omits host-side logging here.
         }
     }
 };

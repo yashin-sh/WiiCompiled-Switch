@@ -105,9 +105,7 @@ void write_liveness_record(
         return;
     }
 
-    const std::size_t size = static_cast<std::size_t>(n) < sizeof(buffer)
-        ? static_cast<std::size_t>(n)
-        : sizeof(buffer) - 1;
+    const std::size_t size = static_cast<std::size_t>(n) < sizeof(buffer) ? static_cast<std::size_t>(n) : sizeof(buffer) - 1;
     write_atomicish(path, buffer, size);
 }
 

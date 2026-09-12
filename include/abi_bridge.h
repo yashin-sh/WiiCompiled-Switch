@@ -16,10 +16,13 @@ void GX_HLE_FIFO_Write8(std::uint8_t value);
 void GX_HLE_FIFO_WriteBurst(const std::uint8_t* data, std::uint32_t sizeBytes);
 
 // Diagnostic seam used by blocker-driven fast-track startup. Non-fast-track
-// builds provide a no-op implementation, so generated-code behavior remains
-// unchanged except that an attributable record can be emitted before abort.
+// builds provide no-op implementations, so translated-code behavior remains
+// unchanged while local hardware runs can publish durable liveness records.
 void mkw_switch_report_unsupported_translated_dispatch(
     const char* kind,
+    std::uint32_t target,
+    CpuContext* cpu) noexcept;
+void mkw_switch_note_translated_dispatch(
     std::uint32_t target,
     CpuContext* cpu) noexcept;
 
@@ -41,7 +44,9 @@ void mkw_switch_hle_os_exception_init(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_interrupt_init(CpuContext* cpu) noexcept;
 }
 
-inline void ApplyRuntimeCallOptions(std::uint32_t, CpuContext*) noexcept {}
+inline void ApplyRuntimeCallOptions(std::uint32_t target, CpuContext* cpu) noexcept {
+    mkw_switch_note_translated_dispatch(target, cpu);
+}
 
 inline constexpr std::uint32_t kPpcAllNonvolatileFprMask = 0xFFFFC000u;
 

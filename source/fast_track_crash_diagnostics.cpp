@@ -22,7 +22,17 @@ constexpr const char* kDispatchPath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-dispatch-blocker.txt";
 constexpr const char* kExceptionPath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-exception.txt";
+constexpr const char* kHeartbeatPath =
+    "sdmc:/switch/WiiCompiled-Switch/fast-track-heartbeat.txt";
+constexpr const char* kMainReachedPath =
+    "sdmc:/switch/WiiCompiled-Switch/fast-track-main-reached.txt";
+constexpr std::uint32_t kPalMainAddress = 0x8000B6B0u;
+
 const char* volatile g_fast_track_stage = "PROCESS_START";
+bool g_liveness_files_reset = false;
+bool g_main_reached = false;
+std::uint64_t g_dispatch_count = 0u;
+std::uint64_t g_last_heartbeat_tick = 0u;
 
 void write_atomicish(const char* path, const char* data, std::size_t size) noexcept {
     const int fd = ::open(path, O_WRONLY | O_CREAT | O_TRUNC, 0666);
@@ -42,6 +52,63 @@ void write_atomicish(const char* path, const char* data, std::size_t size) noexc
     ::close(fd);
 }
 
+void reset_liveness_files_once() noexcept {
+    if (g_liveness_files_reset) {
+        return;
+    }
+    g_liveness_files_reset = true;
+    ::unlink(kDispatchPath);
+    ::unlink(kExceptionPath);
+    ::unlink(kHeartbeatPath);
+    ::unlink(kMainReachedPath);
+}
+
+void write_liveness_record(
+    const char* path,
+    const char* title,
+    std::uint32_t target,
+    CpuContext* cpu) noexcept {
+    char buffer[1024];
+    const std::uint32_t guest_pc = cpu ? cpu->pc : 0u;
+    const std::uint32_t r1 = cpu ? cpu->gpr[1] : 0u;
+    const std::uint32_t r2 = cpu ? cpu->gpr[2] : 0u;
+    const std::uint32_t r3 = cpu ? cpu->gpr[3] : 0u;
+    const std::uint32_t r13 = cpu ? cpu->gpr[13] : 0u;
+
+    const int n = std::snprintf(
+        buffer,
+        sizeof(buffer),
+        "%s\n"
+        "========================================\n"
+        "dispatch count        : %llu\n"
+        "last target           : 0x%08x\n"
+        "guest pc              : 0x%08x\n"
+        "r1                    : 0x%08x\n"
+        "r2                    : 0x%08x\n"
+        "r3                    : 0x%08x\n"
+        "r13                   : 0x%08x\n"
+        "fast-track stage      : %s\n"
+        "PAL main              : 0x%08x\n"
+        "main reached          : %s\n",
+        title,
+        static_cast<unsigned long long>(g_dispatch_count),
+        target,
+        guest_pc,
+        r1,
+        r2,
+        r3,
+        r13,
+        g_fast_track_stage,
+        kPalMainAddress,
+        g_main_reached ? "YES" : "NO");
+    if (n <= 0) {
+        return;
+    }
+
+    const std::size_t size = static_cast<std::size_t>(n) < sizeof(buffer) ? static_cast<std::size_t>(n) : sizeof(buffer) - 1;
+    write_atomicish(path, buffer, size);
+}
+
 } // namespace
 #endif
 
@@ -50,6 +117,42 @@ extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept {
     g_fast_track_stage = stage ? stage : "<null>";
 #else
     (void)stage;
+#endif
+}
+
+extern "C" void mkw_switch_note_translated_dispatch(
+    std::uint32_t target,
+    CpuContext* cpu) noexcept {
+#if MKW_FAST_TRACK_DIAGNOSTICS
+    reset_liveness_files_once();
+    ++g_dispatch_count;
+
+    if (target == kPalMainAddress && !g_main_reached) {
+        g_main_reached = true;
+        g_fast_track_stage = "GUEST_MAIN_REACHED";
+        write_liveness_record(
+            kMainReachedPath,
+            "WiiCompiled-Switch PAL main reached",
+            target,
+            cpu);
+    }
+
+    const std::uint64_t now = armGetSystemTick();
+    const std::uint64_t frequency = armGetSystemTickFreq();
+    const bool heartbeat_due =
+        g_last_heartbeat_tick == 0u || frequency == 0u ||
+        now - g_last_heartbeat_tick >= frequency;
+    if (heartbeat_due || target == kPalMainAddress) {
+        g_last_heartbeat_tick = now;
+        write_liveness_record(
+            kHeartbeatPath,
+            "WiiCompiled-Switch translated liveness heartbeat",
+            target,
+            cpu);
+    }
+#else
+    (void)target;
+    (void)cpu;
 #endif
 }
 

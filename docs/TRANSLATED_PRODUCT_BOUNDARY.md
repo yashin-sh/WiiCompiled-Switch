@@ -54,7 +54,8 @@ That path has now been hardware-validated beyond metadata inspection:
 - real Wii SDK/native boundaries are reached and fixed iteratively;
 - native HLE can call back into translated code, as validated for `IPCCltInit` → `IPCInit`;
 - native HLE can publish required guest SDA bookkeeping, as validated for `__OSInitSTM`;
-- native storage HLE can bridge required guest NAND state to an SD-backed Horizon data root, as validated for `NANDInit`.
+- native storage HLE can bridge required guest NAND state to an SD-backed Horizon data root, as validated for `NANDInit`;
+- the next captured storage boundary, `NANDPrivateOpenAsync`, now has a concrete SD-backed file-open state and guest completion ABI rather than a success-only stub.
 
 Therefore the previous `WAITING_FOR_TRANSLATED_PRODUCT` / `TRANSLATED_PRODUCT_LINKED` states are historical bootstrap milestones, not the current development stop point.
 
@@ -81,10 +82,12 @@ OSReport → OSGetConsoleType → OSGetResetCode
   ↓
 DCZeroRange → IPCCltInit → __OSInitSTM → NANDInit
   ↓
+NANDPrivateOpenAsync
+  ↓
 PAL main (0x8000B6B0)  ← not yet proven
 ```
 
-As of 2026-09-12, real hardware has crossed the translated/native boundaries for `OSReport`, `OSGetConsoleType`, `OSGetResetCode`, `DCZeroRange`, `IPCCltInit`, `__OSInitSTM`, and `NANDInit`.
+As of 2026-09-12, real hardware has captured the translated/native boundaries for `OSReport`, `OSGetConsoleType`, `OSGetResetCode`, `DCZeroRange`, `IPCCltInit`, `__OSInitSTM`, `NANDInit`, and `NANDPrivateOpenAsync`. The first seven have been proven to advance to a later boundary on subsequent hardware runs; `NANDPrivateOpenAsync` is fixed in `main` and awaits the next hardware retest.
 
 The project has **not yet emitted `fast-track-main-reached.txt`**, so `main()` must not be claimed as reached.
 
@@ -116,7 +119,9 @@ This boundary reinforces that a hardware-facing HLE cannot automatically be redu
 
 Pinned WiiCompiled's `NANDInit` HLE (`0x8019E18C`) initializes host-side NAND/ISFS support and also publishes the guest-visible path/state expected by the RVL NAND library. The Switch port maps the host side to the existing SD-backed `nand_root()` while preserving the Wii-style guest path `/title/00010004/<gamecode>/data`, `NANDHomeDir` at `0x80346D20`, and initialized value `2` at `0x80386848`.
 
-This means later NAND/ISFS blockers should be treated as a filesystem-translation boundary, not as unconditional success stubs: host storage effects and guest bookkeeping may both matter.
+`NANDPrivateOpenAsync` (`0x8019C990`) extends that boundary into live file state and guest completion. The Switch side translates/clamps the requested path below `nand_root()`, opens it with NAND mode semantics, allocates a persistent host fd, writes the guest `NANDFileInfo` fd/open flag, then invokes the guest callback ABI with `(result, commandBlock)` on a scratch `CpuContext` so callback register writes cannot corrupt the caller.
+
+Pinned WiiCompiled queues this completion and drains it later from alarm/IOS servicing. The current Switch fast-track queues then drains it before the HLE returns. That is a deliberate scheduling approximation, not a claim of exact timing equivalence; the next hardware run will tell us whether boot depends on the later delivery point.
 
 ## Diagnostics at this boundary
 
@@ -154,7 +159,8 @@ The local generated-product path was exercised on hardware through real translat
 - `0x801A16E4` — `DCZeroRange`;
 - `0x80193478` — `IPCCltInit`;
 - `0x801AB848` — `__OSInitSTM`;
-- `0x8019E18C` — `NANDInit`.
+- `0x8019E18C` — `NANDInit`;
+- `0x8019C990` — `NANDPrivateOpenAsync`.
 
 The day also produced two useful non-dispatch diagnostics:
 
@@ -187,6 +193,7 @@ Only Nintendo-data-free runtime/platform code, documentation and synthetic probe
 - native HLE → translated dispatch seam: PASS;
 - native HLE guest-SDA state publication: PASS;
 - initial NAND/ISFS host+guest bootstrap: PASS;
+- NAND async-open native seam and callback ABI: PASS in CI, awaiting hardware retest after fix;
 - first-blocker durable diagnostics: PASS;
 - PAL `main()` reached: **NOT YET PROVEN**;
 - first rendered frame: **NOT YET PROVEN**.
@@ -196,6 +203,8 @@ Only Nintendo-data-free runtime/platform code, documentation and synthetic probe
 The next meaningful boundary is no longer "translated product linked". It is:
 
 1. keep the local fast-track on PAL `__start`;
-2. fix each first unsupported boundary using the pinned WiiCompiled semantics;
-3. write `fast-track-main-reached.txt` when dispatch reaches `0x8000B6B0`;
-4. only then begin systematic post-`main` game-subsystem bring-up.
+2. retest the `NANDPrivateOpenAsync` bridge on hardware;
+3. if callback timing matters, move completion draining to a verified alarm/IOS servicing point without changing the guest ABI;
+4. otherwise fix the next first unsupported boundary using the pinned WiiCompiled semantics;
+5. write `fast-track-main-reached.txt` when dispatch reaches `0x8000B6B0`;
+6. only then begin systematic post-`main` game-subsystem bring-up.

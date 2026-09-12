@@ -1,5 +1,6 @@
 #include "switch_nand_runtime.hpp"
 
+#include "devkita64_gcc_compat.hpp"
 #include "abi_bridge.h"
 
 #include <deque>

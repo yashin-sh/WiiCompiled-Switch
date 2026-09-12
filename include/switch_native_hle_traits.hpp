@@ -220,3 +220,21 @@ struct KnownNativeCpuCall<0x801A25D0u> {
     static constexpr bool kAvailable = true;
     static inline void Invoke(CpuContext*) noexcept {}
 };
+
+// OSGetConsoleType (PAL 0x8019F33C). Match the pinned native override exactly:
+// read the guest physical MEM2 size and expose retail Wii vs NDEV/expanded MEM2
+// through r3. MKW uses the NDEV value to enable its extra-memory heap path.
+template <>
+struct KnownNativeCpuCall<0x8019F33Cu> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        constexpr std::uint32_t kPhysicalMem2SizeAddr = 0x80003118u;
+        constexpr std::uint32_t kRetailMem2Size = 64u * 1024u * 1024u;
+        const std::uint32_t physicalMem2Size = Memory::Read32(kPhysicalMem2SizeAddr);
+        cpu->gpr[3] = physicalMem2Size == kRetailMem2Size ? 0x00000012u : 0x10000012u;
+    }
+};

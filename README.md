@@ -33,6 +33,8 @@ Run a legally-owned Mario Kart Wii dump through the WiiCompiled static-recompila
 Current fast-track path:
 
 ```text
+headless Horizon platform init
+  ↓
 __start (PAL 0x800060A4)
   ↓
 Wii SDK / OS bootstrap
@@ -43,7 +45,7 @@ OSReport
   ↓
 OSGetConsoleType
   ↓
-OSGetResetCode             ← latest hardware blocker fixed in main
+OSGetResetCode             ← latest guest blocker fixed in main
   ↓
 remaining early OS/runtime boundaries
   ↓
@@ -64,15 +66,17 @@ first rendered frame
 
 Validated work includes GuestFlat memory, Wii `Memory::Init`, generated data initialization, translated `__start`, register bootstrap, timebase/SPR/FPSCR helpers, OS timing and interrupt state, exception/interrupt initialization, Wii cache-control HLE, EXI initialization/basic transactions, SI initialization, generic indirect translated dispatch, and a growing set of Wii SDK native/HLE boundaries whose behavior is mirrored from the pinned WiiCompiled runtime.
 
-The latest hardware-driven blocker sequence has crossed:
+The hardware-driven guest blocker sequence has crossed:
 
 - `OSReport` (`0x801A25D0`);
 - `OSGetConsoleType` (`0x8019F33C`);
 - `OSGetResetCode` (`0x801A8A50`).
 
-`OSGetResetCode` was the latest captured `DIRECT` blocker and is now fixed in `main` by matching the pinned WiiCompiled behavior: return `0` (`Cold Boot`) without touching Wii reset MMIO.
+`OSGetResetCode` was the latest captured guest `DIRECT` blocker and is fixed by matching the pinned WiiCompiled behavior: return `0` (`Cold Boot`) without touching Wii reset MMIO.
 
-The local fast-track build now writes durable diagnostics under `sdmc:/switch/WiiCompiled-Switch/` (with a progress-file fallback under `sdmc:/switch/`) so non-crashing black-screen stalls can be distinguished from explicit dispatch blockers and host exceptions.
+A later hardware run exposed a separate **pre-guest host crash** during `MAIN_PLATFORM_INIT`: no guest context was active, GuestFlat was not initialized, and the fault register state matched an 8 MiB host memory clear. libnx's default PrintConsole path creates a framebuffer and initializes NV transfer memory of that size. Because the M2 local fast-track does not need an on-screen console or GPU framebuffer, it now starts **headless** and relies on SD diagnostics until a real GX backend exists.
+
+The local fast-track build writes durable diagnostics under `sdmc:/switch/WiiCompiled-Switch/` (with a progress-file fallback under `sdmc:/switch/`) so non-crashing black-screen stalls can be distinguished from explicit dispatch blockers and host exceptions. Platform initialization also publishes finer crash stages such as `PLATFORM_SERVICES_INIT`, `PLATFORM_ROMFS_INIT`, and `PLATFORM_READY`.
 
 Important current limitation: the GX FIFO bridge is still a deliberate sink. A black screen is therefore expected even when translated startup is progressing. The project has **not yet proven entry into Mario Kart Wii `main()` and has not rendered a game frame**.
 
@@ -89,6 +93,8 @@ MKW_JOBS=8 bash scripts/build-local-fast-track-incremental.sh
 ```
 
 Copy the resulting local fast-track NRO to the Switch and launch it through hbmenu in application/title-override mode with full memory.
+
+The local fast-track is intentionally headless: do not expect a libnx text console. Use the SD diagnostic files instead.
 
 Current diagnostics may include:
 

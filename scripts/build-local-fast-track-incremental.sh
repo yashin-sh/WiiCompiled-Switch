@@ -64,7 +64,7 @@ if [[ ! -f "$ELF" || ! -f "$NRO" ]]; then
   exit 6
 fi
 
-if ! strings "$ELF" | grep -Fq 'PLATFORM_CONSOLE_SKIPPED_FAST_TRACK'; then
+if ! grep -aFq 'PLATFORM_CONSOLE_SKIPPED_FAST_TRACK' "$ELF"; then
   echo "error: final ELF does not contain the headless fast-track platform marker" >&2
   echo "error: refusing to provide a hardware-test NRO from a stale/misconfigured build" >&2
   exit 7

@@ -23,7 +23,7 @@ Real hardware confirms that the local NRO can:
 - execute through multiple Wii SDK/native runtime boundaries;
 - execute a mixed native-HLE → translated call path (`IPCCltInit` → `IPCInit`);
 - preserve required guest SDA bookkeeping through host HLE (`__OSInitSTM`);
-- initialize the first NAND/ISFS host+guest state through `NANDInit`;
+- initialize NAND/ISFS host+guest state through `NANDInit` and advance to the first asynchronous NAND open boundary;
 - emit durable unsupported-dispatch and host-exception diagnostics to SD.
 
 The screen remains black because the current GX FIFO bridge is deliberately a sink. No rendered Mario Kart Wii frame has been proven.
@@ -227,7 +227,36 @@ CI result before merge: 5/5 workflows green, including Nintendo-data-free fast-t
 
 Merge commit: `56e778ce7a5e8ac678763fd00bc6922f904884ea`.
 
-Current status: `NANDInit` is the latest hardware-captured guest blocker fixed in `main`. A post-#87 hardware run is required to identify the next boundary or prove PAL `main()`.
+Result after fix: hardware advanced beyond `NANDInit` and captured `NANDPrivateOpenAsync` at `0x8019C990`.
+
+### 8. `NANDPrivateOpenAsync` — `0x8019C990`
+
+Captured blocker:
+
+```text
+kind                  : DIRECT
+target                : 0x8019c990
+guest pc              : 0x800060a4
+r1                    : 0x80399138
+r2                    : 0x8038efa0
+r3                    : 0x80252df8
+r13                   : 0x8038cc00
+fast-track stage      : TRANSLATED_EXEC_ENTER
+```
+
+Pinned WiiCompiled maps this address to `NANDPrivateOpenAsync_HLE`. This boundary is not a success-only stub. It performs synchronous `NANDOpen` semantics first, queues the completion callback with `(result, commandBlock)`, and returns the same NAND result. Upstream drains pending NAND callbacks later from its alarm/IOS servicing path.
+
+Switch fix: add a persistent SD-backed NAND open runtime below the existing `nand_root()`. Wii guest paths are normalized, backslashes are converted, relative paths resolve below the title data directory, and `.`/`..` traversal is clamped at the NAND root. Modes 1/2/3 map to host read/read-write opens. Successful opens allocate a persistent fd beginning at 100, write the fd into guest `NANDFileInfo`, and set `openFlag = 1` at offset `0x8A`. The boundary preserves the relevant result family (`0`, `-8`, `-12`, `-64`).
+
+The completion callback receives `r3 = result` and `r4 = commandBlock` on a scratch `CpuContext`, preventing callback register mutations from corrupting the interrupted translated caller. The current fast-track queues then drains the callback before the HLE returns; unlike pinned WiiCompiled, it does not yet delay delivery to the later alarm/IOS pump. This is an explicit scheduling approximation to be validated on hardware, not a claim of timing equivalence.
+
+PR: #93
+
+The first PR head exposed only integration issues in CI: `clang-format` formatting and direct inclusion of WiiCompiled `abi_bridge.h` before the devkitA64 GCC compatibility shims. Both were fixed. Fresh head `c03a446d3f3bfde3b107cd3754b8aa9563a8d2ea` passed all 5 workflows, including `fast-track-startup` and the full Nintendo-data-free Switch build.
+
+Merge commit: `5c5cc83f85837396a1ac8db8e80ada16d71ccd97`.
+
+Current status: `NANDPrivateOpenAsync` is the latest hardware-captured blocker fixed in `main`. A post-#93 hardware run is required to prove that the current callback scheduling advances boot, expose any ordering/reentrancy issue, identify the next boundary, or prove PAL `main()`.
 
 ## Diagnostic-path issue discovered during hardware testing
 
@@ -286,10 +315,12 @@ Specifically, hardware has now proven that:
 - invalid guest-memory behavior at HLE seams must match the Switch memory slice contract as well as upstream intent;
 - native HLE may legitimately call translated guest code and must preserve that dependency;
 - hardware-facing host HLE may skip Wii I/O while still publishing mandatory guest SDA state;
-- storage HLE may require both host filesystem effects and guest path/state publication.
+- storage HLE requires both host filesystem effects and guest path/state publication;
+- `NANDInit` now advances far enough to reach the first concrete async file-open boundary.
 
 It does **not** prove:
 
+- that the new `NANDPrivateOpenAsync` scheduling approximation has advanced on hardware yet;
 - entry into PAL `main()`;
 - game/resource initialization completion;
 - a working GX renderer;
@@ -298,9 +329,9 @@ It does **not** prove:
 
 The next real-hardware run should be classified as one of:
 
-1. a new `fast-track-dispatch-blocker.txt` — map/fix the next pinned runtime boundary;
-2. a `fast-track-exception.txt` — use stage + FAR/registers + guest context to attribute the failure;
-3. a heartbeat with no blocker — investigate a non-crashing loop/stall;
+1. a new `fast-track-dispatch-blocker.txt` — current callback delivery worked well enough to continue; map/fix the next pinned runtime boundary;
+2. a `fast-track-exception.txt` — use stage + FAR/registers + guest context to attribute the failure, including possible callback ordering/reentrancy;
+3. a heartbeat with no blocker — investigate a non-crashing loop/stall and whether delayed NAND completion is required;
 4. `fast-track-main-reached.txt` — declare the PAL `main()` milestone reached and move to the first post-`main` blocker.
 
 ## Build command used for the local fast-track

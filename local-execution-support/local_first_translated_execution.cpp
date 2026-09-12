@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <exception>
+#include <sys/stat.h>
 
 extern "C" void func_80006090(CpuContext* ctx);
 extern "C" void func_8000609C(CpuContext* ctx);
@@ -145,8 +146,22 @@ bool run_local_bootstrap_register_prelude(MkwSwitchTranslatedExecutionProbeResul
 void write_fast_track_progress(const char* state,
                                const CpuContext& cpu,
                                const char* detail = nullptr) noexcept {
-    std::FILE* out = std::fopen(
-        "sdmc:/switch/WiiCompiled-Switch/fast-track-progress.txt", "w");
+    constexpr const char* kDiagnosticDirectory = "sdmc:/switch/WiiCompiled-Switch";
+    constexpr const char* kPrimaryProgressPath =
+        "sdmc:/switch/WiiCompiled-Switch/fast-track-progress.txt";
+    constexpr const char* kFallbackProgressPath =
+        "sdmc:/switch/fast-track-progress.txt";
+
+    // The NRO does not have to be installed inside /switch/WiiCompiled-Switch.
+    // Make the diagnostics directory explicitly instead of silently depending
+    // on the user's install layout. If that still fails, leave a fallback file
+    // directly under /switch so a non-crashing stall remains observable.
+    (void)::mkdir(kDiagnosticDirectory, 0777);
+
+    std::FILE* out = std::fopen(kPrimaryProgressPath, "w");
+    if (!out) {
+        out = std::fopen(kFallbackProgressPath, "w");
+    }
     if (!out) {
         return;
     }

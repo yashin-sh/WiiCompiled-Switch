@@ -123,8 +123,10 @@ struct KnownNativeCpuCall<0x8019E18Cu> {
 // NANDPrivateOpenAsync (PAL 0x8019C990). Pinned WiiCompiled forwards the
 // request through the synchronous NANDOpen implementation, queues the guest
 // completion callback with (result, commandBlock), and returns the same result.
-// The Switch runtime keeps that split so callback code cannot clobber the live
-// translated caller's registers.
+// The current Switch fast-track drains that queue before this HLE returns, but
+// does so on a scratch CpuContext so callback register mutations cannot corrupt
+// the interrupted translated caller. Moving the drain to the future alarm/IOS
+// pump remains a scheduling refinement rather than a guest ABI change.
 template <>
 struct KnownNativeCpuCall<0x8019C990u> {
     static constexpr bool kAvailable = true;
@@ -143,5 +145,6 @@ struct KnownNativeCpuCall<0x8019C990u> {
             mkw::switch_nand_runtime::OpenSync(pathPtr, fileInfoPtr, mode);
         mkw::switch_nand_runtime::QueueCallback(callbackPtr, result, commandBlockPtr);
         cpu->gpr[3] = static_cast<std::uint32_t>(result);
+        mkw::switch_nand_runtime::PumpCallbacks(cpu);
     }
 };

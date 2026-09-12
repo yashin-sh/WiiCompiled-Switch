@@ -22,7 +22,7 @@ Run a legally-owned Mario Kart Wii dump through the WiiCompiled static-recompila
 | WiiCompiled PPC → AArch64 translated code executes on Switch | ✅ Done |
 | Guest memory/data initialization | ✅ Done |
 | HostContext / GuestFlat / translated handoff | ✅ Done |
-| Wii SDK early OS/cache/timing/interrupt bootstrap | 🟡 In progress |
+| Wii SDK early OS/cache/timing/interrupt/bootstrap | 🟡 In progress |
 | EXI/SI bootstrap and basic EXI transaction HLE | ✅ Crossed in hardware fast-track |
 | Durable blocker / crash diagnostics on SD | ✅ Done |
 | Reach Mario Kart Wii `main()` | ⬜ Next major milestone |
@@ -45,7 +45,11 @@ OSReport
   ↓
 OSGetConsoleType
   ↓
-OSGetResetCode             ← latest guest blocker fixed in main
+OSGetResetCode
+  ↓
+DCZeroRange
+  ↓
+IPCCltInit                 ← latest hardware blocker fixed in main
   ↓
 remaining early OS/runtime boundaries
   ↓
@@ -66,15 +70,19 @@ first rendered frame
 
 Validated work includes GuestFlat memory, Wii `Memory::Init`, generated data initialization, translated `__start`, register bootstrap, timebase/SPR/FPSCR helpers, OS timing and interrupt state, exception/interrupt initialization, Wii cache-control HLE, EXI initialization/basic transactions, SI initialization, generic indirect translated dispatch, and a growing set of Wii SDK native/HLE boundaries whose behavior is mirrored from the pinned WiiCompiled runtime.
 
-The hardware-driven guest blocker sequence has crossed:
+The hardware-driven guest blocker sequence has now crossed:
 
 - `OSReport` (`0x801A25D0`);
 - `OSGetConsoleType` (`0x8019F33C`);
-- `OSGetResetCode` (`0x801A8A50`).
+- `OSGetResetCode` (`0x801A8A50`);
+- `DCZeroRange` (`0x801A16E4`);
+- `IPCCltInit` (`0x80193478`).
 
-`OSGetResetCode` was the latest captured guest `DIRECT` blocker and is fixed by matching the pinned WiiCompiled behavior: return `0` (`Cold Boot`) without touching Wii reset MMIO.
+`DCZeroRange` exposed an important Switch-runtime contract mismatch: pinned WiiCompiled catches an invalid guest-memory access, while the Switch `Memory::GetPointer` slice returns `nullptr`. A hardware call with `r3 = 0xFFFFFFFF` aligned to `0xFFFFFFE0`, and the old HLE called `memset(nullptr, 0, 0x20)`. The Switch HLE now checks the returned guest pointer before entering libc while preserving valid-range zeroing and the GX/DMA notification seam.
 
-A later hardware run exposed a separate **pre-guest host crash** during `MAIN_PLATFORM_INIT`: no guest context was active, GuestFlat was not initialized, and the fault register state matched an 8 MiB host memory clear. libnx's default PrintConsole path creates a framebuffer and initializes NV transfer memory of that size. Because the M2 local fast-track does not need an on-screen console or GPU framebuffer, it now starts **headless** and relies on SD diagnostics until a real GX backend exists.
+`IPCCltInit` is the latest captured guest `DIRECT` blocker. Matching the pinned WiiCompiled HLE requires more than returning success: the Switch HLE calls translated `IPCInit` at `0x80192F7C`, advances the r13-relative IPC buffer-low global by `0x1000` for `iosHeap`, skips Wii-specific interrupt/MMIO setup, and returns success.
+
+An earlier hardware run exposed a separate **pre-guest host crash** during `MAIN_PLATFORM_INIT`: no guest context was active, GuestFlat was not initialized, and the fault register state matched an 8 MiB host memory clear in the libnx PrintConsole/NV path. The M2 local fast-track therefore starts **headless** and relies on SD diagnostics until a real GX backend exists. Subsequent hardware runs have confirmed that this headless path reaches `TRANSLATED_EXEC_ENTER` with an active guest context.
 
 The local fast-track build writes durable diagnostics under `sdmc:/switch/WiiCompiled-Switch/` (with a progress-file fallback under `sdmc:/switch/`) so non-crashing black-screen stalls can be distinguished from explicit dispatch blockers and host exceptions. Platform initialization also publishes finer crash stages such as `PLATFORM_SERVICES_INIT`, `PLATFORM_ROMFS_INIT`, and `PLATFORM_READY`.
 
@@ -92,7 +100,9 @@ git pull
 MKW_JOBS=8 bash scripts/build-local-fast-track-incremental.sh
 ```
 
-Copy the resulting local fast-track NRO to the Switch and launch it through hbmenu in application/title-override mode with full memory.
+The incremental helper invalidates its local cache when the Git HEAD changes, verifies that the headless fast-track marker is present in the resulting ELF, and reports the generated NRO SHA-256 so the exact hardware-test artifact can be identified.
+
+Copy the resulting `WiiCompiled-Switch-local-fast-track.nro` to the Switch and launch it through hbmenu in application/title-override mode with full memory.
 
 The local fast-track is intentionally headless: do not expect a libnx text console. Use the SD diagnostic files instead.
 

@@ -291,7 +291,7 @@ struct KnownNativeCpuCall<0x801A16E4u> {
             auto* destination = Memory::GetPointer(alignedAddress, alignedLength);
             std::memset(destination, 0, alignedLength);
             mkw_switch_gx_notify_guest_ram_dma_write(alignedAddress, alignedLength);
-        } catch (const Memory::AccessViolation&) {
+        } catch (...) {
             // Pinned WiiCompiled logs and returns for an invalid guest range.
             // The Switch fast-track intentionally omits host-side logging here.
         }

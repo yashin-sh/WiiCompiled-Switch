@@ -56,12 +56,19 @@ Hardware evidence is recorded in:
 The current hardware-driven method is deliberate: execute the broadest safe translated startup path, stop on the first unsupported native/translated boundary or attributable exception, mirror the pinned WiiCompiled semantics, validate in Nintendo-data-free CI, then repeat on hardware.
 
 ## M3 — graphics / first frame
+- [ ] Resolve shared upstream GX safety blockers before attributing failures to a Switch backend:
+  - [ ] #109 — release-safe FIFO bounds checking
+  - [ ] #110 — prevent draw merges across different `GXVtxFmt` values
+  - [ ] #111 — guard `GX_LINESTRIP` zero/short vertex counts
+  - [ ] #112 — make unsupported indexed XF loads visible in Release builds
 - [ ] Select the native Switch graphics strategy compatible with WiiCompiled/Aurora
 - [ ] Replace the temporary GX FIFO sink with a real GX → Switch command/backend path
 - [ ] Render first clear frame
 - [ ] GX command path functional
 - [ ] shader/pipeline cache strategy
 - [ ] 720p handheld / 1080p docked policy
+
+The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
 > Graphics is intentionally not considered validated while `GX_HLE_FIFO_Write*` remains a sink. A black screen during the M2 fast-track is therefore not proof of a graphics failure.
 

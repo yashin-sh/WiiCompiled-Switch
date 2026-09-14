@@ -5,6 +5,7 @@
 extern "C" void mkw_switch_hle_vi_init(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_vi_set_black(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_vi_configure(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_vi_flush(CpuContext* cpu) noexcept;
 
 template <>
 struct KnownNativeCpuCall<0x801B94A4u> {
@@ -56,5 +57,17 @@ struct KnownNativeCpuCall<0x801B9F6Cu> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_vi_configure(cpu);
+    }
+};
+
+// VIFlush (PAL 0x801BA9A4). Pinned WiiCompiled arms pending VI state for the
+// next retrace and returns zero. The Switch fast-track records only that guest
+// VI bookkeeping; it does not fabricate a retrace or presenter frame.
+template <>
+struct KnownNativeCpuCall<0x801BA9A4u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_vi_flush(cpu);
     }
 };

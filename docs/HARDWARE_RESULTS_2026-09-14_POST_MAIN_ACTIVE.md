@@ -54,28 +54,34 @@ The next blocker was `OSGetCurrentThread` at `0x801A98B0`. PR #124 mirrored the 
 
 `VIGetDTVStatus` at `0x801BAD38` was then reached. PR #130 mirrored the pin's native disabled/not-ready result (`r3 = 0`) without Wii VI MMIO or renderer side effects. The subsequent real-Switch run crossed that boundary and exposed the first VI pending-state mutation.
 
-## Latest hardware blocker: VISetBlack
+`VISetBlack` at `0x801BAB2C` was then reached. PR #131 mirrored the pin's pending-black request semantics and returned `r3 = 0` without committing the value, fabricating a retrace, or invoking a presenter. The subsequent real-Switch run crossed `VISetBlack` and exposed render-mode configuration.
+
+`VIConfigure` at `0x801B9F6C` was then reached. PR #132 validated and decoded the guest `GXRenderModeObj` into pending VI format/geometry state while keeping the Switch fast-track headless. The subsequent real-Switch run crossed `VIConfigure` and exposed the pending-state flush boundary.
+
+## Latest hardware blocker: VIFlush
 
 The latest durable blocker is:
 
 ```text
 kind    : DIRECT
-target  : 0x801BAB2C
+target  : 0x801BA9A4
 pc      : 0x800060A4
 r1      : 0x80399108
 r2      : 0x8038EFA0
-r3      : 0x00000001
+r3      : 0x00000000
 r13     : 0x8038CC00
 stage   : GUEST_POST_MAIN_ACTIVE
 ```
 
-For PAL RMCP01, `0x801BAB2C` is `VISetBlack()`. At pinned WiiCompiled commit `a135beb201042b20f390c6695ca6b26768820fb4`, the native HLE treats `r3 != 0` as a black-screen request, ensures the VI state exists, stores the request in **pending** VI state, and returns `0`.
+For PAL RMCP01, `0x801BA9A4` is `VIFlush()`. At pinned WiiCompiled commit `a135beb201042b20f390c6695ca6b26768820fb4`, the native HLE ensures VI state exists, then, if its pending framebuffer slot is still zero, tries to recover a queued framebuffer from the guest SDK globals at `0x80386BA0` and `0x80350890`. A non-zero recovered value becomes the pending framebuffer.
 
-The pin deliberately does not apply that value immediately. `VIFlush` arms pending state and a later retrace commits it. The Switch fast-track therefore preserves the requested pending-black boolean locally and returns `r3 = 0`, but does not fabricate `VIFlush`, a retrace, a framebuffer, Aurora or a presenter. A Nintendo-data-free synthetic probe resolves the same direct target and seeds the hardware-observed `r3 = 1` input shape.
+The function then sets the internal `flushArmed` flag and returns `r3 = 0`. It deliberately does not commit the pending TV/geometry/black/framebuffer state in `VIFlush`; that commit occurs at the next retrace. It also does not mark an XFB ready here: the pin defers frame readiness to `GXCopyDisp`.
+
+The Switch bridge therefore mirrors only the pending-state arm and optional queued-framebuffer recovery. It does not fabricate a retrace, XFB readiness, Aurora state, framebuffer presentation or a renderer path. A Nintendo-data-free synthetic probe resolves the same direct target and seeds the hardware-observed `r3 = 0` input shape.
 
 ## Current next hardware run
 
-After the `VISetBlack` bridge is merged, rebuild the local fast-track NRO from `main`, run it on hardware, and collect at minimum:
+After the `VIFlush` bridge is merged, rebuild the local fast-track NRO from `main`, run it on hardware, and collect at minimum:
 
 ```text
 fast-track-dispatch-blocker.txt
@@ -91,6 +97,6 @@ fast-track-heartbeat.txt
 fast-track-exception.txt
 ```
 
-The immediate acceptance criterion is that `0x801BAB2C` is no longer reported as an unsupported direct dispatch. The next durable blocker, or a later named post-main phase, defines the next implementation step.
+The immediate acceptance criterion is that `0x801BA9A4` is no longer reported as an unsupported direct dispatch. The next durable blocker, or a later named post-main phase, defines the next implementation step.
 
 A black screen remains expected. GX and VI bridges here are boot-state compatibility only; the fast-track GX FIFO remains a deliberate sink until the M3 renderer exists.

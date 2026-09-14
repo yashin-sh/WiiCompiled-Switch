@@ -53,7 +53,9 @@
 - [x] hardware-cross the pinned PAL60 `SCGetEuRgb60Mode` bridge far enough to reach `SCGetAspectRatio` (`0x801B1BE4`)
 - [x] hardware-cross the pinned-default widescreen `SCGetAspectRatio` bridge far enough to reach `VIGetDTVStatus` (`0x801BAD38`)
 - [x] hardware-cross the pinned `VIGetDTVStatus` disabled/not-ready bridge far enough to reach `VISetBlack` (`0x801BAB2C`)
-- [ ] hardware-validate the pinned `VISetBlack` pending-state bridge and identify the next post-main blocker
+- [x] hardware-cross the pinned `VISetBlack` pending-state bridge far enough to reach `VIConfigure` (`0x801B9F6C`)
+- [x] hardware-cross the pinned `VIConfigure` pending-state bridge far enough to reach `VIFlush` (`0x801BA9A4`)
+- [ ] hardware-validate the pinned `VIFlush` pending-state arm and identify the next post-main blocker
 - [ ] publish a real local DVD FST/data mapping before resource loading requires it
 - [ ] move NAND async completion draining from the fast-track HLE boundary to a verified alarm/IOS scheduling point if later hardware ordering requires it
 - [ ] complete thread/mutex/condition-variable semantics required by the game

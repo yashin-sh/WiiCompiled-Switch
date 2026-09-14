@@ -24,6 +24,8 @@ constexpr std::uint32_t kViNextFrameBufferHwAddr = 0x80350890u;
 
 std::atomic<bool> g_viInitialized{false};
 std::atomic<bool> g_viPendingBlack{false};
+std::atomic<std::uint32_t> g_viPendingNextFrameBuffer{0u};
+std::atomic<bool> g_viFlushArmed{false};
 
 void Write8IfMapped(std::uint32_t address, std::uint8_t value) noexcept {
     if (Memory::Contains(address, 1u)) {
@@ -40,6 +42,18 @@ void Write16IfMapped(std::uint32_t address, std::uint16_t value) noexcept {
 void Write32IfMapped(std::uint32_t address, std::uint32_t value) noexcept {
     if (Memory::Contains(address, 4u)) {
         Memory::Write32(address, value);
+    }
+}
+
+std::uint32_t Read32IfMapped(std::uint32_t address) noexcept {
+    if (!Memory::Contains(address, 4u)) {
+        return 0u;
+    }
+
+    try {
+        return Memory::Read32(address);
+    } catch (...) {
+        return 0u;
     }
 }
 
@@ -89,6 +103,31 @@ extern "C" void mkw_switch_hle_vi_set_black(CpuContext* cpu) noexcept {
     mkw_switch_hle_vi_init(cpu);
     g_viPendingBlack.store(makeBlack, std::memory_order_release);
     cpu->gpr[3] = 0u;
+}
+
+extern "C" void mkw_switch_hle_vi_flush(CpuContext* cpu) noexcept {
+    // Pinned VIFlush first ensures VI state exists, opportunistically recovers a
+    // pending framebuffer from the SDK-visible guest globals when the internal
+    // pending slot is still zero, then only arms pending state for a later
+    // retrace. It does not itself commit VI state or present a frame.
+    mkw_switch_hle_vi_init(cpu);
+
+    if (Memory::IsInitialized() &&
+        g_viPendingNextFrameBuffer.load(std::memory_order_acquire) == 0u) {
+        std::uint32_t guestNextFrameBuffer = Read32IfMapped(kViNextFrameBufferAddr);
+        if (guestNextFrameBuffer == 0u) {
+            guestNextFrameBuffer = Read32IfMapped(kViNextFrameBufferHwAddr);
+        }
+        if (guestNextFrameBuffer != 0u) {
+            g_viPendingNextFrameBuffer.store(guestNextFrameBuffer, std::memory_order_release);
+        }
+    }
+
+    g_viFlushArmed.store(true, std::memory_order_release);
+
+    if (cpu) {
+        cpu->gpr[3] = 0u;
+    }
 }
 
 #endif

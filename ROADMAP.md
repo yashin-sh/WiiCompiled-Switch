@@ -58,7 +58,9 @@
 - [x] hardware-cross the pinned `VIFlush` pending-state arm far enough to reach `GXSetDispCopySrc` (`0x8016F438`)
 - [x] hardware-cross the pinned `GXSetDispCopySrc` state/FIFO bridge far enough to reach `GXSetDispCopyDst` (`0x8016F4B8`)
 - [x] hardware-cross the pinned `GXSetDispCopyDst` state/FIFO bridge far enough to reach `VIWaitForRetrace` (`0x801B99EC`)
-- [ ] hardware-validate the pinned non-fiber `VIWaitForRetrace` retrace/commit bridge and identify the next post-main blocker
+- [x] hardware-cross the pinned non-fiber `VIWaitForRetrace` retrace/commit bridge far enough to reach `VISetPostRetraceCallback` (`0x801B9138`)
+- [x] hardware-cross the pinned `VISetPostRetraceCallback` registration bridge far enough to reach `OSCreateThread` (`0x801A9E84`)
+- [ ] hardware-validate the pinned guest-visible `OSCreateThread` bridge and identify the next post-main blocker
 - [ ] publish a real local DVD FST/data mapping before resource loading requires it
 - [ ] move NAND async completion draining from the fast-track HLE boundary to a verified alarm/IOS scheduling point if later hardware ordering requires it
 - [ ] complete thread/mutex/condition-variable semantics required by the game
@@ -71,6 +73,7 @@ Hardware evidence is recorded in:
 - `docs/HARDWARE_RESULTS_2026-09-12.md`
 - `docs/HARDWARE_RESULTS_2026-09-13_MAIN_REACHED.md`
 - `docs/HARDWARE_RESULTS_2026-09-14_POST_MAIN_ACTIVE.md`
+- `docs/HARDWARE_RESULTS_2026-09-15_OS_CREATE_THREAD.md`
 
 The current hardware-driven method remains deliberate after `main`: execute the broadest safe translated path, stop on the first unsupported native/translated boundary or attributable exception, mirror the pinned WiiCompiled semantics, validate in Nintendo-data-free CI, then repeat on hardware. Post-main bring-up remains tracked in #117.
 

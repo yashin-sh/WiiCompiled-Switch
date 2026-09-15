@@ -4,6 +4,7 @@
 
 extern "C" void mkw_switch_hle_gx_init(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 
 template <>
 struct KnownNativeCpuCall<0x8016B850u> {
@@ -24,5 +25,17 @@ struct KnownNativeCpuCall<0x8016F438u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_disp_copy_src(cpu);
+    }
+};
+
+// GXSetDispCopyDst (PAL 0x8016F4B8). Pinned WiiCompiled narrows r3/r4 to
+// u16, records destination width/height, and emits the BP 0x4D display-copy
+// stride write through the GX FIFO. Preserve the void-call GPR contract.
+template <>
+struct KnownNativeCpuCall<0x8016F4B8u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_disp_copy_dst(cpu);
     }
 };

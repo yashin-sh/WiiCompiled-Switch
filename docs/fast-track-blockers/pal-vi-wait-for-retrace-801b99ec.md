@@ -40,6 +40,8 @@ The Switch fast-track does not link the desktop `GuestFiberManager`, so this bri
 
 Aurora, framebuffer presentation and a real GX/VI renderer remain intentionally absent. The existing headless FIFO sink is unchanged.
 
-## Acceptance
+## Hardware validation
 
-On the next real-Switch run, `0x801B99EC` must no longer be reported as an unsupported direct dispatch. The next durable blocker defines the following step.
+The bridge was hardware-crossed on 2026-09-15. The subsequent run reached `VISetPostRetraceCallback` (`0x801B9138`), and after PR #137 crossed that registration boundary the next durable blocker became `OSCreateThread` (`0x801A9E84`).
+
+This confirms `0x801B99EC` is no longer an unsupported direct dispatch in the observed post-main path.

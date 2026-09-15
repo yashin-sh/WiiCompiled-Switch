@@ -10,6 +10,11 @@
 namespace {
 
 constexpr std::uint32_t kRenderModeBytes = 0x39u;
+constexpr std::uint32_t kViTvFormatAddr = 0x80386BA8u;
+constexpr std::uint32_t kViRenderWidthAddr = 0x80350864u;
+constexpr std::uint32_t kViRenderHeightAddr = 0x80350866u;
+constexpr std::uint32_t kViXfbWidthAddr = 0x80350872u;
+constexpr std::uint32_t kViXfbHeightAddr = 0x8035087Cu;
 
 std::atomic<std::uint32_t> g_pendingTvFormat{0u};
 std::atomic<std::uint32_t> g_pendingRenderWidth{640u};
@@ -18,6 +23,18 @@ std::atomic<std::uint32_t> g_pendingViXOrigin{0u};
 std::atomic<std::uint32_t> g_pendingViYOrigin{0u};
 std::atomic<std::uint32_t> g_pendingXfbWidth{640u};
 std::atomic<std::uint32_t> g_pendingXfbHeight{480u};
+
+void Write16IfMapped(std::uint32_t address, std::uint16_t value) noexcept {
+    if (Memory::Contains(address, 2u)) {
+        Memory::Write16(address, value);
+    }
+}
+
+void Write32IfMapped(std::uint32_t address, std::uint32_t value) noexcept {
+    if (Memory::Contains(address, 4u)) {
+        Memory::Write32(address, value);
+    }
+}
 
 } // namespace
 
@@ -62,6 +79,27 @@ extern "C" void mkw_switch_hle_vi_configure(CpuContext* cpu) noexcept {
 
     // The pinned host presenter call is intentionally omitted in headless fast-track.
     cpu->gpr[3] = 0u;
+}
+
+// Commit the VIConfigure pending geometry at a retrace boundary. The pinned
+// AdvanceRetrace path writes these active values back to the guest-visible VI
+// globals after a VIFlush arm. Keep that bookkeeping separate from rendering.
+extern "C" std::uint32_t mkw_switch_hle_vi_commit_pending_config() noexcept {
+    const std::uint32_t tvFormat = g_pendingTvFormat.load(std::memory_order_acquire);
+    const std::uint32_t renderWidth = g_pendingRenderWidth.load(std::memory_order_acquire);
+    const std::uint32_t renderHeight = g_pendingRenderHeight.load(std::memory_order_acquire);
+    const std::uint32_t xfbWidth = g_pendingXfbWidth.load(std::memory_order_acquire);
+    const std::uint32_t xfbHeight = g_pendingXfbHeight.load(std::memory_order_acquire);
+
+    if (Memory::IsInitialized()) {
+        Write32IfMapped(kViTvFormatAddr, tvFormat);
+        Write16IfMapped(kViRenderWidthAddr, static_cast<std::uint16_t>(renderWidth));
+        Write16IfMapped(kViRenderHeightAddr, static_cast<std::uint16_t>(renderHeight));
+        Write16IfMapped(kViXfbWidthAddr, static_cast<std::uint16_t>(xfbWidth));
+        Write16IfMapped(kViXfbHeightAddr, static_cast<std::uint16_t>(xfbHeight));
+    }
+
+    return tvFormat;
 }
 
 #endif

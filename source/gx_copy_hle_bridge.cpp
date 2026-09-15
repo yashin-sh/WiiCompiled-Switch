@@ -12,6 +12,8 @@ std::atomic<std::uint16_t> g_dispCopyLeft{0u};
 std::atomic<std::uint16_t> g_dispCopyTop{0u};
 std::atomic<std::uint16_t> g_dispCopyWidth{0u};
 std::atomic<std::uint16_t> g_dispCopyHeight{0u};
+std::atomic<std::uint16_t> g_dispCopyDstWidth{0u};
+std::atomic<std::uint16_t> g_dispCopyDstHeight{0u};
 
 } // namespace
 
@@ -53,6 +55,32 @@ extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept {
     GX_HLE_FIFO_Write32(size);
 
     // The pinned override is void: preserve the guest GPRs, including r3.
+}
+
+extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept {
+    if (!cpu) {
+        return;
+    }
+
+    const std::uint16_t width = static_cast<std::uint16_t>(cpu->gpr[3]);
+    const std::uint16_t height = static_cast<std::uint16_t>(cpu->gpr[4]);
+
+    // Mirror pinned Aurora GXSetDispCopyDst host-side state. Height is retained
+    // in GX state even though the PAL/Aurora BP 0x4D write below encodes only
+    // the display-copy stride derived from width.
+    g_dispCopyDstWidth.store(width, std::memory_order_release);
+    g_dispCopyDstHeight.store(height, std::memory_order_release);
+
+    const std::uint32_t stride =
+        0x4D000000u |
+        ((((static_cast<std::uint32_t>(width) & 0x7FFFu) << 1u) >> 5u) & 0x3FFu);
+
+    // Match GX_WRITE_RAS_REG exactly. The FIFO helper remains a deliberate
+    // headless sink until the M3 GX -> Switch renderer exists.
+    GX_HLE_FIFO_Write8(0x61u);
+    GX_HLE_FIFO_Write32(stride);
+
+    // The pinned override is void: preserve all guest GPRs.
 }
 
 #endif

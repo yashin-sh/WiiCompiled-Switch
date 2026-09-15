@@ -62,34 +62,32 @@ The next blocker was `OSGetCurrentThread` at `0x801A98B0`. PR #124 mirrored the 
 
 `GXSetDispCopySrc` at `0x8016F438` was then reached. PR #134 mirrored the pin's display-copy source rectangle and exact BP `0x49`/`0x4A` FIFO command shapes while preserving the deliberate headless FIFO sink. The subsequent real-Switch run crossed `GXSetDispCopySrc` and exposed the display-copy destination boundary.
 
-## Latest hardware blocker: GXSetDispCopyDst
+`GXSetDispCopyDst` at `0x8016F4B8` was then reached. PR #135 mirrored the pin's destination width/height and exact BP `0x4D` FIFO command shape while preserving the deliberate headless FIFO sink. The subsequent real-Switch run crossed `GXSetDispCopyDst` and exposed the VI retrace wait boundary.
+
+## Latest hardware blocker: VIWaitForRetrace
 
 The latest durable blocker is:
 
 ```text
 kind    : DIRECT
-target  : 0x8016F4B8
+target  : 0x801B99EC
 pc      : 0x800060A4
 r1      : 0x80399108
 r2      : 0x8038EFA0
-r3      : 0x00000260
+r3      : 0x00000001
 r13     : 0x8038CC00
 stage   : GUEST_POST_MAIN_ACTIVE
 ```
 
-For PAL RMCP01, `0x8016F4B8` is `GXSetDispCopyDst()`. At pinned WiiCompiled commit `a135beb201042b20f390c6695ca6b26768820fb4`, the native override narrows `r3` and `r4` to `u16`, passes them to `GXSetDispCopyDst`, stores destination width/height in host GX state, and emits one BP/RAS FIFO write:
+For PAL RMCP01, `0x801B99EC` is `VIWaitForRetrace()`. At pinned WiiCompiled commit `a135beb201042b20f390c6695ca6b26768820fb4`, the native HLE uses a guest-fiber path when the desktop `GuestFiberManager` is active and otherwise uses a host-timed fallback. The fallback computes the next deadline from `lastRetrace + retraceInterval`, sleeps until that deadline when necessary, calls `AdvanceRetrace`, then returns `r3 = 0`.
 
-```text
-0x4D000000 | ((((width & 0x7FFF) << 1) >> 5) & 0x3FF)
-```
+`AdvanceRetrace` commits state armed by `VIFlush`, increments/toggles retrace state, writes the guest-visible retrace count, wakes the VI retrace queue, services pre/post callbacks, and may service Aurora on desktop. The Switch fast-track does not link the desktop `GuestFiberManager`, so the bridge mirrors only that pinned non-fiber path. It paces one retrace using active VI timing, commits pending VI geometry/black/framebuffer state only when `VIFlush` armed it, publishes the new guest retrace count, and preserves queue/callback handoffs when they become relevant.
 
-The override is `void`, so it preserves guest GPRs and has no direct guest-memory or VI effect. The durable blocker record captures `r3 = 0x260` but does not currently include `r4`; the bridge reads the real runtime `r4` rather than inventing a hardware value.
-
-The Switch fast-track bridge mirrors the destination width/height locally and emits the same BP `0x4D` command through `GX_HLE_FIFO_Write8/32`. Those helpers remain the deliberate headless FIFO sink, so this boundary does not fabricate Aurora, a framebuffer, presentation, or a renderer backend. A Nintendo-data-free synthetic probe uses the observed `r3` value and a representative non-zero `r4` only to exercise the two-argument bridge.
+Aurora/presenter work remains intentionally absent. If the VI sleep queue is later non-empty, the bridge hands off to the real guest `OSWakeupThread` boundary rather than silently dropping the wakeup. A Nintendo-data-free synthetic probe resolves the same direct target and seeds the hardware-observed `r3 = 1` input shape.
 
 ## Current next hardware run
 
-After the `GXSetDispCopyDst` bridge is merged, rebuild the local fast-track NRO from `main`, run it on hardware, and collect at minimum:
+After the `VIWaitForRetrace` bridge is merged, rebuild the local fast-track NRO from `main`, run it on hardware, and collect at minimum:
 
 ```text
 fast-track-dispatch-blocker.txt
@@ -105,6 +103,6 @@ fast-track-heartbeat.txt
 fast-track-exception.txt
 ```
 
-The immediate acceptance criterion is that `0x8016F4B8` is no longer reported as an unsupported direct dispatch. The next durable blocker, or a later named post-main phase, defines the next implementation step.
+The immediate acceptance criterion is that `0x801B99EC` is no longer reported as an unsupported direct dispatch. The next durable blocker, or a later named post-main phase, defines the next implementation step.
 
 A black screen remains expected. GX and VI bridges here are boot-state compatibility only; the fast-track GX FIFO remains a deliberate sink until the M3 renderer exists.

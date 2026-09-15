@@ -6,6 +6,7 @@ extern "C" void mkw_switch_hle_vi_init(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_vi_set_black(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_vi_configure(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_vi_flush(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_vi_wait_for_retrace(CpuContext* cpu) noexcept;
 
 template <>
 struct KnownNativeCpuCall<0x801B94A4u> {
@@ -69,5 +70,18 @@ struct KnownNativeCpuCall<0x801BA9A4u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_vi_flush(cpu);
+    }
+};
+
+// VIWaitForRetrace (PAL 0x801B99EC). The Switch fast-track has no desktop
+// GuestFiberManager, so the bridge mirrors pinned WiiCompiled's non-fiber path:
+// pace to one VI deadline, advance/commit one retrace, service explicit guest
+// queue/callback handoffs when present, and return zero without a presenter.
+template <>
+struct KnownNativeCpuCall<0x801B99ECu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_vi_wait_for_retrace(cpu);
     }
 };

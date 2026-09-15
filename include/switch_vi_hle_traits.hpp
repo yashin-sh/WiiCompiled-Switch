@@ -7,6 +7,7 @@ extern "C" void mkw_switch_hle_vi_set_black(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_vi_configure(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_vi_flush(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_vi_wait_for_retrace(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_vi_set_post_retrace_callback(CpuContext* cpu) noexcept;
 
 template <>
 struct KnownNativeCpuCall<0x801B94A4u> {
@@ -83,5 +84,17 @@ struct KnownNativeCpuCall<0x801B99ECu> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_vi_wait_for_retrace(cpu);
+    }
+};
+
+// VISetPostRetraceCallback (PAL 0x801B9138). Pinned WiiCompiled returns the
+// previous callback, stores the new guest callback and republishes VI guest
+// state. No retrace or callback invocation happens at registration time.
+template <>
+struct KnownNativeCpuCall<0x801B9138u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_vi_set_post_retrace_callback(cpu);
     }
 };

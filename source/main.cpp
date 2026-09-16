@@ -70,7 +70,7 @@ int main(int, char**) {
 
     mkw_switch_set_fast_track_stage("GUESTFLAT_API_PROBE");
     const auto guest_flat_api_result = mkw::guest_flat_api_probe::run();
-    mkw::guest_flat_api_probe::print_smoke_result(guest_flat_api_result);
+    mkw::guest_flat_api_probe::print(guest_flat_api_result);
     if (!mkw::guest_flat_api_probe::append_report(guest_flat_api_result)) {
         std::printf("WARNING: could not append GuestFlat API results to vm-probe.txt.\n");
         consoleUpdate(nullptr);

@@ -10,6 +10,7 @@ namespace mkw::switch_input_hle {
 // initialization time. Preserve that state now so later hardware-proven WPAD
 // entry points can share it without constructing any Wii Bluetooth objects.
 inline bool g_wpad_initialized = false;
+inline std::uint8_t g_wpad_dpd_sensitivity = 3u;
 
 } // namespace mkw::switch_input_hle
 
@@ -27,5 +28,21 @@ struct KnownNativeCpuCall<0x801BF5C4u> {
 
         mkw::switch_input_hle::g_wpad_initialized = true;
         cpu->gpr[3] = 0u;
+    }
+};
+
+// WPADGetDpdSensitivity (PAL 0x801C329C). Pinned WiiCompiled returns the shared
+// WPAD stub state's DPD sensitivity, initialized to 3. No guest memory, device
+// probing, or callback activity is involved at this boundary.
+template <>
+struct KnownNativeCpuCall<0x801C329Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        cpu->gpr[3] = static_cast<std::uint32_t>(mkw::switch_input_hle::g_wpad_dpd_sensitivity);
     }
 };

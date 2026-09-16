@@ -4,6 +4,7 @@
 static_assert(KnownNativeCpuCall<0x801BF5C4u>::kAvailable);
 static_assert(KnownNativeCpuCall<0x801C329Cu>::kAvailable);
 static_assert(KnownNativeCpuCall<0x801BF64Cu>::kAvailable);
+static_assert(KnownNativeCpuCall<0x801C0EC4u>::kAvailable);
 
 // Nintendo-data-free compile/link coverage for the hardware-proven PAL
 // WPADInit boundary. The pinned HLE only initializes host-side WPAD contract
@@ -35,4 +36,15 @@ extern "C" __attribute__((used)) void synthetic_wpad_get_status_hle_probe(CpuCon
     }
 
     InvokeDirectCpu<0x801BF64Cu>(cpu);
+}
+
+// Nintendo-data-free coverage for PAL WPADControlMotor. Pinned WiiCompiled
+// treats this boundary as a void no-op, so it has no device or guest-memory
+// dependency and must preserve the guest register file.
+extern "C" __attribute__((used)) void synthetic_wpad_control_motor_hle_probe(CpuContext* cpu) {
+    if (!cpu) {
+        return;
+    }
+
+    InvokeDirectCpu<0x801C0EC4u>(cpu);
 }

@@ -72,7 +72,8 @@
 - [x] hardware-cross the pinned PAL `WPADGetDpdSensitivity` default sensitivity getter far enough to reach `WPADGetStatus` (`0x801BF64C`)
 - [x] hardware-cross the pinned PAL `WPADGetStatus` contract-state getter far enough to reach `WPADControlMotor` (`0x801C0EC4`)
 - [x] hardware-cross the pinned PAL `WPADControlMotor` no-op boundary far enough to reach `PADInit` (`0x801AF2F0`)
-- [ ] hardware-cross the pinned PAL `PADInit` idempotent host initialization and identify the next post-main boundary
+- [x] hardware-cross the pinned PAL `PADInit` idempotent host initialization far enough to reach `OSGetTime` (`0x801AAD5C`)
+- [ ] hardware-cross the pinned PAL `OSGetTime` rollover-safe time-base getter and identify the next post-main boundary
 - [ ] publish a real local DVD FST/data mapping before resource loading requires it
 - [ ] move NAND async completion draining from the fast-track HLE boundary to a verified alarm/IOS scheduling point if later hardware ordering requires it
 - [ ] complete thread/mutex/condition-variable semantics required by the game
@@ -97,6 +98,7 @@ Hardware evidence is recorded in:
 - `docs/HARDWARE_RESULTS_2026-09-16_WPAD_GET_STATUS.md`
 - `docs/HARDWARE_RESULTS_2026-09-16_WPAD_CONTROL_MOTOR.md`
 - `docs/HARDWARE_RESULTS_2026-09-16_PAD_INIT.md`
+- `docs/HARDWARE_RESULTS_2026-09-16_OS_GET_TIME.md`
 
 The current hardware-driven method remains deliberate after `main`: execute the broadest safe translated path, stop on the first unsupported native/translated boundary or attributable exception, mirror the pinned WiiCompiled semantics, validate in Nintendo-data-free CI, then repeat on hardware. Post-main bring-up remains tracked in #117.
 

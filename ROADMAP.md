@@ -74,7 +74,8 @@
 - [x] hardware-cross the pinned PAL `WPADControlMotor` no-op boundary far enough to reach `PADInit` (`0x801AF2F0`)
 - [x] hardware-cross the pinned PAL `PADInit` idempotent host initialization far enough to reach `OSGetTime` (`0x801AAD5C`)
 - [x] hardware-cross the pinned PAL `OSGetTime` rollover-safe time-base getter far enough to reach `OSSetPowerCallback` (`0x801AB75C`)
-- [ ] hardware-cross the pinned PAL `OSSetPowerCallback` SDA/STM bookkeeping bridge and identify the next post-main boundary
+- [x] hardware-cross the pinned PAL `OSSetPowerCallback` SDA/STM bookkeeping bridge far enough to reach `SCGetProductArea` (`0x801B23A0`)
+- [ ] hardware-cross the pinned PAL `SCGetProductArea` SDK-table lookup and identify the next post-main boundary
 - [ ] publish a real local DVD FST/data mapping before resource loading requires it
 - [ ] move NAND async completion draining from the fast-track HLE boundary to a verified alarm/IOS scheduling point if later hardware ordering requires it
 - [ ] complete thread/mutex/condition-variable semantics required by the game
@@ -101,6 +102,7 @@ Hardware evidence is recorded in:
 - `docs/HARDWARE_RESULTS_2026-09-16_PAD_INIT.md`
 - `docs/HARDWARE_RESULTS_2026-09-16_OS_GET_TIME.md`
 - `docs/HARDWARE_RESULTS_2026-09-16_OS_SET_POWER_CALLBACK.md`
+- `docs/HARDWARE_RESULTS_2026-09-16_SC_GET_PRODUCT_AREA.md`
 
 The current hardware-driven method remains deliberate after `main`: execute the broadest safe translated path, stop on the first unsupported native/translated boundary or attributable exception, mirror the pinned WiiCompiled semantics, validate in Nintendo-data-free CI, then repeat on hardware. Post-main bring-up remains tracked in #117.
 

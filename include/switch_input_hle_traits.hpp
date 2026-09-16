@@ -46,3 +46,19 @@ struct KnownNativeCpuCall<0x801C329Cu> {
         cpu->gpr[3] = static_cast<std::uint32_t>(mkw::switch_input_hle::g_wpad_dpd_sensitivity);
     }
 };
+
+// WPADGetStatus (PAL 0x801BF64C). Pinned WiiCompiled reports the shared WPAD
+// contract state only: disabled (0) before initialization, ready (3) after
+// WPADInit. The function takes no channel argument and does no device probing.
+template <>
+struct KnownNativeCpuCall<0x801BF64Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        cpu->gpr[3] = mkw::switch_input_hle::g_wpad_initialized ? 3u : 0u;
+    }
+};

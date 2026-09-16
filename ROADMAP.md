@@ -65,7 +65,8 @@
 - [x] hardware-cross the pinned `OSResumeThread` guest run-queue/scheduler handoff far enough to reach `SelectThread` (`0x801A9C08`)
 - [x] hardware-cross the pinned guest scheduler `SelectThread` bridge far enough to select guest context `0x8042A680` and reach `OSLoadContext` (`0x801A1F58`)
 - [x] hardware-cross the pinned non-fiber `OSLoadContext` restore/jump bridge into `EGG::Thread::start` (`0x8024373C`) far enough to reach `OSReceiveMessage` (`0x801A7424`)
-- [ ] hardware-validate the pinned `OSReceiveMessage` queue bridge and identify whether this thread blocks in `OSSleepThread` (`0x801AA9B8`), wakes senders through `OSWakeupThread` (`0x801AAAA4`), or reaches the next post-main boundary
+- [x] hardware-cross the pinned `OSReceiveMessage` empty blocking-receive path far enough to reach `OSSleepThread` (`0x801AA9B8`) on receive wait queue `0x804294F8`
+- [ ] hardware-validate the pinned `OSSleepThread` wait-queue park / `SelectThread(0)` handoff and identify the next scheduler, wakeup, or post-main boundary
 - [ ] publish a real local DVD FST/data mapping before resource loading requires it
 - [ ] move NAND async completion draining from the fast-track HLE boundary to a verified alarm/IOS scheduling point if later hardware ordering requires it
 - [ ] complete thread/mutex/condition-variable semantics required by the game
@@ -83,6 +84,7 @@ Hardware evidence is recorded in:
 - `docs/HARDWARE_RESULTS_2026-09-16_SELECT_THREAD.md`
 - `docs/HARDWARE_RESULTS_2026-09-16_OS_LOAD_CONTEXT.md`
 - `docs/HARDWARE_RESULTS_2026-09-16_OS_RECEIVE_MESSAGE.md`
+- `docs/HARDWARE_RESULTS_2026-09-16_OS_SLEEP_THREAD.md`
 
 The current hardware-driven method remains deliberate after `main`: execute the broadest safe translated path, stop on the first unsupported native/translated boundary or attributable exception, mirror the pinned WiiCompiled semantics, validate in Nintendo-data-free CI, then repeat on hardware. Post-main bring-up remains tracked in #117.
 

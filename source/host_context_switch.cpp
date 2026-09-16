@@ -119,6 +119,10 @@ bool IsCurrent(Handle context) {
     return context != nullptr && context == g_current;
 }
 
+Handle Current() noexcept {
+    return g_current;
+}
+
 void Switch(Handle target) {
     auto* destination = static_cast<Context*>(target);
     Context* source = g_current;

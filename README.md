@@ -18,9 +18,10 @@ Current hardware frontier on `main`:
 - `WPADGetDpdSensitivity` (`0x801C329C`) — crossed on hardware;
 - `WPADGetStatus` (`0x801BF64C`) — crossed on hardware;
 - `WPADControlMotor` (`0x801C0EC4`) — crossed on hardware;
-- `PADInit` (`0x801AF2F0`) — bridge merged; **next hardware run must prove the next boundary**.
+- `PADInit` (`0x801AF2F0`) — crossed on hardware;
+- `OSGetTime` (`0x801AAD5C`) — bridge merged; **next hardware run must prove the next boundary**.
 
-The most recent `PADInit` bridge mirrors the pinned host contract only: initialization is idempotent and guest-visible success is `r3 = 1`. It does **not** pre-port `PADRead`, reset, recalibration, physical rumble, SDL controller objects, or Joy-Con/GameCube mappings.
+The current `OSGetTime` bridge mirrors the pinned leaf contract only: read the host-backed Broadway time base with the SDK rollover-safe `TBU → TBL → TBU` sequence and publish the stable 64-bit value in guest `r3:r4`. It does **not** pre-port adjacent time APIs or alter scheduler state.
 
 ## Milestones
 
@@ -33,7 +34,7 @@ The most recent `PADInit` bridge mirrors the pinned host contract only: initiali
 | Reach Mario Kart Wii `main()` | ✅ Hardware validated |
 | Enter post-`main` game initialization | ✅ Hardware validated |
 | Thread/context continuation across guest `OSThread` switches | ✅ Hardware validated |
-| Post-main OS/VI/WPAD/PAD initialization | 🟡 In progress |
+| Post-main OS/VI/WPAD/PAD/time initialization | 🟡 In progress |
 | Game/resource initialization | 🟡 In progress |
 | GX → Switch graphics backend / first frame | ⬜ Pending |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
@@ -61,9 +62,11 @@ WPADGetDpdSensitivity
   ↓
 WPADGetStatus
   ↓
-WPADControlMotor                         ✅ all crossed on hardware
+WPADControlMotor
   ↓
-PADInit (0x801AF2F0)                     ← current merged frontier
+PADInit                                   ✅ all crossed on hardware
+  ↓
+OSGetTime (0x801AAD5C)                    ← current merged frontier
   ↓
 next hardware-proven post-main boundary
   ↓
@@ -72,7 +75,7 @@ resource / input / graphics bring-up
 first rendered frame
 ```
 
-The complete blocker-by-blocker history and current checklist live in [`ROADMAP.md`](ROADMAP.md). Hardware evidence is recorded in dated files under [`docs/`](docs/), including the current `PADInit` result.
+The complete blocker-by-blocker history and current checklist live in [`ROADMAP.md`](ROADMAP.md). Hardware evidence is recorded in dated files under [`docs/`](docs/), including the current `OSGetTime` result.
 
 ## Important limitations
 
@@ -201,7 +204,7 @@ Start with:
 - [`docs/M2_RUNTIME_BOOTSTRAP.md`](docs/M2_RUNTIME_BOOTSTRAP.md) — current runtime/bootstrap architecture and hardware method;
 - [`docs/HARDWARE_RESULTS_2026-09-13_MAIN_REACHED.md`](docs/HARDWARE_RESULTS_2026-09-13_MAIN_REACHED.md) — first real `main()` proof;
 - [`docs/HARDWARE_RESULTS_2026-09-16_GUEST_FIBER_CONTINUATION.md`](docs/HARDWARE_RESULTS_2026-09-16_GUEST_FIBER_CONTINUATION.md) — HostContext guest continuation proof;
-- [`docs/HARDWARE_RESULTS_2026-09-16_PAD_INIT.md`](docs/HARDWARE_RESULTS_2026-09-16_PAD_INIT.md) — current hardware frontier evidence.
+- [`docs/HARDWARE_RESULTS_2026-09-16_OS_GET_TIME.md`](docs/HARDWARE_RESULTS_2026-09-16_OS_GET_TIME.md) — current hardware frontier evidence.
 
 Older dated `HARDWARE_RESULTS_*` files are historical snapshots. Their “next blocker” wording intentionally reflects what was known on that date and is not rewritten retroactively.
 

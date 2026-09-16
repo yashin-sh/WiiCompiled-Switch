@@ -3,6 +3,7 @@
 
 #include "abi_bridge.h"
 #include "memory.h"
+#include "switch_guest_fiber.hpp"
 
 #include <cstdint>
 
@@ -163,22 +164,23 @@ extern "C" void mkw_switch_hle_os_sleep_thread(CpuContext* ctx) noexcept {
             static_cast<std::int32_t>(Memory::Read32(currentThread + kThreadPriorityOffset));
         InsertThreadIntoQueueByPriority(queuePtr, currentThread, priority);
 
+        // The wait state now has a matching native continuation when this thread
+        // was created through OSCreateThread. SelectThread will switch away from
+        // this host stack instead of flattening the continuation into SRR0.
+        mkw::switch_guest_fiber::suspend(currentThread);
         Memory::Write32(kSchedulerReschedCounterAddr, 1u);
 
-        // Match the SDK/HLE handoff exactly: a sleeping thread yields through
-        // SelectThread(0). The hardware-proven Switch scheduler owns the actual
-        // non-fiber context restore/jump through OSLoadContext.
         cpu->gpr[3] = 0u;
         InvokeDirectCpu<0x801A9C08u>(cpu);
 
-        // SelectThread may deliberately return without switching (for example
-        // on a context mismatch). Never let the caller keep running while the
-        // same OSThread remains WAITING and linked into the wait queue.
+        // SelectThread may deliberately return without switching. Never let the
+        // caller keep running while the same OSThread remains WAITING and linked.
         if (Memory::Read16(currentThread + kThreadStateOffset) == kThreadStateWaiting &&
             Memory::Read32(currentThread + kThreadQueueOffset) == queuePtr) {
             UnlinkWaitQueueNode(queuePtr, currentThread);
             Memory::Write32(currentThread + kThreadQueueOffset, 0u);
             Memory::Write16(currentThread + kThreadStateOffset, kThreadStateRunning);
+            mkw::switch_guest_fiber::resume(currentThread);
         }
     } catch (...) {
         // Match the pin's contained guest-memory-fault boundary. The normal

@@ -3,6 +3,7 @@
 
 #include "abi_bridge.h"
 #include "memory.h"
+#include "switch_guest_fiber.hpp"
 
 #include <cstdint>
 #include <cstdlib>
@@ -277,10 +278,30 @@ extern "C" void mkw_switch_hle_select_thread(CpuContext* ctx) noexcept {
         cpu->gpr[3] = nextThread;
         InvokeDirectCpu<0x801A1E70u>(cpu); // OSSetCurrentContext
 
-        // Pinned WiiCompiled's non-fiber fallback restores this OSContext and
-        // jumps to SRR0 through OSLoadContext. Keep that exact native boundary
-        // visible; it becomes the next durable blocker only if hardware really
-        // needs a context switch.
+        // The latest hardware trace proves that an OSContext can resume at an
+        // instruction inside an already translated C++ function (0x80238A78 in
+        // EGG::ProcessMeter::__ct). Pinned WiiCompiled solves that class of
+        // continuation by preserving each guest OSThread's native host stack.
+        // Adopt the same path when OSCreateThread gave the target a HostContext.
+        if (mkw::switch_guest_fiber::available() &&
+            mkw::switch_guest_fiber::has(nextThread)) {
+            if (mkw::switch_guest_fiber::current_thread() == 0u && runningContext != 0u) {
+                if (!mkw::switch_guest_fiber::has(runningContext) &&
+                    !mkw::switch_guest_fiber::register_current(runningContext, cpu)) {
+                    AbortSelectBoundary("SELECTTHREAD_REGISTER_MAIN_FIBER", cpu);
+                }
+            }
+
+            if (!mkw::switch_guest_fiber::switch_to(nextThread, cpu)) {
+                AbortSelectBoundary("SELECTTHREAD_GUEST_FIBER_SWITCH", cpu);
+            }
+            cpu->gpr[3] = 0u;
+            return;
+        }
+
+        // Keep the already hardware-proven non-fiber fallback for contexts that
+        // were not created through OSCreateThread. Its SRR0 dispatch remains a
+        // durable blocker rather than manufacturing a translated continuation.
         cpu->gpr[3] = nextThread;
         InvokeDirectCpu<0x801A1F58u>(cpu);
     } catch (...) {

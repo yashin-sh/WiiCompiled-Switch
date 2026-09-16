@@ -50,6 +50,49 @@ struct KnownNativeCpuCall<0x801AB848u> {
     }
 };
 
+// OS__InitMessageQueue (PAL 0x801A72FC). Pinned WiiCompiled initializes the
+// guest OSMessageQueue in place: clear both embedded OSThreadQueue head/tail
+// pairs, publish the caller-provided message-array pointer/count, and reset the
+// ring-buffer first/used counters. It returns no value and leaves CpuContext
+// registers unchanged.
+template <>
+struct KnownNativeCpuCall<0x801A72FCu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        const std::uint32_t queuePtr = cpu->gpr[3];
+        if (queuePtr == 0u) {
+            return;
+        }
+
+        const std::uint32_t msgArrayPtr = cpu->gpr[4];
+        const std::uint32_t msgCount = cpu->gpr[5];
+        constexpr std::uint32_t kQueueSize = 0x20u;
+
+        try {
+            if (!Memory::Contains(queuePtr, kQueueSize)) {
+                return;
+            }
+
+            Memory::Write32(queuePtr + 0x00u, 0u);
+            Memory::Write32(queuePtr + 0x04u, 0u);
+            Memory::Write32(queuePtr + 0x08u, 0u);
+            Memory::Write32(queuePtr + 0x0Cu, 0u);
+            Memory::Write32(queuePtr + 0x10u, msgArrayPtr);
+            Memory::Write32(queuePtr + 0x14u, msgCount);
+            Memory::Write32(queuePtr + 0x18u, 0u);
+            Memory::Write32(queuePtr + 0x1Cu, 0u);
+        } catch (...) {
+            // Match the pinned HLE boundary: a guest-memory fault is contained
+            // inside the native override rather than escaping into the caller.
+        }
+    }
+};
+
 // SCCheckStatus (PAL 0x801B0220). OSInit polls this while SYSCONF is being
 // loaded asynchronously through NAND IPC. Pinned WiiCompiled has no matching
 // asynchronous IOS callback pump for this path, so its native override returns

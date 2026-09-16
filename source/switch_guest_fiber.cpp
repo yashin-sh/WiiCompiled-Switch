@@ -156,11 +156,13 @@ bool create(std::uint32_t guest_thread,
     record->guest_thread = guest_thread;
     record->entry_point = entry_point;
     record->entry_arg = entry_arg;
-    record->saved_cpu = seed_cpu ? *seed_cpu : CpuContext{};
+    record->saved_cpu = {};
     record->saved_cpu.gpr[1] = guest_stack_top;
     record->saved_cpu.gpr[3] = entry_arg;
     record->saved_cpu.pc = entry_point;
     record->saved_cpu.srr0 = entry_point;
+    record->saved_cpu.hid2 =
+        seed_cpu && seed_cpu->hid2 != 0u ? seed_cpu->hid2 : 0x10000000u;
     record->state = FiberState::Waiting;
     record->scheduler_host = false;
     return true;

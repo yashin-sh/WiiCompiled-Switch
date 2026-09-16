@@ -12,6 +12,12 @@ namespace mkw::switch_input_hle {
 inline bool g_wpad_initialized = false;
 inline std::uint8_t g_wpad_dpd_sensitivity = 3u;
 
+// Pinned Aurora PADInit is idempotent host-side initialization. The desktop
+// implementation also seeds SDL/keyboard mappings, which are not constructed
+// on Horizon at this boundary. Preserve the initialization state so later
+// hardware-proven PAD calls can share it without inventing controller devices.
+inline bool g_pad_initialized = false;
+
 } // namespace mkw::switch_input_hle
 
 // WPADInit (PAL 0x801BF5C4). At the pinned WiiCompiled revision this only marks
@@ -71,4 +77,23 @@ struct KnownNativeCpuCall<0x801C0EC4u> {
     static constexpr bool kAvailable = true;
 
     static inline void Invoke(CpuContext*) noexcept {}
+};
+
+// PADInit (PAL 0x801AF2F0). Pinned WiiCompiled calls Aurora PADInit(), which is
+// idempotent, marks its host PAD state initialized, seeds desktop keyboard
+// bindings, and returns true. Horizon does not have those SDL keyboard objects
+// at this boundary, so preserve only the proven initialization state and the
+// guest-visible success value (1); do not pre-port PADRead or device mappings.
+template <>
+struct KnownNativeCpuCall<0x801AF2F0u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        mkw::switch_input_hle::g_pad_initialized = true;
+        cpu->gpr[3] = 1u;
+    }
 };

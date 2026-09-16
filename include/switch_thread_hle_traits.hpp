@@ -8,6 +8,7 @@
 extern "C" void mkw_switch_hle_os_create_thread(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_os_resume_thread(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_select_thread(CpuContext* cpu) noexcept;
+extern "C" [[noreturn]] void mkw_switch_hle_os_load_context(CpuContext* cpu) noexcept;
 
 // OSGetCurrentThread (PAL 0x801A98B0). Pinned WiiCompiled registers this as a
 // native function. Its complete guest-visible behavior is to return the running
@@ -35,14 +36,26 @@ struct KnownNativeCpuCall<0x801A98B0u> {
 // run-queue selection and uses a desktop GuestFiberManager only for the final
 // host context switch. The Switch bridge preserves the guest scheduler state,
 // no-switch fast path, priority queue selection and OSSetCurrentContext handoff.
-// If a real context switch is selected, the pin's OSLoadContext boundary remains
-// explicit instead of fabricating fiber semantics on Horizon.
+// A real non-fiber switch now crosses the hardware-proven OSLoadContext bridge.
 template <>
 struct KnownNativeCpuCall<0x801A9C08u> {
     static constexpr bool kAvailable = true;
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_select_thread(cpu);
+    }
+};
+
+// OSLoadContext (PAL 0x801A1F58). This is the pin's rfi replacement and is not
+// a normal ABI-returning call: it restores the guest OSContext register file and
+// jumps dynamically to saved SRR0. The Switch helper keeps that non-returning
+// boundary explicit and lets the generated indirect table validate the target.
+template <>
+struct KnownNativeCpuCall<0x801A1F58u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_os_load_context(cpu);
     }
 };
 

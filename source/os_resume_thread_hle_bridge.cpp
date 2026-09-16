@@ -3,6 +3,7 @@
 
 #include "abi_bridge.h"
 #include "memory.h"
+#include "switch_guest_fiber.hpp"
 
 #include <cstdint>
 #include <cstdlib>
@@ -235,17 +236,19 @@ extern "C" void mkw_switch_hle_os_resume_thread(CpuContext* ctx) noexcept {
                         kThreadQueueArrayAddr + static_cast<std::uint32_t>(priority) * 8u;
                     InsertThreadIntoQueueByPriority(queueEntry, threadPtr, priority);
                     Memory::Write32(kSchedulerReschedCounterAddr, 1u);
+                    mkw::switch_guest_fiber::resume(threadPtr);
                 } else if (state == kThreadStateRunning) {
                     // Pinned WiiCompiled has a desktop-fiber race recovery here.
-                    // Horizon has no GuestFiberManager state to prove that recovery safe.
+                    // Keep it explicit until hardware proves that recovery path
+                    // is needed by the Switch host-context bridge.
                     AbortResumeBoundary(
                         "OSRESUMETHREAD_RUNNING_RECOVERY", cpu, threadPtr, irqState);
                 }
 
                 if (Memory::Read32(kSchedulerReschedCounterAddr) != 0u) {
                     // The pin immediately enters SelectThread(0) with interrupts still
-                    // disabled. Keep that exact dependency explicit; the scheduler is
-                    // the next durable boundary until its own hardware blocker is proven.
+                    // disabled. The scheduler may now preserve a translated host stack
+                    // when the target was created through OSCreateThread.
                     cpu->gpr[3] = 0u;
                     InvokeDirectCpu<0x801A9C08u>(cpu);
                 }

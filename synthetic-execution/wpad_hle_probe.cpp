@@ -5,6 +5,7 @@ static_assert(KnownNativeCpuCall<0x801BF5C4u>::kAvailable);
 static_assert(KnownNativeCpuCall<0x801C329Cu>::kAvailable);
 static_assert(KnownNativeCpuCall<0x801BF64Cu>::kAvailable);
 static_assert(KnownNativeCpuCall<0x801C0EC4u>::kAvailable);
+static_assert(KnownNativeCpuCall<0x801AF2F0u>::kAvailable);
 
 // Nintendo-data-free compile/link coverage for the hardware-proven PAL
 // WPADInit boundary. The pinned HLE only initializes host-side WPAD contract
@@ -47,4 +48,15 @@ extern "C" __attribute__((used)) void synthetic_wpad_control_motor_hle_probe(Cpu
     }
 
     InvokeDirectCpu<0x801C0EC4u>(cpu);
+}
+
+// Nintendo-data-free coverage for PAL PADInit. The Switch bridge preserves the
+// pinned idempotent initialization state and success return without constructing
+// SDL/Aurora controller or keyboard objects.
+extern "C" __attribute__((used)) void synthetic_pad_init_hle_probe(CpuContext* cpu) {
+    if (!cpu) {
+        return;
+    }
+
+    InvokeDirectCpu<0x801AF2F0u>(cpu);
 }

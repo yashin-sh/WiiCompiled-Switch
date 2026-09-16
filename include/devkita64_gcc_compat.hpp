@@ -74,4 +74,5 @@ inline void WriteStack64(std::uint32_t address, std::uint64_t value) {
 #include "switch_os_hle_traits.hpp"
 #include "switch_audio_hle_traits.hpp"
 #include "switch_ppc_hle_traits.hpp"
+#include "switch_input_hle_traits.hpp"
 #endif

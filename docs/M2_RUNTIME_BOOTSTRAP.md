@@ -38,7 +38,8 @@ The following pieces are validated through CI and/or real Switch hardware:
 20. the observed WPAD initialization/getter/motor boundaries;
 21. `PADInit` hardware-crossed far enough to expose `OSGetTime`;
 22. `OSGetTime` hardware-crossed far enough to expose `OSSetPowerCallback`;
-23. the current `OSSetPowerCallback` bridge, merged/pending hardware validation after this change.
+23. `OSSetPowerCallback` hardware-crossed far enough to expose `SCGetProductArea`;
+24. the current `SCGetProductArea` bridge, merged/pending hardware validation after this change.
 
 ## Current translated path
 
@@ -75,12 +76,14 @@ PADInit                                  ✅ hardware crossed
   ↓
 OSGetTime (0x801AAD5C)                   ✅ hardware crossed
   ↓
-OSSetPowerCallback (0x801AB75C)          ← current merged frontier
+OSSetPowerCallback (0x801AB75C)          ✅ hardware crossed
+  ↓
+SCGetProductArea (0x801B23A0)            ← current merged frontier
   ↓
 next hardware-proven boundary
 ```
 
-`main()` is therefore no longer a pending milestone. The current task is to hardware-cross `OSSetPowerCallback` and identify the next post-main boundary.
+`main()` is therefore no longer a pending milestone. The current task is to hardware-cross `SCGetProductArea` and identify the next post-main boundary.
 
 ## Current hardware-driven method
 
@@ -109,11 +112,12 @@ The recent sequence is:
 - `WPADControlMotor` (`0x801C0EC4`) — crossed on hardware;
 - `PADInit` (`0x801AF2F0`) — crossed on hardware;
 - `OSGetTime` (`0x801AAD5C`) — crossed on hardware;
-- `OSSetPowerCallback` (`0x801AB75C`) — current bridge, next hardware validation pending.
+- `OSSetPowerCallback` (`0x801AB75C`) — crossed on hardware;
+- `SCGetProductArea` (`0x801B23A0`) — current bridge, next hardware validation pending.
 
-At the pinned revision, `OSSetPowerCallback` takes the new callback from guest `r3` and uses the guest SDA base in `r13`. The callback slot is `r13 - 0x62B8`, the handler-active flag is `r13 - 0x62C0`, and `0x801ABC0C` is the SDK default callback. The HLE disables interrupts, reads the previous callback, installs the requested callback or the SDK default for a NULL request, marks the STM handler active, restores the previous interrupt state, and returns NULL when the previous callback was the SDK default (otherwise the previous callback address).
+At the pinned revision, `SCGetProductArea` looks up the emulated NAND `AREA` string in the SDK product-area table at guest address `0x8029CEB0`. Rows are five bytes wide: the first byte is the SDK region enum and the remaining bytes hold a short NUL-terminated region string. The search checks at most 13 rows, stops on an enum byte of `0xFF`, and returns `0xFFFFFFFF` if nothing matches.
 
-The real Wii implementation would involve STM/IOS event registration. Pinned WiiCompiled deliberately stubs that host-device registration while preserving guest-visible SDA state. The Switch bridge mirrors only that boundary and does not create a speculative power-button event source.
+Pinned WiiCompiled initializes a fresh PAL NAND with `AREA=EUR`, `CODE=LEH`, and `GAME=EU`; an existing desktop `setting.txt` takes precedence. The Switch fast-track does not yet expose a complete console-identity surface, so this hardware-proven boundary mirrors only the same fresh-PAL `AREA=EUR` value and resolves it through the locally translated guest SDK table. The public repository contains no copy of that Nintendo table. `SCGetProductCode`, `SCGetProductSN`, and `SCGetProductGameRegion` remain untouched until hardware reaches them.
 
 ## HostContext guest continuation
 
@@ -189,7 +193,7 @@ Fast-track changes are expected to pass exactly these five workflows:
 ## Next slices
 
 1. build the current `main` local fast-track and run it on hardware;
-2. verify that `OSSetPowerCallback` no longer appears as the first unsupported boundary;
+2. verify that `SCGetProductArea` no longer appears as the first unsupported boundary;
 3. capture the next blocker or attributable exception;
 4. map that exact PAL address against pinned WiiCompiled;
 5. implement only its verified semantics and repeat the CI/hardware cycle;
@@ -209,6 +213,7 @@ Use `ROADMAP.md` as the authoritative current checklist. Key evidence includes:
 - `HARDWARE_RESULTS_2026-09-16_WPAD_CONTROL_MOTOR.md`;
 - `HARDWARE_RESULTS_2026-09-16_PAD_INIT.md`;
 - `HARDWARE_RESULTS_2026-09-16_OS_GET_TIME.md`;
-- `HARDWARE_RESULTS_2026-09-16_OS_SET_POWER_CALLBACK.md`.
+- `HARDWARE_RESULTS_2026-09-16_OS_SET_POWER_CALLBACK.md`;
+- `HARDWARE_RESULTS_2026-09-16_SC_GET_PRODUCT_AREA.md`.
 
 Older dated hardware result files are historical snapshots and intentionally retain the frontier wording that was true when each run was captured.

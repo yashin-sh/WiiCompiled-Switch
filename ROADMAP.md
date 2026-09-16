@@ -62,7 +62,8 @@
 - [x] hardware-cross the pinned `VISetPostRetraceCallback` registration bridge far enough to reach `OSCreateThread` (`0x801A9E84`)
 - [x] hardware-cross the pinned guest-visible `OSCreateThread` bridge far enough to reach `OS__InitMessageQueue` (`0x801A72FC`)
 - [x] hardware-cross the pinned guest-visible `OS__InitMessageQueue` bridge far enough to reach `OSResumeThread` (`0x801AA58C`)
-- [ ] hardware-validate the pinned `OSResumeThread` guest run-queue/scheduler handoff and identify the next post-main blocker
+- [x] hardware-cross the pinned `OSResumeThread` guest run-queue/scheduler handoff far enough to reach `SelectThread` (`0x801A9C08`)
+- [ ] hardware-validate the pinned guest scheduler `SelectThread` bridge and identify the next post-main blocker
 - [ ] publish a real local DVD FST/data mapping before resource loading requires it
 - [ ] move NAND async completion draining from the fast-track HLE boundary to a verified alarm/IOS scheduling point if later hardware ordering requires it
 - [ ] complete thread/mutex/condition-variable semantics required by the game
@@ -77,6 +78,7 @@ Hardware evidence is recorded in:
 - `docs/HARDWARE_RESULTS_2026-09-14_POST_MAIN_ACTIVE.md`
 - `docs/HARDWARE_RESULTS_2026-09-15_OS_CREATE_THREAD.md`
 - `docs/HARDWARE_RESULTS_2026-09-16_OS_INIT_MESSAGE_QUEUE.md`
+- `docs/HARDWARE_RESULTS_2026-09-16_SELECT_THREAD.md`
 
 The current hardware-driven method remains deliberate after `main`: execute the broadest safe translated path, stop on the first unsupported native/translated boundary or attributable exception, mirror the pinned WiiCompiled semantics, validate in Nintendo-data-free CI, then repeat on hardware. Post-main bring-up remains tracked in #117.
 

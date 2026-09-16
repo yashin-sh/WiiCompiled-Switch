@@ -19,9 +19,10 @@ Current hardware frontier on `main`:
 - `WPADGetStatus` (`0x801BF64C`) — crossed on hardware;
 - `WPADControlMotor` (`0x801C0EC4`) — crossed on hardware;
 - `PADInit` (`0x801AF2F0`) — crossed on hardware;
-- `OSGetTime` (`0x801AAD5C`) — bridge merged; **next hardware run must prove the next boundary**.
+- `OSGetTime` (`0x801AAD5C`) — crossed on hardware;
+- `OSSetPowerCallback` (`0x801AB75C`) — bridge merged/pending hardware crossing after this change.
 
-The current `OSGetTime` bridge mirrors the pinned leaf contract only: read the host-backed Broadway time base with the SDK rollover-safe `TBU → TBL → TBU` sequence and publish the stable 64-bit value in guest `r3:r4`. It does **not** pre-port adjacent time APIs or alter scheduler state.
+The `OSSetPowerCallback` bridge mirrors the pinned guest-visible SDK bookkeeping only: it uses the guest SDA callback/handler-active slots derived from `r13`, wraps mutation in the already validated interrupt disable/restore helpers, returns the previous callback using the SDK default-as-NULL rule, and does **not** create a real Wii STM/IOS power-event source on Horizon.
 
 ## Milestones
 
@@ -64,9 +65,11 @@ WPADGetStatus
   ↓
 WPADControlMotor
   ↓
-PADInit                                   ✅ all crossed on hardware
+PADInit
   ↓
-OSGetTime (0x801AAD5C)                    ← current merged frontier
+OSGetTime (0x801AAD5C)                    ✅ crossed on hardware
+  ↓
+OSSetPowerCallback (0x801AB75C)           ← current merged frontier
   ↓
 next hardware-proven post-main boundary
   ↓
@@ -75,7 +78,7 @@ resource / input / graphics bring-up
 first rendered frame
 ```
 
-The complete blocker-by-blocker history and current checklist live in [`ROADMAP.md`](ROADMAP.md). Hardware evidence is recorded in dated files under [`docs/`](docs/), including the current `OSGetTime` result.
+The complete blocker-by-blocker history and current checklist live in [`ROADMAP.md`](ROADMAP.md). Hardware evidence is recorded in dated files under [`docs/`](docs/), including the current `OSSetPowerCallback` result.
 
 ## Important limitations
 
@@ -204,7 +207,7 @@ Start with:
 - [`docs/M2_RUNTIME_BOOTSTRAP.md`](docs/M2_RUNTIME_BOOTSTRAP.md) — current runtime/bootstrap architecture and hardware method;
 - [`docs/HARDWARE_RESULTS_2026-09-13_MAIN_REACHED.md`](docs/HARDWARE_RESULTS_2026-09-13_MAIN_REACHED.md) — first real `main()` proof;
 - [`docs/HARDWARE_RESULTS_2026-09-16_GUEST_FIBER_CONTINUATION.md`](docs/HARDWARE_RESULTS_2026-09-16_GUEST_FIBER_CONTINUATION.md) — HostContext guest continuation proof;
-- [`docs/HARDWARE_RESULTS_2026-09-16_OS_GET_TIME.md`](docs/HARDWARE_RESULTS_2026-09-16_OS_GET_TIME.md) — current hardware frontier evidence.
+- [`docs/HARDWARE_RESULTS_2026-09-16_OS_SET_POWER_CALLBACK.md`](docs/HARDWARE_RESULTS_2026-09-16_OS_SET_POWER_CALLBACK.md) — current hardware frontier evidence.
 
 Older dated `HARDWARE_RESULTS_*` files are historical snapshots. Their “next blocker” wording intentionally reflects what was known on that date and is not rewritten retroactively.
 

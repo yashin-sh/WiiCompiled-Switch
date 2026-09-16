@@ -1,5 +1,6 @@
 #include "switch_guest_fiber.hpp"
 
+#include "devkita64_gcc_compat.hpp"
 #include "abi_bridge.h"
 #include "memory.h"
 #include "switch_host_context_ext.hpp"
@@ -70,8 +71,7 @@ GuestFiberRecord* Allocate(std::uint32_t guest_thread) noexcept {
     return nullptr;
 }
 
-[[noreturn]] void AbortGuestFiberBoundary(const char* kind,
-                                           std::uint32_t target,
+[[noreturn]] void AbortGuestFiberBoundary(const char* kind, std::uint32_t target,
                                            CpuContext* cpu) noexcept {
     mkw_switch_report_unsupported_translated_dispatch(kind, target, cpu);
     std::abort();

@@ -62,3 +62,13 @@ struct KnownNativeCpuCall<0x801BF64Cu> {
         cpu->gpr[3] = mkw::switch_input_hle::g_wpad_initialized ? 3u : 0u;
     }
 };
+
+// WPADControlMotor (PAL 0x801C0EC4). At the pinned WiiCompiled revision this
+// is intentionally a void no-op: channel and command are ignored, no WPAD state
+// is mutated, and no return register is written. Preserve all guest GPRs.
+template <>
+struct KnownNativeCpuCall<0x801C0EC4u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext*) noexcept {}
+};

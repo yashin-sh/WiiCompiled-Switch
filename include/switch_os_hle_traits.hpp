@@ -3,6 +3,7 @@
 #include "abi_bridge.h"
 #include "memory.h"
 #include "switch_thread_hle_traits.hpp"
+#include "isa/ppc_isa_int.h"
 
 #include <cstdint>
 
@@ -106,6 +107,31 @@ struct KnownNativeCpuCall<0x801A7424u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_os_receive_message(cpu);
+    }
+};
+
+// OSGetTime (PAL 0x801AAD5C). Pinned WiiCompiled reads the 64-bit Broadway
+// time base using the SDK rollover-safe TBU/TBL/TBU sequence and publishes the
+// stable high/low words in guest r3:r4. It has no guest-memory side effects.
+template <>
+struct KnownNativeCpuCall<0x801AAD5Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        while (true) {
+            const std::uint32_t hi1 = PPC_Mftbu();
+            const std::uint32_t lo = PPC_Mftb();
+            const std::uint32_t hi2 = PPC_Mftbu();
+            if (hi1 == hi2) {
+                cpu->gpr[3] = hi1;
+                cpu->gpr[4] = lo;
+                return;
+            }
+        }
     }
 };
 

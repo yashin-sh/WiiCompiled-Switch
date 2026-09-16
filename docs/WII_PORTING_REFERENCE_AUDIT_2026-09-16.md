@@ -88,15 +88,15 @@ For WiiCompiled-Switch work:
 
 ## Concrete follow-up tracks
 
-### DVD/FST/resources
+### DVD/FST/resources — #154
 
-The roadmap already requires publishing a real local DVD FST/data mapping before resource loading needs it. A dedicated issue should define the local-only architecture and acceptance criteria without fabricating FST data or committing game content.
+Issue #154 defines the local-only architecture and acceptance criteria for publishing a real RMCP01 DVD FST/data mapping when hardware resource loading requires it, without fabricating FST data or committing game content.
 
 Useful references: pinned WiiCompiled, DTK disc/VFS tooling, NWiiRecomp virtual-disc/FST architecture, Wii disc-format documentation.
 
-### StaticR.rel / REL modules
+### StaticR.rel / REL modules — #155
 
-MKW uses `StaticR.rel`, and `doldecomp/mkw` tracks it explicitly. A dedicated research issue should prepare symbol/module ownership, relocation requirements, and local build/link strategy before hardware first reaches an unsupported REL-backed boundary.
+Issue #155 prepares symbol/module ownership, relocation requirements, DOL-vs-REL attribution, and local build/link strategy before hardware first reaches an unsupported REL-backed boundary.
 
 Useful references: `doldecomp/mkw`, DTK REL analysis/merge commands, pinned WiiCompiled dispatch/runtime behavior.
 

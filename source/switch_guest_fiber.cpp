@@ -71,8 +71,7 @@ GuestFiberRecord* Allocate(std::uint32_t guest_thread) noexcept {
     return nullptr;
 }
 
-[[noreturn]] void AbortGuestFiberBoundary(const char* kind, std::uint32_t target,
-                                           CpuContext* cpu) noexcept {
+[[noreturn]] void AbortGuestFiberBoundary(const char* kind, std::uint32_t target, CpuContext* cpu) noexcept {
     mkw_switch_report_unsupported_translated_dispatch(kind, target, cpu);
     std::abort();
 }

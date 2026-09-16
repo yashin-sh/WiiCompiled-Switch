@@ -15,16 +15,19 @@ extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
 #if defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK
 struct CpuContext;
 extern "C" void mkw_switch_hle_select_thread(CpuContext* ctx) noexcept;
+extern "C" void mkw_switch_hle_os_receive_message(CpuContext* ctx) noexcept;
 #endif
 
 int main(int, char**) {
 #if defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK
-    // The synthetic fast-track NRO is a link probe, not a SelectThread runtime
-    // test. Keep the real bridge reachable through --gc-sections so unresolved
+    // The synthetic fast-track NRO is a link probe, not a scheduler/runtime
+    // test. Keep the real bridges reachable through --gc-sections so unresolved
     // dependencies that would break the local devkitA64 fast-track are caught
-    // by public CI without executing scheduler semantics against fake state.
+    // by public CI without executing guest scheduler semantics against fake state.
     volatile auto select_thread_link_anchor = &mkw_switch_hle_select_thread;
+    volatile auto os_receive_message_link_anchor = &mkw_switch_hle_os_receive_message;
     (void)select_thread_link_anchor;
+    (void)os_receive_message_link_anchor;
 #endif
 
     mkw_switch_set_fast_track_stage("MAIN_PLATFORM_INIT");

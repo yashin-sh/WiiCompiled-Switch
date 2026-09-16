@@ -36,7 +36,8 @@ The following pieces are validated through CI and/or real Switch hardware:
 18. HostContext-backed guest `OSThread` continuation that resumes an interior translated continuation rather than requiring a fake function entry;
 19. VI/GX bootstrap state through `VISetPostRetraceCallback` while graphics output remains headless;
 20. the observed WPAD initialization/getter/motor boundaries;
-21. the current `PADInit` bridge, merged and awaiting the next hardware run to expose the following boundary.
+21. `PADInit` hardware-crossed far enough to expose `OSGetTime`;
+22. the current `OSGetTime` bridge, merged and awaiting the next hardware run to expose the following boundary.
 
 ## Current translated path
 
@@ -67,14 +68,16 @@ HostContext-backed guest OSThread switch ✅ hardware validated
   ↓
 WPADInit → WPADGetDpdSensitivity
   ↓
-WPADGetStatus → WPADControlMotor         ✅ hardware crossed
+WPADGetStatus → WPADControlMotor
   ↓
-PADInit (0x801AF2F0)                     ← current merged frontier
+PADInit                                  ✅ hardware crossed
+  ↓
+OSGetTime (0x801AAD5C)                   ← current merged frontier
   ↓
 next hardware-proven boundary
 ```
 
-`main()` is therefore no longer a pending milestone. The current task is to hardware-cross `PADInit` and identify the next post-main boundary.
+`main()` is therefore no longer a pending milestone. The current task is to hardware-cross `OSGetTime` and identify the next post-main boundary.
 
 ## Current hardware-driven method
 
@@ -88,22 +91,25 @@ For every new blocker:
 6. add Nintendo-data-free synthetic/CI coverage;
 7. run the five repository CI workflows;
 8. merge only after all five are green;
-9. update `ROADMAP.md`, the dated hardware result, and issue #117;
+9. update `README.md`, `ROADMAP.md`, this document, the dated hardware result, and issue #117;
 10. repeat on hardware.
 
 This prevents speculative scheduler, input, renderer, filesystem, or device behavior from entering the fast-track simply because a nearby upstream API exists.
 
-## Current post-main input frontier
+## Current post-main frontier
 
-The recent input-related sequence is:
+The recent sequence is:
 
 - `WPADInit` (`0x801BF5C4`) — crossed on hardware;
 - `WPADGetDpdSensitivity` (`0x801C329C`) — crossed on hardware;
 - `WPADGetStatus` (`0x801BF64C`) — crossed on hardware;
 - `WPADControlMotor` (`0x801C0EC4`) — crossed on hardware;
-- `PADInit` (`0x801AF2F0`) — bridge merged, next hardware validation pending.
+- `PADInit` (`0x801AF2F0`) — crossed on hardware;
+- `OSGetTime` (`0x801AAD5C`) — bridge merged, next hardware validation pending.
 
-At the pinned revision, `PADInit` is idempotent, marks its host PAD layer initialized, seeds desktop keyboard mappings, and returns true. The Switch bridge mirrors only the guest-visible initialization contract needed on Horizon and returns `r3 = 1`; it deliberately does not construct SDL keyboard/controller objects or pre-port `PADRead`, reset, recalibration, motor control, or physical controller mappings.
+At the pinned revision, `OSGetTime` is a CPU-only leaf. It reads the Broadway 64-bit time base with the SDK rollover-safe `TBU → TBL → TBU` sequence, retries if the two upper-word reads differ, and returns the stable high/low words in guest `r3:r4`. There is no guest-memory access, scheduler mutation, callback, or device side effect at this boundary.
+
+The Switch runtime already provides `PPC_Mftb()` / `PPC_Mftbu()` from a monotonic Horizon host clock converted through `TimeBaseContract` to Broadway ticks. The new native trait reuses that validated source and mirrors only the pinned rollover-safe read; adjacent time APIs remain untouched until hardware reaches them.
 
 ## HostContext guest continuation
 
@@ -179,7 +185,7 @@ Fast-track changes are expected to pass exactly these five workflows:
 ## Next slices
 
 1. build the current `main` local fast-track and run it on hardware;
-2. verify that `PADInit` no longer appears as the first unsupported boundary;
+2. verify that `OSGetTime` no longer appears as the first unsupported boundary;
 3. capture the next blocker or attributable exception;
 4. map that exact PAL address against pinned WiiCompiled;
 5. implement only its verified semantics and repeat the CI/hardware cycle;
@@ -197,6 +203,7 @@ Use `ROADMAP.md` as the authoritative current checklist. Key evidence includes:
 - `HARDWARE_RESULTS_2026-09-16_WPAD_DPD_SENSITIVITY.md`;
 - `HARDWARE_RESULTS_2026-09-16_WPAD_GET_STATUS.md`;
 - `HARDWARE_RESULTS_2026-09-16_WPAD_CONTROL_MOTOR.md`;
-- `HARDWARE_RESULTS_2026-09-16_PAD_INIT.md`.
+- `HARDWARE_RESULTS_2026-09-16_PAD_INIT.md`;
+- `HARDWARE_RESULTS_2026-09-16_OS_GET_TIME.md`.
 
 Older dated hardware result files are historical snapshots and intentionally retain the frontier wording that was true when each run was captured.

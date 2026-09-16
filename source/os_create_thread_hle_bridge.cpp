@@ -3,6 +3,7 @@
 
 #include "abi_bridge.h"
 #include "memory.h"
+#include "switch_guest_fiber.hpp"
 
 #include <cstdint>
 
@@ -202,6 +203,16 @@ extern "C" void mkw_switch_hle_os_create_thread(CpuContext* ctx) noexcept {
 
         cpu->gpr[3] = irqState;
         mkw_switch_hle_os_restore_interrupts(cpu);
+
+        // Pinned WiiCompiled associates each created OSThread with a cooperative
+        // HostContext when the guest fiber layer is active. The Switch layer
+        // adopts runtime_bootstrap's already-validated scheduler and creates
+        // only this thread's host stack. Failure remains host-only and does not
+        // change the guest OSCreateThread success contract; SelectThread retains
+        // the existing OSLoadContext fallback for a thread without a host stack.
+        (void)mkw::switch_guest_fiber::create(
+            threadPtr, entryFunc, entryArg, alignedStack - 8u, cpu);
+
         cpu->gpr[3] = 1u;
     } catch (...) {
         cpu->gpr[3] = 0u;

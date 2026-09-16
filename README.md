@@ -6,15 +6,23 @@ Experimental Nintendo Switch (Horizon OS / Atmosphère) homebrew porting layer f
 
 Run a legally-owned Mario Kart Wii dump through the WiiCompiled static-recompilation runtime as a native AArch64 Nintendo Switch homebrew application (`.nro`), without Dolphin at runtime.
 
-## Project progress
+## Current status
 
-**Estimated progress toward first rendered frame: ~25%**
+The project now executes real WiiCompiled-translated Mario Kart Wii code on real Switch hardware and has **reached PAL `main()` (`0x8000B6B0`) after 605 translated dispatches**. Post-`main` execution is also proven through `System::RKSystem::main` (`0x80008EF0`) and `System::RKSystem::initialize` (`0x80009194`).
 
-```text
-█████░░░░░░░░░░░░░ 25%
-```
+The current work is no longer “reach `main()`”. It is the **post-main initialization fast-track** tracked in issue #117: run on hardware, stop at the first unsupported native/translated boundary, mirror the exact pinned WiiCompiled semantics, validate in Nintendo-data-free CI, merge, and repeat.
 
-> This percentage is an engineering estimate, not a function-count metric. The pre-graphics runtime has advanced substantially, but a real GX → Switch renderer still does not exist, so the first-frame estimate is intentionally conservative.
+Current hardware frontier on `main`:
+
+- `WPADInit` (`0x801BF5C4`) — crossed on hardware;
+- `WPADGetDpdSensitivity` (`0x801C329C`) — crossed on hardware;
+- `WPADGetStatus` (`0x801BF64C`) — crossed on hardware;
+- `WPADControlMotor` (`0x801C0EC4`) — crossed on hardware;
+- `PADInit` (`0x801AF2F0`) — bridge merged; **next hardware run must prove the next boundary**.
+
+The most recent `PADInit` bridge mirrors the pinned host contract only: initialization is idempotent and guest-visible success is `r3 = 1`. It does **not** pre-port `PADRead`, reset, recalibration, physical rumble, SDL controller objects, or Joy-Con/GameCube mappings.
+
+## Milestones
 
 | Milestone | Status |
 | --- | --- |
@@ -22,141 +30,85 @@ Run a legally-owned Mario Kart Wii dump through the WiiCompiled static-recompila
 | WiiCompiled PPC → AArch64 translated code executes on Switch | ✅ Done |
 | Guest memory/data initialization | ✅ Done |
 | HostContext / GuestFlat / translated handoff | ✅ Done |
-| Wii SDK early OS/cache/timing/interrupt/bootstrap | 🟡 In progress |
-| EXI/SI bootstrap and basic EXI transaction HLE | ✅ Crossed in hardware fast-track |
-| Durable blocker / crash diagnostics on SD | ✅ Done |
-| Reach Mario Kart Wii `main()` | ⬜ Next major milestone |
-| Game/resource initialization | ⬜ Pending |
+| Reach Mario Kart Wii `main()` | ✅ Hardware validated |
+| Enter post-`main` game initialization | ✅ Hardware validated |
+| Thread/context continuation across guest `OSThread` switches | ✅ Hardware validated |
+| Post-main OS/VI/WPAD/PAD initialization | 🟡 In progress |
+| Game/resource initialization | 🟡 In progress |
 | GX → Switch graphics backend / first frame | ⬜ Pending |
-| Input, audio, filesystem completeness and gameplay | ⬜ Pending |
+| Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
-Current fast-track path:
+## Current fast-track path
 
 ```text
 headless Horizon platform init
   ↓
-__start (PAL 0x800060A4)
+PAL __start (0x800060A4)
   ↓
-Wii SDK / OS bootstrap
+early Wii SDK / OS / NAND / DVD / VI bring-up
   ↓
-cache / timing / interrupts / EXI / SI
+PAL main() (0x8000B6B0)                  ✅ reached on hardware
   ↓
-OSReport
+System::RKSystem::main / initialize      ✅ reached on hardware
   ↓
-OSGetConsoleType
+post-main MEM2 / mutex / thread / VI
   ↓
-OSGetResetCode
+HostContext-backed guest OSThread switch ✅ hardware validated
   ↓
-DCZeroRange
+WPADInit
   ↓
-IPCCltInit
+WPADGetDpdSensitivity
   ↓
-__OSInitSTM
+WPADGetStatus
   ↓
-NANDInit
+WPADControlMotor                         ✅ all crossed on hardware
   ↓
-NANDPrivateOpenAsync
+PADInit (0x801AF2F0)                     ← current merged frontier
   ↓
-SCCheckStatus
+next hardware-proven post-main boundary
   ↓
-DVDInit
-  ↓
-DVDLowClearCoverInterrupt
-  ↓
-DVDLowInquiry
-  ↓
-ESP_InitLib
-  ↓
-ESP_CloseLib
-  ↓
-NANDOpenAsync                ← latest hardware blocker fixed in main
-  ↓
-remaining early OS/runtime boundaries
-  ↓
-__init_user
-  ↓
-main() (PAL 0x8000B6B0)    ← next major milestone
-  ↓
-Mario Kart Wii initialization
-  ↓
-GX / resources / input
+resource / input / graphics bring-up
   ↓
 first rendered frame
 ```
 
-## Status
+The complete blocker-by-blocker history and current checklist live in [`ROADMAP.md`](ROADMAP.md). Hardware evidence is recorded in dated files under [`docs/`](docs/), including the current `PADInit` result.
 
-**M2 — Fast-track translated startup toward `main()`.** The project executes real WiiCompiled-translated Mario Kart Wii startup code as AArch64 under Horizon/libnx on real Switch hardware.
+## Important limitations
 
-Validated work includes GuestFlat memory, Wii `Memory::Init`, generated data initialization, translated `__start`, register bootstrap, timebase/SPR/FPSCR helpers, OS timing and interrupt state, exception/interrupt initialization, Wii cache-control HLE, EXI initialization/basic transactions, SI initialization, generic indirect translated dispatch, and a growing set of Wii SDK native/HLE boundaries whose behavior is mirrored from the pinned WiiCompiled runtime.
+### Graphics
 
-The hardware-driven guest blocker sequence has now captured and fixed:
+The GX FIFO bridge is still intentionally a sink. There is no real GX → Switch renderer yet, so a **black screen is expected** even while translated CPU execution is advancing correctly. First-frame work belongs to M3.
 
-- `OSReport` (`0x801A25D0`);
-- `OSGetConsoleType` (`0x8019F33C`);
-- `OSGetResetCode` (`0x801A8A50`);
-- `DCZeroRange` (`0x801A16E4`);
-- `IPCCltInit` (`0x80193478`);
-- `__OSInitSTM` (`0x801AB848`);
-- `NANDInit` (`0x8019E18C`);
-- `NANDPrivateOpenAsync` (`0x8019C990`);
-- `SCCheckStatus` (`0x801B0220`);
-- `DVDInit` (`0x8015EA1C`);
-- `DVDLowClearCoverInterrupt` (`0x80166964`);
-- `DVDLowInquiry` (`0x80165A30`);
-- `ESP_InitLib` (`0x801671D0`);
-- `ESP_CloseLib` (`0x80167224`);
-- `NANDOpenAsync` (`0x8019C918`).
+### Filesystem / DVD
 
-`DCZeroRange` exposed an important Switch-runtime contract mismatch: pinned WiiCompiled catches an invalid guest-memory access, while the Switch `Memory::GetPointer` slice returns `nullptr`. A hardware call with `r3 = 0xFFFFFFFF` aligned to `0xFFFFFFE0`, and the old HLE called `memset(nullptr, 0, 0x20)`. The Switch HLE now checks the returned guest pointer before entering libc while preserving valid-range zeroing and the GX/DMA notification seam.
+The project does not fabricate Nintendo game data. A real local DVD/FST mapping still has to be published from the user's own dump when resource loading requires it.
 
-`IPCCltInit` required more than returning success: the Switch HLE calls translated `IPCInit` at `0x80192F7C`, advances the r13-relative IPC buffer-low global by `0x1000` for `iosHeap`, skips Wii-specific interrupt/MMIO setup, and returns success.
+### Input
 
-`__OSInitSTM` avoids real Wii `/dev/stm/*` IOS devices but preserves the guest-visible reset bookkeeping in the SDA block: initialized flag `1` plus two stable non-zero fake handles. The Switch HLE mirrors those values and guards invalid SDA ranges.
-
-`NANDInit` links the Wii-style guest NAND state to the SD-backed Horizon runtime: it derives the four-character game code from guest memory with PAL `RMCP` fallback, creates the title data directory under `nand_root()`, publishes `/title/00010004/<gamecode>/data` into guest `NANDHomeDir` at `0x80346D20`, writes initialized state `2` at `0x80386848`, and returns `NAND_RESULT_OK` without opening Wii IOS `/dev/fs`.
-
-`NANDPrivateOpenAsync` performs a real SD-backed synchronous NAND open below `nand_root()`, normalizes/clamps Wii paths, supports modes 1/2/3, publishes a persistent host fd plus `NANDFileInfo::openFlag = 1`, and invokes the guest completion ABI as `(result, commandBlock)` on a scratch `CpuContext`. Pinned WiiCompiled normally drains queued NAND callbacks later from its alarm/IOS pump; the current fast-track drains the queued callback before the HLE returns. A real hardware run progressed past this boundary to `SCCheckStatus`, proving that this scheduling approximation does not block the current boot path up to that point, but it remains a timing difference rather than a claim of full equivalence.
-
-`SCCheckStatus` is native-overridden to return `0` (`SC_STATUS_OK`) immediately because Wii `OSInit` otherwise polls while waiting for an asynchronous SYSCONF/NAND IOS completion path that the host runtime does not service here. A subsequent real-hardware run advanced beyond this boundary and captured `DVDInit`, validating the current `SCCheckStatus` fast-track behavior.
-
-`DVDInit` (`0x8015EA1C`) mirrors the startup-visible guest bookkeeping from pinned WiiCompiled: DVD flags, waiting/cancel queues, context sentinels and the low-memory PAL disc identity. The Switch fast-track still deliberately does not fabricate game-derived FST data; if low memory already contains a structurally valid FST, it dispatches translated `__DVDFSInit` (`0x8015DF1C`). A subsequent real-hardware run advanced beyond this boundary to `DVDLowClearCoverInterrupt`, proving the current bootstrap HLE is sufficient for this stage while real DVD/FST publication remains pending.
-
-`DVDLowClearCoverInterrupt` (`0x80166964`) is native-overridden by pinned WiiCompiled to ignore the callback argument and immediately return `1`. The Switch HLE mirrors that leaf behavior without guest-memory writes or physical DVD access. A subsequent real-hardware run advanced beyond this boundary and captured `DVDLowInquiry`, validating the current cover-interrupt fast-track behavior.
-
-`DVDLowInquiry` (`0x80165A30`) acknowledges that the drive is present, marks the supplied DVD command block complete by writing `DVD_STATE_END` (`0`) at offset `+0x0C`, completes the shared DVD cancel/reset bookkeeping, ignores the callback argument, and returns `1`. The Switch HLE mirrors those guest-visible semantics and reuses the existing cancel-state helper. A subsequent real-hardware run advanced beyond this boundary and captured `ESP_InitLib`, validating the current inquiry fast-track behavior.
-
-`ESP_InitLib` (`0x801671D0`) deliberately does not open Wii `/dev/es` on the host and returns `0` immediately. The Switch HLE mirrors that exact leaf behavior with no guest-memory writes, IOS handle, or callback side effects. A subsequent real-hardware run advanced beyond this boundary and captured `ESP_CloseLib`, validating the current init behavior.
-
-`ESP_CloseLib` (`0x80167224`) is a no-op close in pinned WiiCompiled because no real host `/dev/es` handle exists. The Switch HLE mirrors that immediate-success behavior. A subsequent real-hardware run advanced beyond this boundary and captured `NANDOpenAsync`, validating the current close behavior.
-
-`NANDOpenAsync` (`0x8019C918`) is the latest hardware-captured `DIRECT` blocker. Pinned WiiCompiled forwards to synchronous `NANDOpen`, queues the guest completion callback as `(result, commandBlock)`, and returns the same NAND result. The Switch HLE reuses the existing SD-backed `OpenSync` implementation, persistent host-fd table and scratch-`CpuContext` callback bridge already used by `NANDPrivateOpenAsync`. The fix is CI-valid and merged; a post-fix hardware run is still required to prove the next advance. As with the private-open bridge, callback draining still occurs before the HLE returns, so exact IOS/alarm scheduling equivalence is not claimed.
-
-An earlier hardware run exposed a separate **pre-guest host crash** during `MAIN_PLATFORM_INIT`: no guest context was active, GuestFlat was not initialized, and the fault register state matched an 8 MiB host memory clear in the libnx PrintConsole/NV path. The M2 local fast-track therefore starts **headless** and relies on SD diagnostics until a real GX backend exists. Subsequent hardware runs have confirmed that this headless path reaches `TRANSLATED_EXEC_ENTER` with an active guest context.
-
-The local fast-track build writes durable diagnostics under `sdmc:/switch/WiiCompiled-Switch/` (with a progress-file fallback under `sdmc:/switch/`) so non-crashing black-screen stalls can be distinguished from explicit dispatch blockers and host exceptions. Platform initialization also publishes finer crash stages such as `PLATFORM_SERVICES_INIT`, `PLATFORM_ROMFS_INIT`, and `PLATFORM_READY`.
-
-Important current limitation: the GX FIFO bridge is still a deliberate sink. A black screen is therefore expected even when translated startup is progressing. The project has **not yet proven entry into Mario Kart Wii `main()` and has not rendered a game frame**.
-
-Public CI remains Nintendo-data-free. A real WiiCompiled game product is generated from a user-owned dump **before the Switch build** and linked into the same NRO. Generated game-derived code/data and local game NRO/ELF outputs are never committed or uploaded by CI.
+Some pinned WPAD/PAD initialization boundaries are now mirrored because hardware reached them, but full Joy-Con / Pro Controller / Wii Remote / GameCube input semantics are **not** implemented yet. Input behavior is added only when hardware evidence proves the required boundary and pinned semantics.
 
 ## Local fast-track hardware test
 
-After pulling `main`, build the private local translated product with:
+After pulling `main`:
 
 ```sh
 git checkout main
 git pull
-MKW_JOBS=8 bash scripts/build-local-fast-track-incremental.sh
+git submodule update --init --recursive
+
+MKW_JOBS=4 bash scripts/build-local-fast-track.sh
 ```
 
-The incremental helper invalidates its local cache when the Git HEAD changes, verifies that the headless fast-track marker is present in the resulting ELF, and reports the generated NRO SHA-256 so the exact hardware-test artifact can be identified.
+For repeat local rebuilds, the incremental helper also exists:
 
-Copy the resulting `WiiCompiled-Switch-local-fast-track.nro` to the Switch and launch it through hbmenu in application/title-override mode with full memory.
+```sh
+MKW_JOBS=4 bash scripts/build-local-fast-track-incremental.sh
+```
 
-The local fast-track is intentionally headless: do not expect a libnx text console. Use the SD diagnostic files instead.
+Copy `WiiCompiled-Switch-local-fast-track.nro` to the Switch and launch it through hbmenu in application/title-override mode with full memory.
 
-Current diagnostics may include:
+The fast-track is intentionally headless. Use the SD diagnostic files instead of expecting a text console:
 
 ```text
 /switch/WiiCompiled-Switch/fast-track-progress.txt
@@ -166,13 +118,25 @@ Current diagnostics may include:
 /switch/WiiCompiled-Switch/fast-track-exception.txt
 ```
 
-`fast-track-main-reached.txt` is written only when the translated dispatcher reaches PAL `main` at `0x8000B6B0`.
+`fast-track-main-reached.txt` records the already-proven PAL `main` milestone; the current loop normally advances through `fast-track-dispatch-blocker.txt`.
+
+## Public CI boundary
+
+Public CI remains Nintendo-data-free. A real WiiCompiled Mario Kart Wii product is generated locally from a user-owned dump before the Switch build and linked into the NRO. Generated game-derived C++/objects/data and game-containing NRO/ELF artifacts are never committed or uploaded by public CI.
+
+The repository currently validates five CI workflows for fast-track changes:
+
+- `lint`;
+- `fast-track-startup`;
+- `stateful-translated-sequence`;
+- `bootstrap-register-prelude`;
+- `build-switch`.
 
 ## Legal / content policy
 
 This repository contains **no Nintendo game code, ROM, disc image, keys, firmware, copyrighted game assets, decrypted content, or generated translated game output**. Users must provide their own legally obtained game dump locally. Do not commit generated game data or extracted assets.
 
-WiiCompiled is GPL-3.0; derivative code in this repository is therefore GPL-3.0 unless a file says otherwise. See `LEGAL.md`.
+WiiCompiled is GPL-3.0; derivative code in this repository is therefore GPL-3.0 unless a file says otherwise. See [`LEGAL.md`](LEGAL.md).
 
 ## Requirements
 
@@ -188,16 +152,10 @@ git submodule update --init --recursive
 make
 ```
 
-Expected output:
+Expected public probe output:
 
 ```text
 WiiCompiled-Switch.nro
-```
-
-Copy it to:
-
-```text
-/switch/WiiCompiled-Switch/WiiCompiled-Switch.nro
 ```
 
 The public probe contains no translated Mario Kart Wii product. Game-derived translation is a separate local-only build path.
@@ -222,7 +180,7 @@ generated C++ / RuntimeConfig / data init
 | Switch platform adapter                                 |
 | - lifecycle / applet                                    |
 | - runtime filesystem + diagnostics / NAND backing       |
-| - input                                                 |
+| - input HLE state (partial, hardware-driven)             |
 | - audio (bootstrap/HLE incomplete)                      |
 | - graphics (GX FIFO sink; renderer pending)             |
 | - context switching / timing / guest memory             |
@@ -237,13 +195,22 @@ generated C++ / RuntimeConfig / data init
 
 ## Roadmap and evidence
 
-See:
+Start with:
 
-- `ROADMAP.md`
-- `docs/M2_RUNTIME_BOOTSTRAP.md`
-- `docs/TRANSLATED_PRODUCT_BOUNDARY.md`
-- `docs/HARDWARE_RESULTS_2026-09-12.md`
+- [`ROADMAP.md`](ROADMAP.md) — authoritative current milestone/frontier checklist;
+- [`docs/M2_RUNTIME_BOOTSTRAP.md`](docs/M2_RUNTIME_BOOTSTRAP.md) — current runtime/bootstrap architecture and hardware method;
+- [`docs/HARDWARE_RESULTS_2026-09-13_MAIN_REACHED.md`](docs/HARDWARE_RESULTS_2026-09-13_MAIN_REACHED.md) — first real `main()` proof;
+- [`docs/HARDWARE_RESULTS_2026-09-16_GUEST_FIBER_CONTINUATION.md`](docs/HARDWARE_RESULTS_2026-09-16_GUEST_FIBER_CONTINUATION.md) — HostContext guest continuation proof;
+- [`docs/HARDWARE_RESULTS_2026-09-16_PAD_INIT.md`](docs/HARDWARE_RESULTS_2026-09-16_PAD_INIT.md) — current hardware frontier evidence.
+
+Older dated `HARDWARE_RESULTS_*` files are historical snapshots. Their “next blocker” wording intentionally reflects what was known on that date and is not rewritten retroactively.
 
 ## Upstream
 
-The long-term aim is to keep Switch-specific changes narrow enough that they can eventually be proposed upstream to WiiCompiled rather than maintaining a permanent fork. The audited upstream revision is recorded in `UPSTREAM.md` and enforced by CI.
+The audited WiiCompiled revision is pinned to:
+
+```text
+a135beb201042b20f390c6695ca6b26768820fb4
+```
+
+CI enforces the pin. New hardware blockers are mapped against that exact revision before any HLE behavior is added.

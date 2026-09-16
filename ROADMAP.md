@@ -61,7 +61,8 @@
 - [x] hardware-cross the pinned non-fiber `VIWaitForRetrace` retrace/commit bridge far enough to reach `VISetPostRetraceCallback` (`0x801B9138`)
 - [x] hardware-cross the pinned `VISetPostRetraceCallback` registration bridge far enough to reach `OSCreateThread` (`0x801A9E84`)
 - [x] hardware-cross the pinned guest-visible `OSCreateThread` bridge far enough to reach `OS__InitMessageQueue` (`0x801A72FC`)
-- [ ] hardware-validate the pinned guest-visible `OS__InitMessageQueue` bridge and identify the next post-main blocker
+- [x] hardware-cross the pinned guest-visible `OS__InitMessageQueue` bridge far enough to reach `OSResumeThread` (`0x801AA58C`)
+- [ ] hardware-validate the pinned `OSResumeThread` guest run-queue/scheduler handoff and identify the next post-main blocker
 - [ ] publish a real local DVD FST/data mapping before resource loading requires it
 - [ ] move NAND async completion draining from the fast-track HLE boundary to a verified alarm/IOS scheduling point if later hardware ordering requires it
 - [ ] complete thread/mutex/condition-variable semantics required by the game

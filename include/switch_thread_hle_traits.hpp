@@ -7,6 +7,7 @@
 
 extern "C" void mkw_switch_hle_os_create_thread(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_os_resume_thread(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_os_sleep_thread(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_select_thread(CpuContext* cpu) noexcept;
 extern "C" [[noreturn]] void mkw_switch_hle_os_load_context(CpuContext* cpu) noexcept;
 
@@ -84,5 +85,19 @@ struct KnownNativeCpuCall<0x801AA58Cu> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_os_resume_thread(cpu);
+    }
+};
+
+// OSSleepThread (PAL 0x801AA9B8). Pinned WiiCompiled disables interrupts,
+// marks the current OSThread WAITING, links it into the supplied wait queue in
+// priority order, requests a reschedule and yields through SelectThread(0).
+// Desktop fiber suspension is host machinery only; Switch uses the already
+// hardware-proven SelectThread -> OSLoadContext guest context handoff.
+template <>
+struct KnownNativeCpuCall<0x801AA9B8u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_os_sleep_thread(cpu);
     }
 };

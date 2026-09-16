@@ -16,6 +16,7 @@ extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
 struct CpuContext;
 extern "C" void mkw_switch_hle_select_thread(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_os_receive_message(CpuContext* ctx) noexcept;
+extern "C" void mkw_switch_hle_os_sleep_thread(CpuContext* ctx) noexcept;
 #endif
 
 int main(int, char**) {
@@ -26,8 +27,10 @@ int main(int, char**) {
     // by public CI without executing guest scheduler semantics against fake state.
     volatile auto select_thread_link_anchor = &mkw_switch_hle_select_thread;
     volatile auto os_receive_message_link_anchor = &mkw_switch_hle_os_receive_message;
+    volatile auto os_sleep_thread_link_anchor = &mkw_switch_hle_os_sleep_thread;
     (void)select_thread_link_anchor;
     (void)os_receive_message_link_anchor;
+    (void)os_sleep_thread_link_anchor;
 #endif
 
     mkw_switch_set_fast_track_stage("MAIN_PLATFORM_INIT");
@@ -67,7 +70,7 @@ int main(int, char**) {
 
     mkw_switch_set_fast_track_stage("GUESTFLAT_API_PROBE");
     const auto guest_flat_api_result = mkw::guest_flat_api_probe::run();
-    mkw::guest_flat_api_probe::print(guest_flat_api_result);
+    mkw::guest_flat_api_probe::print_smoke_result(guest_flat_api_result);
     if (!mkw::guest_flat_api_probe::append_report(guest_flat_api_result)) {
         std::printf("WARNING: could not append GuestFlat API results to vm-probe.txt.\n");
         consoleUpdate(nullptr);

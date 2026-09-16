@@ -20,9 +20,10 @@ Current hardware frontier on `main`:
 - `WPADControlMotor` (`0x801C0EC4`) — crossed on hardware;
 - `PADInit` (`0x801AF2F0`) — crossed on hardware;
 - `OSGetTime` (`0x801AAD5C`) — crossed on hardware;
-- `OSSetPowerCallback` (`0x801AB75C`) — bridge merged/pending hardware crossing after this change.
+- `OSSetPowerCallback` (`0x801AB75C`) — crossed on hardware;
+- `SCGetProductArea` (`0x801B23A0`) — bridge merged/pending hardware crossing after this change.
 
-The `OSSetPowerCallback` bridge mirrors the pinned guest-visible SDK bookkeeping only: it uses the guest SDA callback/handler-active slots derived from `r13`, wraps mutation in the already validated interrupt disable/restore helpers, returns the previous callback using the SDK default-as-NULL rule, and does **not** create a real Wii STM/IOS power-event source on Horizon.
+The `SCGetProductArea` bridge mirrors the pinned PAL identity boundary only: it uses WiiCompiled's fresh-PAL `AREA=EUR` default and resolves that short string through the SDK-owned guest table at `0x8029CEB0`. The public runtime does **not** embed that Nintendo table, and adjacent identity APIs (`SCGetProductCode`, `SCGetProductSN`, `SCGetProductGameRegion`) remain unsupported until hardware reaches them.
 
 ## Milestones
 
@@ -69,7 +70,9 @@ PADInit
   ↓
 OSGetTime (0x801AAD5C)                    ✅ crossed on hardware
   ↓
-OSSetPowerCallback (0x801AB75C)           ← current merged frontier
+OSSetPowerCallback (0x801AB75C)           ✅ crossed on hardware
+  ↓
+SCGetProductArea (0x801B23A0)             ← current merged frontier
   ↓
 next hardware-proven post-main boundary
   ↓
@@ -78,7 +81,7 @@ resource / input / graphics bring-up
 first rendered frame
 ```
 
-The complete blocker-by-blocker history and current checklist live in [`ROADMAP.md`](ROADMAP.md). Hardware evidence is recorded in dated files under [`docs/`](docs/), including the current `OSSetPowerCallback` result.
+The complete blocker-by-blocker history and current checklist live in [`ROADMAP.md`](ROADMAP.md). Hardware evidence is recorded in dated files under [`docs/`](docs/), including the current `SCGetProductArea` result.
 
 ## Important limitations
 
@@ -207,7 +210,7 @@ Start with:
 - [`docs/M2_RUNTIME_BOOTSTRAP.md`](docs/M2_RUNTIME_BOOTSTRAP.md) — current runtime/bootstrap architecture and hardware method;
 - [`docs/HARDWARE_RESULTS_2026-09-13_MAIN_REACHED.md`](docs/HARDWARE_RESULTS_2026-09-13_MAIN_REACHED.md) — first real `main()` proof;
 - [`docs/HARDWARE_RESULTS_2026-09-16_GUEST_FIBER_CONTINUATION.md`](docs/HARDWARE_RESULTS_2026-09-16_GUEST_FIBER_CONTINUATION.md) — HostContext guest continuation proof;
-- [`docs/HARDWARE_RESULTS_2026-09-16_OS_SET_POWER_CALLBACK.md`](docs/HARDWARE_RESULTS_2026-09-16_OS_SET_POWER_CALLBACK.md) — current hardware frontier evidence.
+- [`docs/HARDWARE_RESULTS_2026-09-16_SC_GET_PRODUCT_AREA.md`](docs/HARDWARE_RESULTS_2026-09-16_SC_GET_PRODUCT_AREA.md) — current hardware frontier evidence.
 
 Older dated `HARDWARE_RESULTS_*` files are historical snapshots. Their “next blocker” wording intentionally reflects what was known on that date and is not rewritten retroactively.
 

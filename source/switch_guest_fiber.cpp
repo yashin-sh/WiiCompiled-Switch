@@ -129,6 +129,9 @@ bool create(std::uint32_t guest_thread,
             std::uint32_t entry_arg,
             std::uint32_t guest_stack_top,
             CpuContext* seed_cpu) noexcept {
+    if (!g_scheduler_host && !initialize_from_current_host()) {
+        return false;
+    }
     if (!available() || guest_thread == 0u || entry_point == 0u) {
         return false;
     }

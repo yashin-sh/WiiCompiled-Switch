@@ -37,7 +37,8 @@ The following pieces are validated through CI and/or real Switch hardware:
 19. VI/GX bootstrap state through `VISetPostRetraceCallback` while graphics output remains headless;
 20. the observed WPAD initialization/getter/motor boundaries;
 21. `PADInit` hardware-crossed far enough to expose `OSGetTime`;
-22. the current `OSGetTime` bridge, merged and awaiting the next hardware run to expose the following boundary.
+22. `OSGetTime` hardware-crossed far enough to expose `OSSetPowerCallback`;
+23. the current `OSSetPowerCallback` bridge, merged/pending hardware validation after this change.
 
 ## Current translated path
 
@@ -72,12 +73,14 @@ WPADGetStatus → WPADControlMotor
   ↓
 PADInit                                  ✅ hardware crossed
   ↓
-OSGetTime (0x801AAD5C)                   ← current merged frontier
+OSGetTime (0x801AAD5C)                   ✅ hardware crossed
+  ↓
+OSSetPowerCallback (0x801AB75C)          ← current merged frontier
   ↓
 next hardware-proven boundary
 ```
 
-`main()` is therefore no longer a pending milestone. The current task is to hardware-cross `OSGetTime` and identify the next post-main boundary.
+`main()` is therefore no longer a pending milestone. The current task is to hardware-cross `OSSetPowerCallback` and identify the next post-main boundary.
 
 ## Current hardware-driven method
 
@@ -105,11 +108,12 @@ The recent sequence is:
 - `WPADGetStatus` (`0x801BF64C`) — crossed on hardware;
 - `WPADControlMotor` (`0x801C0EC4`) — crossed on hardware;
 - `PADInit` (`0x801AF2F0`) — crossed on hardware;
-- `OSGetTime` (`0x801AAD5C`) — bridge merged, next hardware validation pending.
+- `OSGetTime` (`0x801AAD5C`) — crossed on hardware;
+- `OSSetPowerCallback` (`0x801AB75C`) — current bridge, next hardware validation pending.
 
-At the pinned revision, `OSGetTime` is a CPU-only leaf. It reads the Broadway 64-bit time base with the SDK rollover-safe `TBU → TBL → TBU` sequence, retries if the two upper-word reads differ, and returns the stable high/low words in guest `r3:r4`. There is no guest-memory access, scheduler mutation, callback, or device side effect at this boundary.
+At the pinned revision, `OSSetPowerCallback` takes the new callback from guest `r3` and uses the guest SDA base in `r13`. The callback slot is `r13 - 0x62B8`, the handler-active flag is `r13 - 0x62C0`, and `0x801ABC0C` is the SDK default callback. The HLE disables interrupts, reads the previous callback, installs the requested callback or the SDK default for a NULL request, marks the STM handler active, restores the previous interrupt state, and returns NULL when the previous callback was the SDK default (otherwise the previous callback address).
 
-The Switch runtime already provides `PPC_Mftb()` / `PPC_Mftbu()` from a monotonic Horizon host clock converted through `TimeBaseContract` to Broadway ticks. The new native trait reuses that validated source and mirrors only the pinned rollover-safe read; adjacent time APIs remain untouched until hardware reaches them.
+The real Wii implementation would involve STM/IOS event registration. Pinned WiiCompiled deliberately stubs that host-device registration while preserving guest-visible SDA state. The Switch bridge mirrors only that boundary and does not create a speculative power-button event source.
 
 ## HostContext guest continuation
 
@@ -185,7 +189,7 @@ Fast-track changes are expected to pass exactly these five workflows:
 ## Next slices
 
 1. build the current `main` local fast-track and run it on hardware;
-2. verify that `OSGetTime` no longer appears as the first unsupported boundary;
+2. verify that `OSSetPowerCallback` no longer appears as the first unsupported boundary;
 3. capture the next blocker or attributable exception;
 4. map that exact PAL address against pinned WiiCompiled;
 5. implement only its verified semantics and repeat the CI/hardware cycle;
@@ -204,6 +208,7 @@ Use `ROADMAP.md` as the authoritative current checklist. Key evidence includes:
 - `HARDWARE_RESULTS_2026-09-16_WPAD_GET_STATUS.md`;
 - `HARDWARE_RESULTS_2026-09-16_WPAD_CONTROL_MOTOR.md`;
 - `HARDWARE_RESULTS_2026-09-16_PAD_INIT.md`;
-- `HARDWARE_RESULTS_2026-09-16_OS_GET_TIME.md`.
+- `HARDWARE_RESULTS_2026-09-16_OS_GET_TIME.md`;
+- `HARDWARE_RESULTS_2026-09-16_OS_SET_POWER_CALLBACK.md`.
 
 Older dated hardware result files are historical snapshots and intentionally retain the frontier wording that was true when each run was captured.

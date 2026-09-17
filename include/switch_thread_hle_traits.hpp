@@ -8,6 +8,7 @@
 extern "C" void mkw_switch_hle_os_create_thread(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_os_resume_thread(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_os_sleep_thread(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_os_wakeup_thread(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_select_thread(CpuContext* cpu) noexcept;
 extern "C" [[noreturn]] void mkw_switch_hle_os_load_context(CpuContext* cpu) noexcept;
 
@@ -99,5 +100,19 @@ struct KnownNativeCpuCall<0x801AA9B8u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_os_sleep_thread(cpu);
+    }
+};
+
+// OSWakeupThread (PAL 0x801AAAA4). Pinned WiiCompiled drains the supplied
+// OSThreadQueue, marks each live thread READY, requeues every non-suspended
+// thread by effective priority, marks the scheduler pending mask and resumes
+// the matching guest fiber. A wakeup can immediately enter SelectThread(0),
+// which is why this boundary is allowed to perform a real HostContext switch.
+template <>
+struct KnownNativeCpuCall<0x801AAAA4u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_os_wakeup_thread(cpu);
     }
 };

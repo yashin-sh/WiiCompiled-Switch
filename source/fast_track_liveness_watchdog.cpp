@@ -108,6 +108,17 @@ void WriteAll(int fd, const char* data, std::size_t size) noexcept {
     }
 }
 
+void ResetHistoryState() noexcept {
+    g_history_initialized = false;
+    g_have_previous = false;
+    g_sample_index = 0u;
+    g_first_sample_tick = 0u;
+    g_previous_hash = 0u;
+    g_previous_dispatch = 0u;
+    g_previous_target = 0u;
+    g_stale_seconds = 0u;
+}
+
 void InitializeHistoryFile() noexcept {
     if (g_history_initialized) {
         return;
@@ -139,6 +150,14 @@ void AppendHistorySample(std::uint64_t now,
                          std::uint32_t r1,
                          std::uint32_t r3,
                          std::uint64_t hash) noexcept {
+    // A stale heartbeat from the previous launch can still exist before the
+    // current translated runner performs its first reset/write. The real
+    // dispatch counter restarts from one, so a counter decrease is a durable
+    // new-run marker: throw away the old watchdog history automatically.
+    if (g_have_previous && dispatch < g_previous_dispatch) {
+        ResetHistoryState();
+    }
+
     if (g_sample_index >= kMaxHistorySamples) {
         return;
     }

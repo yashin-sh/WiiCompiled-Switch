@@ -125,3 +125,58 @@ For every future blocker:
 7. merge only after the existing five-workflow CI contract passes.
 
 This preserves the current fast-track discipline while giving later filesystem, REL, input, and graphics work better reference material.
+
+## 2026-09-17 addendum — Aurora and `new-coke/strikers`
+
+A targeted audit of current `encounter/aurora` and `new-coke/strikers` is recorded in `STRIKERS_AURORA_REFERENCE_AUDIT_2026-09-17.md`.
+
+### Aurora — preferred reusable GX reference
+
+Repository: `encounter/aurora`
+
+Aurora is MIT-licensed and is the compatibility layer already targeted by pinned WiiCompiled's desktop GX runtime. At the exact WiiCompiled pin, `GX_HLE_FIFO_Write8/16/32/Float` feed `HleFifoWrite`, which already parses GX FIFO/state/draw traffic and submits through Aurora.
+
+This materially changes the M3 implementation rule: **do not build a second GX FIFO parser for Switch unless the pinned decoder is proven unusable**. The current Switch sink is a temporary fast-track substitution, not the intended first-frame architecture.
+
+Aurora upstream is still WebGPU/Dawn- and SDL3-oriented and has no audited native Deko3D/NXVK backend in this review. That keeps #4's backend question open, but narrows the high-level renderer question substantially.
+
+### `new-coke/strikers` — concrete Aurora/DVD case study
+
+Repository: `new-coke/strikers`
+
+Strikers is a native source port from decompiled Super Mario Strikers code, not a static recompilation. It is therefore **not** a PPC/runtime reference for WiiCompiled-Switch.
+
+It is useful as a concrete case study because it demonstrates:
+
+- a complete Nintendo SDK game running through Aurora GX;
+- a small explicit compatibility surface for GX calls Aurora does not provide;
+- startup-aware shader/pipeline compilation handling;
+- one logical DVD/FST index fed from either an extracted data tree or a disc image;
+- separation between game-facing DVD APIs and host storage/read implementation.
+
+For #154, use that storage/index separation as a design pattern while preserving pinned WiiCompiled's exact guest-visible MEM2/FST/low-memory contract.
+
+For #4, use Strikers as evidence that Aurora GX is a viable high-level compatibility layer. The first Horizon graphics probe is now tracked narrowly in #162: preserve pinned WiiCompiled `HleFifoWrite`/Aurora GX and test Dawn/WebGPU → Vulkan/Mesa/NVK on real Switch before paying the cost of a direct Deko3D Aurora backend.
+
+### Strikers licensing boundary
+
+The Strikers README states that the author's original porting code/tools/docs are offered under CC0 only to the extent the author owns them, while reconstructed game code can remain subject to third-party rights.
+
+Therefore:
+
+- do not copy reconstructed Strikers game code or assets;
+- prefer upstream MIT-licensed Aurora for reusable implementation code;
+- use Strikers for architecture, compatibility-gap discovery and validation strategy;
+- independently implement RMCP01 behavior from pinned WiiCompiled, real hardware, public formats and our own code.
+
+### Updated practical reference order
+
+For the current project phase:
+
+1. pinned WiiCompiled — exact runtime/HLE/GX-decoder semantics;
+2. real Switch hardware — implementation gate;
+3. `doldecomp/mkw` — RMCP01 structure/module attribution;
+4. DTK — analysis and disc/REL tooling;
+5. upstream Aurora — reusable GX compatibility layer;
+6. Strikers — concrete Aurora GX + DVD/FST integration case study;
+7. NWiiRecomp — independent architecture reference under its custom-license restrictions.

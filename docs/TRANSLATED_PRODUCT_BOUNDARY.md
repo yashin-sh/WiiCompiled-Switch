@@ -1,6 +1,6 @@
 # M2 — Translated-product boundary
 
-Status: **hardware-validated and crossed on real Nintendo Switch**. The project links and executes a locally generated WiiCompiled Mario Kart Wii product; the active milestone is translated boot toward PAL `main()`.
+Status: **hardware-validated and crossed on real Nintendo Switch**. The project links and executes a locally generated WiiCompiled Mario Kart Wii product, has reached PAL `main()`, and now sustains tens of thousands of post-main translated dispatches.
 
 Upstream WiiCompiled pin: `a135beb201042b20f390c6695ca6b26768820fb4`.
 
@@ -15,15 +15,13 @@ At the pinned upstream revision the translator flow is:
 3. `emit-build-shards` emits the generated native build graph;
 4. the generated output is compiled and linked together with the WiiCompiled runtime into one native executable.
 
-For the Switch port, that means the user-owned translated product is linked into the same AArch64 NRO as the Horizon runtime.
+For the Switch port, the user-owned translated product is therefore linked into the same AArch64 NRO as the Horizon runtime.
 
 ## Three separate data domains
 
-The port keeps these concepts separate:
-
 ### 1. Build-time user-owned inputs
 
-Local inputs used by WiiCompiled's translator, such as the DOL/REL required by the Mario Kart Wii manifest.
+Local inputs used by WiiCompiled's translator, including the DOL/REL required by the Mario Kart Wii manifest.
 
 ### 2. Build-time translated product
 
@@ -45,24 +43,21 @@ This preserves a public CI path that can validate the Horizon runtime without sh
 
 The private local build replaces the public weak product seam with the generated WiiCompiled product and associated handoff/data initialization.
 
-That path has now been hardware-validated beyond metadata inspection:
+That path is now hardware-validated far beyond metadata inspection:
 
 - generated data initialization executes;
 - translated execution handoff executes;
 - PAL `__start` (`0x800060A4`) executes on Switch;
-- the local headless platform path reaches `TRANSLATED_EXEC_ENTER` with an active TLS guest context;
-- real Wii SDK/native boundaries are reached and fixed iteratively;
-- native HLE can call back into translated code, as validated for `IPCCltInit` → `IPCInit`;
-- native HLE can publish required guest SDA bookkeeping, as validated for `__OSInitSTM`;
-- native storage HLE bridges required guest NAND state to an SD-backed Horizon data root, as validated for `NANDInit`;
-- `NANDPrivateOpenAsync` now has concrete SD-backed file-open state and guest completion ABI and has advanced on real hardware to the following status poll;
-- host HLE can deliberately collapse an unserviceable Wii async polling boundary, as captured for `SCCheckStatus`.
+- PAL `main()` (`0x8000B6B0`) is reached after 605 translated dispatches;
+- post-main execution progresses through `System::RKSystem::main` and `System::RKSystem::initialize`;
+- HostContext-backed guest `OSThread` continuations resume interior translated continuations correctly;
+- the observed VI/GX, WPAD/PAD, time, power, SC and scheduler boundaries have been hardware-crossed through `OSWakeupThread`;
+- the latest sustained run reached 37,148 translated dispatches total / 36,543 post-main without a new unsupported-dispatch abort;
+- the last durable target `0x8020FCD4` maps to the RMCP01 `egg/core/eggAsyncDisplay.cpp` text range.
 
-Therefore the previous `WAITING_FOR_TRANSLATED_PRODUCT` / `TRANSLATED_PRODUCT_LINKED` states are historical bootstrap milestones, not the current development stop point.
+The translated-product seam itself is therefore no longer an active blocker. Current work is post-main runtime/game initialization and first-frame preparation.
 
 ## Current execution milestone
-
-The active local path is:
 
 ```text
 local user-owned game inputs
@@ -77,58 +72,40 @@ translated execution handoff
   ↓
 PAL __start (0x800060A4)
   ↓
-Wii SDK / OS bootstrap
+Wii SDK / OS / NAND / DVD / VI bootstrap
   ↓
-OSReport → OSGetConsoleType → OSGetResetCode
+PAL main (0x8000B6B0)                    ✅ hardware validated
   ↓
-DCZeroRange → IPCCltInit → __OSInitSTM → NANDInit
+post-main thread/context/VI/input/time
   ↓
-NANDPrivateOpenAsync → SCCheckStatus
+OSWakeupThread (0x801AAAA4)              ✅ hardware validated
   ↓
-PAL main (0x8000B6B0)  ← not yet proven
+sustained translated execution           ✅ 37,148 total dispatches
+  ↓
+EGG AsyncDisplay range (0x8020FCD4...)   ✅ reached
+  ↓
+active-loop vs durable-stall diagnosis   ← current frontier
 ```
-
-As of 2026-09-13, real hardware has captured the translated/native boundaries for `OSReport`, `OSGetConsoleType`, `OSGetResetCode`, `DCZeroRange`, `IPCCltInit`, `__OSInitSTM`, `NANDInit`, `NANDPrivateOpenAsync`, and `SCCheckStatus`. The first eight have been proven to advance to a later boundary on subsequent hardware runs; `SCCheckStatus` is fixed in `main` and awaits the next hardware retest.
-
-The project has **not yet emitted `fast-track-main-reached.txt`**, so `main()` must not be claimed as reached.
 
 ## Important boundary lessons from hardware
 
-### Headless host bootstrap
+### Native HLE can call translated guest code
 
-A pre-guest `MAIN_PLATFORM_INIT` Data Abort with an 8 MiB host clear was attributable to the libnx PrintConsole/NV path, not to translated Mario Kart Wii code. The local fast-track now skips that path. Later runs reached translated execution with active guest state, validating that the headless product path is real on hardware.
+Pinned WiiCompiled HLE is not always a leaf. `IPCCltInit` calls translated `IPCInit` before publishing its guest-visible state. The Switch port therefore preserves native-to-translated handoff instead of treating every native override as isolated.
 
-### Guest-memory contract at native HLE boundaries
+### Native HLE can require guest-visible bookkeeping even when host hardware I/O is skipped
 
-`DCZeroRange` exposed a difference between upstream WiiCompiled and the Switch memory slice. Upstream reports an invalid range through `Memory::AccessViolation`; the Switch `Memory::GetPointer` slice returns `nullptr`.
+Examples already crossed include `__OSInitSTM`, NAND state, VI state, power callback state and scheduler queues. Hardware-facing host work may be collapsed or replaced while guest-visible state still has to match the pinned runtime contract.
 
-The hardware case `r3 = 0xFFFFFFFF` aligned to `0xFFFFFFE0` and previously caused `memset(nullptr, 0, 0x20)`. The Switch HLE now treats a null guest pointer as the upstream best-effort invalid-range path rather than converting it into a host crash.
+### Guest thread resume is a host-context problem, not just an address-dispatch problem
 
-### Native-to-translated calls are part of the product boundary
+Hardware exposed saved SRR0 `0x80238A78`, an interior continuation inside translated code. The Switch runtime now preserves guest `OSThread` continuations through host `HostContext` fibers so the original translated host stack resumes correctly.
 
-Pinned WiiCompiled's `IPCCltInit` HLE calls translated `IPCInit` (`0x80192F7C`) before advancing the IPC buffer-low pointer by `0x1000`. The Switch port mirrors this behavior instead of treating every native HLE as an isolated leaf.
+### Black output does not currently prove a translated stall
 
-This is important for later runtime work: a host/native override may still depend on translated guest code and guest-memory side effects.
+The current GX FIFO bridge remains a sink. The latest run continued for tens of thousands of post-main dispatches and reached the EGG display subsystem while the screen remained black.
 
-### Native HLE may publish guest SDA state
-
-Pinned WiiCompiled's `__OSInitSTM` HLE (`0x801AB848`) avoids real Wii `/dev/stm/*` IOS devices but still writes the guest-visible state expected by reset logic: an initialized flag plus two non-zero fake STM handles in the `r13` SDA block. The Switch port mirrors that state and guards the whole range before writing.
-
-This boundary reinforces that a hardware-facing HLE cannot automatically be reduced to a no-op: host I/O may be skipped while guest bookkeeping must still be preserved.
-
-### Storage HLE spans host and guest state
-
-Pinned WiiCompiled's `NANDInit` HLE (`0x8019E18C`) initializes host-side NAND/ISFS support and also publishes the guest-visible path/state expected by the RVL NAND library. The Switch port maps the host side to the existing SD-backed `nand_root()` while preserving the Wii-style guest path `/title/00010004/<gamecode>/data`, `NANDHomeDir` at `0x80346D20`, and initialized value `2` at `0x80386848`.
-
-`NANDPrivateOpenAsync` (`0x8019C990`) extends that boundary into live file state and guest completion. The Switch side translates/clamps the requested path below `nand_root()`, opens it with NAND mode semantics, allocates a persistent host fd, writes the guest `NANDFileInfo` fd/open flag, then invokes the guest callback ABI with `(result, commandBlock)` on a scratch `CpuContext` so callback register writes cannot corrupt the caller.
-
-Pinned WiiCompiled queues this completion and drains it later from alarm/IOS servicing. The current Switch fast-track queues then drains it before the HLE returns. Real hardware has now advanced from this boundary to `SCCheckStatus`, so this timing approximation is sufficient for the current startup slice. That evidence is not a claim of exact timing equivalence; a later ordering-sensitive path may still require delayed delivery.
-
-### Host HLE may collapse an unserviceable async poll
-
-`SCCheckStatus` (`0x801B0220`) is polled by Wii `OSInit` while SYSCONF loading is outstanding. Pinned WiiCompiled does not service the corresponding Wii NAND/IOS completion path here, so its native override returns `0` (`SC_STATUS_OK`) immediately rather than allowing the guest to spin forever. The Switch port mirrors that exact guest-visible result and leaves all unrelated state untouched.
-
-The hardware call arrived with `r3 = 0xFFFFFFF4` (`-12`) from the preceding NAND path. That value is caller state, not `SCCheckStatus` semantics; the HLE overwrites it with `0`.
+For that reason the local fast-track now has an independent Horizon watchdog so translated progress can be distinguished from a true translated-thread stall.
 
 ## Diagnostics at this boundary
 
@@ -137,20 +114,24 @@ The local translated path uses durable SD records rather than relying on visible
 ```text
 sdmc:/switch/WiiCompiled-Switch/fast-track-progress.txt
 sdmc:/switch/WiiCompiled-Switch/fast-track-heartbeat.txt
+sdmc:/switch/WiiCompiled-Switch/fast-track-heartbeat-history.txt
 sdmc:/switch/WiiCompiled-Switch/fast-track-main-reached.txt
 sdmc:/switch/WiiCompiled-Switch/fast-track-dispatch-blocker.txt
 sdmc:/switch/WiiCompiled-Switch/fast-track-exception.txt
 ```
 
-These files make three states distinguishable:
+These files distinguish:
 
-- translated startup is still alive/progressing;
-- a specific unsupported translated/native boundary stopped execution;
+- translated execution is still progressing;
+- the independent watchdog is alive but translated dispatch has become stale;
+- a specific unsupported direct/indirect boundary stopped execution;
 - a host exception occurred with attributable AArch64/guest context.
 
-`fast-track-main-reached.txt` is the explicit proof marker for PAL `main` at `0x8000B6B0`.
+`fast-track-main-reached.txt` is the durable proof marker for PAL `main` at `0x8000B6B0`.
 
-## Hardware history
+For the current sustained-black-screen frontier, `fast-track-heartbeat-history.txt` is the primary diagnostic. `ACTIVE` means the translated heartbeat changed between watchdog samples; consecutive `STALE` samples mean the watchdog thread remains alive while translated execution stopped advancing.
+
+## Hardware history summary
 
 ### 2026-09-10
 
@@ -158,26 +139,17 @@ The public Nintendo-data-free boundary was validated on hardware: Horizon servic
 
 ### 2026-09-12 / 2026-09-13
 
-The local generated-product path was exercised on hardware through real translated startup. Hardware blockers observed and subsequently fixed include:
+The local generated-product path crossed the early Wii SDK/OS/NAND/DVD startup sequence and reached PAL `main()` on real hardware.
 
-- `0x801A25D0` — `OSReport`;
-- `0x8019F33C` — `OSGetConsoleType`;
-- `0x801A8A50` — `OSGetResetCode`;
-- `0x801A16E4` — `DCZeroRange`;
-- `0x80193478` — `IPCCltInit`;
-- `0x801AB848` — `__OSInitSTM`;
-- `0x8019E18C` — `NANDInit`;
-- `0x8019C990` — `NANDPrivateOpenAsync`;
-- `0x801B0220` — `SCCheckStatus`.
+### 2026-09-14 through 2026-09-16
 
-The hardware sequence also proved that the current immediate completion delivery for `NANDPrivateOpenAsync` advances far enough to reach `SCCheckStatus`; exact timing equivalence remains intentionally unclaimed.
+The post-main path advanced through MEM2 allocation, mutex/thread setup, VI/GX initialization, guest scheduler/context switching, HostContext-backed guest continuation, WPAD/PAD initialization, `OSGetTime`, `OSSetPowerCallback` and `SCGetProductArea`.
 
-The runs also produced two useful non-dispatch diagnostics:
+### 2026-09-17
 
-- a pre-guest PrintConsole/NV-related host crash, removed from the local fast-track by making it headless;
-- an active-guest `DCZeroRange` null-pointer crash, fixed by honoring the Switch memory slice's null-return contract.
+Hardware crossed `OSWakeupThread` and then no longer hit an immediate unsupported-dispatch abort. The run reached 37,148 translated dispatches total / 36,543 post-main and was manually terminated while black. The last durable target mapped to the RMCP01 EGG AsyncDisplay range.
 
-See `HARDWARE_RESULTS_2026-09-12.md`.
+See `HARDWARE_RESULTS_2026-09-17_OS_WAKEUP_THREAD.md` and `HARDWARE_RESULTS_2026-09-17_SUSTAINED_LIVENESS.md`.
 
 ## Local-only content policy
 
@@ -199,23 +171,22 @@ Only Nintendo-data-free runtime/platform code, documentation and synthetic probe
 - real Switch runtime/GuestFlat/HostContext foundation: PASS;
 - local generated data initialization: PASS;
 - local translated `__start` execution: PASS;
-- headless local platform path reaching translated execution: PASS;
-- native HLE → translated dispatch seam: PASS;
-- native HLE guest-SDA state publication: PASS;
-- initial NAND/ISFS host+guest bootstrap: PASS;
-- NAND async-open native seam and callback ABI: PASS in CI and advanced on hardware to `SCCheckStatus`;
-- SCCheckStatus native seam: PASS in CI, awaiting post-fix hardware retest;
-- first-blocker durable diagnostics: PASS;
-- PAL `main()` reached: **NOT YET PROVEN**;
+- PAL `main()` reached: **PASS on hardware**;
+- HostContext guest continuation: **PASS on hardware**;
+- observed post-main scheduler/input/time/SC sequence through `OSWakeupThread`: **PASS on hardware**;
+- sustained post-main translated execution: **PASS on hardware**;
+- EGG AsyncDisplay range reached: **PASS on hardware**;
+- active-loop vs durable-stall classification: **PENDING next watchdog run**;
+- real GX → Switch renderer: **NOT YET IMPLEMENTED**;
 - first rendered frame: **NOT YET PROVEN**.
 
 ## Next boundary
 
-The next meaningful boundary is no longer "translated product linked". It is:
+The meaningful boundary is now post-main liveness rather than translated-product linkage:
 
-1. keep the local fast-track on PAL `__start`;
-2. retest the `SCCheckStatus` bridge on hardware;
-3. if a later path proves callback timing-sensitive, move NAND completion draining to a verified alarm/IOS servicing point without changing the guest ABI;
-4. otherwise fix the next first unsupported boundary using the pinned WiiCompiled semantics;
-5. write `fast-track-main-reached.txt` when dispatch reaches `0x8000B6B0`;
-6. only then begin systematic post-`main` game-subsystem bring-up.
+1. run the current local fast-track on real hardware;
+2. if the display remains black, leave it running long enough to collect the independent watchdog history;
+3. inspect `fast-track-heartbeat-history.txt` to classify ACTIVE vs STALE behavior;
+4. if a new unsupported dispatch or exception appears, attribute that exact boundary against the pinned WiiCompiled revision;
+5. publish real local DVD/FST data only when the hardware path proves resource loading requires it;
+6. move into the real GX → Switch renderer/first-frame track once runtime/resource initialization is sufficiently stable.

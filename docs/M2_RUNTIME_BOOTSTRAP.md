@@ -1,14 +1,14 @@
 # M2 — Horizon runtime bootstrap / translated fast-track
 
-Status: **core bootstrap, PAL `main()`, and post-main translated execution are hardware-validated on Nintendo Switch through 2026-09-16**.
+Status: **core bootstrap, PAL `main()`, guest thread continuation, the observed post-main OS/VI/WPAD/PAD/time/SC/scheduler path, and sustained translated execution are hardware-validated on Nintendo Switch through 2026-09-17**.
 
 Upstream WiiCompiled pin: `a135beb201042b20f390c6695ca6b26768820fb4`.
 
 ## Goal
 
-Maintain a stable WiiCompiled runtime on Horizon, link a locally generated translated Mario Kart Wii product, and advance real hardware execution one concrete blocker at a time until game/resource initialization is complete enough to support the first rendered frame.
+Maintain a stable WiiCompiled runtime on Horizon, link a locally generated translated Mario Kart Wii product, and advance real hardware execution from concrete evidence until game/resource initialization is complete enough to support the first rendered frame.
 
-The original M2 goal of reaching PAL `main()` (`0x8000B6B0`) is complete. The active work is now the post-main fast-track tracked in issue #117.
+The original M2 goal of reaching PAL `main()` (`0x8000B6B0`) is complete. The active work is the post-main fast-track tracked in issue #117.
 
 Graphics and audio completeness are not prerequisites for this phase. The current GX FIFO bridge is intentionally a sink, so a black screen is expected while CPU/runtime bring-up progresses.
 
@@ -32,18 +32,17 @@ The following pieces are validated through CI and/or real Switch hardware:
 14. PAL `main()` reached on real Switch hardware after 605 translated dispatches;
 15. post-main execution through `System::RKSystem::main` (`0x80008EF0`) and `System::RKSystem::initialize` (`0x80009194`);
 16. MEM2/allocator state needed by the second post-main `OSInitAlloc`;
-17. mutex/thread/scheduler progression through `OSLockMutex`, `OSCreateThread`, `OSResumeThread`, `SelectThread`, `OSLoadContext`, `OSReceiveMessage`, and `OSSleepThread`;
+17. mutex/thread/scheduler progression through `OSLockMutex`, `OSCreateThread`, `OSResumeThread`, `SelectThread`, `OSLoadContext`, `OSReceiveMessage`, `OSSleepThread`, and `OSWakeupThread`;
 18. HostContext-backed guest `OSThread` continuation that resumes an interior translated continuation rather than requiring a fake function entry;
 19. VI/GX bootstrap state through `VISetPostRetraceCallback` while graphics output remains headless;
-20. the observed WPAD initialization/getter/motor boundaries;
-21. `PADInit` hardware-crossed far enough to expose `OSGetTime`;
-22. `OSGetTime` hardware-crossed far enough to expose `OSSetPowerCallback`;
-23. `OSSetPowerCallback` hardware-crossed far enough to expose `SCGetProductArea`;
-24. the current `SCGetProductArea` bridge, merged/pending hardware validation after this change.
+20. observed WPAD/PAD initialization/getter/motor boundaries;
+21. `PADInit`, `OSGetTime`, `OSSetPowerCallback`, and `SCGetProductArea` hardware-crossed;
+22. `OSWakeupThread` hardware-crossed into sustained translated execution;
+23. a real run of 37,148 translated dispatches total / 36,543 post-main without a new unsupported-dispatch abort;
+24. execution reaching RMCP01 `egg/core/eggAsyncDisplay.cpp` at `0x8020FCD4`;
+25. an independent Horizon liveness watchdog that can distinguish translated progress from a durable translated-thread stall without mutating guest state.
 
 ## Current translated path
-
-The active path is conceptually:
 
 ```text
 Horizon/libnx entry
@@ -68,26 +67,28 @@ post-main MEM2 / mutex / thread setup
   ↓
 HostContext-backed guest OSThread switch ✅ hardware validated
   ↓
-WPADInit → WPADGetDpdSensitivity
+WPAD / PAD                              ✅ hardware crossed
   ↓
-WPADGetStatus → WPADControlMotor
+OSGetTime                              ✅ hardware crossed
   ↓
-PADInit                                  ✅ hardware crossed
+OSSetPowerCallback                     ✅ hardware crossed
   ↓
-OSGetTime (0x801AAD5C)                   ✅ hardware crossed
+SCGetProductArea                       ✅ hardware crossed
   ↓
-OSSetPowerCallback (0x801AB75C)          ✅ hardware crossed
+OSWakeupThread                         ✅ hardware crossed
   ↓
-SCGetProductArea (0x801B23A0)            ← current merged frontier
+sustained translated execution         ✅ 37,148 total dispatches
   ↓
-next hardware-proven boundary
+EGG AsyncDisplay range                  ✅ reached at 0x8020FCD4
+  ↓
+active-loop vs durable-stall classification ← current frontier
 ```
 
-`main()` is therefore no longer a pending milestone. The current task is to hardware-cross `SCGetProductArea` and identify the next post-main boundary.
+There is currently **no new exact unsupported HLE boundary to implement**. The current task is to determine whether the prolonged black-screen state is a healthy translated/game/display loop or a durable translated-thread stall.
 
 ## Current hardware-driven method
 
-For every new blocker:
+For a concrete unsupported boundary:
 
 1. run the current NRO on real Switch hardware;
 2. capture a durable `fast-track-dispatch-blocker.txt` or attributable exception;
@@ -100,24 +101,25 @@ For every new blocker:
 9. update `README.md`, `ROADMAP.md`, this document, the dated hardware result, and issue #117;
 10. repeat on hardware.
 
-This prevents speculative scheduler, input, renderer, filesystem, or device behavior from entering the fast-track simply because a nearby upstream API exists.
+When no new blocker appears, use the independent liveness watchdog rather than guessing. It samples the translated heartbeat from a separate Horizon thread and records whether dispatch state is still changing.
 
 ## Current post-main frontier
 
-The recent sequence is:
+The recent hardware sequence is:
 
-- `WPADInit` (`0x801BF5C4`) — crossed on hardware;
-- `WPADGetDpdSensitivity` (`0x801C329C`) — crossed on hardware;
-- `WPADGetStatus` (`0x801BF64C`) — crossed on hardware;
-- `WPADControlMotor` (`0x801C0EC4`) — crossed on hardware;
-- `PADInit` (`0x801AF2F0`) — crossed on hardware;
-- `OSGetTime` (`0x801AAD5C`) — crossed on hardware;
-- `OSSetPowerCallback` (`0x801AB75C`) — crossed on hardware;
-- `SCGetProductArea` (`0x801B23A0`) — current bridge, next hardware validation pending.
+- `WPADInit` (`0x801BF5C4`) — crossed;
+- `WPADGetDpdSensitivity` (`0x801C329C`) — crossed;
+- `WPADGetStatus` (`0x801BF64C`) — crossed;
+- `WPADControlMotor` (`0x801C0EC4`) — crossed;
+- `PADInit` (`0x801AF2F0`) — crossed;
+- `OSGetTime` (`0x801AAD5C`) — crossed;
+- `OSSetPowerCallback` (`0x801AB75C`) — crossed;
+- `SCGetProductArea` (`0x801B23A0`) — crossed;
+- `OSWakeupThread` (`0x801AAAA4`) — crossed;
+- sustained translated execution — 37,148 total dispatches / 36,543 post-main;
+- last durable target `0x8020FCD4` — mapped to `egg/core/eggAsyncDisplay.cpp`.
 
-At the pinned revision, `SCGetProductArea` looks up the emulated NAND `AREA` string in the SDK product-area table at guest address `0x8029CEB0`. Rows are five bytes wide: the first byte is the SDK region enum and the remaining bytes hold a short NUL-terminated region string. The search checks at most 13 rows, stops on an enum byte of `0xFF`, and returns `0xFFFFFFFF` if nothing matches.
-
-Pinned WiiCompiled initializes a fresh PAL NAND with `AREA=EUR`, `CODE=LEH`, and `GAME=EU`; an existing desktop `setting.txt` takes precedence. The Switch fast-track does not yet expose a complete console-identity surface, so this hardware-proven boundary mirrors only the same fresh-PAL `AREA=EUR` value and resolves it through the locally translated guest SDK table. The public repository contains no copy of that Nintendo table. `SCGetProductCode`, `SCGetProductSN`, and `SCGetProductGameRegion` remain untouched until hardware reaches them.
+The run no longer returned automatically to hbmenu because it did not hit the previous unsupported-dispatch abort path. It remained black until manually terminated. Because the GX FIFO is still a sink, this does not by itself establish a graphics failure.
 
 ## HostContext guest continuation
 
@@ -135,6 +137,7 @@ Consequences:
 
 - a black screen does **not** imply translated CPU execution is stalled;
 - the runtime can continue advancing post-main while the screen remains black;
+- reaching `EGG::AsyncDisplay` does **not** mean a frame has been rendered;
 - first-frame work belongs to M3, where the FIFO sink must be replaced by a real GX → Switch renderer/backend.
 
 ## DVD / resource boundary
@@ -152,12 +155,13 @@ sdmc:/switch/WiiCompiled-Switch/
 Primary files:
 
 - `fast-track-progress.txt` — coarse fast-track state;
-- `fast-track-heartbeat.txt` — translated-dispatch liveness snapshot;
+- `fast-track-heartbeat.txt` — latest translated-dispatch liveness snapshot;
+- `fast-track-heartbeat-history.txt` — independent watchdog history with `ACTIVE`/`STALE`, stale seconds, dispatch delta, target and selected guest registers;
 - `fast-track-main-reached.txt` — durable proof that PAL `main` was dispatched;
 - `fast-track-dispatch-blocker.txt` — first unsupported direct/indirect boundary;
 - `fast-track-exception.txt` — libnx exception record with AArch64 and guest context.
 
-The diagnostics intentionally record runtime state only; no Nintendo game data or generated translated code is committed.
+The watchdog is diagnostics-only. It never mutates guest CPU, memory, scheduler, or GX state.
 
 ## Local build path
 
@@ -192,13 +196,14 @@ Fast-track changes are expected to pass exactly these five workflows:
 
 ## Next slices
 
-1. build the current `main` local fast-track and run it on hardware;
-2. verify that `SCGetProductArea` no longer appears as the first unsupported boundary;
-3. capture the next blocker or attributable exception;
-4. map that exact PAL address against pinned WiiCompiled;
-5. implement only its verified semantics and repeat the CI/hardware cycle;
-6. publish real local DVD/FST data only when resource loading proves it is required;
-7. begin the real GX → Switch graphics backend when the pre-graphics runtime path is stable enough to make first-frame work meaningful.
+1. run the current `main` local fast-track on hardware;
+2. if the screen remains black, keep the NRO alive long enough to collect watchdog samples before terminating it manually;
+3. inspect `fast-track-heartbeat-history.txt` first;
+4. if samples remain `ACTIVE`, treat the path as sustained execution and identify the dominant game/resource/graphics milestone next;
+5. if samples become consecutively `STALE`, attribute the exact final translated state before changing runtime behavior;
+6. if a new blocker or exception appears, return to the exact-address/pinned-semantics workflow;
+7. publish real local DVD/FST data only when resource loading proves it is required;
+8. begin the real GX → Switch graphics backend when the pre-graphics path is stable enough to make first-frame work meaningful.
 
 ## Evidence index
 
@@ -214,6 +219,8 @@ Use `ROADMAP.md` as the authoritative current checklist. Key evidence includes:
 - `HARDWARE_RESULTS_2026-09-16_PAD_INIT.md`;
 - `HARDWARE_RESULTS_2026-09-16_OS_GET_TIME.md`;
 - `HARDWARE_RESULTS_2026-09-16_OS_SET_POWER_CALLBACK.md`;
-- `HARDWARE_RESULTS_2026-09-16_SC_GET_PRODUCT_AREA.md`.
+- `HARDWARE_RESULTS_2026-09-16_SC_GET_PRODUCT_AREA.md`;
+- `HARDWARE_RESULTS_2026-09-17_OS_WAKEUP_THREAD.md`;
+- `HARDWARE_RESULTS_2026-09-17_SUSTAINED_LIVENESS.md`.
 
 Older dated hardware result files are historical snapshots and intentionally retain the frontier wording that was true when each run was captured.

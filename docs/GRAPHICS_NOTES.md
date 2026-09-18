@@ -14,20 +14,20 @@ This is now the first route to test under #4/#162 because:
 - `new-coke/strikers` demonstrates Aurora GX handling a complete Nintendo SDK game on supported desktop backends, including pipeline/shader warm-up and only a small explicit compatibility layer for missing GX calls;
 - issue #4 contains an external real-Switch report claiming successful frame presentation through Aurora GX → Dawn/WebGPU → Vulkan/Mesa/NVK → libnx/NWindow.
 
-That external report is useful evidence, not yet our own validation. #162 exists to reproduce or falsify it on WiiCompiled-Switch hardware.
+The lower presentation half is now our own hardware validation: the isolated #162 probe has presented continuously changing full-screen colors on real Switch through `NWindow → VK_NN_vi_surface → loaderless NVK → VkSwapchainKHR → QueuePresentKHR`. The remaining external/unproven portion is Dawn/WebGPU + Aurora GX + WiiCompiled FIFO.
 
 The probe should keep Aurora's **GX + graphics/pipeline** layers while bypassing desktop SDL application/input/audio services wherever Horizon-native services already exist.
 
 Minimum progression:
 
-1. create/present a Horizon clear frame through the isolated loaderless NVK / `VK_NN_vi_surface` probe in `m3-graphics-probe/`;
-2. present a simple Vulkan triangle on the proven VI swapchain;
+1. ~~create/present a Horizon clear frame through the isolated loaderless NVK / `VK_NN_vi_surface` probe~~ — **hardware PASS**;
+2. present a simple Vulkan triangle on the proven VI swapchain — **current frontier**;
 3. place Dawn/WebGPU over the proven Vulkan/NVK path;
 4. feed a fabricated Nintendo-data-free GX/FIFO sequence through pinned `HleFifoWrite` and obtain visible output;
 5. measure CPU frame overhead, memory use and presentation stability on Tegra X1;
 6. only then connect a private local RMCP01 stream.
 
-The first probe is intentionally direct Vulkan rather than Dawn: it isolates the Horizon/NVK/VI presentation layer. A failure here is below Aurora/Dawn; a PASS gives Dawn a known-good Vulkan surface to target.
+The first direct-Vulkan probe has passed on hardware, so Dawn now has a known-good Horizon/NVK/VI presentation substrate to target. Any failure introduced by the next Dawn/Aurora stages can be attributed above the already-proven WSI/present layer.
 
 ## Fallback — Deko3D native Aurora backend
 

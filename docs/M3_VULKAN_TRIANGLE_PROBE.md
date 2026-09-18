@@ -82,6 +82,16 @@ Diagnostic report:
 
 A PASS validates shader compilation, shader modules, render pass, graphics-pipeline creation, rasterisation and presentation on the already-proven NVK/VI surface.
 
+## Hardware result — 2026-09-18
+
+Real Switch hardware displayed the triangle successfully. This validates the direct Vulkan/NVK graphics-pipeline path through shader modules, render pass, graphics pipeline, rasterisation, swapchain and physical display output.
+
+The first successful rendering run did **not** create `m3-vulkan-triangle-probe.txt`. That was isolated to report initialization: libnx normally mounts `sdmc:` before NRO `main()`, while the probe incorrectly gated `fopen()` on a second `fsdevMountSdmc()` call. The renderer itself was already working. The probe now prefers the existing runtime mount and only mounts/unmounts `sdmc:` itself as a fallback.
+
+Native Vulkan triangle frame ✅
+
+This is still **not** an Aurora GX frame, WiiCompiled FIFO frame, or RMCP01/Mario Kart frame.
+
 ## After PASS
 
 The next #162 step is Dawn/WebGPU over this proven Vulkan/NVK graphics path. Only after Dawn works do we add Aurora GX and fabricated Nintendo-data-free input through pinned WiiCompiled `HleFifoWrite`.

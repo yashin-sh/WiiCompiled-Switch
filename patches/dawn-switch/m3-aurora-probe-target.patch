@@ -1,0 +1,22 @@
+diff --git a/src/dawn/native/CMakeLists.txt b/src/dawn/native/CMakeLists.txt
+--- a/src/dawn/native/CMakeLists.txt
++++ b/src/dawn/native/CMakeLists.txt
+@@
+     if (DAWN_PLATFORM_SWITCH)
++        set(DAWN_SWITCH_AURORA_PROBE_DIR "" CACHE PATH
++            "Optional external Aurora GX probe CMake source directory")
++        set(DAWN_SWITCH_AURORA_ROOT "" CACHE PATH
++            "Pinned WiiCompiled aurora-main directory for the Aurora GX probe")
++        if (DAWN_SWITCH_AURORA_PROBE_DIR)
++            if (NOT DAWN_SWITCH_AURORA_ROOT)
++                message(FATAL_ERROR
++                    "DAWN_SWITCH_AURORA_ROOT is required with DAWN_SWITCH_AURORA_PROBE_DIR")
++            endif()
++            set(M3_AURORA_ROOT "${DAWN_SWITCH_AURORA_ROOT}")
++            add_subdirectory(
++                "${DAWN_SWITCH_AURORA_PROBE_DIR}"
++                "${CMAKE_CURRENT_BINARY_DIR}/m3-aurora-gx-probe")
++        endif()
++
+         option(DAWN_SWITCH_BUILD_CLEAR_NRO
+             "Build the Dawn Switch clear/present NRO smoke test" OFF)

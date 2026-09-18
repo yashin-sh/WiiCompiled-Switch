@@ -12,8 +12,8 @@ readonly MESA_IMAGE="${MKW_M3_MESA_IMAGE:-wiicompiled-m3-mesa-b297e230-v3}"
 readonly RUST_TARGET="aarch64-unknown-linux-gnu"
 readonly JOBS="${MKW_JOBS:-4}"
 readonly VULKAN_ARCHIVE="$MESA_DIR/builddir-switch/src/nouveau/vulkan/libvulkan.a"
-readonly PROBE_DIR="$ROOT_DIR/m3-graphics-probe"
-readonly OUTPUT="$PROBE_DIR/WiiCompiled-Switch-m3-vulkan-clear-probe.nro"
+readonly PROBE_DIR="$ROOT_DIR/m3-triangle-probe"
+readonly OUTPUT="$PROBE_DIR/WiiCompiled-Switch-m3-vulkan-triangle-probe.nro"
 
 need() {
     if ! command -v "$1" >/dev/null 2>&1; then
@@ -97,14 +97,14 @@ if [[ ! -f "$VULKAN_ARCHIVE" ]]; then
     exit 1
 fi
 
-echo "[4/5] Building isolated M3 Vulkan clear probe..."
+echo "[4/5] Building isolated M3 Vulkan triangle probe..."
 docker run --rm \
     "${DOCKER_SECURITY_ARGS[@]}" \
     -e MKW_M3_JOBS="$JOBS" \
     -e MESA_SWITCH_RUST_TARGET="$RUST_TARGET" \
     -v "$MESA_DIR:/mesa:ro" \
     -v "$ROOT_DIR:/work" \
-    -w /work/m3-graphics-probe \
+    -w /work/m3-triangle-probe \
     "$MESA_IMAGE" \
     bash -lc '
         set -euo pipefail
@@ -149,6 +149,34 @@ docker run --rm \
         echo "Rust target libdir: $target_libdir"
         echo "Rust std closure: ${#rust_libs[@]} archives"
 
+        rm -rf generated
+        mkdir -p generated
+
+        glslangValidator -V --target-env vulkan1.1 \
+            -S vert -o generated/triangle.vert.spv shaders/triangle.vert
+        glslangValidator -V --target-env vulkan1.1 \
+            -S frag -o generated/triangle.frag.spv shaders/triangle.frag
+
+        python3 - <<"PY"
+from pathlib import Path
+import struct
+
+def emit(src: str, dst: str, symbol: str) -> None:
+    data = Path(src).read_bytes()
+    if len(data) % 4:
+        raise SystemExit(f"{src}: SPIR-V size is not 32-bit aligned")
+    words = struct.unpack(f"<{len(data)//4}I", data)
+    lines = ["#pragma once", "#include <cstdint>", "", f"static const std::uint32_t {symbol}[] = {{"]
+    for i in range(0, len(words), 8):
+        chunk = ", ".join(f"0x{word:08x}u" for word in words[i:i+8])
+        lines.append(f"    {chunk},")
+    lines += ["};", ""]
+    Path(dst).write_text("\n".join(lines), encoding="utf-8")
+
+emit("generated/triangle.vert.spv", "generated/triangle_vert_spv.h", "kTriangleVertSpv")
+emit("generated/triangle.frag.spv", "generated/triangle_frag_spv.h", "kTriangleFragSpv")
+PY
+
         make -j"$MKW_M3_JOBS" \
             MESA_SWITCH_ROOT=/mesa \
             RUST_STD_LIBS="$rust_std_libs"
@@ -163,9 +191,9 @@ echo "[5/5] Probe ready."
 echo "NRO: $OUTPUT"
 echo
 echo "Copy it to:"
-echo "  /switch/WiiCompiled-Switch-m3-vulkan-clear-probe/WiiCompiled-Switch-m3-vulkan-clear-probe.nro"
+echo "  /switch/WiiCompiled-Switch-m3-vulkan-triangle-probe/WiiCompiled-Switch-m3-vulkan-triangle-probe.nro"
 echo
-echo "Hardware status:"
-echo "  - NVK/VI changing-color clear/present is already validated on real Switch;"
-echo "  - use this target for reproducibility/regression checks;"
-echo "  - the next #162 feature target is a Vulkan triangle."
+echo "Expected hardware result:"
+echo "  - a large RGB triangle appears on a dark background;"
+echo "  - press + to exit;"
+echo "  - send back /switch/WiiCompiled-Switch/m3-vulkan-triangle-probe.txt."

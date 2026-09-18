@@ -14,7 +14,7 @@ include $(DEVKITPRO)/libnx/switch_rules
 TARGET      := WiiCompiled-Switch-m3-vulkan-triangle-probe
 BUILD       := build
 SOURCES     := source
-INCLUDES    := $(MESA_SWITCH_ROOT)/include generated
+INCLUDES    := $(MESA_SWITCH_ROOT)/include $(CURDIR)/generated
 APP_TITLE   := WiiCompiled-Switch M3 Vulkan Triangle
 APP_AUTHOR  := Community homebrew port
 APP_VERSION := 0.1.0

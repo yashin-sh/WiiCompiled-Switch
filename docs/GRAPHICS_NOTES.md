@@ -22,12 +22,12 @@ Minimum progression:
 
 1. ~~create/present a Horizon clear frame through the isolated loaderless NVK / `VK_NN_vi_surface` probe~~ — **hardware PASS**;
 2. ~~present a simple Vulkan triangle on the proven VI swapchain~~ — **hardware PASS: visible triangle on real Switch**; the first run exposed only an SD-report initialization bug, not a rendering failure;
-3. place Dawn/WebGPU over the proven Vulkan/NVK path — **current frontier**;
+3. place Dawn/WebGPU over the proven Vulkan/NVK path — **offscreen probe implemented; hardware test next**;
 4. feed a fabricated Nintendo-data-free GX/FIFO sequence through pinned `HleFifoWrite` and obtain visible output;
 5. measure CPU frame overhead, memory use and presentation stability on Tegra X1;
 6. only then connect a private local RMCP01 stream.
 
-The first direct-Vulkan probe has passed on hardware, so Dawn now has a known-good Horizon/NVK/VI presentation substrate to target. Any failure introduced by the next Dawn/Aurora stages can be attributed above the already-proven WSI/present layer.
+The first direct-Vulkan probe has passed on hardware, so Dawn now has a known-good Horizon/NVK/VI presentation substrate to target. The first Dawn slice is deliberately offscreen: it pins the exact Dawn source behind Aurora's package, bypasses Dawn's desktop Vulkan loader in favor of the statically linked mesa-switch ICD, and uses `ProcessEvents()` rather than Dawn's POSIX `TimedWaitAny` path. A hardware PASS will isolate Dawn adapter/device/pipeline/GPU execution before surface integration. Any failure introduced by later Dawn/Aurora presentation stages can then be attributed above the already-proven native WSI/present layer.
 
 ## Fallback — Deko3D native Aurora backend
 

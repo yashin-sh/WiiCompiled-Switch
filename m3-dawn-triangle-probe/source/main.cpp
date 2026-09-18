@@ -528,8 +528,38 @@ int main(int, char**) {
     }
 
     const bool passed = run_present_loop(surface, device, queue, pipeline);
-    surface.Unconfigure();
 
+    report("STAGE TEARDOWN begin\n");
+
+    report("STAGE TEARDOWN surface-unconfigure begin\n");
+    surface.Unconfigure();
+    report("STAGE TEARDOWN surface-unconfigure PASS\n");
+
+    report("STAGE TEARDOWN pipeline-release begin\n");
+    pipeline = nullptr;
+    report("STAGE TEARDOWN pipeline-release PASS\n");
+
+    report("STAGE TEARDOWN queue-release begin\n");
+    queue = nullptr;
+    report("STAGE TEARDOWN queue-release PASS\n");
+
+    report("STAGE TEARDOWN surface-release begin\n");
+    surface = nullptr;
+    report("STAGE TEARDOWN surface-release PASS\n");
+
+    report("STAGE TEARDOWN device-release begin\n");
+    device = nullptr;
+    report("STAGE TEARDOWN device-release PASS\n");
+
+    report("STAGE TEARDOWN adapter-release begin\n");
+    adapter = nullptr;
+    report("STAGE TEARDOWN adapter-release PASS\n");
+
+    report("STAGE TEARDOWN instance-release begin\n");
+    instance = nullptr;
+    report("STAGE TEARDOWN instance-release PASS\n");
+
+    report("STAGE TEARDOWN PASS\n");
     report("RESULT=%s\n", passed ? "PASS" : "FAIL");
     close_report();
     return passed ? 0 : 1;

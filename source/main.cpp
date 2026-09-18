@@ -4,6 +4,7 @@
 #include "horizon_runtime_services.hpp"
 #include "memory_init_probe.hpp"
 #include "runtime_bootstrap.hpp"
+#include "rendered_fast_track_graphics.hpp"
 #include "switch_platform.hpp"
 #include "vm_probe.hpp"
 
@@ -39,6 +40,16 @@ int main(int, char**) {
     mkw_switch_set_fast_track_stage("MAIN_PLATFORM_INIT");
     auto info = mkw::switch_platform::initialize();
     mkw::switch_platform::present_bootstrap_screen(info);
+
+#if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+    mkw_switch_set_fast_track_stage("RENDERER_INIT");
+    if (!mkw_switch_renderer_initialize()) {
+        mkw_switch_set_fast_track_stage("RENDERER_INIT_FAILED");
+        mkw::switch_platform::shutdown();
+        return 2;
+    }
+    mkw_switch_set_fast_track_stage("RENDERER_READY");
+#endif
 
 #if defined(MKW_LOCAL_FAST_TRACK) && MKW_LOCAL_FAST_TRACK
     // The VM/context/GuestFlat smoke probes were hardware-validated earlier in
@@ -127,6 +138,9 @@ int main(int, char**) {
     }
 
     mkw_switch_set_fast_track_stage("SHUTDOWN");
+#if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+    mkw_switch_renderer_shutdown();
+#endif
     mkw::runtime_bootstrap::stop();
     mkw::switch_platform::shutdown();
     return 0;

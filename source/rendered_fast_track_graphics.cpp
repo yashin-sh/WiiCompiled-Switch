@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <iterator>
 #include <mutex>
 #include <sys/stat.h>
 #include <thread>

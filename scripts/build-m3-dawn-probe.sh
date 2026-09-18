@@ -16,6 +16,8 @@ readonly DAWN_BUILD_DIR="${MKW_M3_DAWN_BUILD_ROOT:-$DEPS_DIR/dawn-switch-build}"
 
 readonly MESA_PATCH="$ROOT_DIR/patches/mesa-switch/m3-linux-build.patch"
 readonly DAWN_PATCH="$ROOT_DIR/patches/dawn-switch/m3-static-nvk-link.patch"
+readonly ABSEIL_DIR="$DAWN_DIR/third_party/abseil-cpp"
+readonly ABSEIL_PATCH="$ROOT_DIR/patches/dawn-switch/m3-abseil-switch-newlib.patch"
 readonly PROBE_SOURCE="$ROOT_DIR/m3-dawn-probe/source/main.cpp"
 readonly OUTPUT_DIR="$ROOT_DIR/m3-dawn-probe"
 readonly OUTPUT="$OUTPUT_DIR/WiiCompiled-Switch-m3-dawn-clear-probe.nro"
@@ -41,6 +43,10 @@ if [[ ! -f "$MESA_PATCH" ]]; then
 fi
 if [[ ! -f "$DAWN_PATCH" ]]; then
     echo "error: missing Dawn integration patch: $DAWN_PATCH" >&2
+    exit 1
+fi
+if [[ ! -f "$ABSEIL_PATCH" ]]; then
+    echo "error: missing Abseil Switch/newlib patch: $ABSEIL_PATCH" >&2
     exit 1
 fi
 if [[ ! -f "$PROBE_SOURCE" ]]; then
@@ -127,6 +133,31 @@ if [[ "$actual_dawn_pin" != "$DAWN_PIN" ]]; then
 fi
 echo "      dawn-switch: $actual_dawn_pin"
 
+echo "      initializing public Dawn third-party submodules..."
+git -C "$DAWN_DIR" \
+    -c submodule.third_party/angle.update=none \
+    -c submodule.third_party/swiftshader.update=none \
+    submodule update --init --recursive --jobs "$JOBS" --depth 1
+
+if [[ ! -e "$ABSEIL_DIR/.git" ]]; then
+    echo "error: Dawn Abseil submodule was not initialized: $ABSEIL_DIR" >&2
+    exit 1
+fi
+
+# Dawn's pinned Abseil assumes glibc/POSIX details that differ under Switch
+# newlib. Restore the exact submodule revision and apply only our narrow
+# Horizon portability delta.
+git -C "$ABSEIL_DIR" restore --source=HEAD -- \
+    absl/base/internal/sysinfo.cc \
+    absl/base/internal/thread_identity.cc \
+    absl/debugging/internal/elf_mem_image.h \
+    absl/time/internal/cctz/src/time_zone_libc.cc
+if ! git -C "$ABSEIL_DIR" apply --check "$ABSEIL_PATCH"; then
+    echo "error: Abseil Switch/newlib patch no longer applies" >&2
+    exit 1
+fi
+git -C "$ABSEIL_DIR" apply "$ABSEIL_PATCH"
+
 # The public fork contains Switch NWindow/Vulkan support, but its sample CMake
 # linkage assumes a different NVK package shape. Keep the upstream pin exact,
 # then apply only our narrow static-link integration delta.
@@ -178,7 +209,6 @@ docker run --rm \
             hashbrown
             rustc_std_workspace_alloc
             miniz_oxide
-            adler
             unwind
             cfg_if
             libc
@@ -199,6 +229,39 @@ docker run --rm \
             rust_libs+=("${matches[0]}")
         done
 
+        adler_lib=""
+        adler_stem=""
+        for candidate in adler2 adler; do
+            matches=("$target_libdir/lib${candidate}-"*.rlib)
+            if (("${#matches[@]}" > 1)); then
+                echo "error: multiple Rust $candidate archives found in $target_libdir" >&2
+                exit 1
+            fi
+            if (("${#matches[@]}" == 1)); then
+                adler_lib="${matches[0]}"
+                adler_stem="$candidate"
+                break
+            fi
+        done
+        if [[ -z "$adler_lib" ]]; then
+            echo "error: neither Rust adler2 nor adler archive exists in $target_libdir" >&2
+            exit 1
+        fi
+        rust_libs+=("$adler_lib")
+        echo "Rust compression dependency: $adler_stem"
+
+        compat_dir=/build/compat-libs
+        mkdir -p "$compat_dir"
+        cat >"$compat_dir/empty_posix.c" <<"EOF"
+void wiicompiled_switch_empty_posix_archive(void) {}
+EOF
+        /opt/devkitpro/devkitA64/bin/aarch64-none-elf-gcc \
+            -c "$compat_dir/empty_posix.c" -o "$compat_dir/empty_posix.o"
+        for compat in dl rt util; do
+            /opt/devkitpro/devkitA64/bin/aarch64-none-elf-ar \
+                rcs "$compat_dir/lib${compat}.a" "$compat_dir/empty_posix.o"
+        done
+
         extra_libs=""
         for lib in "${rust_libs[@]}"; do
             if [[ -n "$extra_libs" ]]; then
@@ -206,7 +269,8 @@ docker run --rm \
             fi
             extra_libs+="$lib"
         done
-        extra_libs+=";expat;zstd;z;stdc++;dl;rt;util"
+        extra_libs+=";expat;zstd;z;stdc++"
+        extra_libs+=";$compat_dir/libdl.a;$compat_dir/librt.a;$compat_dir/libutil.a"
 
         cmake -S /dawn -B /build -G Ninja \
             -DCMAKE_TOOLCHAIN_FILE=/opt/devkitpro/cmake/Switch.cmake \

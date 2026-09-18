@@ -28,6 +28,7 @@ endif
 # The outer build helper resolves the matching Rust std closure from the
 # container sysroot and passes absolute .rlib paths here.
 RUST_STD_LIBS ?=
+POSIX_COMPAT_LIBS ?=
 
 ARCH        := -march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
 CFLAGS      := -g -Wall -Wextra -O2 -ffunction-sections -fdata-sections $(ARCH)
@@ -39,7 +40,7 @@ LDFLAGS     := -specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) \
                -Wl,-u,vk_icdGetInstanceProcAddr \
                -Wl,-u,vk_icdNegotiateLoaderICDInterfaceVersion
 LIBS        := -Wl,--start-group $(MESA_VULKAN_LIB) $(RUST_STD_LIBS) \
-               -lexpat -lzstd -lz -lnx -lstdc++ -lm -ldl -lrt -lutil \
+               -lexpat -lzstd -lz -lnx -lstdc++ -lm $(POSIX_COMPAT_LIBS) \
                -Wl,--end-group
 LIBDIRS     := $(PORTLIBS) $(LIBNX)
 

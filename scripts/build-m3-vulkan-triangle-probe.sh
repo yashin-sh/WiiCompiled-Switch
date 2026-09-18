@@ -123,7 +123,6 @@ docker run --rm \
             hashbrown
             rustc_std_workspace_alloc
             miniz_oxide
-            adler
             unwind
             cfg_if
             libc
@@ -143,7 +142,40 @@ docker run --rm \
             fi
             rust_libs+=("${matches[0]}")
         done
+
+        adler_lib=""
+        adler_stem=""
+        for candidate in adler2 adler; do
+            matches=("$target_libdir/lib${candidate}-"*.rlib)
+            if ((${#matches[@]} > 1)); then
+                echo "error: multiple Rust $candidate archives found in $target_libdir" >&2
+                exit 1
+            fi
+            if ((${#matches[@]} == 1)); then
+                adler_lib="${matches[0]}"
+                adler_stem="$candidate"
+                break
+            fi
+        done
+        if [[ -z "$adler_lib" ]]; then
+            echo "error: neither Rust adler2 nor adler archive exists in $target_libdir" >&2
+            exit 1
+        fi
+        rust_libs+=("$adler_lib")
         rust_std_libs="${rust_libs[*]}"
+
+        compat_dir=/work/.deps/m3/compat-libs
+        mkdir -p "$compat_dir"
+        cat >"$compat_dir/empty_posix.c" <<"EOF"
+void wiicompiled_switch_empty_posix_archive(void) {}
+EOF
+        /opt/devkitpro/devkitA64/bin/aarch64-none-elf-gcc \
+            -c "$compat_dir/empty_posix.c" -o "$compat_dir/empty_posix.o"
+        for compat in dl rt util; do
+            /opt/devkitpro/devkitA64/bin/aarch64-none-elf-ar \
+                rcs "$compat_dir/lib${compat}.a" "$compat_dir/empty_posix.o"
+        done
+        posix_compat_libs="$compat_dir/libdl.a $compat_dir/librt.a $compat_dir/libutil.a"
 
         echo "Rust target: $MESA_SWITCH_RUST_TARGET"
         echo "Rust target libdir: $target_libdir"
@@ -179,7 +211,8 @@ PY
 
         make -j"$MKW_M3_JOBS" \
             MESA_SWITCH_ROOT=/mesa \
-            RUST_STD_LIBS="$rust_std_libs"
+            RUST_STD_LIBS="$rust_std_libs" \
+            POSIX_COMPAT_LIBS="$posix_compat_libs"
     '
 
 if [[ ! -f "$OUTPUT" ]]; then

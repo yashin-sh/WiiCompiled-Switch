@@ -7,7 +7,7 @@
 #include <string_view>
 
 class Memory {
-public:
+  public:
     static constexpr size_t kMem1Size = 24u * 1024u * 1024u;
     static constexpr size_t kMem2Size = 128u * 1024u * 1024u;
     static constexpr uint32_t kMem1PhysicalBase = 0x00000000u;
@@ -24,14 +24,20 @@ public:
         kMem2UncachedBase + static_cast<uint32_t>(kMem2Size);
 
     class AccessViolation : public std::runtime_error {
-    public:
+      public:
         AccessViolation(uint32_t address, size_t length, std::string_view reason);
 
-        uint32_t address() const noexcept { return address_; }
-        size_t length() const noexcept { return length_; }
-        std::string_view reason() const noexcept { return reason_; }
+        uint32_t address() const noexcept {
+            return address_;
+        }
+        size_t length() const noexcept {
+            return length_;
+        }
+        std::string_view reason() const noexcept {
+            return reason_;
+        }
 
-    private:
+      private:
         uint32_t address_ = 0;
         size_t length_ = 0;
         std::string reason_;

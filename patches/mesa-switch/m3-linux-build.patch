@@ -1,8 +1,9 @@
 diff --git a/Docker.rust b/Docker.rust
-index 5dc5058..0000000 100644
+index 2405f300d52..05bd7223157 100644
 --- a/Docker.rust
 +++ b/Docker.rust
-@@ -6,7 +6,7 @@ RUN apt-get update && \
+@@ -4,7 +4,7 @@ FROM devkitpro/devkita64:latest
+ RUN apt-get update && \
      apt-get install -y \
          python3-pip python3-setuptools python3-wheel \
 -        ninja-build pkg-config flex bison curl \
@@ -10,18 +11,29 @@ index 5dc5058..0000000 100644
          libclang-dev clang cmake git \
          llvm-15-dev libllvmspirvlib-15-dev libclc-15-dev libclang-15-dev \
      && apt-get clean
-@@ -34,6 +34,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --
+@@ -32,6 +32,17 @@ RUN cd /tmp && \
+ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly && \
      . $HOME/.cargo/env && \
      rustup component add rust-src && \
 +    rustup target add aarch64-unknown-linux-gnu && \
      cargo install bindgen-cli cbindgen
  
++# Placeholder libdl/librt/libutil archives so Rust std for
++# aarch64-unknown-linux-gnu links against Switch newlib. Real compatibility
++# symbols come from Mesa's rust_switch_stubs.c and libnx; the same archives
++# are (re)created idempotently by build-switch.sh inside build containers.
++RUN cd /tmp && \
++    echo "void __mesa_switch_stub_lib(void) {}" > stub_posix.c && \
++    /opt/devkitpro/devkitA64/bin/aarch64-none-elf-gcc -c stub_posix.c -o stub_posix.o && \
++    for L in dl rt util; do /opt/devkitpro/devkitA64/bin/aarch64-none-elf-ar rcs /opt/devkitpro/portlibs/switch/lib/lib${L}.a stub_posix.o; done && \
++    rm -f /tmp/stub_posix.c /tmp/stub_posix.o
++
  ENV PATH="/root/.cargo/bin:${PATH}"
 diff --git a/build-switch.sh b/build-switch.sh
-index 64bb44a..0000000 100755
+index cc2722da8cb..435e03f2782 100755
 --- a/build-switch.sh
 +++ b/build-switch.sh
-@@ -1,8 +1,12 @@
+@@ -1,8 +1,14 @@
  #!/bin/bash
  set -e
  
@@ -37,7 +49,7 @@ index 64bb44a..0000000 100755
  
  # Build the Docker image if needed.
  if ! docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
-@@ -13,8 +17,10 @@ fi
+@@ -13,6 +19,8 @@ fi
  # Start the build container.
  docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
  docker run -d --name "$CONTAINER_NAME" \
@@ -45,3 +57,22 @@ index 64bb44a..0000000 100755
 +    -e MESA_SWITCH_RUST_TARGET="$MESA_SWITCH_RUST_TARGET" \
      -v "$(pwd):/project" --workdir "/project" \
      "$IMAGE_NAME" sleep infinity
+ 
+@@ -95,7 +103,7 @@ run 'ninja -C /project/builddir-native src/compiler/clc/mesa_clc src/compiler/sp
+ # Configure the cross build.
+ echo "=== Configuring cross build (Switch + nouveau + nouveau_vk) ==="
+ run '
+-export PATH="/usr/local/libexec:/project/builddir-native/src/compiler/clc:/project/builddir-native/src/compiler/spirv:$PATH"
++export PATH="/project/builddir-native/src/compiler/clc:/project/builddir-native/src/compiler/spirv:$PATH:/usr/local/libexec"
+ cd /project && meson setup builddir-switch --wipe \
+     --cross-file switch_cross_file.txt \
+     --buildtype=release \
+@@ -123,7 +131,7 @@ cd /project && meson setup builddir-switch --wipe \
+ # Build Switch archives.
+ echo "=== Building Mesa for Switch ==="
+ run '
+-export PATH="/usr/local/libexec:/project/builddir-native/src/compiler/clc:/project/builddir-native/src/compiler/spirv:$PATH"
++export PATH="/project/builddir-native/src/compiler/clc:/project/builddir-native/src/compiler/spirv:$PATH:/usr/local/libexec"
+ ninja -C /project/builddir-switch \
+     src/nouveau/vulkan/libnvk.a \
+     src/nouveau/vulkan/libvulkan.a \

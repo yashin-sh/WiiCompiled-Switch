@@ -123,7 +123,7 @@ docker run --rm \
             hashbrown
             rustc_std_workspace_alloc
             miniz_oxide
-            adler
+            adler2
             unwind
             cfg_if
             libc

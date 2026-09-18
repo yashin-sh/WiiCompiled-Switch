@@ -1,0 +1,79 @@
+diff --git a/absl/base/internal/sysinfo.cc b/absl/base/internal/sysinfo.cc
+index a62dd31..0bed5f1 100644
+--- a/absl/base/internal/sysinfo.cc
++++ b/absl/base/internal/sysinfo.cc
+@@ -466,6 +466,14 @@ pid_t GetTID() {
+   return static_cast<pid_t>(zx_thread_self());
+ }
+ 
++#elif defined(__SWITCH__)
++
++pid_t GetTID() {
++  // newlib's pthread_t is an opaque pointer, not an arithmetic thread id.
++  // Use the pointer value itself as the per-thread identity.
++  return static_cast<pid_t>(reinterpret_cast<uintptr_t>(pthread_self()));
++}
++
+ #else
+ 
+ // Fallback implementation of `GetTID` using `pthread_self`.
+diff --git a/absl/base/internal/thread_identity.cc b/absl/base/internal/thread_identity.cc
+index 0471a25..aa02313 100644
+--- a/absl/base/internal/thread_identity.cc
++++ b/absl/base/internal/thread_identity.cc
+@@ -85,9 +85,9 @@ void SetCurrentThreadIdentity(ThreadIdentity* identity,
+                   reclaimer);
+ 
+ #if defined(__wasi__) || defined(__EMSCRIPTEN__) || defined(__MINGW32__) || \
+-    defined(__hexagon__)
+-  // Emscripten, WASI and MinGW pthread implementations does not support
+-  // signals. See
++    defined(__hexagon__) || defined(__SWITCH__)
++  // Emscripten, WASI, MinGW and Switch pthread implementations do not
++  // support signals. See
+   // https://kripken.github.io/emscripten-site/docs/porting/pthreads.html for
+   // more information.
+   pthread_setspecific(thread_identity_pthread_key,
+diff --git a/absl/debugging/internal/elf_mem_image.h b/absl/debugging/internal/elf_mem_image.h
+index c8a1036..21e080c 100644
+--- a/absl/debugging/internal/elf_mem_image.h
++++ b/absl/debugging/internal/elf_mem_image.h
+@@ -35,7 +35,7 @@
+ #if defined(__ELF__) && !defined(__OpenBSD__) && !defined(__QNX__) &&    \
+     !defined(__asmjs__) && !defined(__wasm__) && !defined(__HAIKU__) &&  \
+     !defined(__sun) && !defined(__VXWORKS__) && !defined(__hexagon__) && \
+-    !defined(__XTENSA__)
++    !defined(__XTENSA__) && !defined(__SWITCH__)
+ #define ABSL_HAVE_ELF_MEM_IMAGE 1
+ #endif
+ 
+diff --git a/absl/time/internal/cctz/src/time_zone_libc.cc b/absl/time/internal/cctz/src/time_zone_libc.cc
+index 362da1a..c894c79 100644
+--- a/absl/time/internal/cctz/src/time_zone_libc.cc
++++ b/absl/time/internal/cctz/src/time_zone_libc.cc
+@@ -33,6 +33,16 @@ extern long altzone;
+ }
+ #endif
+ 
++#if defined(__SWITCH__)
++// newlib declares _timezone/_tzname only with SVID/POSIX feature macros,
++// which are disabled under the strict C++ modes used here.
++extern long _timezone;
++extern char *_tzname[2];
++#ifndef tzname
++#define tzname _tzname
++#endif
++#endif
++
+ namespace absl {
+ ABSL_NAMESPACE_BEGIN
+ namespace time_internal {
+@@ -61,7 +71,7 @@ auto tm_zone(const std::tm& tm) -> decltype(tzname[0]) {
+   return tzname[is_dst];
+ }
+ #elif defined(__native_client__) || defined(__myriad2__) || \
+-    defined(__EMSCRIPTEN__)
++    defined(__EMSCRIPTEN__) || defined(__SWITCH__)
+ // Uses the globals: '_timezone' and 'tzname'.
+ auto tm_gmtoff(const std::tm& tm) -> decltype(_timezone + 0) {
+   const bool is_dst = tm.tm_isdst > 0;

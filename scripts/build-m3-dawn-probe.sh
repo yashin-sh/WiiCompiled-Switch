@@ -16,6 +16,8 @@ readonly DAWN_BUILD_DIR="${MKW_M3_DAWN_BUILD_ROOT:-$DEPS_DIR/dawn-switch-build}"
 
 readonly MESA_PATCH="$ROOT_DIR/patches/mesa-switch/m3-linux-build.patch"
 readonly DAWN_PATCH="$ROOT_DIR/patches/dawn-switch/m3-static-nvk-link.patch"
+readonly ABSEIL_DIR="$DAWN_DIR/third_party/abseil-cpp"
+readonly ABSEIL_PATCH="$ROOT_DIR/patches/dawn-switch/m3-abseil-switch-newlib.patch"
 readonly PROBE_SOURCE="$ROOT_DIR/m3-dawn-probe/source/main.cpp"
 readonly OUTPUT_DIR="$ROOT_DIR/m3-dawn-probe"
 readonly OUTPUT="$OUTPUT_DIR/WiiCompiled-Switch-m3-dawn-clear-probe.nro"
@@ -41,6 +43,10 @@ if [[ ! -f "$MESA_PATCH" ]]; then
 fi
 if [[ ! -f "$DAWN_PATCH" ]]; then
     echo "error: missing Dawn integration patch: $DAWN_PATCH" >&2
+    exit 1
+fi
+if [[ ! -f "$ABSEIL_PATCH" ]]; then
+    echo "error: missing Abseil Switch patch: $ABSEIL_PATCH" >&2
     exit 1
 fi
 if [[ ! -f "$PROBE_SOURCE" ]]; then
@@ -127,6 +133,16 @@ if [[ "$actual_dawn_pin" != "$DAWN_PIN" ]]; then
 fi
 echo "      dawn-switch: $actual_dawn_pin"
 
+echo "      initializing Dawn third-party submodules..."
+# ANGLE (GLES backend is OFF) contains chrome-internal-only test suites
+# (es-cts) that can never be fetched publicly, and SwiftShader (software
+# ICD, tests are OFF) drags a multi-GB nested llvm-project. Neither is
+# needed for the Switch Vulkan NRO, so both trees stay uninitialized.
+git -C "$DAWN_DIR" \
+    -c submodule.third_party/angle.update=none \
+    -c submodule.third_party/swiftshader.update=none \
+    submodule update --init --recursive --jobs "$JOBS" --depth 1
+
 # The public fork contains Switch NWindow/Vulkan support, but its sample CMake
 # linkage assumes a different NVK package shape. Keep the upstream pin exact,
 # then apply only our narrow static-link integration delta.
@@ -136,6 +152,19 @@ if ! git -C "$DAWN_DIR" apply --check "$DAWN_PATCH"; then
     exit 1
 fi
 git -C "$DAWN_DIR" apply "$DAWN_PATCH"
+
+# Stock Abseil assumes glibc-style pthreads (arithmetic pthread_t, signals).
+# newlib on Switch provides neither, so apply our narrow Switch portability
+# delta to the pinned Abseil submodule.
+git -C "$ABSEIL_DIR" restore --source=HEAD -- \
+    absl/base/internal/sysinfo.cc absl/base/internal/thread_identity.cc \
+    absl/debugging/internal/elf_mem_image.h \
+    absl/time/internal/cctz/src/time_zone_libc.cc
+if ! git -C "$ABSEIL_DIR" apply --check "$ABSEIL_PATCH"; then
+    echo "error: Abseil Switch patch no longer applies" >&2
+    exit 1
+fi
+git -C "$ABSEIL_DIR" apply "$ABSEIL_PATCH"
 
 # The fork's CMake recipe names src/dawn/switch/clear_nro.cpp while the public
 # examples live elsewhere. Supply our independent Nintendo-data-free probe at
@@ -178,7 +207,7 @@ docker run --rm \
             hashbrown
             rustc_std_workspace_alloc
             miniz_oxide
-            adler
+            adler2
             unwind
             cfg_if
             libc

@@ -115,6 +115,7 @@ Hardware evidence is recorded in:
 - `docs/HARDWARE_RESULTS_2026-09-18_ACTIVE_RETRACE_LOOP.md`
 - `docs/HARDWARE_RESULTS_2026-09-18_M3_VULKAN_CLEAR_FRAME.md`
 - `docs/HARDWARE_RESULTS_2026-09-18_M3_AURORA_GX.md`
+- `docs/HARDWARE_RESULTS_2026-09-18_M3_HLE_FIFO_AURORA.md`
 
 The current hardware-driven method remains deliberate after `main`: execute the broadest safe translated path, stop on the first unsupported native/translated boundary or attributable exception, and when no blocker appears use the independent heartbeat watchdog to distinguish sustained execution from a real stall. New runtime behavior is still added only from hardware evidence and pinned WiiCompiled semantics. Post-main bring-up remains tracked in #117.
 
@@ -131,8 +132,8 @@ The current hardware-driven method remains deliberate after `main`: execute the 
 - [x] Prove a WGSL shader + Dawn graphics pipeline + triangle on real Switch — **hardware PASS: visible RGB triangle + clean explicit teardown**
 - [x] Select the native Switch graphics strategy compatible with WiiCompiled/Aurora — **Aurora GX → Dawn/WebGPU → Vulkan/NVK is the primary path; Deko3D remains fallback**
 - [x] Present an isolated Aurora GX triangle on real Switch — **hardware PASS: first Aurora GX triangle + 563-frame active loop + clean teardown**
-- [ ] Prove pinned WiiCompiled `HleFifoWrite` → Aurora GX with a fabricated Nintendo-data-free FIFO stream — **probe implemented; hardware test next**
-- [ ] Replace the temporary GX FIFO sink with a real GX → Switch command/backend path
+- [x] Prove pinned WiiCompiled `HleFifoWrite` → Aurora GX with a fabricated Nintendo-data-free FIFO stream — **hardware PASS: exact pin, raw-direct path, 1,435-frame stable loop**
+- [ ] Replace the temporary GX FIFO sink with a real GX → Switch command/backend path — **separate RMCP01 rendered fast-track implemented; hardware test next**
 - [x] Render first native Switch clear frame
 - [ ] GX command path functional
 - [ ] shader/pipeline cache strategy
@@ -140,7 +141,7 @@ The current hardware-driven method remains deliberate after `main`: execute the 
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> Graphics is intentionally not considered validated while `GX_HLE_FIFO_Write*` remains a sink. A black screen during the fast-track is therefore not proof of a graphics failure.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The separate rendered RMCP01 fast-track now links the hardware-proven pinned FIFO/Aurora/Dawn/NVK path; its first real-Switch run is the current M3 gate.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input

@@ -52,6 +52,7 @@
 - `HARDWARE_RESULTS_2026-09-18_M3_VULKAN_CLEAR_FRAME.md` — real-Switch loaderless NVK / `VK_NN_vi_surface` changing-color clear-frame PASS
 - `HARDWARE_RESULTS_2026-09-18_M3_VULKAN_TRIANGLE.md` — real-Switch shader/pipeline/rasterisation triangle PASS; records the separate SD-report fix
 - `HARDWARE_RESULTS_2026-09-18_M3_DAWN_CLEAR.md` — real-Switch Dawn/WebGPU clear/present PASS with 1,507-frame stable loop
+- `HARDWARE_RESULTS_2026-09-18_M3_DAWN_TRIANGLE.md` — real-Switch WGSL/Dawn graphics-pipeline triangle PASS with clean explicit teardown
 
 ## Blocker notes
 

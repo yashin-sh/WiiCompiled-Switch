@@ -371,7 +371,7 @@ bool run_present_loop(const wgpu::Surface& surface,
     return frame != 0;
 }
 
-}  // namespace
+} // namespace
 
 int main(int, char**) {
     init_report();

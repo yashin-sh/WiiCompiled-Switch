@@ -33,26 +33,25 @@ physical Switch display
 
 This advances the graphics proof from a native clear/present to actual shader execution, pipeline creation and rasterisation.
 
-## Diagnostic-file caveat
+## Durable hardware log
 
-The successful rendering run did not produce:
+The follow-up run after the SD-report fix produced the expected persistent report and confirms the full triangle path:
 
-```text
-/switch/WiiCompiled-Switch/m3-vulkan-triangle-probe.txt
-```
+- `vkCreateInstance -> 0`;
+- `vkCreateViSurfaceNN -> 0`;
+- GPU: `NVIDIA Tegra X1 (GM20B) (NVK GM20B)`, Vulkan API `1.3.354`, queue family `0`;
+- `VK_KHR_swapchain`: present;
+- swapchain creation: success, `1280x720`, 3 requested/3 returned images, format `37`, present mode `2`;
+- render pass: success;
+- vertex and fragment shader modules: success;
+- pipeline layout: success;
+- graphics pipeline: success;
+- `PASS FIRST_TRIANGLE_PRESENT`;
+- sustained `ACTIVE` heartbeats through frame `5880`;
+- user exit with `+`;
+- final `PASS LOOP frames=5888` and `RESULT=PASS`.
 
-This is a diagnostics bug, not evidence of a renderer failure.
-
-libnx runtime startup normally mounts `sdmc:` before NRO `main()`. The probe then attempted `fsdevMountSdmc()` again and only opened the report if that second mount returned success. Therefore an already-available SD filesystem could leave `g_report` null while Vulkan continued normally.
-
-The probe has been hardened to:
-
-1. use the already-mounted `sdmc:` first;
-2. create/open the report directly;
-3. call `fsdevMountSdmc()` only as a fallback;
-4. unmount only if the probe itself created the fallback mount.
-
-The same narrow fix is applied to the clear-frame probe because it used the same logger pattern.
+This also hardware-validates the mount-safe report fix from #168: the durable `.txt` now exists and survived the successful run.
 
 ## What this proves
 

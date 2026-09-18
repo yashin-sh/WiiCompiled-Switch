@@ -15,7 +15,8 @@
 - `M2_LOCAL_DATA_INIT_HARDWARE_PASS.md` — real-Switch PASS for user-owned RMCP01 generated data sections
 - `M2_FUNCTION_SHARD_LINK.md` — local translated-function compile/link-only boundary
 - `TRANSLATED_PRODUCT_BOUNDARY.md` — build-time translated-product seam, local-only product policy and current execution milestone
-- `GRAPHICS_NOTES.md` — graphics backend notes and deferred M3 direction
+- `GRAPHICS_NOTES.md` — graphics backend notes and M3 direction
+- `M3_VULKAN_CLEAR_PROBE.md` — isolated loaderless NVK / `VK_NN_vi_surface` clear-frame hardware probe for #162
 - `WII_PORTING_REFERENCE_AUDIT_2026-09-16.md` — reference/tooling hierarchy and licensing notes
 - `STRIKERS_AURORA_REFERENCE_AUDIT_2026-09-17.md` — targeted `new-coke/strikers` / Aurora audit for #154 DVD/FST and #4/#162 first-frame work
 

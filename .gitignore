@@ -27,6 +27,9 @@ keys.txt
 # Local WiiCompiled build/output beside the pinned source submodule
 /third_party/WiiCompiled-build/
 
+# Local external dependencies used by isolated M3 probes
+/.deps/
+
 # OS/editor
 .DS_Store
 .vscode/

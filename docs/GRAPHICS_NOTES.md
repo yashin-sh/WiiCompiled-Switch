@@ -20,11 +20,14 @@ The probe should keep Aurora's **GX + graphics/pipeline** layers while bypassing
 
 Minimum progression:
 
-1. create/present a Horizon clear frame;
-2. present a simple triangle through Dawn/Vulkan/NVK;
-3. feed a fabricated Nintendo-data-free GX/FIFO sequence through pinned `HleFifoWrite` and obtain visible output;
-4. measure CPU frame overhead, memory use and presentation stability on Tegra X1;
-5. only then connect a private local RMCP01 stream.
+1. create/present a Horizon clear frame through the isolated loaderless NVK / `VK_NN_vi_surface` probe in `m3-graphics-probe/`;
+2. present a simple Vulkan triangle on the proven VI swapchain;
+3. place Dawn/WebGPU over the proven Vulkan/NVK path;
+4. feed a fabricated Nintendo-data-free GX/FIFO sequence through pinned `HleFifoWrite` and obtain visible output;
+5. measure CPU frame overhead, memory use and presentation stability on Tegra X1;
+6. only then connect a private local RMCP01 stream.
+
+The first probe is intentionally direct Vulkan rather than Dawn: it isolates the Horizon/NVK/VI presentation layer. A failure here is below Aurora/Dawn; a PASS gives Dawn a known-good Vulkan surface to target.
 
 ## Fallback — Deko3D native Aurora backend
 

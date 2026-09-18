@@ -85,4 +85,10 @@ STAGE TEARDOWN PASS
 RESULT=PASS
 ```
 
-A visible triangle plus `RESULT=PASS` proves the **Aurora GX frame** milestone. It does not yet prove the WiiCompiled `HleFifoWrite` decoder. The following gate is a fabricated Nintendo-data-free GX/FIFO byte stream fed through the pinned WiiCompiled decoder into this renderer.
+## Hardware result
+
+**PASS on 2026-09-18.** The probe reached `PASS FIRST_AURORA_GX_TRIANGLE_PRESENT`, remained active through 563 frames, and completed explicit teardown with `RESULT=PASS`.
+
+See `HARDWARE_RESULTS_2026-09-18_M3_AURORA_GX.md`.
+
+This proves the **Aurora GX frame** milestone. It does not yet prove the WiiCompiled `HleFifoWrite` decoder. The following gate is a fabricated Nintendo-data-free GX/FIFO byte stream fed through the pinned WiiCompiled decoder into this renderer.

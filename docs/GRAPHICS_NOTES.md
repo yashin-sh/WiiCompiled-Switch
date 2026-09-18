@@ -21,8 +21,8 @@ The probe should keep Aurora's **GX + graphics/pipeline** layers while bypassing
 Minimum progression:
 
 1. ~~create/present a Horizon clear frame through the isolated loaderless NVK / `VK_NN_vi_surface` probe~~ — **hardware PASS**;
-2. present a simple Vulkan triangle on the proven VI swapchain — **probe implemented; hardware test next**;
-3. place Dawn/WebGPU over the proven Vulkan/NVK path;
+2. ~~present a simple Vulkan triangle on the proven VI swapchain~~ — **hardware PASS: visible triangle on real Switch**; the first run exposed only an SD-report initialization bug, not a rendering failure;
+3. place Dawn/WebGPU over the proven Vulkan/NVK path — **current frontier**;
 4. feed a fabricated Nintendo-data-free GX/FIFO sequence through pinned `HleFifoWrite` and obtain visible output;
 5. measure CPU frame overhead, memory use and presentation stability on Tegra X1;
 6. only then connect a private local RMCP01 stream.

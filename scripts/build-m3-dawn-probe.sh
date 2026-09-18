@@ -239,6 +239,7 @@ echo "[5/7] Building Dawn/WebGPU clear probe..."
 docker run --rm \
     "${DOCKER_SECURITY_ARGS[@]}" \
     -e MKW_M3_JOBS="$JOBS" \
+    -v "$MESA_DIR:/mesa:ro" \
     -v "$DAWN_DIR:/dawn:ro" \
     -v "$DAWN_BUILD_DIR:/build" \
     "$MESA_IMAGE" \

@@ -103,4 +103,126 @@ replace(
     "#endif\n",
 )
 
+
+replace(
+    "src/dawn/common/SystemUtils.cpp",
+    "#include <cstdlib>\n#elif DAWN_PLATFORM_IS(MACOS) || DAWN_PLATFORM_IS(IOS)\n",
+    "#include <cstdlib>\n"
+    "#elif DAWN_PLATFORM_IS(SWITCH)\n"
+    "#include <cstdlib>\n"
+    "#elif DAWN_PLATFORM_IS(MACOS) || DAWN_PLATFORM_IS(IOS)\n",
+)
+
+replace(
+    "src/dawn/common/DynamicLib.h",
+    "#if DAWN_PLATFORM_IS(WINDOWS)\n"
+    "#include \"partition_alloc/pointers/raw_ptr.h\"\n"
+    "#elif DAWN_PLATFORM_IS(POSIX)\n"
+    "#include \"partition_alloc/pointers/raw_ptr_exclusion.h\"\n",
+    "#if DAWN_PLATFORM_IS(WINDOWS)\n"
+    "#include \"partition_alloc/pointers/raw_ptr.h\"\n"
+    "#elif DAWN_PLATFORM_IS(SWITCH)\n"
+    "#elif DAWN_PLATFORM_IS(POSIX)\n"
+    "#include \"partition_alloc/pointers/raw_ptr_exclusion.h\"\n",
+)
+
+replace(
+    "src/dawn/common/DynamicLib.h",
+    "#elif DAWN_PLATFORM_IS(POSIX)\n"
+    "    // On POSIX we use `dlopen`, which returns a \"handle\" which may not be a real pointer:\n",
+    "#elif DAWN_PLATFORM_IS(SWITCH)\n"
+    "    void* mHandle = nullptr;\n"
+    "#elif DAWN_PLATFORM_IS(POSIX)\n"
+    "    // On POSIX we use `dlopen`, which returns a \"handle\" which may not be a real pointer:\n",
+)
+
+replace(
+    "src/dawn/common/DynamicLib.cpp",
+    "#elif DAWN_PLATFORM_IS(POSIX)\n#include <dlfcn.h>\n",
+    "#elif DAWN_PLATFORM_IS(SWITCH)\n"
+    "#elif DAWN_PLATFORM_IS(POSIX)\n"
+    "#include <dlfcn.h>\n",
+)
+
+replace(
+    "src/dawn/common/DynamicLib.cpp",
+    "#elif DAWN_PLATFORM_IS(POSIX)\n"
+    "    mHandle = dlopen(filename.c_str(), RTLD_NOW);\n"
+    "\n"
+    "    if (mHandle == nullptr && error != nullptr) {\n"
+    "        *error = dlerror();\n"
+    "    }\n",
+    "#elif DAWN_PLATFORM_IS(SWITCH)\n"
+    "    (void)filename;\n"
+    "    if (error != nullptr) {\n"
+    "        *error = \"Dynamic loading is unavailable on Horizon\";\n"
+    "    }\n"
+    "    mHandle = nullptr;\n"
+    "#elif DAWN_PLATFORM_IS(POSIX)\n"
+    "    mHandle = dlopen(filename.c_str(), RTLD_NOW);\n"
+    "\n"
+    "    if (mHandle == nullptr && error != nullptr) {\n"
+    "        *error = dlerror();\n"
+    "    }\n",
+)
+
+replace(
+    "src/dawn/common/DynamicLib.cpp",
+    "#elif DAWN_PLATFORM_IS(POSIX)\n"
+    "    mHandle = dlopen(filename.c_str(), RTLD_NOW | RTLD_NOLOAD);\n"
+    "\n"
+    "    if (mHandle == nullptr && error != nullptr) {\n"
+    "        *error = dlerror();\n"
+    "    }\n",
+    "#elif DAWN_PLATFORM_IS(SWITCH)\n"
+    "    (void)filename;\n"
+    "    if (error != nullptr) {\n"
+    "        *error = \"Dynamic loading is unavailable on Horizon\";\n"
+    "    }\n"
+    "    mHandle = nullptr;\n"
+    "#elif DAWN_PLATFORM_IS(POSIX)\n"
+    "    mHandle = dlopen(filename.c_str(), RTLD_NOW | RTLD_NOLOAD);\n"
+    "\n"
+    "    if (mHandle == nullptr && error != nullptr) {\n"
+    "        *error = dlerror();\n"
+    "    }\n",
+)
+
+replace(
+    "src/dawn/common/DynamicLib.cpp",
+    "#elif DAWN_PLATFORM_IS(POSIX)\n"
+    "        dlclose(mHandle);\n",
+    "#elif DAWN_PLATFORM_IS(SWITCH)\n"
+    "        // No dynamic loader on Horizon.\n"
+    "#elif DAWN_PLATFORM_IS(POSIX)\n"
+    "        dlclose(mHandle);\n",
+)
+
+replace(
+    "src/dawn/common/DynamicLib.cpp",
+    "#elif DAWN_PLATFORM_IS(POSIX)\n"
+    "    proc = reinterpret_cast<void*>(dlsym(mHandle, procName.c_str()));\n"
+    "\n"
+    "    if (proc == nullptr && error != nullptr) {\n"
+    "        *error = dlerror();\n"
+    "    }\n",
+    "#elif DAWN_PLATFORM_IS(SWITCH)\n"
+    "    (void)procName;\n"
+    "    if (error != nullptr) {\n"
+    "        *error = \"Dynamic symbol lookup is unavailable on Horizon\";\n"
+    "    }\n"
+    "#elif DAWN_PLATFORM_IS(POSIX)\n"
+    "    proc = reinterpret_cast<void*>(dlsym(mHandle, procName.c_str()));\n"
+    "\n"
+    "    if (proc == nullptr && error != nullptr) {\n"
+    "        *error = dlerror();\n"
+    "    }\n",
+)
+
+replace(
+    "src/dawn/native/CMakeLists.txt",
+    "    elseif (UNIX AND NOT APPLE)\n",
+    "    elseif (UNIX AND NOT APPLE AND NOT DAWN_SWITCH)\n",
+)
+
 print("patched Dawn for loaderless mesa-switch/NVK")

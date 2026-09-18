@@ -26,7 +26,7 @@ The latest hardware run confirms the prolonged black-screen path is **actively e
 
 The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge sets `r3` to the new retrace value immediately before invoking the post-retrace callback, so this is direct evidence that the VI/retrace loop continued advancing for thousands of retraces.
 
-The GX FIFO bridge in the normal #117 fast-track remains a sink, so Mario Kart is still expected to stay black there. Separately, M3 has now hardware-validated native Vulkan clear/present, a direct Vulkan triangle, Dawn/WebGPU clear/present, and a visible WGSL triangle through a Dawn graphics pipeline with clean teardown. The next graphics frontier is Aurora GX, then the real pinned FIFO decoder.
+The GX FIFO bridge in the normal #117 fast-track remains a sink, so Mario Kart is still expected to stay black there. Separately, M3 has now hardware-validated native Vulkan clear/present, a direct Vulkan triangle, Dawn/WebGPU clear/present, a visible WGSL triangle, and a real Aurora GX triangle with a 563-frame active loop and clean teardown. The next graphics frontier is the real pinned WiiCompiled `HleFifoWrite` decoder feeding Aurora GX.
 
 ## Milestones
 
@@ -48,8 +48,8 @@ The GX FIFO bridge in the normal #117 fast-track remains a sink, so Mario Kart i
 | Native Vulkan triangle / shader pipeline (NVK/VI) | ✅ Hardware validated |
 | Dawn/WebGPU → Vulkan/NVK clear/present | ✅ Hardware validated (1,507-frame loop) |
 | Dawn WGSL triangle / graphics pipeline | ✅ Hardware validated + clean exit |
-| Aurora GX triangle | 🟡 Probe implemented; hardware test next |
-| WiiCompiled FIFO → Aurora GX | ⬜ Next after Aurora hardware PASS |
+| Aurora GX triangle | ✅ Hardware validated (563-frame active loop) |
+| WiiCompiled FIFO → Aurora GX | 🟡 Next hardware gate |
 | WiiCompiled/Aurora GX → first RMCP01 frame | 🟡 M3 #162 in progress |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
@@ -94,9 +94,9 @@ Dawn/WebGPU clear/present                     ✅ hardware validated
   ↓
 Dawn WGSL triangle                             ✅ hardware validated + clean exit
   ↓
-Aurora GX triangle                             ← hardware test next
+Aurora GX triangle                             ✅ hardware validated
   ↓
-HleFifoWrite synthetic FIFO
+HleFifoWrite synthetic FIFO                     ← hardware test next
   ↓
 RMCP01 graphics stream
   ↓
@@ -238,7 +238,8 @@ Start with:
 - [`docs/HARDWARE_RESULTS_2026-09-17_SUSTAINED_LIVENESS.md`](docs/HARDWARE_RESULTS_2026-09-17_SUSTAINED_LIVENESS.md) — first sustained black-screen / AsyncDisplay evidence;
 - [`docs/HARDWARE_RESULTS_2026-09-18_ACTIVE_RETRACE_LOOP.md`](docs/HARDWARE_RESULTS_2026-09-18_ACTIVE_RETRACE_LOOP.md) — 126,563-dispatch run proving the black-screen path is an active VI/post-retrace loop;
 - [`docs/HARDWARE_RESULTS_2026-09-18_M3_VULKAN_CLEAR_FRAME.md`](docs/HARDWARE_RESULTS_2026-09-18_M3_VULKAN_CLEAR_FRAME.md) — real-Switch changing-color NVK/VI clear-frame presentation proof;
-- [`docs/HARDWARE_RESULTS_2026-09-18_M3_VULKAN_TRIANGLE.md`](docs/HARDWARE_RESULTS_2026-09-18_M3_VULKAN_TRIANGLE.md) — real-Switch Vulkan shader/pipeline/rasterisation triangle proof and SD-report follow-up.
+- [`docs/HARDWARE_RESULTS_2026-09-18_M3_VULKAN_TRIANGLE.md`](docs/HARDWARE_RESULTS_2026-09-18_M3_VULKAN_TRIANGLE.md) — real-Switch Vulkan shader/pipeline/rasterisation triangle proof and SD-report follow-up;
+- [`docs/HARDWARE_RESULTS_2026-09-18_M3_AURORA_GX.md`](docs/HARDWARE_RESULTS_2026-09-18_M3_AURORA_GX.md) — real-Switch Aurora GX triangle proof, 563-frame active loop, and clean teardown.
 
 Older dated `HARDWARE_RESULTS_*` files are historical snapshots. Their “next blocker” wording intentionally reflects what was known on that date and is not rewritten retroactively.
 

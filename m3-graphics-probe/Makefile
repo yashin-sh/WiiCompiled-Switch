@@ -24,6 +24,11 @@ ifeq ($(wildcard $(MESA_VULKAN_LIB)),)
 $(error "Missing $(MESA_VULKAN_LIB). Run scripts/build-m3-vulkan-clear-probe.sh first")
 endif
 
+# Mesa's NAK/Rust objects are cross-built for aarch64-unknown-linux-gnu.
+# The outer build helper resolves the matching Rust std closure from the
+# container sysroot and passes absolute .rlib paths here.
+RUST_STD_LIBS ?=
+
 ARCH        := -march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
 CFLAGS      := -g -Wall -Wextra -O2 -ffunction-sections -fdata-sections $(ARCH)
 CFLAGS      += $(INCLUDE) -D__SWITCH__ -DVK_USE_PLATFORM_VI_NN -DVK_NO_PROTOTYPES
@@ -33,8 +38,8 @@ LDFLAGS     := -specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) \
                -Wl,-Map,$(notdir $*.map) -Wl,--gc-sections -pthread \
                -Wl,-u,vk_icdGetInstanceProcAddr \
                -Wl,-u,vk_icdNegotiateLoaderICDInterfaceVersion
-LIBS        := -Wl,--start-group $(MESA_VULKAN_LIB) \
-               -lelf -lexpat -lzstd -lz -lnx -lstdc++ -lm \
+LIBS        := -Wl,--start-group $(MESA_VULKAN_LIB) $(RUST_STD_LIBS) \
+               -lexpat -lzstd -lz -lnx -lstdc++ -lm -ldl -lrt -lutil \
                -Wl,--end-group
 LIBDIRS     := $(PORTLIBS) $(LIBNX)
 

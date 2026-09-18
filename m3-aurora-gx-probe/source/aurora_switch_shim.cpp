@@ -218,21 +218,18 @@ PresentSource current_present_source() noexcept {
     return {
         .bindGroup = g_CopyBindGroup,
         .texture = source.texture,
-        .view = source.view,
         .size = source.size,
         .format = source.format,
     };
 }
 
-void set_present_source_override(const wgpu::BindGroup& bindGroup,
-                                 const wgpu::Texture& texture,
-                                 const wgpu::TextureView& view,
+void set_present_source_override(wgpu::BindGroup bindGroup,
+                                 wgpu::Texture texture,
                                  wgpu::Extent3D size,
                                  wgpu::TextureFormat format) noexcept {
     g_presentOverride = {
-        .bindGroup = bindGroup,
-        .texture = texture,
-        .view = view,
+        .bindGroup = std::move(bindGroup),
+        .texture = std::move(texture),
         .size = size,
         .format = format,
     };
@@ -244,26 +241,40 @@ void clear_present_source_override() noexcept {
     g_hasPresentOverride = false;
 }
 
-wgpu::BindGroup create_copy_bind_group(const wgpu::TextureView&,
-                                       const wgpu::Sampler&) {
+wgpu::BindGroup create_copy_bind_group(const TextureWithSampler&) {
     return {};
 }
 
-Viewport calculate_present_viewport(wgpu::Extent3D sourceSize,
-                                    uint32_t outputWidth,
-                                    uint32_t outputHeight) noexcept {
-    (void)sourceSize;
+wgpu::BindGroup create_copy_bind_group(wgpu::TextureView, wgpu::Sampler) {
+    return {};
+}
+
+Viewport calculate_present_viewport(uint32_t surfaceWidth,
+                                    uint32_t surfaceHeight,
+                                    uint32_t,
+                                    uint32_t) noexcept {
     return {
         .left = 0.0f,
         .top = 0.0f,
-        .width = static_cast<float>(outputWidth),
-        .height = static_cast<float>(outputHeight),
+        .width = static_cast<float>(surfaceWidth),
+        .height = static_cast<float>(surfaceHeight),
         .znear = 0.0f,
         .zfar = 1.0f,
     };
 }
 
-void draw_clear(const wgpu::RenderPassEncoder&, const wgpu::Color&) {}
+Viewport calculate_present_viewport_for_aspect(uint32_t surfaceWidth,
+                                               uint32_t surfaceHeight,
+                                               float) noexcept {
+    return calculate_present_viewport(surfaceWidth, surfaceHeight, surfaceWidth, surfaceHeight);
+}
+
+void draw_clear(const wgpu::RenderPassEncoder&,
+                bool,
+                bool,
+                bool,
+                const Vec4<float>&,
+                float) {}
 
 size_t load_from_cache(void const*, size_t, void*, size_t, void*) {
     return 0;

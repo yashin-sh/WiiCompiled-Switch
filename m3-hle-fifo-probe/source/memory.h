@@ -1,0 +1,57 @@
+#pragma once
+
+#include <cstddef>
+#include <cstdint>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+
+class Memory {
+public:
+    static constexpr size_t kMem1Size = 24u * 1024u * 1024u;
+    static constexpr size_t kMem2Size = 128u * 1024u * 1024u;
+    static constexpr uint32_t kMem1PhysicalBase = 0x00000000u;
+    static constexpr uint32_t kMem1CachedBase = 0x80000000u;
+    static constexpr uint32_t kMem1UncachedBase = 0xC0000000u;
+    static constexpr uint32_t kMem2PhysicalBase = 0x10000000u;
+    static constexpr uint32_t kMem2CachedBase = 0x90000000u;
+    static constexpr uint32_t kMem2UncachedBase = 0xD0000000u;
+    static constexpr uint32_t kMem2PhysicalEnd =
+        kMem2PhysicalBase + static_cast<uint32_t>(kMem2Size);
+    static constexpr uint32_t kMem2CachedEnd =
+        kMem2CachedBase + static_cast<uint32_t>(kMem2Size);
+    static constexpr uint32_t kMem2UncachedEnd =
+        kMem2UncachedBase + static_cast<uint32_t>(kMem2Size);
+
+    class AccessViolation : public std::runtime_error {
+    public:
+        AccessViolation(uint32_t address, size_t length, std::string_view reason);
+
+        uint32_t address() const noexcept { return address_; }
+        size_t length() const noexcept { return length_; }
+        std::string_view reason() const noexcept { return reason_; }
+
+    private:
+        uint32_t address_ = 0;
+        size_t length_ = 0;
+        std::string reason_;
+    };
+
+    static uint8_t Read8(uint32_t addr);
+    static uint16_t Read16(uint32_t addr);
+    static uint32_t Read32(uint32_t addr);
+    static uint64_t Read64(uint32_t addr);
+    static float ReadFloat32(uint32_t addr);
+    static double ReadFloat64(uint32_t addr);
+
+    static void Write8(uint32_t addr, uint8_t value);
+    static void Write16(uint32_t addr, uint16_t value);
+    static void Write32(uint32_t addr, uint32_t value);
+    static void Write64(uint32_t addr, uint64_t value);
+    static void WriteFloat32(uint32_t addr, double value);
+    static void WriteFloat64(uint32_t addr, double value);
+
+    static uint8_t* GetPointer(uint32_t addr);
+    static uint8_t* GetPointer(uint32_t addr, size_t length);
+    static bool Contains(uint32_t addr, size_t length = 1);
+};

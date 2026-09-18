@@ -6,6 +6,7 @@ if len(sys.argv) != 2:
 
 root = Path(sys.argv[1])
 
+
 def replace(path: str, old: str, new: str) -> None:
     file = root / path
     text = file.read_text(encoding="utf-8")
@@ -14,6 +15,10 @@ def replace(path: str, old: str, new: str) -> None:
         raise SystemExit(f"{path}: expected exactly one patch site, found {count}")
     file.write_text(text.replace(old, new), encoding="utf-8")
 
+
+# The source snippets below intentionally preserve the exact quoting/layout of
+# pinned Dawn so every replacement remains byte-for-byte auditable.
+# fmt: off
 replace(
     "src/utils/platform.h",
     "#elif defined(__linux__)\n#define DAWN_PLATFORM_IS_LINUX 1\n#define DAWN_PLATFORM_IS_POSIX 1\n",
@@ -223,5 +228,7 @@ replace(
     "    elseif (UNIX AND NOT APPLE)\n",
     "    elseif (UNIX AND NOT APPLE AND NOT DAWN_SWITCH)\n",
 )
+
+# fmt: on
 
 print("patched Dawn for loaderless mesa-switch/NVK")

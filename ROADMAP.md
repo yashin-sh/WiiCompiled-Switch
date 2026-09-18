@@ -131,7 +131,7 @@ The current hardware-driven method remains deliberate after `main`: execute the 
 - [x] Prove a WGSL shader + Dawn graphics pipeline + triangle on real Switch — **hardware PASS: visible RGB triangle + clean explicit teardown**
 - [x] Select the native Switch graphics strategy compatible with WiiCompiled/Aurora — **Aurora GX → Dawn/WebGPU → Vulkan/NVK is the primary path; Deko3D remains fallback**
 - [x] Present an isolated Aurora GX triangle on real Switch — **hardware PASS: first Aurora GX triangle + 563-frame active loop + clean teardown**
-- [ ] Prove pinned WiiCompiled `HleFifoWrite` → Aurora GX with a fabricated Nintendo-data-free FIFO stream — **next hardware gate**
+- [ ] Prove pinned WiiCompiled `HleFifoWrite` → Aurora GX with a fabricated Nintendo-data-free FIFO stream — **probe implemented; hardware test next**
 - [ ] Replace the temporary GX FIFO sink with a real GX → Switch command/backend path
 - [x] Render first native Switch clear frame
 - [ ] GX command path functional

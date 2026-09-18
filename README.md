@@ -26,7 +26,7 @@ The latest hardware run confirms the prolonged black-screen path is **actively e
 
 The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge sets `r3` to the new retrace value immediately before invoking the post-retrace callback, so this is direct evidence that the VI/retrace loop continued advancing for thousands of retraces.
 
-The GX FIFO bridge in the normal #117 fast-track remains a sink, so Mario Kart is still expected to stay black there. Separately, M3 has now hardware-validated both native clear/present and a shader-driven Vulkan triangle through `NWindow → VK_NN_vi_surface → loaderless NVK → VkSwapchainKHR`. The triangle was visible on the real Switch display. The next graphics frontier is Dawn/WebGPU, then Aurora GX and the real pinned FIFO decoder.
+The GX FIFO bridge in the normal #117 fast-track remains a sink, so Mario Kart is still expected to stay black there. Separately, M3 has now hardware-validated native Vulkan clear/present, a direct Vulkan triangle, Dawn/WebGPU clear/present, and a visible WGSL triangle through a Dawn graphics pipeline with clean teardown. The next graphics frontier is Aurora GX, then the real pinned FIFO decoder.
 
 ## Milestones
 
@@ -47,7 +47,7 @@ The GX FIFO bridge in the normal #117 fast-track remains a sink, so Mario Kart i
 | Native Switch GPU clear/present (NVK/VI) | ✅ Hardware validated |
 | Native Vulkan triangle / shader pipeline (NVK/VI) | ✅ Hardware validated |
 | Dawn/WebGPU → Vulkan/NVK clear/present | ✅ Hardware validated (1,507-frame loop) |
-| Dawn WGSL triangle / graphics pipeline | 🟡 Probe implemented; hardware test next |
+| Dawn WGSL triangle / graphics pipeline | ✅ Hardware validated + clean exit |
 | WiiCompiled/Aurora GX → first RMCP01 frame | 🟡 M3 #162 in progress |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
@@ -90,9 +90,11 @@ Vulkan triangle                              ✅ hardware validated
   ↓
 Dawn/WebGPU clear/present                     ✅ hardware validated
   ↓
-Dawn WGSL triangle                             ← hardware test next
+Dawn WGSL triangle                             ✅ hardware validated + clean exit
   ↓
-Aurora GX → HleFifoWrite
+Aurora GX                                      ← current graphics frontier
+  ↓
+HleFifoWrite
   ↓
 first rendered RMCP01 frame
 ```

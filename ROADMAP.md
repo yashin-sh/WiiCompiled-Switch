@@ -113,6 +113,7 @@ Hardware evidence is recorded in:
 - `docs/HARDWARE_RESULTS_2026-09-17_OS_WAKEUP_THREAD.md`
 - `docs/HARDWARE_RESULTS_2026-09-17_SUSTAINED_LIVENESS.md`
 - `docs/HARDWARE_RESULTS_2026-09-18_ACTIVE_RETRACE_LOOP.md`
+- `docs/HARDWARE_RESULTS_2026-09-18_M3_VULKAN_CLEAR_FRAME.md`
 
 The current hardware-driven method remains deliberate after `main`: execute the broadest safe translated path, stop on the first unsupported native/translated boundary or attributable exception, and when no blocker appears use the independent heartbeat watchdog to distinguish sustained execution from a real stall. New runtime behavior is still added only from hardware evidence and pinned WiiCompiled semantics. Post-main bring-up remains tracked in #117.
 
@@ -123,10 +124,12 @@ The current hardware-driven method remains deliberate after `main`: execute the 
   - [ ] #111 — guard `GX_LINESTRIP` zero/short vertex counts
   - [ ] #112 — make unsupported indexed XF loads visible in Release builds
 - [x] Hardware-unblock M3 by proving the current black-screen runtime remains active through 13,918 VI retraces
-- [ ] Complete isolated #162 Aurora/Dawn/Vulkan/NVK clear-frame + triangle hardware probe
+- [x] Hardware-present an isolated loaderless NVK / `VK_NN_vi_surface` clear frame on real Switch (#162/#165)
+- [ ] Present a simple Vulkan triangle on the proven VI/NVK swapchain
+- [ ] Prove Dawn/WebGPU over the proven Vulkan/NVK path
 - [ ] Select the native Switch graphics strategy compatible with WiiCompiled/Aurora
 - [ ] Replace the temporary GX FIFO sink with a real GX → Switch command/backend path
-- [ ] Render first clear frame
+- [x] Render first native Switch clear frame
 - [ ] GX command path functional
 - [ ] shader/pipeline cache strategy
 - [ ] 720p handheld / 1080p docked policy

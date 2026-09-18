@@ -46,6 +46,7 @@
 - `HARDWARE_RESULTS_2026-09-17_OS_WAKEUP_THREAD.md` — scheduler wakeup frontier
 - `HARDWARE_RESULTS_2026-09-17_SUSTAINED_LIVENESS.md` — 37,148-dispatch sustained post-main run and EGG AsyncDisplay attribution
 - `HARDWARE_RESULTS_2026-09-18_ACTIVE_RETRACE_LOOP.md` — 126,563-dispatch run proving active `PostRetraceCallback` / VI retrace progression
+- `HARDWARE_RESULTS_2026-09-18_M3_VULKAN_CLEAR_FRAME.md` — real-Switch loaderless NVK / `VK_NN_vi_surface` changing-color clear-frame PASS
 
 ## Blocker notes
 

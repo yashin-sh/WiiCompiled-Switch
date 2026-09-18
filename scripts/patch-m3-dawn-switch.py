@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
-from pathlib import Path
 import sys
+from pathlib import Path
 
 if len(sys.argv) != 2:
     raise SystemExit("usage: patch-m3-dawn-switch.py <dawn-source>")

@@ -164,6 +164,19 @@ docker run --rm \
         rust_libs+=("$adler_lib")
         rust_std_libs="${rust_libs[*]}"
 
+        compat_dir=/work/.deps/m3/compat-libs
+        mkdir -p "$compat_dir"
+        cat >"$compat_dir/empty_posix.c" <<"EOF"
+void wiicompiled_switch_empty_posix_archive(void) {}
+EOF
+        /opt/devkitpro/devkitA64/bin/aarch64-none-elf-gcc \
+            -c "$compat_dir/empty_posix.c" -o "$compat_dir/empty_posix.o"
+        for compat in dl rt util; do
+            /opt/devkitpro/devkitA64/bin/aarch64-none-elf-ar \
+                rcs "$compat_dir/lib${compat}.a" "$compat_dir/empty_posix.o"
+        done
+        posix_compat_libs="$compat_dir/libdl.a $compat_dir/librt.a $compat_dir/libutil.a"
+
         echo "Rust target: $MESA_SWITCH_RUST_TARGET"
         echo "Rust target libdir: $target_libdir"
         echo "Rust std closure: ${#rust_libs[@]} archives"
@@ -198,7 +211,8 @@ PY
 
         make -j"$MKW_M3_JOBS" \
             MESA_SWITCH_ROOT=/mesa \
-            RUST_STD_LIBS="$rust_std_libs"
+            RUST_STD_LIBS="$rust_std_libs" \
+            POSIX_COMPAT_LIBS="$posix_compat_libs"
     '
 
 if [[ ! -f "$OUTPUT" ]]; then

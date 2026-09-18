@@ -178,7 +178,7 @@ struct Probe {
             .pApplicationInfo = &app_info,
             .enabledLayerCount = 0,
             .ppEnabledLayerNames = nullptr,
-            .enabledExtensionCount = static_cast<std::uint32_t>(std::size(extensions)),
+            .enabledExtensionCount = 2,
             .ppEnabledExtensionNames = extensions,
         };
 
@@ -441,6 +441,10 @@ struct Probe {
         }
 
         VkSurfaceFormatKHR chosen = formats.front();
+        if (formats.size() == 1 && formats.front().format == VK_FORMAT_UNDEFINED) {
+            chosen.format = VK_FORMAT_B8G8R8A8_UNORM;
+            chosen.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+        }
         for (const auto& candidate : formats) {
             if (candidate.format == VK_FORMAT_B8G8R8A8_UNORM ||
                 candidate.format == VK_FORMAT_R8G8B8A8_UNORM) {
@@ -495,7 +499,7 @@ struct Probe {
             .imageColorSpace = chosen.colorSpace,
             .imageExtent = extent,
             .imageArrayLayers = 1,
-            .imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            .imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT,
             .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
             .queueFamilyIndexCount = 0,
             .pQueueFamilyIndices = nullptr,

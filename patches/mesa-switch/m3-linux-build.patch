@@ -2,6 +2,14 @@ diff --git a/Docker.rust b/Docker.rust
 index 5dc5058..0000000 100644
 --- a/Docker.rust
 +++ b/Docker.rust
+@@ -6,7 +6,7 @@ RUN apt-get update && \
+     apt-get install -y \
+         python3-pip python3-setuptools python3-wheel \
+-        ninja-build pkg-config flex bison curl \
++        ninja-build pkg-config flex bison curl glslang-tools \
+         libclang-dev clang cmake git \
+         llvm-15-dev libllvmspirvlib-15-dev libclc-15-dev libclang-15-dev \
+     && apt-get clean
 @@ -34,6 +34,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --
      . $HOME/.cargo/env && \
      rustup component add rust-src && \

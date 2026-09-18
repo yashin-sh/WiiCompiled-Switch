@@ -32,6 +32,7 @@ keys.txt
 /m3-graphics-probe/build/
 /m3-triangle-probe/build/
 /m3-triangle-probe/generated/
+/m3-dawn-probe/build/
 
 # OS/editor
 .DS_Store

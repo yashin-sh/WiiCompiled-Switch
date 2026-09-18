@@ -126,7 +126,8 @@ The current hardware-driven method remains deliberate after `main`: execute the 
 - [x] Hardware-unblock M3 by proving the current black-screen runtime remains active through 13,918 VI retraces
 - [x] Hardware-present an isolated loaderless NVK / `VK_NN_vi_surface` clear frame on real Switch (#162/#165)
 - [x] Present a simple Vulkan triangle on the proven VI/NVK swapchain — **hardware PASS: visible triangle on real Switch (2026-09-18); SD report bug fixed separately**
-- [ ] Prove Dawn/WebGPU over the proven Vulkan/NVK path — **isolated clear probe implemented; hardware test next**
+- [x] Prove Dawn/WebGPU over the proven Vulkan/NVK path — **hardware PASS: 1280x720 surface, first present, 1,507-frame stable loop**
+- [ ] Prove a WGSL shader + Dawn graphics pipeline + triangle on real Switch — **probe implemented; hardware test next**
 - [ ] Select the native Switch graphics strategy compatible with WiiCompiled/Aurora
 - [ ] Replace the temporary GX FIFO sink with a real GX → Switch command/backend path
 - [x] Render first native Switch clear frame

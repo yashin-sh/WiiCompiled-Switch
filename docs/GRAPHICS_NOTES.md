@@ -22,12 +22,13 @@ Minimum progression:
 
 1. ~~create/present a Horizon clear frame through the isolated loaderless NVK / `VK_NN_vi_surface` probe~~ — **hardware PASS**;
 2. ~~present a simple Vulkan triangle on the proven VI swapchain~~ — **hardware PASS: visible triangle on real Switch**; the first run exposed only an SD-report initialization bug, not a rendering failure;
-3. place Dawn/WebGPU over the proven Vulkan/NVK path — **isolated clear/present probe implemented; hardware validation next**;
-4. feed a fabricated Nintendo-data-free GX/FIFO sequence through pinned `HleFifoWrite` and obtain visible output;
-5. measure CPU frame overhead, memory use and presentation stability on Tegra X1;
-6. only then connect a private local RMCP01 stream.
+3. ~~place Dawn/WebGPU over the proven Vulkan/NVK path~~ — **hardware PASS: 1,507-frame real-Switch present loop**;
+4. present a WGSL triangle through a Dawn graphics pipeline — **probe implemented; hardware validation next**;
+5. feed a fabricated Nintendo-data-free GX/FIFO sequence through pinned `HleFifoWrite` and obtain visible output;
+6. measure CPU frame overhead, memory use and presentation stability on Tegra X1;
+7. only then connect a private local RMCP01 stream.
 
-The direct-Vulkan clear and triangle probes have passed on hardware, so Dawn now has a known-good Horizon/NVK/VI presentation substrate to target. The isolated Dawn clear probe pins `danfromtico/dawn-switch` at `77029ea85250c9bdddfc2f88034afb6b5356a031` and reuses the proven Mesa/NVK pin. Any failure in that probe can therefore be attributed above the already-proven WSI/present layer.
+The direct-Vulkan clear/triangle probes and the Dawn clear/present probe have all passed on hardware. Dawn sustained 1,507 presented frames at 1280x720 before a user-requested exit. The remaining renderer risk now moves upward to WGSL shader/pipeline creation, then Aurora GX and pinned WiiCompiled FIFO traffic.
 
 ## Fallback — Deko3D native Aurora backend
 

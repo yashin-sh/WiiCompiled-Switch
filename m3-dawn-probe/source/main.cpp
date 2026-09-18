@@ -22,6 +22,8 @@ constexpr const char* kReportPath =
 FILE* g_report = nullptr;
 wgpu::Adapter g_adapter;
 wgpu::Device g_device;
+bool g_adapter_done = false;
+bool g_device_done = false;
 bool g_queue_done = false;
 wgpu::QueueWorkDoneStatus g_queue_status = wgpu::QueueWorkDoneStatus::Error;
 
@@ -62,6 +64,18 @@ bool open_report(bool& mounted_sdmc_here) {
     return g_report != nullptr;
 }
 
+bool pump_events_until(wgpu::Instance& instance, const bool& done, std::uint32_t iterations) {
+    for (std::uint32_t i = 0; i < iterations; ++i) {
+        instance.ProcessEvents();
+        if (done) {
+            return true;
+        }
+        svcSleepThread(5'000'000);
+    }
+    instance.ProcessEvents();
+    return done;
+}
+
 void wait_for_plus() {
     PadState pad{};
     padConfigureInput(1, HidNpadStyleSet_NpadStandard);
@@ -81,13 +95,10 @@ void wait_for_plus() {
 bool run_dawn_probe() {
     report("stage=INSTANCE");
 
-    const wgpu::InstanceFeatureName instance_features[] = {
-        wgpu::InstanceFeatureName::TimedWaitAny,
-    };
+    // Deliberately avoid TimedWaitAny in the first Horizon probe. Pinned Aurora
+    // uses it, but Dawn implements the POSIX wait path with pipe()/poll().
+    // ProcessEvents isolates the first proof to Dawn -> Vulkan -> NVK.
     wgpu::InstanceDescriptor instance_descriptor{};
-    instance_descriptor.requiredFeatureCount = 1;
-    instance_descriptor.requiredFeatures = instance_features;
-
     wgpu::Instance instance = wgpu::CreateInstance(&instance_descriptor);
     if (!instance) {
         report("FAIL: wgpu::CreateInstance");
@@ -100,9 +111,10 @@ bool run_dawn_probe() {
     adapter_options.powerPreference = wgpu::PowerPreference::HighPerformance;
     adapter_options.backendType = wgpu::BackendType::Vulkan;
 
-    const auto adapter_future = instance.RequestAdapter(
+    g_adapter_done = false;
+    instance.RequestAdapter(
         &adapter_options,
-        wgpu::CallbackMode::WaitAnyOnly,
+        wgpu::CallbackMode::AllowProcessEvents,
         [](wgpu::RequestAdapterStatus status,
            wgpu::Adapter adapter,
            wgpu::StringView message) {
@@ -114,11 +126,12 @@ bool run_dawn_probe() {
             if (status == wgpu::RequestAdapterStatus::Success) {
                 g_adapter = std::move(adapter);
             }
+            g_adapter_done = true;
         });
 
-    const auto adapter_wait = instance.WaitAny(adapter_future, 5'000'000'000ull);
-    report("WaitAny(adapter) -> %u", static_cast<unsigned>(adapter_wait));
-    if (adapter_wait != wgpu::WaitStatus::Success || !g_adapter) {
+    const bool adapter_completed = pump_events_until(instance, g_adapter_done, 2000);
+    report("ProcessEvents(adapter) completed=%s", adapter_completed ? "YES" : "NO");
+    if (!adapter_completed || !g_adapter) {
         report("FAIL ADAPTER");
         return false;
     }
@@ -168,9 +181,10 @@ bool run_dawn_probe() {
                    text.data() ? text.data() : "");
         });
 
-    const auto device_future = g_adapter.RequestDevice(
+    g_device_done = false;
+    g_adapter.RequestDevice(
         &device_descriptor,
-        wgpu::CallbackMode::WaitAnyOnly,
+        wgpu::CallbackMode::AllowProcessEvents,
         [](wgpu::RequestDeviceStatus status,
            wgpu::Device device,
            wgpu::StringView message) {
@@ -182,11 +196,12 @@ bool run_dawn_probe() {
             if (status == wgpu::RequestDeviceStatus::Success) {
                 g_device = std::move(device);
             }
+            g_device_done = true;
         });
 
-    const auto device_wait = instance.WaitAny(device_future, 5'000'000'000ull);
-    report("WaitAny(device) -> %u", static_cast<unsigned>(device_wait));
-    if (device_wait != wgpu::WaitStatus::Success || !g_device) {
+    const bool device_completed = pump_events_until(instance, g_device_done, 2000);
+    report("ProcessEvents(device) completed=%s", device_completed ? "YES" : "NO");
+    if (!device_completed || !g_device) {
         report("FAIL DEVICE");
         return false;
     }
@@ -293,13 +308,15 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         report("FAIL TEXTURE");
         return false;
     }
-    wgpu::TextureView view = texture.CreateView();
+    wgpu::TextureViewDescriptor view_descriptor{};
+    wgpu::TextureView view = texture.CreateView(&view_descriptor);
     if (!view) {
         report("FAIL TEXTURE_VIEW");
         return false;
     }
 
-    wgpu::CommandEncoder encoder = g_device.CreateCommandEncoder();
+    wgpu::CommandEncoderDescriptor encoder_descriptor{};
+    wgpu::CommandEncoder encoder = g_device.CreateCommandEncoder(&encoder_descriptor);
     if (!encoder) {
         report("FAIL COMMAND_ENCODER");
         return false;
@@ -325,7 +342,8 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     pass.Draw(3);
     pass.End();
 
-    wgpu::CommandBuffer commands = encoder.Finish();
+    wgpu::CommandBufferDescriptor command_buffer_descriptor{};
+    wgpu::CommandBuffer commands = encoder.Finish(&command_buffer_descriptor);
     if (!commands) {
         report("FAIL COMMAND_BUFFER");
         return false;
@@ -336,8 +354,8 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     g_queue_done = false;
     g_queue_status = wgpu::QueueWorkDoneStatus::Error;
-    const auto queue_future = queue.OnSubmittedWorkDone(
-        wgpu::CallbackMode::WaitAnyOnly,
+    queue.OnSubmittedWorkDone(
+        wgpu::CallbackMode::AllowProcessEvents,
         [](wgpu::QueueWorkDoneStatus status, wgpu::StringView message) {
             g_queue_status = status;
             g_queue_done = true;
@@ -348,9 +366,9 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
                    text.data() ? text.data() : "");
         });
 
-    const auto queue_wait = instance.WaitAny(queue_future, 5'000'000'000ull);
-    report("WaitAny(queue) -> %u", static_cast<unsigned>(queue_wait));
-    if (queue_wait != wgpu::WaitStatus::Success || !g_queue_done ||
+    const bool queue_completed = pump_events_until(instance, g_queue_done, 6000);
+    report("ProcessEvents(queue) completed=%s", queue_completed ? "YES" : "NO");
+    if (!queue_completed ||
         g_queue_status != wgpu::QueueWorkDoneStatus::Success) {
         report("FAIL GPU_COMPLETION");
         return false;
@@ -368,7 +386,8 @@ int main(int, char**) {
 
     report("WiiCompiled-Switch M3 Dawn/NVK offscreen probe");
     report("WiiCompiled pin: a135beb201042b20f390c6695ca6b26768820fb4");
-    report("Dawn tag: v20260603.191052");
+    report("Dawn package tag: v20260603.191052");
+    report("Dawn source pin: 13abc3bc8ea2d3c2050f9e77a12d012108ceee24");
     report("mesa-switch pin: b297e230ef88c6c88df2561becf864f979f494a6");
     report("goal: Dawn/WebGPU -> Vulkan -> loaderless NVK -> offscreen triangle -> GPU completion");
 

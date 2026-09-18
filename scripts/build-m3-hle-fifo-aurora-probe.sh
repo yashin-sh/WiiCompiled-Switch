@@ -327,6 +327,7 @@ EOF
             -DDAWN_SWITCH_AURORA_PROBE_DIR=/probe \
             -DDAWN_SWITCH_AURORA_ROOT=/wiicompiled/aurora-main \
             -DM3_REPO_ROOT=/repo \
+            -DM3_BUILD_RENDERED_FAST_TRACK=OFF \
             -DDAWN_SWITCH_NVK_ROOT=/mesa \
             -DDAWN_SWITCH_NVK_LIBRARY=/mesa/builddir-switch/src/nouveau/vulkan/libvulkan.a \
             "-DDAWN_SWITCH_EXTRA_LIBRARIES=$extra_libs"

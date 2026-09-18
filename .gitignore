@@ -29,6 +29,7 @@ keys.txt
 
 # Local external dependencies used by isolated M3 probes
 /.deps/
+/m3-graphics-probe/build/
 
 # OS/editor
 .DS_Store

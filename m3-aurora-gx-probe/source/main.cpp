@@ -510,7 +510,7 @@ int main(int, char**) {
     wgpu::Queue queue = device.GetQueue();
 
     wgpu::TextureFormat surfaceFormat = wgpu::TextureFormat::Undefined;
-    wgpu::PresentMode presentMode = wgpu::PresentMode::Undefined;
+    wgpu::PresentMode presentMode{};
     if (!configure_surface(surface,
                            adapter,
                            device,

@@ -97,44 +97,44 @@ void report_error(const char* prefix, wgpu::StringView message) {
 
 const char* logging_type_name(wgpu::LoggingType type) {
     switch (type) {
-        case wgpu::LoggingType::Verbose:
-            return "verbose";
-        case wgpu::LoggingType::Info:
-            return "info";
-        case wgpu::LoggingType::Warning:
-            return "warning";
-        case wgpu::LoggingType::Error:
-            return "error";
+    case wgpu::LoggingType::Verbose:
+        return "verbose";
+    case wgpu::LoggingType::Info:
+        return "info";
+    case wgpu::LoggingType::Warning:
+        return "warning";
+    case wgpu::LoggingType::Error:
+        return "error";
     }
     return "unknown";
 }
 
 const char* error_type_name(wgpu::ErrorType type) {
     switch (type) {
-        case wgpu::ErrorType::NoError:
-            return "no-error";
-        case wgpu::ErrorType::Validation:
-            return "validation";
-        case wgpu::ErrorType::OutOfMemory:
-            return "out-of-memory";
-        case wgpu::ErrorType::Internal:
-            return "internal";
-        case wgpu::ErrorType::Unknown:
-            return "unknown";
+    case wgpu::ErrorType::NoError:
+        return "no-error";
+    case wgpu::ErrorType::Validation:
+        return "validation";
+    case wgpu::ErrorType::OutOfMemory:
+        return "out-of-memory";
+    case wgpu::ErrorType::Internal:
+        return "internal";
+    case wgpu::ErrorType::Unknown:
+        return "unknown";
     }
     return "unknown";
 }
 
 const char* device_lost_reason_name(wgpu::DeviceLostReason reason) {
     switch (reason) {
-        case wgpu::DeviceLostReason::Unknown:
-            return "unknown";
-        case wgpu::DeviceLostReason::Destroyed:
-            return "destroyed";
-        case wgpu::DeviceLostReason::CallbackCancelled:
-            return "callback-cancelled";
-        case wgpu::DeviceLostReason::FailedCreation:
-            return "failed-creation";
+    case wgpu::DeviceLostReason::Unknown:
+        return "unknown";
+    case wgpu::DeviceLostReason::Destroyed:
+        return "destroyed";
+    case wgpu::DeviceLostReason::CallbackCancelled:
+        return "callback-cancelled";
+    case wgpu::DeviceLostReason::FailedCreation:
+        return "failed-creation";
     }
     return "unknown";
 }
@@ -284,14 +284,14 @@ bool configure_surface(const wgpu::Surface& surface,
 wgpu::Color clear_color(std::uint64_t frame) {
     const std::uint64_t phase = (frame / 120u) % 4u;
     switch (phase) {
-        case 0:
-            return {0.03, 0.10, 0.34, 1.0};
-        case 1:
-            return {0.06, 0.30, 0.14, 1.0};
-        case 2:
-            return {0.38, 0.08, 0.10, 1.0};
-        default:
-            return {0.28, 0.08, 0.34, 1.0};
+    case 0:
+        return {0.03, 0.10, 0.34, 1.0};
+    case 1:
+        return {0.06, 0.30, 0.14, 1.0};
+    case 2:
+        return {0.38, 0.08, 0.10, 1.0};
+    default:
+        return {0.28, 0.08, 0.34, 1.0};
     }
 }
 

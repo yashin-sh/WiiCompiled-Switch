@@ -34,7 +34,7 @@ It is the established low-level devkitPro/libnx GPU API and likely offers the mo
 
 ## Important constraints
 
-- Do not replace the active #117 fast-track FIFO sink until `fast-track-heartbeat-history.txt` classifies the current sustained black-screen run as active vs stalled.
+- The #117 black-screen path is now hardware-classified as **active**: a 2026-09-18 run reached 126,563 dispatches and invoked `PostRetraceCallback` with guest retrace value 13,918. Keep the normal fast-track FIFO sink only as a stable baseline until isolated #162 proves the replacement graphics path.
 - Do not import Aurora's full SDL application layer just to obtain GX rendering.
 - Do not copy reconstructed game code from `new-coke/strikers`; use the project as an architecture/case-study reference. Upstream Aurora itself is MIT-licensed.
 - Existing GX correctness issues #109–#112 remain independent prerequisites/guards around the shared decoder path.

@@ -78,9 +78,11 @@
 - [x] hardware-cross the pinned PAL `SCGetProductArea` SDK-table lookup far enough to reach `OSWakeupThread` (`0x801AAAA4`)
 - [x] hardware-cross the pinned PAL `OSWakeupThread` wait-queue/run-queue/HostContext handoff into sustained post-main translated execution
 - [x] prove a sustained run of 37,148 translated dispatches total / 36,543 post-main without a new unsupported-dispatch abort
-- [x] attribute the last durable target `0x8020FCD4` to the RMCP01 `egg/core/eggAsyncDisplay.cpp` text range
+- [x] extend sustained execution to 126,563 total / 125,958 post-main translated dispatches
+- [x] map `0x8020FCD4` exactly to RMCP01 `PostRetraceCallback` and `0x8024373C` to `EGG::Thread::start(void*)`
+- [x] observe callback `r3 = 0x365E`, proving guest VI retrace value advanced to 13,918
 - [x] add an independent Horizon liveness watchdog that records ACTIVE vs STALE translated progress without mutating guest state
-- [ ] classify the sustained black-screen path as an active translated/game/display loop vs a durable translated-thread stall
+- [x] classify the sustained black-screen path as an active translated/VI display loop rather than a durable translated-thread stall
 - [ ] publish a real local DVD FST/data mapping before resource loading requires it
 - [ ] move NAND async completion draining from the fast-track HLE boundary to a verified alarm/IOS scheduling point if later hardware ordering requires it
 - [ ] complete thread/mutex/condition-variable semantics required by the game
@@ -110,6 +112,7 @@ Hardware evidence is recorded in:
 - `docs/HARDWARE_RESULTS_2026-09-16_SC_GET_PRODUCT_AREA.md`
 - `docs/HARDWARE_RESULTS_2026-09-17_OS_WAKEUP_THREAD.md`
 - `docs/HARDWARE_RESULTS_2026-09-17_SUSTAINED_LIVENESS.md`
+- `docs/HARDWARE_RESULTS_2026-09-18_ACTIVE_RETRACE_LOOP.md`
 
 The current hardware-driven method remains deliberate after `main`: execute the broadest safe translated path, stop on the first unsupported native/translated boundary or attributable exception, and when no blocker appears use the independent heartbeat watchdog to distinguish sustained execution from a real stall. New runtime behavior is still added only from hardware evidence and pinned WiiCompiled semantics. Post-main bring-up remains tracked in #117.
 
@@ -119,6 +122,8 @@ The current hardware-driven method remains deliberate after `main`: execute the 
   - [ ] #110 — prevent draw merges across different `GXVtxFmt` values
   - [ ] #111 — guard `GX_LINESTRIP` zero/short vertex counts
   - [ ] #112 — make unsupported indexed XF loads visible in Release builds
+- [x] Hardware-unblock M3 by proving the current black-screen runtime remains active through 13,918 VI retraces
+- [ ] Complete isolated #162 Aurora/Dawn/Vulkan/NVK clear-frame + triangle hardware probe
 - [ ] Select the native Switch graphics strategy compatible with WiiCompiled/Aurora
 - [ ] Replace the temporary GX FIFO sink with a real GX → Switch command/backend path
 - [ ] Render first clear frame
@@ -143,7 +148,7 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] capture and fix the first post-main blocker (#117)
 - [x] hardware-cross the observed post-main scheduler/input/time/SC sequence through `OSWakeupThread`
 - [x] reach sustained translated execution in the EGG display subsystem
-- [ ] classify the sustained black-screen path as live game/display loop vs durable stall
+- [x] classify the sustained black-screen path as an active VI/post-retrace loop
 - [ ] continue post-main initialization through system/resource initialization
 - [ ] complete game/resource initialization
 - [ ] menus

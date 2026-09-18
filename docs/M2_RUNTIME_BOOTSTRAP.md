@@ -39,8 +39,11 @@ The following pieces are validated through CI and/or real Switch hardware:
 21. `PADInit`, `OSGetTime`, `OSSetPowerCallback`, and `SCGetProductArea` hardware-crossed;
 22. `OSWakeupThread` hardware-crossed into sustained translated execution;
 23. a real run of 37,148 translated dispatches total / 36,543 post-main without a new unsupported-dispatch abort;
-24. execution reaching RMCP01 `egg/core/eggAsyncDisplay.cpp` at `0x8020FCD4`;
-25. an independent Horizon liveness watchdog that can distinguish translated progress from a durable translated-thread stall without mutating guest state.
+24. a later run reaching 126,563 total / 125,958 post-main dispatches;
+25. exact RMCP01 attribution of `0x8020FCD4` to `PostRetraceCallback` and `0x8024373C` to `EGG::Thread::start(void*)`;
+26. callback `r3 = 0x365E`, proving the guest VI retrace value advanced to 13,918;
+27. classification of the prolonged black-screen path as active translated/VI execution rather than a durable translated-thread stall;
+28. an independent Horizon liveness watchdog that remains available for future stall attribution without mutating guest state.
 
 ## Current translated path
 
@@ -77,14 +80,18 @@ SCGetProductArea                       ✅ hardware crossed
   ↓
 OSWakeupThread                         ✅ hardware crossed
   ↓
-sustained translated execution         ✅ 37,148 total dispatches
+sustained translated execution         ✅ 126,563 total dispatches
   ↓
-EGG AsyncDisplay range                  ✅ reached at 0x8020FCD4
+PostRetraceCallback                     ✅ 0x8020FCD4
   ↓
-active-loop vs durable-stall classification ← current frontier
+guest VI retrace value                  ✅ 13,918 (0x365E)
+  ↓
+active VI/display loop                  ✅ hardware classified
+  ↓
+isolated M3 first-frame spike #162      ← next graphics frontier
 ```
 
-There is currently **no new exact unsupported HLE boundary to implement**. The current task is to determine whether the prolonged black-screen state is a healthy translated/game/display loop or a durable translated-thread stall.
+There is currently **no new exact unsupported HLE boundary to implement**. The prolonged black-screen state has now been hardware-classified as an active translated/VI loop. The next graphics task is the isolated #162 first-frame probe; the normal fast-track keeps its FIFO sink until that backend path is proven.
 
 ## Current hardware-driven method
 
@@ -116,10 +123,12 @@ The recent hardware sequence is:
 - `OSSetPowerCallback` (`0x801AB75C`) — crossed;
 - `SCGetProductArea` (`0x801B23A0`) — crossed;
 - `OSWakeupThread` (`0x801AAAA4`) — crossed;
-- sustained translated execution — 37,148 total dispatches / 36,543 post-main;
-- last durable target `0x8020FCD4` — mapped to `egg/core/eggAsyncDisplay.cpp`.
+- sustained translated execution — first 37,148 total / 36,543 post-main, then 126,563 total / 125,958 post-main;
+- sampled target `0x8020FCD4` — exact RMCP01 `PostRetraceCallback`;
+- sampled guest PC `0x8024373C` — exact RMCP01 `EGG::Thread::start(void*)`;
+- callback `r3 = 0x365E` — VI retrace value 13,918.
 
-The run no longer returned automatically to hbmenu because it did not hit the previous unsupported-dispatch abort path. It remained black until manually terminated. Because the GX FIFO is still a sink, this does not by itself establish a graphics failure.
+The run no longer returned automatically to hbmenu because it did not hit the previous unsupported-dispatch abort path. The retrace-valued callback sample proves that the black-screen runtime remained active. Because the GX FIFO is still a sink, black output remains expected and now points directly at the deferred graphics path rather than a CPU liveness failure.
 
 ## HostContext guest continuation
 
@@ -196,14 +205,14 @@ Fast-track changes are expected to pass exactly these five workflows:
 
 ## Next slices
 
-1. run the current `main` local fast-track on hardware;
-2. if the screen remains black, keep the NRO alive long enough to collect watchdog samples before terminating it manually;
-3. inspect `fast-track-heartbeat-history.txt` first;
-4. if samples remain `ACTIVE`, treat the path as sustained execution and identify the dominant game/resource/graphics milestone next;
-5. if samples become consecutively `STALE`, attribute the exact final translated state before changing runtime behavior;
-6. if a new blocker or exception appears, return to the exact-address/pinned-semantics workflow;
-7. publish real local DVD/FST data only when resource loading proves it is required;
-8. begin the real GX → Switch graphics backend when the pre-graphics path is stable enough to make first-frame work meaningful.
+1. preserve the current #117 runtime path as the hardware-validated active baseline;
+2. proceed with isolated graphics spike #162;
+3. prove Horizon clear-frame and triangle presentation through the candidate Dawn/Vulkan/NVK path;
+4. feed fabricated Nintendo-data-free GX/FIFO traffic through pinned WiiCompiled `HleFifoWrite`;
+5. measure Tegra X1 CPU overhead, memory use and frame pacing before choosing the backend;
+6. only then connect the private local RMCP01 GX stream;
+7. if a new runtime blocker/exception appears, return to the exact-address/pinned-semantics workflow;
+8. publish real local DVD/FST data only when resource loading proves it is required.
 
 ## Evidence index
 
@@ -221,6 +230,7 @@ Use `ROADMAP.md` as the authoritative current checklist. Key evidence includes:
 - `HARDWARE_RESULTS_2026-09-16_OS_SET_POWER_CALLBACK.md`;
 - `HARDWARE_RESULTS_2026-09-16_SC_GET_PRODUCT_AREA.md`;
 - `HARDWARE_RESULTS_2026-09-17_OS_WAKEUP_THREAD.md`;
-- `HARDWARE_RESULTS_2026-09-17_SUSTAINED_LIVENESS.md`.
+- `HARDWARE_RESULTS_2026-09-17_SUSTAINED_LIVENESS.md`;
+- `HARDWARE_RESULTS_2026-09-18_ACTIVE_RETRACE_LOOP.md`.
 
 Older dated hardware result files are historical snapshots and intentionally retain the frontier wording that was true when each run was captured.

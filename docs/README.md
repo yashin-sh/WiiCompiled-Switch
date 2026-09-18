@@ -44,6 +44,7 @@
 - `HARDWARE_RESULTS_2026-09-16_SC_GET_PRODUCT_AREA.md` — console product-area frontier
 - `HARDWARE_RESULTS_2026-09-17_OS_WAKEUP_THREAD.md` — scheduler wakeup frontier
 - `HARDWARE_RESULTS_2026-09-17_SUSTAINED_LIVENESS.md` — 37,148-dispatch sustained post-main run and EGG AsyncDisplay attribution
+- `HARDWARE_RESULTS_2026-09-18_ACTIVE_RETRACE_LOOP.md` — 126,563-dispatch run proving active `PostRetraceCallback` / VI retrace progression
 
 ## Blocker notes
 

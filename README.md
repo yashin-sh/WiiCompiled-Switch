@@ -22,16 +22,11 @@ The project executes real WiiCompiled-translated Mario Kart Wii code on real Swi
 
 The post-`main` fast-track tracked in issue #117 has now hardware-crossed the observed path through guest thread/context switching, VI/GX bootstrap, WPAD/PAD initialization, timing, power-callback state, console-area lookup, and `OSWakeupThread`.
 
-The latest hardware run is qualitatively different from the earlier blocker-driven runs: it no longer stopped on a new unsupported dispatch or returned automatically to hbmenu. It reached **37,148 translated dispatches total, including 36,543 after `main()`**, and remained on a black screen until manually terminated. The last durable target was `0x8020FCD4`, which RMCP01 mapping places at the start of the `egg/core/eggAsyncDisplay.cpp` text range.
+The latest hardware run confirms the prolonged black-screen path is **actively executing**, not sitting at a durable translated-thread stall. It reached **126,563 translated dispatches total, including 125,958 after `main()`**. RMCP01 maps the sampled target `0x8020FCD4` exactly to `PostRetraceCallback`, while guest PC `0x8024373C` is `EGG::Thread::start(void*)`.
 
-That is evidence of sustained translated/display-subsystem execution, **not proof of a rendered frame**. The GX FIFO bridge remains a sink, so black output is still expected.
+The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge sets `r3` to the new retrace value immediately before invoking the post-retrace callback, so this is direct evidence that the VI/retrace loop continued advancing for thousands of retraces.
 
-The current diagnostic frontier is therefore no longer a specific missing HLE. The next hardware run must classify the sustained black-screen path as either:
-
-- an active translated/game/display loop; or
-- a durable translated-thread stall.
-
-`main` now includes an independent Horizon watchdog that records that distinction in `fast-track-heartbeat-history.txt`.
+The GX FIFO bridge remains a sink, so a **black screen is still expected even on this healthy active path**. The active-vs-stall frontier is now closed; isolated M3 first-frame work under #162 is unblocked while the normal #117 fast-track keeps the sink until that graphics path is proven.
 
 ## Milestones
 
@@ -47,9 +42,9 @@ The current diagnostic frontier is therefore no longer a specific missing HLE. T
 | Observed post-main OS/VI/WPAD/PAD/time/power/SC boundaries | ✅ Hardware validated |
 | `OSWakeupThread` scheduler handoff | ✅ Hardware validated |
 | Sustained post-main translated execution | ✅ Hardware validated |
-| Classify active loop vs durable stall | 🟡 Current frontier |
+| Classify active loop vs durable stall | ✅ Active VI/retrace loop confirmed |
 | Game/resource initialization | 🟡 In progress |
-| GX → Switch graphics backend / first frame | ⬜ Pending |
+| GX → Switch graphics backend / first frame | 🟡 M3 spike #162 ready |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
 ## Current fast-track path
@@ -79,11 +74,13 @@ SCGetProductArea (0x801B23A0)              ✅ hardware crossed
   ↓
 OSWakeupThread (0x801AAAA4)                ✅ hardware crossed
   ↓
-sustained post-main translated execution   ✅ 37,148 total dispatches
+sustained post-main translated execution   ✅ 126,563 total dispatches
   ↓
-EGG AsyncDisplay range (0x8020FCD4...)      ✅ reached
+PostRetraceCallback (0x8020FCD4)            ✅ repeatedly reached
   ↓
-active-loop vs durable-stall classification ← current frontier
+VI retrace value 0x365E / 13,918            ✅ active loop confirmed
+  ↓
+isolated GX/Aurora first-frame spike #162   ← current graphics frontier
   ↓
 resource / graphics bring-up
   ↓
@@ -137,7 +134,7 @@ The fast-track is intentionally headless. Use the SD diagnostic files instead of
 /switch/WiiCompiled-Switch/fast-track-exception.txt
 ```
 
-For the current sustained-black-screen frontier, `fast-track-heartbeat-history.txt` is the primary diagnostic. `ACTIVE` samples mean the translated heartbeat continues to change; consecutive `STALE` samples mean the independent Horizon watchdog is alive while translated dispatch has stopped advancing.
+For future prolonged runs, `fast-track-heartbeat-history.txt` remains the strongest stall diagnostic. The 2026-09-18 hardware result additionally proves active VI progression from the callback's guest retrace value itself: `r3 = 0x365E` at `PostRetraceCallback`.
 
 ## Public CI boundary
 
@@ -222,7 +219,8 @@ Start with:
 - [`docs/HARDWARE_RESULTS_2026-09-13_MAIN_REACHED.md`](docs/HARDWARE_RESULTS_2026-09-13_MAIN_REACHED.md) — first real `main()` proof;
 - [`docs/HARDWARE_RESULTS_2026-09-16_GUEST_FIBER_CONTINUATION.md`](docs/HARDWARE_RESULTS_2026-09-16_GUEST_FIBER_CONTINUATION.md) — HostContext guest continuation proof;
 - [`docs/HARDWARE_RESULTS_2026-09-17_OS_WAKEUP_THREAD.md`](docs/HARDWARE_RESULTS_2026-09-17_OS_WAKEUP_THREAD.md) — scheduler frontier that preceded sustained execution;
-- [`docs/HARDWARE_RESULTS_2026-09-17_SUSTAINED_LIVENESS.md`](docs/HARDWARE_RESULTS_2026-09-17_SUSTAINED_LIVENESS.md) — current sustained black-screen / AsyncDisplay evidence.
+- [`docs/HARDWARE_RESULTS_2026-09-17_SUSTAINED_LIVENESS.md`](docs/HARDWARE_RESULTS_2026-09-17_SUSTAINED_LIVENESS.md) — first sustained black-screen / AsyncDisplay evidence;
+- [`docs/HARDWARE_RESULTS_2026-09-18_ACTIVE_RETRACE_LOOP.md`](docs/HARDWARE_RESULTS_2026-09-18_ACTIVE_RETRACE_LOOP.md) — 126,563-dispatch run proving the black-screen path is an active VI/post-retrace loop.
 
 Older dated `HARDWARE_RESULTS_*` files are historical snapshots. Their “next blocker” wording intentionally reflects what was known on that date and is not rewritten retroactively.
 

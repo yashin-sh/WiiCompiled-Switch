@@ -231,7 +231,7 @@ Do not build a new GX parser. The first graphics spike should reuse the exact pi
 
 ### Active #117 fast-track
 
-Do **not** replace the current GX sink in the normal hardware fast-track yet. The current sustained black-screen run must first be classified with `fast-track-heartbeat-history.txt`. Graphics work should proceed in an isolated M3 probe target until the runtime path is proven ready for handoff.
+The sustained black-screen runtime has now been hardware-classified as **active** by the 2026-09-18 run: 126,563 translated dispatches with `PostRetraceCallback` sampled at guest retrace value 13,918. This removes the liveness gate for #162. Keep the normal #117 sink as a stable baseline while graphics work proceeds in the isolated M3 probe target; replace it only after that path is hardware-proven.
 
 ## Reference priority after this audit
 

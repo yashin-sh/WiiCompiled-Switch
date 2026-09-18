@@ -68,7 +68,15 @@ fi
 git -C "$MESA_DIR" apply "$MESA_PATCH"
 echo "[2/5] Applied pinned Linux/Rust/SELinux integration patch."
 
+need_mesa_build=0
 if [[ ! -f "$VULKAN_ARCHIVE" || "${MKW_M3_FORCE_MESA_REBUILD:-0}" == "1" ]]; then
+    need_mesa_build=1
+fi
+if ! docker image inspect "$MESA_IMAGE" >/dev/null 2>&1; then
+    need_mesa_build=1
+fi
+
+if ((need_mesa_build != 0)); then
     echo "[3/5] Building loaderless NVK/Mesa for Switch..."
     (
         cd "$MESA_DIR"
@@ -77,12 +85,11 @@ if [[ ! -f "$VULKAN_ARCHIVE" || "${MKW_M3_FORCE_MESA_REBUILD:-0}" == "1" ]]; the
         ./build-switch.sh
     )
 else
-    echo "[3/5] Reusing existing loaderless NVK archive."
+    echo "[3/5] Reusing existing loaderless NVK archive and dedicated image."
 fi
 
 if ! docker image inspect "$MESA_IMAGE" >/dev/null 2>&1; then
-    echo "error: expected Mesa build image '$MESA_IMAGE' is missing" >&2
-    echo "       force a Mesa rebuild with MKW_M3_FORCE_MESA_REBUILD=1" >&2
+    echo "error: expected Mesa build image '$MESA_IMAGE' is missing after build" >&2
     exit 1
 fi
 if [[ ! -f "$VULKAN_ARCHIVE" ]]; then

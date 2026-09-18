@@ -123,7 +123,6 @@ docker run --rm \
             hashbrown
             rustc_std_workspace_alloc
             miniz_oxide
-            adler
             unwind
             cfg_if
             libc
@@ -143,6 +142,26 @@ docker run --rm \
             fi
             rust_libs+=("${matches[0]}")
         done
+
+        adler_lib=""
+        adler_stem=""
+        for candidate in adler2 adler; do
+            matches=("$target_libdir/lib${candidate}-"*.rlib)
+            if ((${#matches[@]} > 1)); then
+                echo "error: multiple Rust $candidate archives found in $target_libdir" >&2
+                exit 1
+            fi
+            if ((${#matches[@]} == 1)); then
+                adler_lib="${matches[0]}"
+                adler_stem="$candidate"
+                break
+            fi
+        done
+        if [[ -z "$adler_lib" ]]; then
+            echo "error: neither Rust adler2 nor adler archive exists in $target_libdir" >&2
+            exit 1
+        fi
+        rust_libs+=("$adler_lib")
         rust_std_libs="${rust_libs[*]}"
 
         echo "Rust target: $MESA_SWITCH_RUST_TARGET"

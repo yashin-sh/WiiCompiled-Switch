@@ -24,11 +24,12 @@ Minimum progression:
 2. ~~present a simple Vulkan triangle on the proven VI swapchain~~ — **hardware PASS: visible triangle on real Switch**; the first run exposed only an SD-report initialization bug, not a rendering failure;
 3. ~~place Dawn/WebGPU over the proven Vulkan/NVK path~~ — **hardware PASS: 1,507-frame real-Switch present loop**;
 4. ~~present a WGSL triangle through a Dawn graphics pipeline~~ — **hardware PASS: visible RGB triangle and clean exit**;
-5. feed a fabricated Nintendo-data-free GX/FIFO sequence through pinned `HleFifoWrite` and obtain visible output;
-6. measure CPU frame overhead, memory use and presentation stability on Tegra X1;
-7. only then connect a private local RMCP01 stream.
+5. present a Nintendo-data-free triangle through the actual Aurora GX API/FIFO/command processor — **probe implemented; hardware validation next**;
+6. feed a fabricated Nintendo-data-free GX/FIFO sequence through pinned `HleFifoWrite` and obtain visible output;
+7. measure CPU frame overhead, memory use and presentation stability on Tegra X1;
+8. only then connect a private local RMCP01 stream.
 
-The direct-Vulkan clear/triangle probes, Dawn clear/present, and the Dawn WGSL triangle have all passed on hardware. The triangle rendered visibly through a Dawn graphics pipeline and the explicit teardown completed cleanly after the user-requested exit. The remaining renderer risk now moves upward to Aurora GX and then pinned WiiCompiled FIFO traffic.
+The direct-Vulkan clear/triangle probes, Dawn clear/present, and the Dawn WGSL triangle have all passed on hardware. The next isolated probe now compiles Aurora GX/GFX directly from the pinned WiiCompiled tree and drives a synthetic triangle through the real GX API and FIFO command processor, while reusing the hardware-proven Dawn/NVK presentation path. The pinned WiiCompiled HleFifoWrite decoder remains the following milestone.
 
 ## Fallback — Deko3D native Aurora backend
 

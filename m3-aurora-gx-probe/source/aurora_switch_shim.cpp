@@ -61,8 +61,7 @@ void Module::show_fatal_dialog(const char*, std::string_view) noexcept {}
 
 } // namespace aurora
 
-auto fmt::formatter<AuroraLogLevel>::format(AuroraLogLevel level,
-                                             format_context& ctx) const
+auto fmt::formatter<AuroraLogLevel>::format(AuroraLogLevel level, format_context& ctx) const
     -> format_context::iterator {
     return fmt::format_to(ctx.out(), "{}", static_cast<int>(level));
 }
@@ -139,7 +138,7 @@ bool g_bcTexturesSupported = false;
 namespace {
 PresentSource g_presentOverride{};
 bool g_hasPresentOverride = false;
-}
+} // namespace
 
 bool initialize(AuroraBackend) {
     return static_cast<bool>(g_device);

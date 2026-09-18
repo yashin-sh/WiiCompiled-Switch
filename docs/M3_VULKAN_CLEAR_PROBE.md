@@ -53,6 +53,8 @@ git submodule update --init --recursive
 MKW_JOBS=4 bash scripts/build-m3-vulkan-clear-probe.sh
 ```
 
+The helper now carries the Linux integration needed by the first successful hardware build: it applies a narrow patch to the exact mesa-switch pin, uses a dedicated Docker image with the AArch64 Rust target installed, propagates `MESA_SWITCH_RUST_TARGET`, handles SELinux Enforcing with per-container label isolation rather than host-wide permissive mode, removes the invalid Switch `-lelf` dependency, and discovers the 19-archive Rust AArch64 std closure from the container sysroot automatically.
+
 The first invocation builds the pinned mesa-switch NVK stack in Docker. Later invocations reuse the local archive unless:
 
 ```sh
@@ -78,11 +80,13 @@ Copy the NRO to the SD card, for example:
 
 Launch it through hbmenu in application/title-override mode.
 
-Expected PASS:
+Hardware PASS observed on 2026-09-18:
 
-- a continuously changing full-screen color is visible;
-- the app keeps presenting until `+` is pressed;
-- the report contains `PASS FIRST_PRESENT` and continuing `ACTIVE frames=...` records.
+- continuously changing full-screen colors were visible on the real Switch;
+- the app kept presenting until `+` was pressed;
+- `+` exited cleanly.
+
+The SD report remains useful for regression/debugging, but the visible alternating-color output itself proves physical presentation.
 
 Report:
 
@@ -103,8 +107,8 @@ A PASS does not yet prove:
 
 Those are the next #162 steps in that order:
 
-1. clear-frame NVK/VI proof — this target;
-2. Vulkan triangle;
+1. clear-frame NVK/VI proof — **hardware PASS**;
+2. Vulkan triangle — **next**;
 3. Dawn/WebGPU on the proven Vulkan/NVK surface;
 4. fabricated Nintendo-data-free GX/FIFO traffic through pinned `HleFifoWrite`;
 5. private local RMCP01 GX stream.

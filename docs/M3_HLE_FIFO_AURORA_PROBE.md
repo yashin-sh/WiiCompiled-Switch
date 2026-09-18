@@ -56,13 +56,15 @@ Instead, every frame it constructs a 69-byte FIFO sequence containing:
 5. three big-endian position/color vertices.
 
 Every byte is passed individually to the pinned `HleFifoWrite(value, 1)`.
-This intentionally avoids the burst helper's direct CP fast path, so the CP
-packets, draw header, float components and colors all exercise the ordinary
-incremental decoder.
+This intentionally avoids the burst helper's direct CP fast path. The CP VCD/VAT
+packets are decoded incrementally. Once the complete all-direct triangle packet
+is buffered, the pinned implementation selects its own internal raw-direct draw
+fast path, which submits the decoded packet to Aurora GX.
 
 The probe validates after each packet that the pinned HLE state contains the
-expected VCD/VAT state, the draw is closed, no FIFO bytes remain buffered and
-Aurora work was marked.
+expected VCD/VAT state, the raw-direct draw is closed, no FIFO bytes remain
+buffered, Aurora work was marked, and `vertsRemaining` matches the exact pinned
+raw-direct fast-path post-state (`3` for this three-vertex packet).
 
 ## Build
 

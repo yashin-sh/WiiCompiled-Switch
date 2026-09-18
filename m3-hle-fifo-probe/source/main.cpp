@@ -403,6 +403,11 @@ bool validate_hle_fifo_state() {
     const auto& pos = g_hleGxState.vtxAttrFmt[GX_VTXFMT0][GX_VA_POS];
     const auto& color = g_hleGxState.vtxAttrFmt[GX_VTXFMT0][GX_VA_CLR0];
 
+    // The pinned decoder's all-direct draw fast path submits the complete packet
+    // in one call and deliberately leaves vertsRemaining at the original vertex
+    // count. inBegin == false, an empty FIFO, and hadWork == true are the
+    // completion signals for that path.
+    constexpr uint32_t kExpectedFastPathVertexCount = 3;
     return g_hleGxState.vtxDesc[GX_VA_POS] == GX_DIRECT &&
            g_hleGxState.vtxDesc[GX_VA_CLR0] == GX_DIRECT &&
            pos.cnt == GX_POS_XYZ &&
@@ -411,7 +416,7 @@ bool validate_hle_fifo_state() {
            color.cnt == GX_CLR_RGBA &&
            color.type == GX_RGBA8 &&
            !g_hleGxState.inBegin &&
-           g_hleGxState.vertsRemaining == 0 &&
+           g_hleGxState.vertsRemaining == kExpectedFastPathVertexCount &&
            g_hleGxState.fifoByteCount == 0 &&
            g_auroraFrameHadWork.load(std::memory_order_acquire);
 }
@@ -425,19 +430,31 @@ bool emit_hle_fifo_triangle(uint64_t frame) {
     }
 
     // Exercise the exact pinned decoder one gather-pipe byte at a time. This
-    // intentionally avoids the burst helper's direct CP fast path so VCD, VAT,
-    // draw header, vertex floats and colors all pass through HleFifoWrite.
+    // intentionally avoids the burst helper's direct CP fast path. CP VCD/VAT
+    // packets are decoded incrementally; when the complete all-direct draw packet
+    // is buffered, the pinned HleFifoWrite implementation selects its internal
+    // raw-direct draw fast path.
     for (size_t i = 0; i < packet.size; ++i) {
         HleFifoWrite(packet.bytes[i], 1);
     }
 
     const bool valid = validate_hle_fifo_state();
     if (frame == 1) {
-        report("STAGE HLE_FIFO_STREAM %s posDesc=%u clr0Desc=%u "
-               "fifoBytes=%zu inBegin=%u hadWork=%u\n",
+        const auto& pos = g_hleGxState.vtxAttrFmt[GX_VTXFMT0][GX_VA_POS];
+        const auto& color = g_hleGxState.vtxAttrFmt[GX_VTXFMT0][GX_VA_CLR0];
+        report("STAGE HLE_FIFO_STREAM %s path=raw-direct "
+               "posDesc=%u clr0Desc=%u posCnt=%u posType=%u posFrac=%u "
+               "clrCnt=%u clrType=%u vertsRemaining=%u fifoBytes=%zu "
+               "inBegin=%u hadWork=%u\n",
                valid ? "PASS" : "FAIL",
                static_cast<unsigned>(g_hleGxState.vtxDesc[GX_VA_POS]),
                static_cast<unsigned>(g_hleGxState.vtxDesc[GX_VA_CLR0]),
+               static_cast<unsigned>(pos.cnt),
+               static_cast<unsigned>(pos.type),
+               static_cast<unsigned>(pos.frac),
+               static_cast<unsigned>(color.cnt),
+               static_cast<unsigned>(color.type),
+               static_cast<unsigned>(g_hleGxState.vertsRemaining),
                g_hleGxState.fifoByteCount,
                g_hleGxState.inBegin ? 1u : 0u,
                g_auroraFrameHadWork.load(std::memory_order_acquire) ? 1u : 0u);

@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include "gfx/texture_replacement.hpp"
 #include "internal.hpp"

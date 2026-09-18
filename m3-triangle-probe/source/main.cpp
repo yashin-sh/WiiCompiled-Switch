@@ -1137,10 +1137,19 @@ struct Probe {
 } // namespace
 
 int main(int, char**) {
-    const Result mount_result = fsdevMountSdmc();
-    if (R_SUCCEEDED(mount_result)) {
-        ::mkdir(kReportDir, 0777);
-        g_report = std::fopen(kReportPath, "w");
+    // libnx normally mounts sdmc: during runtime startup before main() for NROs.
+    // Prefer that existing mount. Only attempt our own mount as a fallback, and
+    // only unmount it if this probe created it.
+    bool mounted_sdmc_here = false;
+    ::mkdir(kReportDir, 0777);
+    g_report = std::fopen(kReportPath, "w");
+    if (!g_report) {
+        const Result mount_result = fsdevMountSdmc();
+        if (R_SUCCEEDED(mount_result)) {
+            mounted_sdmc_here = true;
+            ::mkdir(kReportDir, 0777);
+            g_report = std::fopen(kReportPath, "w");
+        }
     }
 
     report("WiiCompiled-Switch M3 Vulkan triangle probe");
@@ -1168,7 +1177,7 @@ int main(int, char**) {
         std::fclose(g_report);
         g_report = nullptr;
     }
-    if (R_SUCCEEDED(mount_result)) {
+    if (mounted_sdmc_here) {
         fsdevUnmountDevice("sdmc");
     }
     return passed ? 0 : 1;

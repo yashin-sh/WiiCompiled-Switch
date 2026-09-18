@@ -45,3 +45,22 @@ index 64bb44a..0000000 100755
 +    -e MESA_SWITCH_RUST_TARGET="$MESA_SWITCH_RUST_TARGET" \
      -v "$(pwd):/project" --workdir "/project" \
      "$IMAGE_NAME" sleep infinity
+
+@@ -95,7 +103,7 @@ run 'ninja -C /project/builddir-native src/compiler/clc/mesa_clc src/compiler/sp
+ # Configure the cross build.
+ echo "=== Configuring cross build (Switch + nouveau + nouveau_vk) ==="
+ run '
+-export PATH="/usr/local/libexec:/project/builddir-native/src/compiler/clc:/project/builddir-native/src/compiler/spirv:$PATH"
++export PATH="/project/builddir-native/src/compiler/clc:/project/builddir-native/src/compiler/spirv:$PATH:/usr/local/libexec"
+ cd /project && meson setup builddir-switch --wipe \
+     --cross-file switch_cross_file.txt \
+     --buildtype=release \
+@@ -123,7 +131,7 @@ cd /project && meson setup builddir-switch --wipe \
+ # Build Switch archives.
+ echo "=== Building Mesa for Switch ==="
+ run '
+-export PATH="/usr/local/libexec:/project/builddir-native/src/compiler/clc:/project/builddir-native/src/compiler/spirv:$PATH"
++export PATH="/project/builddir-native/src/compiler/clc:/project/builddir-native/src/compiler/spirv:$PATH:/usr/local/libexec"
+ ninja -C /project/builddir-switch \
+     src/nouveau/vulkan/libnvk.a \
+     src/nouveau/vulkan/libvulkan.a \

@@ -30,13 +30,8 @@ namespace {
 
 } // namespace
 
-Memory::AccessViolation::AccessViolation(uint32_t address,
-                                        size_t length,
-                                        std::string_view reason)
-    : std::runtime_error(std::string(reason)),
-      address_(address),
-      length_(length),
-      reason_(reason) {}
+Memory::AccessViolation::AccessViolation(uint32_t address, size_t length, std::string_view reason)
+    : std::runtime_error(std::string(reason)), address_(address), length_(length), reason_(reason) {}
 
 uint8_t Memory::Read8(uint32_t addr) {
     throw_unmapped(addr, 1);

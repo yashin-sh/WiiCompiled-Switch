@@ -18,6 +18,7 @@
 - `GRAPHICS_NOTES.md` — graphics backend notes and M3 direction
 - `M3_VULKAN_CLEAR_PROBE.md` — isolated loaderless NVK / `VK_NN_vi_surface` clear-frame hardware probe for #162
 - `M3_VULKAN_TRIANGLE_PROBE.md` — isolated shader/pipeline/rasterisation probe on the hardware-proven NVK/VI swapchain
+- `M3_DAWN_CLEAR_PROBE.md` — isolated Dawn/WebGPU clear/present probe over the proven Vulkan/NVK/VI path
 - `WII_PORTING_REFERENCE_AUDIT_2026-09-16.md` — reference/tooling hierarchy and licensing notes
 - `STRIKERS_AURORA_REFERENCE_AUDIT_2026-09-17.md` — targeted `new-coke/strikers` / Aurora audit for #154 DVD/FST and #4/#162 first-frame work
 

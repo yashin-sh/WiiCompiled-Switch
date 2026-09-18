@@ -1,0 +1,24 @@
+diff --git a/src/dawn/native/CMakeLists.txt b/src/dawn/native/CMakeLists.txt
+--- a/src/dawn/native/CMakeLists.txt
++++ b/src/dawn/native/CMakeLists.txt
+@@
+             target_include_directories(${target_name} PRIVATE
+                 "${DAWN_SWITCH_NVK_ROOT}/include")
+             target_link_libraries(${target_name} PRIVATE
++                -Wl,--start-group
+                 webgpu_dawn
+                 "${DAWN_SWITCH_NVK_LIBRARY}"
+-                drm_nouveau
+-                zstd
+-                z
++                ${DAWN_SWITCH_EXTRA_LIBRARIES}
+                 nx
+-                m)
++                m
++                -Wl,--end-group)
+             target_link_options(${target_name} PRIVATE
+                 -Wl,--gc-sections
+-                -Wl,--allow-multiple-definition)
++                -Wl,--allow-multiple-definition
++                -Wl,-u,vk_icdGetInstanceProcAddr
++                -Wl,-u,vk_icdNegotiateLoaderICDInterfaceVersion)

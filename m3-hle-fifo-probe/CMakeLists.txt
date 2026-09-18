@@ -24,7 +24,7 @@ target_sources(m3_aurora_gx PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/source/runtime_fifo_shim.cpp"
 )
 
-target_include_directories(m3_aurora_gx BEFORE PRIVATE
+target_include_directories(m3_aurora_gx BEFORE PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/source"
     "${M3_WIICOMPILED_ROOT}/runtime/include"
     "${M3_WIICOMPILED_ROOT}/runtime/src"

@@ -11,22 +11,34 @@ endif()
 
 get_filename_component(M3_WIICOMPILED_ROOT "${M3_AURORA_ROOT}" DIRECTORY)
 
-# Reuse the hardware-proven Aurora GX/Dawn integration unchanged, then add only
-# the pinned runtime FIFO decoder and the narrow probe-only runtime seams it
-# needs. This makes the delta from the successful #176 hardware path explicit.
+# Reuse the hardware-proven Aurora GX/Dawn integration unchanged. The default
+# target remains the isolated HleFifoWrite probe. A local-only reconfigure can
+# instead attach the RMCP01 rendered fast-track without changing the Dawn source
+# directory already registered in this build tree.
+option(M3_BUILD_RENDERED_FAST_TRACK
+    "Build the local RMCP01 rendered fast-track instead of the isolated FIFO probe"
+    OFF)
+
 add_subdirectory(
     "${M3_REPO_ROOT}/m3-aurora-gx-probe"
     "${CMAKE_CURRENT_BINARY_DIR}/aurora-gx-base"
 )
 
-target_sources(m3_aurora_gx PRIVATE
-    "${M3_WIICOMPILED_ROOT}/runtime/src/hle/gx/gx_fifo.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/source/runtime_fifo_shim.cpp"
-)
+if(M3_BUILD_RENDERED_FAST_TRACK)
+    add_subdirectory(
+        "${M3_REPO_ROOT}/local-rendered-fast-track"
+        "${CMAKE_CURRENT_BINARY_DIR}/rendered-fast-track"
+    )
+else()
+    target_sources(m3_aurora_gx PRIVATE
+        "${M3_WIICOMPILED_ROOT}/runtime/src/hle/gx/gx_fifo.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/source/runtime_fifo_shim.cpp"
+    )
 
-target_include_directories(m3_aurora_gx BEFORE PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/source"
-    "${M3_WIICOMPILED_ROOT}/runtime/include"
-    "${M3_WIICOMPILED_ROOT}/runtime/src"
-    "${M3_WIICOMPILED_ROOT}/runtime/src/hle/gx"
-)
+    target_include_directories(m3_aurora_gx BEFORE PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/source"
+        "${M3_WIICOMPILED_ROOT}/runtime/include"
+        "${M3_WIICOMPILED_ROOT}/runtime/src"
+        "${M3_WIICOMPILED_ROOT}/runtime/src/hle/gx"
+    )
+endif()

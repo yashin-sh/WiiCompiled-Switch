@@ -22,6 +22,7 @@
 - `M3_DAWN_TRIANGLE_PROBE.md` — isolated WGSL shader/pipeline/triangle probe over the hardware-proven Dawn path
 - `M3_AURORA_GX_PROBE.md` — isolated Aurora GX API/FIFO triangle over the hardware-proven Dawn/NVK path
 - `M3_HLE_FIFO_AURORA_PROBE.md` — bytewise fabricated FIFO through pinned WiiCompiled `HleFifoWrite` into Aurora GX
+- `M3_RMCP01_RENDERED_FAST_TRACK.md` — first local game-facing rendered fast-track using the proven FIFO/Aurora/Dawn/NVK path
 - `WII_PORTING_REFERENCE_AUDIT_2026-09-16.md` — reference/tooling hierarchy and licensing notes
 - `STRIKERS_AURORA_REFERENCE_AUDIT_2026-09-17.md` — targeted `new-coke/strikers` / Aurora audit for #154 DVD/FST and #4/#162 first-frame work
 
@@ -56,6 +57,7 @@
 - `HARDWARE_RESULTS_2026-09-18_M3_DAWN_CLEAR.md` — real-Switch Dawn/WebGPU clear/present PASS with 1,507-frame stable loop
 - `HARDWARE_RESULTS_2026-09-18_M3_DAWN_TRIANGLE.md` — real-Switch WGSL/Dawn graphics-pipeline triangle PASS with clean explicit teardown
 - `HARDWARE_RESULTS_2026-09-18_M3_AURORA_GX.md` — real-Switch Aurora GX triangle PASS with 563-frame active loop and clean teardown
+- `HARDWARE_RESULTS_2026-09-18_M3_HLE_FIFO_AURORA.md` — exact pinned `HleFifoWrite` → Aurora GX PASS with 1,435-frame active loop
 
 ## Blocker notes
 

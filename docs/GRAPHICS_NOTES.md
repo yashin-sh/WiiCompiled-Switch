@@ -14,7 +14,7 @@ This is now the first route to test under #4/#162 because:
 - `new-coke/strikers` demonstrates Aurora GX handling a complete Nintendo SDK game on supported desktop backends, including pipeline/shader warm-up and only a small explicit compatibility layer for missing GX calls;
 - issue #4 contains an external real-Switch report claiming successful frame presentation through Aurora GX → Dawn/WebGPU → Vulkan/Mesa/NVK → libnx/NWindow.
 
-The lower presentation half is now our own hardware validation: the isolated #162 probe has presented continuously changing full-screen colors on real Switch through `NWindow → VK_NN_vi_surface → loaderless NVK → VkSwapchainKHR → QueuePresentKHR`. The remaining external/unproven portion is Dawn/WebGPU + Aurora GX + WiiCompiled FIFO.
+The complete Nintendo-data-free renderer path is now our own hardware validation: Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` decoder have each presented successfully on real Switch through loaderless NVK and `NWindow`. The remaining unproven boundary is the real local RMCP01 command stream.
 
 The probe should keep Aurora's **GX + graphics/pipeline** layers while bypassing desktop SDL application/input/audio services wherever Horizon-native services already exist.
 
@@ -25,11 +25,11 @@ Minimum progression:
 3. ~~place Dawn/WebGPU over the proven Vulkan/NVK path~~ — **hardware PASS: 1,507-frame real-Switch present loop**;
 4. ~~present a WGSL triangle through a Dawn graphics pipeline~~ — **hardware PASS: visible RGB triangle and clean exit**;
 5. ~~present a Nintendo-data-free triangle through the actual Aurora GX API/FIFO/command processor~~ — **hardware PASS: visible triangle, 563-frame loop, clean teardown**;
-6. feed a fabricated Nintendo-data-free GX/FIFO sequence through pinned `HleFifoWrite` and obtain visible output — **bytewise VCD/VAT + triangle probe implemented; hardware validation next**;
-7. measure CPU frame overhead, memory use and presentation stability on Tegra X1;
-8. only then connect a private local RMCP01 stream.
+6. ~~feed a fabricated Nintendo-data-free GX/FIFO sequence through pinned `HleFifoWrite` and obtain visible output~~ — **hardware PASS: raw-direct path, 1,435-frame stable loop, clean teardown**;
+7. connect a private local RMCP01 stream through the same renderer — **separate rendered fast-track implemented; hardware validation next**;
+8. measure CPU frame overhead, memory use and presentation stability on Tegra X1.
 
-The direct-Vulkan clear/triangle probes, Dawn clear/present, Dawn WGSL triangle, and the isolated Aurora GX triangle have now all passed on hardware. The Aurora run presented successfully for 563 frames and exited cleanly. The current graphics frontier is therefore the pinned WiiCompiled `HleFifoWrite` decoder feeding a fabricated Nintendo-data-free FIFO stream into this hardware-proven Aurora/Dawn/NVK path.
+The direct-Vulkan clear/triangle probes, Dawn clear/present, Dawn WGSL triangle, Aurora GX triangle and pinned `HleFifoWrite` synthetic FIFO path have now all passed on hardware. The FIFO run remained active for 1,435 frames and exited cleanly. The current graphics frontier is the local RMCP01 rendered fast-track: real translated game FIFO → pinned decoder → Aurora/Dawn/NVK → `GXCopyDisp` → Switch display.
 
 ## Fallback — Deko3D native Aurora backend
 
@@ -39,7 +39,7 @@ It is the established low-level devkitPro/libnx GPU API and likely offers the mo
 
 ## Important constraints
 
-- The #117 black-screen path is now hardware-classified as **active**: a 2026-09-18 run reached 126,563 dispatches and invoked `PostRetraceCallback` with guest retrace value 13,918. Keep the normal fast-track FIFO sink only as a stable baseline until isolated #162 proves the replacement graphics path.
+- The #117 black-screen path is hardware-classified as **active**: a 2026-09-18 run reached 126,563 dispatches and invoked `PostRetraceCallback` with guest retrace value 13,918. Keep that headless FIFO sink as the stable control baseline while the separate rendered RMCP01 target is validated.
 - Do not import Aurora's full SDL application layer just to obtain GX rendering.
 - Do not copy reconstructed game code from `new-coke/strikers`; use the project as an architecture/case-study reference. Upstream Aurora itself is MIT-licensed.
 - Existing GX correctness issues #109–#112 remain independent prerequisites/guards around the shared decoder path.

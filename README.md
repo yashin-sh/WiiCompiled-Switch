@@ -8,13 +8,13 @@ Run a legally-owned Mario Kart Wii dump through the WiiCompiled static-recompila
 
 ## Project progress
 
-**Estimated progress toward first rendered Mario Kart Wii frame: ~55%**
+**Estimated progress toward first rendered Mario Kart Wii frame: ~65%**
 
 ```text
-███████████░░░░░░░░░ 55%
+█████████████░░░░░░░ 65%
 ```
 
-> This percentage is an engineering estimate, not a function-count metric. The runtime has crossed PAL `main()` and sustained post-main VI/thread execution, and isolated M3 probes have now **hardware-presented both native Vulkan/NVK clear frames and a real rasterized triangle on the Switch display**. The remaining gap is the actual Dawn/Aurora/WiiCompiled GX path and an RMCP01 frame, so the estimate remains deliberately conservative.
+> This percentage is an engineering estimate, not a function-count metric. The runtime has crossed PAL `main()` and sustained post-main VI/thread execution, while the complete Nintendo-data-free graphics chain through pinned `HleFifoWrite → Aurora GX → Dawn/Vulkan/NVK` is now hardware-proven. The remaining gap is the first real local RMCP01 frame and the game-facing blockers it exposes.
 
 ## Current status
 
@@ -26,7 +26,7 @@ The latest hardware run confirms the prolonged black-screen path is **actively e
 
 The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge sets `r3` to the new retrace value immediately before invoking the post-retrace callback, so this is direct evidence that the VI/retrace loop continued advancing for thousands of retraces.
 
-The GX FIFO bridge in the normal #117 fast-track remains a sink, so Mario Kart is still expected to stay black there. Separately, M3 has now hardware-validated native Vulkan clear/present, a direct Vulkan triangle, Dawn/WebGPU clear/present, a visible WGSL triangle, and a real Aurora GX triangle with a 563-frame active loop and clean teardown. The next graphics frontier is the real pinned WiiCompiled `HleFifoWrite` decoder feeding Aurora GX.
+The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has now hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. A separate local rendered fast-track now connects the real RMCP01 FIFO stream to that proven backend. Its first hardware run is the current graphics frontier.
 
 ## Milestones
 
@@ -49,7 +49,8 @@ The GX FIFO bridge in the normal #117 fast-track remains a sink, so Mario Kart i
 | Dawn/WebGPU → Vulkan/NVK clear/present | ✅ Hardware validated (1,507-frame loop) |
 | Dawn WGSL triangle / graphics pipeline | ✅ Hardware validated + clean exit |
 | Aurora GX triangle | ✅ Hardware validated (563-frame active loop) |
-| WiiCompiled FIFO → Aurora GX | 🟡 Probe implemented; hardware test next |
+| WiiCompiled FIFO → Aurora GX | ✅ Hardware validated (1,435-frame loop) |
+| RMCP01 rendered fast-track | 🟡 Implemented; hardware test next |
 | WiiCompiled/Aurora GX → first RMCP01 frame | 🟡 M3 #162 in progress |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
@@ -96,9 +97,9 @@ Dawn WGSL triangle                             ✅ hardware validated + clean ex
   ↓
 Aurora GX triangle                             ✅ hardware validated
   ↓
-HleFifoWrite synthetic FIFO                     ← bytewise probe ready for hardware
+HleFifoWrite synthetic FIFO                     ✅ hardware validated, 1,435 frames
   ↓
-RMCP01 graphics stream
+RMCP01 rendered fast-track                      ← hardware test next
   ↓
 first rendered RMCP01 frame
 ```
@@ -109,7 +110,7 @@ The complete blocker-by-blocker history and current checklist live in [`ROADMAP.
 
 ### Graphics
 
-The normal fast-track GX FIFO bridge is still intentionally a sink, so a **black Mario Kart screen is expected** while translated CPU execution advances. However, isolated M3 probes have now proven both real Switch GPU presentation and a shader-driven Vulkan triangle through loaderless NVK and `VK_NN_vi_surface`. What remains is the game-facing path: Dawn/WebGPU → Aurora GX → pinned WiiCompiled `HleFifoWrite` → RMCP01 frame.
+The normal fast-track GX FIFO bridge remains intentionally a sink, so it stays a reliable **headless control baseline**. The separate rendered fast-track now uses the hardware-proven `HleFifoWrite → Aurora GX → Dawn/WebGPU → Vulkan/NVK` path and presents at the RMCP01 `GXCopyDisp` boundary. The next unknown is therefore game-facing behavior, not renderer viability.
 
 ### Filesystem / DVD
 
@@ -138,6 +139,14 @@ MKW_JOBS=4 bash scripts/build-local-fast-track-incremental.sh
 ```
 
 Copy `WiiCompiled-Switch-local-fast-track.nro` to the Switch and launch it through hbmenu in application/title-override mode with full memory.
+
+For the first graphics-enabled RMCP01 run, keep that headless NRO as the control baseline and build the separate rendered target:
+
+```sh
+MKW_JOBS=4 bash scripts/build-local-rendered-fast-track.sh
+```
+
+This produces `WiiCompiled-Switch-local-rendered-fast-track.nro`. It contains locally generated game-derived code and must not be uploaded or committed.
 
 The fast-track is intentionally headless. Use the SD diagnostic files instead of expecting a text console:
 
@@ -214,7 +223,7 @@ generated C++ / RuntimeConfig / data init
 | - runtime filesystem + diagnostics / NAND backing       |
 | - input HLE state (partial, hardware-driven)            |
 | - audio (bootstrap/HLE incomplete)                      |
-| - graphics (GX FIFO sink; renderer pending)             |
+| - graphics (headless sink baseline + rendered variant)  |
 | - context switching / timing / guest memory             |
 | - independent fast-track liveness watchdog              |
 +----------------------------------------------------------+
@@ -239,7 +248,9 @@ Start with:
 - [`docs/HARDWARE_RESULTS_2026-09-18_ACTIVE_RETRACE_LOOP.md`](docs/HARDWARE_RESULTS_2026-09-18_ACTIVE_RETRACE_LOOP.md) — 126,563-dispatch run proving the black-screen path is an active VI/post-retrace loop;
 - [`docs/HARDWARE_RESULTS_2026-09-18_M3_VULKAN_CLEAR_FRAME.md`](docs/HARDWARE_RESULTS_2026-09-18_M3_VULKAN_CLEAR_FRAME.md) — real-Switch changing-color NVK/VI clear-frame presentation proof;
 - [`docs/HARDWARE_RESULTS_2026-09-18_M3_VULKAN_TRIANGLE.md`](docs/HARDWARE_RESULTS_2026-09-18_M3_VULKAN_TRIANGLE.md) — real-Switch Vulkan shader/pipeline/rasterisation triangle proof and SD-report follow-up;
-- [`docs/HARDWARE_RESULTS_2026-09-18_M3_AURORA_GX.md`](docs/HARDWARE_RESULTS_2026-09-18_M3_AURORA_GX.md) — real-Switch Aurora GX triangle proof, 563-frame active loop, and clean teardown.
+- [`docs/HARDWARE_RESULTS_2026-09-18_M3_AURORA_GX.md`](docs/HARDWARE_RESULTS_2026-09-18_M3_AURORA_GX.md) — real-Switch Aurora GX triangle proof, 563-frame active loop, and clean teardown;
+- [`docs/HARDWARE_RESULTS_2026-09-18_M3_HLE_FIFO_AURORA.md`](docs/HARDWARE_RESULTS_2026-09-18_M3_HLE_FIFO_AURORA.md) — real-Switch exact pinned `HleFifoWrite` → Aurora GX proof with a 1,435-frame active loop;
+- [`docs/M3_RMCP01_RENDERED_FAST_TRACK.md`](docs/M3_RMCP01_RENDERED_FAST_TRACK.md) — first local Mario Kart graphics-enabled fast-track.
 
 Older dated `HARDWARE_RESULTS_*` files are historical snapshots. Their “next blocker” wording intentionally reflects what was known on that date and is not rewritten retroactively.
 

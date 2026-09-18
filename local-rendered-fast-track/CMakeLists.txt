@@ -15,10 +15,14 @@ endif()
 get_filename_component(M3_WIICOMPILED_ROOT "${M3_AURORA_ROOT}" DIRECTORY)
 
 # Reuse the exact Aurora GX/GFX + Dawn seams that already passed on hardware.
-add_subdirectory(
-    "${M3_REPO_ROOT}/m3-aurora-gx-probe"
-    "${CMAKE_CURRENT_BINARY_DIR}/aurora-gx-base"
-)
+# The normal entry path already created this target through m3-hle-fifo-probe;
+# keep this CMake usable standalone as well.
+if(NOT TARGET m3_aurora_gx)
+    add_subdirectory(
+        "${M3_REPO_ROOT}/m3-aurora-gx-probe"
+        "${CMAKE_CURRENT_BINARY_DIR}/aurora-gx-base"
+    )
+endif()
 
 enable_language(ASM)
 

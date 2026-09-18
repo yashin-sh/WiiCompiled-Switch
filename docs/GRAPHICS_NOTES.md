@@ -25,7 +25,7 @@ Minimum progression:
 3. ~~place Dawn/WebGPU over the proven Vulkan/NVK path~~ — **hardware PASS: 1,507-frame real-Switch present loop**;
 4. ~~present a WGSL triangle through a Dawn graphics pipeline~~ — **hardware PASS: visible RGB triangle and clean exit**;
 5. ~~present a Nintendo-data-free triangle through the actual Aurora GX API/FIFO/command processor~~ — **hardware PASS: visible triangle, 563-frame loop, clean teardown**;
-6. feed a fabricated Nintendo-data-free GX/FIFO sequence through pinned `HleFifoWrite` and obtain visible output;
+6. feed a fabricated Nintendo-data-free GX/FIFO sequence through pinned `HleFifoWrite` and obtain visible output — **bytewise VCD/VAT + triangle probe implemented; hardware validation next**;
 7. measure CPU frame overhead, memory use and presentation stability on Tegra X1;
 8. only then connect a private local RMCP01 stream.
 

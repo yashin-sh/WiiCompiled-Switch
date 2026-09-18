@@ -78,6 +78,7 @@ fi
 echo "[4/7] Building host protoc required by Dawn cross-build..."
 docker run --rm \
     "${DOCKER_SECURITY_ARGS[@]}" \
+    -e MKW_M3_JOBS="$JOBS" \
     -v "$ROOT_DIR:/work" \
     -w /work \
     "$MESA_IMAGE" \
@@ -93,7 +94,7 @@ docker run --rm \
             -DTINT_BUILD_CMD_TOOLS=OFF \
             -DTINT_BUILD_IR_BINARY=OFF \
             -DCMAKE_BUILD_TYPE=Release
-        cmake --build /work/.deps/m3/dawn-host-build --target protoc -j"'"$JOBS"'"
+        cmake --build /work/.deps/m3/dawn-host-build --target protoc -j"$MKW_M3_JOBS"
     '
 
 if [[ ! -x "$DAWN_HOST_BUILD/protoc" ]]; then
@@ -105,6 +106,7 @@ echo "[5/7] Cross-building pinned Dawn/WebGPU for Horizon..."
 rm -rf "$DAWN_SWITCH_BUILD" "$DAWN_INSTALL"
 docker run --rm \
     "${DOCKER_SECURITY_ARGS[@]}" \
+    -e MKW_M3_JOBS="$JOBS" \
     -v "$ROOT_DIR:/work" \
     -w /work \
     "$MESA_IMAGE" \
@@ -139,7 +141,7 @@ docker run --rm \
             -DTINT_BUILD_TESTS=OFF \
             -DTINT_BUILD_CMD_TOOLS=OFF \
             -DTINT_BUILD_IR_BINARY=OFF
-        cmake --build /work/.deps/m3/dawn-switch-build --target webgpu_dawn -j"'"$JOBS"'"
+        cmake --build /work/.deps/m3/dawn-switch-build --target webgpu_dawn -j"$MKW_M3_JOBS"
         cmake --install /work/.deps/m3/dawn-switch-build
     '
 

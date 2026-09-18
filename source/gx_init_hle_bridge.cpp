@@ -4,6 +4,10 @@
 #include "abi_bridge.h"
 #include "memory.h"
 
+#if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+#include <dolphin/gx.h>
+#endif
+
 #include <cstdint>
 
 namespace {
@@ -69,9 +73,13 @@ extern "C" void mkw_switch_hle_gx_init(CpuContext* cpu) noexcept {
         return;
     }
 
-    // Pinned WiiCompiled always returns the guest FIFO object address. Aurora's
-    // renderer-side GX state is intentionally absent while this fast-track is
-    // headless; only the pin's guest-visible state is mirrored below.
+    // Pinned WiiCompiled always returns the guest FIFO object address. The
+    // stable fast-track remains headless. The rendered variant additionally
+    // initializes the already-created Aurora GX backend before publishing the
+    // same guest-visible SDK state below.
+#if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+    GXInit(nullptr, 0);
+#endif
     cpu->gpr[3] = kFifoObjAddr;
     if (!Memory::IsInitialized()) {
         return;

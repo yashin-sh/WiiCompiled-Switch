@@ -128,7 +128,8 @@ The current hardware-driven method remains deliberate after `main`: execute the 
 - [x] Present a simple Vulkan triangle on the proven VI/NVK swapchain — **hardware PASS: visible triangle on real Switch (2026-09-18); SD report bug fixed separately**
 - [x] Prove Dawn/WebGPU over the proven Vulkan/NVK path — **hardware PASS: 1280x720 surface, first present, 1,507-frame stable loop**
 - [x] Prove a WGSL shader + Dawn graphics pipeline + triangle on real Switch — **hardware PASS: visible RGB triangle + clean explicit teardown**
-- [ ] Select the native Switch graphics strategy compatible with WiiCompiled/Aurora
+- [x] Select the native Switch graphics strategy compatible with WiiCompiled/Aurora — **Aurora GX → Dawn/WebGPU → Vulkan/NVK is the primary path; Deko3D remains fallback**
+- [ ] Present an isolated Aurora GX triangle on real Switch — **probe implemented; hardware test next**
 - [ ] Replace the temporary GX FIFO sink with a real GX → Switch command/backend path
 - [x] Render first native Switch clear frame
 - [ ] GX command path functional

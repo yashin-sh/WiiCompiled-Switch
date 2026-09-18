@@ -600,8 +600,7 @@ extern "C" void GX_HLE_FIFO_Write8(uint8_t value) {
     note_rmcp01_fifo_activity();
 }
 
-extern "C" void GX__CallDisplayList_80172f64(uint32_t listAddr,
-                                              uint32_t sizeBytes) {
+extern "C" void GX__CallDisplayList_80172f64(uint32_t listAddr, uint32_t sizeBytes) {
     if (listAddr == 0 || sizeBytes == 0 || !Memory::Contains(listAddr, sizeBytes)) {
         report("WARN display-list range rejected addr=0x%08x size=%u\n",
                listAddr,

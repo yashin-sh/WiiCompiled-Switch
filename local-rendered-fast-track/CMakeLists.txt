@@ -77,17 +77,17 @@ target_compile_definitions(mkw_switch_rendered_fast_track PRIVATE
 )
 
 target_compile_options(mkw_switch_rendered_fast_track PRIVATE
-    -Wall
-    -Wextra
-    -O2
-    -ffunction-sections
-    -fdata-sections
-    -fno-rtti
-    -fno-fast-math
-    -ffp-contract=off
-    -fno-tree-slp-vectorize
-    -include
-    "${M3_REPO_ROOT}/include/devkita64_gcc_compat.hpp"
+    $<$<COMPILE_LANGUAGE:CXX>:-Wall>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wextra>
+    $<$<COMPILE_LANGUAGE:CXX>:-O2>
+    $<$<COMPILE_LANGUAGE:CXX>:-ffunction-sections>
+    $<$<COMPILE_LANGUAGE:CXX>:-fdata-sections>
+    $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
+    $<$<COMPILE_LANGUAGE:CXX>:-fno-fast-math>
+    $<$<COMPILE_LANGUAGE:CXX>:-ffp-contract=off>
+    $<$<COMPILE_LANGUAGE:CXX>:-fno-tree-slp-vectorize>
+    $<$<COMPILE_LANGUAGE:CXX>:-include>
+    $<$<COMPILE_LANGUAGE:CXX>:${M3_REPO_ROOT}/include/devkita64_gcc_compat.hpp>
 )
 
 target_link_libraries(mkw_switch_rendered_fast_track PRIVATE

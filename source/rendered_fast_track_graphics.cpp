@@ -55,6 +55,8 @@ FILE* g_report = nullptr;
 bool g_mountedSdmcHere = false;
 bool g_initialized = false;
 uint64_t g_presentedFrames = 0;
+std::atomic_bool g_loggedFirstFifoWrite{false};
+std::atomic_bool g_loggedFirstFifoWork{false};
 
 wgpu::Instance g_instance;
 wgpu::Adapter g_adapter;
@@ -419,6 +421,8 @@ extern "C" bool mkw_switch_renderer_initialize() noexcept {
         g_auroraFrameHadWork.store(false, std::memory_order_release);
         g_presentedFrames = 0;
         g_gxFrameCount = 0;
+        g_loggedFirstFifoWrite.store(false, std::memory_order_release);
+        g_loggedFirstFifoWork.store(false, std::memory_order_release);
         g_initialized = true;
 
         if (!begin_frame_locked()) {
@@ -557,22 +561,43 @@ void EnsureAuroraFrameActive() {
     }
 }
 
+namespace {
+
+void note_rmcp01_fifo_activity() {
+    if (!g_loggedFirstFifoWrite.exchange(true, std::memory_order_acq_rel)) {
+        report("PASS FIRST_RMCP01_FIFO_WRITE\n");
+        mkw_switch_set_fast_track_stage("RMCP01_FIFO_ACTIVE");
+    }
+
+    if (g_auroraFrameHadWork.load(std::memory_order_acquire) &&
+        !g_loggedFirstFifoWork.exchange(true, std::memory_order_acq_rel)) {
+        report("PASS FIRST_RMCP01_FIFO_WORK\n");
+        mkw_switch_set_fast_track_stage("RMCP01_FIFO_RENDER_WORK");
+    }
+}
+
+} // namespace
+
 extern "C" void GX_HLE_FIFO_WriteFloat(float value) {
     uint32_t raw = 0;
     std::memcpy(&raw, &value, sizeof(raw));
     HleFifoWrite(raw, 4);
+    note_rmcp01_fifo_activity();
 }
 
 extern "C" void GX_HLE_FIFO_Write32(uint32_t value) {
     HleFifoWrite(value, 4);
+    note_rmcp01_fifo_activity();
 }
 
 extern "C" void GX_HLE_FIFO_Write16(uint16_t value) {
     HleFifoWrite(static_cast<uint32_t>(value), 2);
+    note_rmcp01_fifo_activity();
 }
 
 extern "C" void GX_HLE_FIFO_Write8(uint8_t value) {
     HleFifoWrite(static_cast<uint32_t>(value), 1);
+    note_rmcp01_fifo_activity();
 }
 
 extern "C" void GX__CallDisplayList_80172f64(uint32_t listAddr,

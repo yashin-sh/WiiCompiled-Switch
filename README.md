@@ -46,7 +46,8 @@ The GX FIFO bridge in the normal #117 fast-track remains a sink, so Mario Kart i
 | Game/resource initialization | 🟡 In progress |
 | Native Switch GPU clear/present (NVK/VI) | ✅ Hardware validated |
 | Native Vulkan triangle / shader pipeline (NVK/VI) | ✅ Hardware validated |
-| Dawn/WebGPU → Vulkan/NVK clear/present | 🟡 Probe implemented; hardware test next |
+| Dawn/WebGPU → Vulkan/NVK clear/present | ✅ Hardware validated (1,507-frame loop) |
+| Dawn WGSL triangle / graphics pipeline | 🟡 Probe implemented; hardware test next |
 | WiiCompiled/Aurora GX → first RMCP01 frame | 🟡 M3 #162 in progress |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
@@ -87,7 +88,9 @@ NVK/VI clear-frame presentation             ✅ hardware validated
   ↓
 Vulkan triangle                              ✅ hardware validated
   ↓
-Dawn/WebGPU clear probe                       ← hardware test next
+Dawn/WebGPU clear/present                     ✅ hardware validated
+  ↓
+Dawn WGSL triangle                             ← hardware test next
   ↓
 Aurora GX → HleFifoWrite
   ↓

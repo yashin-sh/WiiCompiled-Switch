@@ -9,6 +9,7 @@
 #include <cstring>
 #include <string_view>
 #include <sys/stat.h>
+#include <utility>
 
 u32 __nx_applet_type = AppletType_Application;
 size_t __nx_heap_size = 0;

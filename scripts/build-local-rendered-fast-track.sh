@@ -65,6 +65,7 @@ fi
 echo "[3/4] Reconfiguring the proven build tree for the local RMCP01 rendered target..."
 docker run --rm \
     "${DOCKER_SECURITY_ARGS[@]}" \
+    -e MKW_M3_JOBS="$JOBS" \
     -v "$MESA_DIR:/mesa:ro" \
     -v "$DAWN_DIR:/dawn:ro" \
     -v "$DAWN_BUILD_DIR:/build" \
@@ -76,7 +77,7 @@ docker run --rm \
         set -euo pipefail
         export DEVKITPRO=/opt/devkitpro
         cmake -S /dawn -B /build -DM3_BUILD_RENDERED_FAST_TRACK=ON
-        cmake --build /build --target mkw_switch_rendered_fast_track_nro -j"${MKW_JOBS:-4}"
+        cmake --build /build --target mkw_switch_rendered_fast_track_nro -j"$MKW_M3_JOBS"
     '
 
 echo "[4/4] Collecting local game-containing NRO..."

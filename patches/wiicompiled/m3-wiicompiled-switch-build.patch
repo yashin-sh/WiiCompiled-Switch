@@ -1,0 +1,123 @@
+diff --git a/aurora-main/include/dolphin/gx/GXGeometry.h b/aurora-main/include/dolphin/gx/GXGeometry.h
+index a71eb74..646f35c 100644
+--- a/aurora-main/include/dolphin/gx/GXGeometry.h
++++ b/aurora-main/include/dolphin/gx/GXGeometry.h
+@@ -22,10 +22,10 @@ void GXSetPointSize(u8 pointSize, GXTexOffset texOffsets);
+ void GXEnableTexOffsets(GXTexCoordID coord, GXBool line_enable, GXBool point_enable);
+ #ifdef TARGET_PC
+ void GXSetArray(GXAttr attr, const void* data, u32 size, u8 stride, bool le);
+-static inline void GXSetArray(GXAttr attr, const void* data, u32 size, u8 stride) {
+-  GXSetArray(attr, data, size, stride, false);
+-}
+ #define GXSETARRAY(attr, data, size, stride, le) GXSetArray((attr), (data), (size), (stride), (le))
++// NOTE: no 4-argument C++ convenience overload here: devkitA64 GCC rejects
++// any second declaration of a C-linkage function name in the same scope,
++// even with C++ linkage. Callers must pass the endianness flag explicitly.
+ #else
+ void GXSetArray(GXAttr attr, const void* data, u8 stride);
+ #define GXSETARRAY(attr, data, size, stride, le) GXSetArray((attr), (data), (stride))
+diff --git a/runtime/include/abi_bridge.h b/runtime/include/abi_bridge.h
+index e4b87f9..ff70054 100644
+--- a/runtime/include/abi_bridge.h
++++ b/runtime/include/abi_bridge.h
+@@ -1,5 +1,6 @@
+ #pragma once
+-#include "memory.h"
++#include <memory.h> // <> (not "") so embedders can shadow the memory model;
++// resolves to this same file in standalone builds.
+ #include "ppc_runtime.h"
+ #include "system_bridge.h"
+ #include "game_graphics_options.h"
+diff --git a/runtime/include/gx_guest_write.h b/runtime/include/gx_guest_write.h
+index f12c21f..5242a80 100644
+--- a/runtime/include/gx_guest_write.h
++++ b/runtime/include/gx_guest_write.h
+@@ -5,7 +5,8 @@
+ // so hooking those plus DMA writers is a complete notification. Header-only: hot, must not
+ // link-depend on the GX HLE.
+ 
+-#include "memory.h"
++#include <memory.h> // <> (not "") so embedders can shadow the memory model;
++// resolves to this same file in standalone builds.
+ 
+ #include <array>
+ #include <atomic>
+diff --git a/runtime/include/runtime_config.h b/runtime/include/runtime_config.h
+index c8cdf80..34626d6 100644
+--- a/runtime/include/runtime_config.h
++++ b/runtime/include/runtime_config.h
+@@ -168,7 +168,7 @@ inline bool IsSupportedGraphicsApi(std::string_view value) {
+ #if defined(__APPLE__)
+     static constexpr std::array<std::string_view, 2> values{"auto", "metal"};
+ // only vulkan for linux
+-#elif defined(__linux__)
++#elif defined(__linux__) || defined(__SWITCH__)
+     static constexpr std::array<std::string_view, 2> values{"auto", "vulkan"};
+ #elif defined(_WIN32)
+     static constexpr std::array<std::string_view, 3> values{"auto", "d3d12", "vulkan"};
+diff --git a/runtime/include/runtime_log.h b/runtime/include/runtime_log.h
+index 60ff361..6b75882 100644
+--- a/runtime/include/runtime_log.h
++++ b/runtime/include/runtime_log.h
+@@ -6,7 +6,8 @@
+ #include <cstdio>
+ #include <iostream>
+ 
+-#include "memory.h"
++#include <memory.h> // <> (not "") so embedders can shadow the memory model;
++// resolves to this same file in standalone builds.
+ 
+ // Canonical module tags. Use one of these; never write a bare "[...]" prefix
+ // into a message. (A message whose text spans several output lines repeats the
+diff --git a/runtime/include/system_bridge.h b/runtime/include/system_bridge.h
+index a2d4cf6..a1775f1 100644
+--- a/runtime/include/system_bridge.h
++++ b/runtime/include/system_bridge.h
+@@ -9,7 +9,8 @@
+ 
+ #include <csetjmp>
+ 
+-#include "memory.h"
++#include <memory.h> // <> (not "") so embedders can shadow the memory model;
++// resolves to this same file in standalone builds.
+ 
+ // Windows' SehLogger longjmps out of a vectored exception handler, where plain setjmp/longjmp is
+ // the norm. A POSIX signal handler jumping back to here must use the sig-prefixed pair instead:
+diff --git a/runtime/src/hle/gx/gx_dl.cpp b/runtime/src/hle/gx/gx_dl.cpp
+index 4a984a7..cf73728 100644
+--- a/runtime/src/hle/gx/gx_dl.cpp
++++ b/runtime/src/hle/gx/gx_dl.cpp
+@@ -1097,7 +1097,7 @@ static void ApplyAuroraArrayIfChanged(GXAttr attr, const void* data, uint32_t si
+     if (applied.valid && applied.data == data && applied.size == size && applied.stride == stride) {
+         return;
+     }
+-    GXSetArray(attr, data, size, stride);
++    GXSetArray(attr, data, size, stride, false);
+     applied.data = data;
+     applied.size = size;
+     applied.stride = stride;
+diff --git a/runtime/src/hle/gx/gx_internal.h b/runtime/src/hle/gx/gx_internal.h
+index 8656dba..5935f12 100644
+--- a/runtime/src/hle/gx/gx_internal.h
++++ b/runtime/src/hle/gx/gx_internal.h
+@@ -22,6 +22,7 @@
+ #include <dolphin/gx/GXTev.h>
+ #include <dolphin/gx/GXBump.h>
+ #include <dolphin/gx/GXGeometry.h>
++#include <dolphin/gx/GXAurora.h>
+ #include <dolphin/gx/GXVert.h>
+ #include <dolphin/gx/GXExtra.h>
+ 
+diff --git a/runtime/src/hle/gx/gx_stream_common.h b/runtime/src/hle/gx/gx_stream_common.h
+index 006ab47..0547f7f 100644
+--- a/runtime/src/hle/gx/gx_stream_common.h
++++ b/runtime/src/hle/gx/gx_stream_common.h
+@@ -333,7 +333,7 @@ inline bool ApplyIndexedXfArrayForPacket(uint8_t cmd, uint32_t value) {
+         return false;
+     }
+ 
+-    GXSetArray(static_cast<GXAttr>(attr), hostPtr, span, static_cast<uint8_t>(arr.stride));
++    GXSetArray(static_cast<GXAttr>(attr), hostPtr, span, static_cast<uint8_t>(arr.stride), false);
+     return true;
+ }
+ 

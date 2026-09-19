@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer and local FST publication hardware-proven; the first #192 hardware run advances past the old TaskThread miss but does not yet prove a queued TaskThread job; the current exact blocker is PAL `GXSetProjection` at `0x8017301C`**.
+Status: **renderer and local FST publication hardware-proven; #193 hardware-proves both `TaskThread::run` and `GXSetProjection`; the current exact blocker is PAL `GXSetViewport` at `0x801733B4`**.
 
 ## Purpose
 
@@ -386,6 +386,36 @@ the matrix plus projection type to Aurora GX.
 The renderer remains ready with eight FIFO writes, zero display-list calls,
 zero drawable FIFO work, zero `GXCopyDisp`, and zero presents. FST publication
 remains valid and no DVD-read diagnostic is produced.
+
+## Hardware result after #193 — GXSetViewport frontier
+
+The first real-Switch run after #193 records:
+
+```text
+TaskThread::run hits : 1
+GXSetProjection hits : 1
+```
+
+This removes the prior ambiguity: merged #192 and #193 are both hardware-PASS.
+The scheduler remains recovered on the default/main thread and FST publication
+remains valid.
+
+The next exact blocker is:
+
+```text
+kind   : DIRECT
+target : 0x801733B4
+r1     : 0x80399008
+r3     : 0x80399048
+stage  : RMCP01_GX_SET_PROJECTION
+```
+
+Pinned WiiCompiled maps `0x801733B4` to `GXSetViewport`. Its six scalar
+float parameters use PPC `f1..f6` and are forwarded directly to Aurora GX.
+
+Graphics state is otherwise unchanged: eight bootstrap FIFO writes, zero
+display-list calls, no drawable FIFO work, zero `GXCopyDisp`, and zero
+presents. No DVD-read status file is produced.
 
 ## Build
 

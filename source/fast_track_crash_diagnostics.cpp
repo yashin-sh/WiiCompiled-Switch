@@ -53,6 +53,7 @@ constexpr std::uint32_t kOsLoadContextAddress = 0x801A1F58u;
 constexpr std::uint32_t kTaskThreadRunAddress = 0x80242D7Cu;
 constexpr std::uint32_t kGxSetProjectionAddress = 0x8017301Cu;
 constexpr std::uint32_t kGxSetViewportAddress = 0x801733B4u;
+constexpr std::uint32_t kGxSetScissorAddress = 0x80173430u;
 constexpr std::uint32_t kDefaultThreadContextAddr = 0x80347498u;
 constexpr std::uint32_t kOSCurrentContextAddr = 0x800000D4u;
 constexpr std::uint32_t kOSRunningContextAddr = 0x800000E4u;
@@ -94,6 +95,7 @@ std::uint64_t g_os_load_context_dispatch_count = 0u;
 std::uint64_t g_task_thread_run_dispatch_count = 0u;
 std::uint64_t g_gx_set_projection_dispatch_count = 0u;
 std::uint64_t g_gx_set_viewport_dispatch_count = 0u;
+std::uint64_t g_gx_set_scissor_dispatch_count = 0u;
 
 struct FstSnapshot {
     std::uint32_t address = 0u;
@@ -213,6 +215,8 @@ const char* post_main_phase_name(std::uint32_t target) noexcept {
         return "GXSetProjection";
     case 0x801733B4u:
         return "GXSetViewport";
+    case 0x80173430u:
+        return "GXSetScissor";
     default:
         return "-";
     }
@@ -251,6 +255,7 @@ bool is_durable_post_main_phase_target(std::uint32_t target) noexcept {
     case 0x80242D7Cu:
     case 0x8017301Cu:
     case 0x801733B4u:
+    case 0x80173430u:
     case 0x80672CC8u:
         return true;
     default:
@@ -459,6 +464,7 @@ void write_liveness_record(
         "TaskThread::run hits  : %llu\n"
         "GXSetProjection hits  : %llu\n"
         "GXSetViewport hits    : %llu\n"
+        "GXSetScissor hits     : %llu\n"
         "guest fiber current   : 0x%08x\n"
         "OS current/running    : 0x%08x / 0x%08x\n"
         "default thread s/s/p  : %u / %d / %d\n"
@@ -492,6 +498,7 @@ void write_liveness_record(
         static_cast<unsigned long long>(g_task_thread_run_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_projection_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_viewport_dispatch_count),
+        static_cast<unsigned long long>(g_gx_set_scissor_dispatch_count),
         scheduler.fiber_current,
         scheduler.os_current,
         scheduler.os_running,
@@ -635,6 +642,9 @@ extern "C" void mkw_switch_note_translated_dispatch(
     }
     if (target == kGxSetViewportAddress) {
         ++g_gx_set_viewport_dispatch_count;
+    }
+    if (target == kGxSetScissorAddress) {
+        ++g_gx_set_scissor_dispatch_count;
     }
     if (target == kEggVideoConfigureAddress && !g_post_video_trace_started) {
         g_post_video_trace_started = true;

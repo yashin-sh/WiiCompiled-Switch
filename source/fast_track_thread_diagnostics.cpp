@@ -1,5 +1,6 @@
 #include "fast_track_thread_diagnostics.hpp"
 
+#include "devkita64_gcc_compat.hpp"
 #include "abi_bridge.h"
 
 #include "memory.h"

@@ -2,6 +2,7 @@
 #include "switch_os_hle_traits.hpp"
 
 static_assert(KnownNativeCpuCall<0x801A72FCu>::kAvailable);
+static_assert(KnownNativeCpuCall<0x801A735Cu>::kAvailable);
 static_assert(KnownNativeCpuCall<0x801A7424u>::kAvailable);
 
 // Nintendo-data-free compile/link coverage for PAL OS__InitMessageQueue.
@@ -25,4 +26,14 @@ extern "C" __attribute__((used)) void synthetic_os_receive_message_hle_probe(Cpu
     }
 
     InvokeDirectCpu<0x801A7424u>(cpu);
+}
+
+// Compile/link the hardware-proven PAL OSSendMessage native boundary without
+// mutating synthetic queue state during normal public CI execution.
+extern "C" __attribute__((used)) void synthetic_os_send_message_hle_probe(CpuContext* cpu) {
+    if (!cpu || cpu->pc != 0xFFFFFFFEu) {
+        return;
+    }
+
+    InvokeDirectCpu<0x801A735Cu>(cpu);
 }

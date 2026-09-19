@@ -153,7 +153,31 @@ It records:
 
 No guest scheduler, DVD, REL or renderer behavior is changed by this diagnostic.
 
-## Hardware result after #184 — DVD retry frontier\n\nThe scheduler-focused hardware run closes the earlier ambiguity:\n\n- the default/main thread (`0x80347498`) is still present and becomes `READY`\n  at priority 16 on run queue `0x80347830`;\n- guest thread `0x90112660` remains `RUNNING` at priority 6;\n- `VIWaitForRetrace`, `PostRetraceCallback`, and `OSWakeupThread` then advance\n  together at the sustained retrace cadence while `SelectThread` barely advances;\n- `RKSystem::run` and StaticR remain at zero;\n- the graphics path still contains only the eight `Video::configure` BP writes.\n\nThis disproves the idea that the default thread was simply lost. The higher-\npriority worker remains active while the default thread is runnable.\n\nSource attribution provides the next concrete gate: in pinned RMCP01,\n`EGG::DvdRipper::loadToMainRAM` is the explicit non-video path that retries a\nnegative `DVDRead` by calling `VIWaitForRetrace()` and trying again. Pinned\nWiiCompiled therefore native-overrides `DVDReadPrio` (`0x8015E834`) and the\ninternal `DVDReadAsyncPrio` (`0x8015E74C`) against the user-owned extracted\n`DATA/files` source.\n\nThe Switch port already publishes the local FST but did not yet provide those\nread overrides. The next hardware slice adds only that missing read contract:\nresolve `DVDFileInfo::startAddr` through the published FST, read the matching\n`DATA/files` payload into guest RAM, publish DVD completion state, and notify\nthe existing guest-RAM DMA seam. A bounded `dvd-read-status.txt` records the\nfirst 32 attempts for hardware attribution.\n\n## Build
+## Hardware result after #184 — DVD retry frontier\n\nThe scheduler-focused hardware run closes the earlier ambiguity:\n\n- the default/main thread (`0x80347498`) is still present and becomes `READY`\n  at priority 16 on run queue `0x80347830`;\n- guest thread `0x90112660` remains `RUNNING` at priority 6;\n- `VIWaitForRetrace`, `PostRetraceCallback`, and `OSWakeupThread` then advance\n  together at the sustained retrace cadence while `SelectThread` barely advances;\n- `RKSystem::run` and StaticR remain at zero;\n- the graphics path still contains only the eight `Video::configure` BP writes.\n\nThis disproves the idea that the default thread was simply lost. The higher-\npriority worker remains active while the default thread is runnable.\n\nSource attribution provides the next concrete gate: in pinned RMCP01,\n`EGG::DvdRipper::loadToMainRAM` is the explicit non-video path that retries a\nnegative `DVDRead` by calling `VIWaitForRetrace()` and trying again. Pinned\nWiiCompiled therefore native-overrides `DVDReadPrio` (`0x8015E834`) and the\ninternal `DVDReadAsyncPrio` (`0x8015E74C`) against the user-owned extracted\n`DATA/files` source.\n\nThe Switch port already publishes the local FST but did not yet provide those\nread overrides. The next hardware slice adds only that missing read contract:\nresolve `DVDFileInfo::startAddr` through the published FST, read the matching\n`DATA/files` payload into guest RAM, publish DVD completion state, and notify\nthe existing guest-RAM DMA seam. A bounded `dvd-read-status.txt` records the\nfirst 32 attempts for hardware attribution.\n\n## Hardware result after #185 — later prio-6 guest thread frontier
+
+The first hardware run with the local DVD-read bridge disproves the previous
+DVD-retry attribution for the current startup path:
+
+- the FST remains published and structurally valid at `0x97DC0000`;
+- neither `DVDReadPrio` (`0x8015E834`) nor internal
+  `DVDReadAsyncPrio` (`0x8015E74C`) appears in the bounded post-video trace;
+- no `dvd-read-status.txt` is produced, so #185 is not reached in this run;
+- the default thread is still running after the initial ProcessMeter
+  `OSReceiveMessage` / `OSSleepThread` handoff;
+- only later, between roughly 2 and 3 seconds, execution switches durably to
+  OSThread `0x90112660`, priority 6, while the default thread becomes READY;
+- the sustained sample remains `PostRetraceCallback` at `0x8020FCD4` with
+  guest PC `EGG::Thread::start(void*)` at `0x8024373C`.
+
+The initial priority-6 ProcessMeter thread is not the durable blocker: its
+OSThread is created at `0x8042A680`, whereas the sustained active OSThread is
+`0x90112660`. The next hardware diagnostic therefore records bounded
+`OSCreateThread -> OSResumeThread -> GuestFiberEntry` lifecycle events,
+including entry point, entry argument, priority, EGG object vtable and the
+`Thread::run` virtual slot. This should identify the exact later thread class
+without changing scheduler or renderer semantics.
+
+## Build
 
 The user's existing local RMCP01 translated product must already be present,
 the same prerequisite as `build-local-fast-track.sh`.

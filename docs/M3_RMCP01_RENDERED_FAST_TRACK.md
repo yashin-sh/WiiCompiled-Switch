@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer and local FST publication hardware-proven; #191 hardware-crosses `GXDrawDone`; the current blocker is virtual `EGG::TaskThread::run` at `0x80242D7C`, reached by the priority-24 ResourceManager worker**.
+Status: **renderer and local FST publication hardware-proven; the first #192 hardware run advances past the old TaskThread miss but does not yet prove a queued TaskThread job; the current exact blocker is PAL `GXSetProjection` at `0x8017301C`**.
 
 ## Purpose
 
@@ -357,6 +357,35 @@ remains valid and no DVD-read diagnostic is produced yet.
 
 The next slice mirrors the pinned `TaskThread::run` loop and routes this
 virtual native target before the generated translated indirect table.
+
+## Hardware result after #192 — GXSetProjection frontier
+
+The first real-Switch run after #192 advances to 4,107 translated dispatches /
+3,501 post-main dispatches. The old `INDIRECT_JUMP_MISS 0x80242D7C` is not
+reproduced and the priority-24 TaskThread still enters its guest fiber.
+
+This run does **not** yet prove queued `TaskThread::run` execution because the
+diagnostics had no dedicated hit counter and `OSReceiveMessage` remains at 2.
+The next diagnostic revision therefore records both `TaskThread::run hits` and
+`GXSetProjection hits`.
+
+The new exact blocker is:
+
+```text
+kind   : DIRECT
+target : 0x8017301C
+r1     : 0x80399008
+r3     : 0x80399048
+stage  : RMCP01_GX_DRAW_DONE
+```
+
+Pinned WiiCompiled maps `0x8017301C` to `GXSetProjection`. Its native
+override converts the guest big-endian 4x4 matrix to host floats and forwards
+the matrix plus projection type to Aurora GX.
+
+The renderer remains ready with eight FIFO writes, zero display-list calls,
+zero drawable FIFO work, zero `GXCopyDisp`, and zero presents. FST publication
+remains valid and no DVD-read diagnostic is produced.
 
 ## Build
 

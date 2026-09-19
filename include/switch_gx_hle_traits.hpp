@@ -8,6 +8,7 @@ extern "C" void mkw_switch_hle_gx_copy_disp(CpuContext* cpu) noexcept;
 
 extern "C" void mkw_switch_hle_gx_init(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_draw_done(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 
@@ -30,6 +31,19 @@ struct KnownNativeCpuCall<0x8016EAB0u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_draw_done(cpu);
+    }
+};
+
+// GXSetProjection (PAL 0x8017301C). Pinned WiiCompiled reads the guest's
+// big-endian 4x4 matrix, converts it to host floats, and forwards the matrix
+// plus projection type into Aurora GX. This boundary is reached directly by
+// RMCP01 after #192.
+template <>
+struct KnownNativeCpuCall<0x8017301Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_projection(cpu);
     }
 };
 

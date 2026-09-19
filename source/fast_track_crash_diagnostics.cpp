@@ -50,6 +50,8 @@ constexpr std::uint32_t kOsSleepThreadAddress = 0x801AA9B8u;
 constexpr std::uint32_t kOsWakeupThreadAddress = 0x801AAAA4u;
 constexpr std::uint32_t kSelectThreadAddress = 0x801A9C08u;
 constexpr std::uint32_t kOsLoadContextAddress = 0x801A1F58u;
+constexpr std::uint32_t kTaskThreadRunAddress = 0x80242D7Cu;
+constexpr std::uint32_t kGxSetProjectionAddress = 0x8017301Cu;
 constexpr std::uint32_t kDefaultThreadContextAddr = 0x80347498u;
 constexpr std::uint32_t kOSCurrentContextAddr = 0x800000D4u;
 constexpr std::uint32_t kOSRunningContextAddr = 0x800000E4u;
@@ -88,6 +90,8 @@ std::uint64_t g_os_sleep_thread_dispatch_count = 0u;
 std::uint64_t g_os_wakeup_thread_dispatch_count = 0u;
 std::uint64_t g_select_thread_dispatch_count = 0u;
 std::uint64_t g_os_load_context_dispatch_count = 0u;
+std::uint64_t g_task_thread_run_dispatch_count = 0u;
+std::uint64_t g_gx_set_projection_dispatch_count = 0u;
 
 struct FstSnapshot {
     std::uint32_t address = 0u;
@@ -201,6 +205,10 @@ const char* post_main_phase_name(std::uint32_t target) noexcept {
         return "EGG::Video::initialize";
     case 0x80243D6Cu:
         return "EGG::Video::configure";
+    case 0x80242D7Cu:
+        return "EGG::TaskThread::run";
+    case 0x8017301Cu:
+        return "GXSetProjection";
     default:
         return "-";
     }
@@ -236,6 +244,8 @@ bool is_durable_post_main_phase_target(std::uint32_t target) noexcept {
     case 0x80229DCCu:
     case 0x80229DD8u:
     case 0x801A7424u:
+    case 0x80242D7Cu:
+    case 0x8017301Cu:
     case 0x80672CC8u:
         return true;
     default:
@@ -441,6 +451,8 @@ void write_liveness_record(
         "OSWakeupThread hits   : %llu\n"
         "SelectThread hits     : %llu\n"
         "OSLoadContext hits    : %llu\n"
+        "TaskThread::run hits  : %llu\n"
+        "GXSetProjection hits  : %llu\n"
         "guest fiber current   : 0x%08x\n"
         "OS current/running    : 0x%08x / 0x%08x\n"
         "default thread s/s/p  : %u / %d / %d\n"
@@ -471,6 +483,8 @@ void write_liveness_record(
         static_cast<unsigned long long>(g_os_wakeup_thread_dispatch_count),
         static_cast<unsigned long long>(g_select_thread_dispatch_count),
         static_cast<unsigned long long>(g_os_load_context_dispatch_count),
+        static_cast<unsigned long long>(g_task_thread_run_dispatch_count),
+        static_cast<unsigned long long>(g_gx_set_projection_dispatch_count),
         scheduler.fiber_current,
         scheduler.os_current,
         scheduler.os_running,
@@ -605,6 +619,12 @@ extern "C" void mkw_switch_note_translated_dispatch(
     }
     if (target == kOsLoadContextAddress) {
         ++g_os_load_context_dispatch_count;
+    }
+    if (target == kTaskThreadRunAddress) {
+        ++g_task_thread_run_dispatch_count;
+    }
+    if (target == kGxSetProjectionAddress) {
+        ++g_gx_set_projection_dispatch_count;
     }
     if (target == kEggVideoConfigureAddress && !g_post_video_trace_started) {
         g_post_video_trace_started = true;

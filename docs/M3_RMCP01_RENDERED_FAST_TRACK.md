@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer and local FST publication hardware-proven; #189 hardware-validates the VI poll fix and the `0x90112660` starvation fix; the current blocker is PAL `OSSendMessage` at `0x801A735C`**.
+Status: **renderer and local FST publication hardware-proven; #190 hardware-crosses `OSSendMessage` while preserving scheduler recovery; the current blocker is PAL `GXDrawDone` at `0x8016EAB0`**.
 
 ## Purpose
 
@@ -299,6 +299,36 @@ message-queue send contract only.
 
 Full evidence is recorded in
 `HARDWARE_RESULTS_2026-09-19_OS_SEND_MESSAGE_FRONTIER.md`.
+
+## Hardware result after #190 — GXDrawDone frontier
+
+The first real-Switch run after #190 crosses the previous PAL
+`OSSendMessage (0x801A735C)` blocker and preserves the scheduler fixes:
+
+- `0x8042A680` still returns through its blocking message path;
+- priority-6 worker `0x90112660` still parks on VI queue `0x80386BC0`;
+- default/main `0x80347498` remains the current/running thread in the durable
+  snapshot;
+- the liveness watchdog remains ACTIVE while translated dispatches advance.
+
+The new explicit blocker is:
+
+```text
+kind   : DIRECT
+target : 0x8016EAB0
+r3     : 0x8042944C
+stage  : HOST_CONTEXT_SWITCH_RETURNED
+```
+
+At the pinned WiiCompiled revision, `0x8016EAB0` is `GXDrawDone`.
+Pinned behavior clears the guest draw-done flag, drains GX, then publishes the
+PE-finish bit and draw-done flag. In the rendered fast-track the implementation
+uses Aurora's real `GXDrawDone()` FIFO drain and preserves the separate
+`GXCopyDisp` present boundary.
+
+The renderer remains initialized with exactly eight bootstrap FIFO writes and
+still has no display-list call, drawable FIFO work, `GXCopyDisp`, or present.
+FST publication remains valid; `RKSystem::run` and StaticR are still zero.
 
 ## Build
 

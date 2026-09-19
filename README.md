@@ -26,7 +26,7 @@ The latest hardware run confirms the prolonged black-screen path is **actively e
 
 The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge sets `r3` to the new retrace value immediately before invoking the post-retrace callback, so this is direct evidence that the VI/retrace loop continued advancing for thousands of retraces.
 
-The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The local rendered RMCP01 target is also running on hardware. Its current game-facing frontier is no longer renderer bring-up: the user-owned FST is published successfully, #185 local DVD reads are installed but not reached, and the next gate is identifying later priority-6 OSThread `0x90112660`.
+The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`; the current gate is correcting `VIWaitForRetrace` to use the pin's guest-fiber wait-queue path instead of leaving that higher-priority guest RUNNING.
 
 ## Milestones
 
@@ -103,7 +103,9 @@ RMCP01 rendered fast-track                      ✅ hardware running
   ↓
 local FST publication @ 0x97DC0000              ✅ hardware validated
   ↓
-later OSThread 0x90112660 identity               ← current gate
+later OSThread 0x90112660 / run 0x80008D18       ✅ identified
+  ↓
+fiber-aware VIWaitForRetrace scheduling              ← current gate
   ↓
 first rendered RMCP01 frame
 ```

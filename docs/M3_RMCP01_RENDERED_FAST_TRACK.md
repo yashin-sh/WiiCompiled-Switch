@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer and local FST publication hardware-proven; #186 identified later priority-6 OSThread `0x90112660`; the first #188 hardware run exposed an earlier VI-poll register-clobber regression at the initial guest-fiber entry, now fixed in code pending hardware revalidation**.
+Status: **renderer and local FST publication hardware-proven; #189 hardware-validates the VI poll fix and the `0x90112660` starvation fix; the current blocker is PAL `OSSendMessage` at `0x801A735C`**.
 
 ## Purpose
 
@@ -267,6 +267,38 @@ Hardware acceptance now proceeds in two stages:
 
 Full evidence and attribution are recorded in
 `HARDWARE_RESULTS_2026-09-19_VI_POLL_CONTEXT_REGRESSION.md`.
+
+## Hardware result after #189 — scheduler recovery and OSSendMessage frontier
+
+The next real-Switch run validates both pending VI/scheduler gates:
+
+- initial OSThread `0x8042A680` crosses `EGG::Thread::start` and returns
+  through its historical blocking message path;
+- later worker `0x90112660`, priority 6, enters its guest fiber and returns
+  in WAITING state on VI queue `0x80386BC0`;
+- final scheduler snapshot is back on the default/main thread
+  `0x80347498`, priority 16;
+- counters advance to `OSSleepThread=2`, `OSWakeupThread=318`,
+  `SelectThread=27`.
+
+The run reaches 2,581 translated dispatches / 1,975 post-main dispatches before
+the next explicit blocker:
+
+```text
+kind   : DIRECT
+target : 0x801A735C
+r3     : 0x8042BBFC
+stage  : HOST_CONTEXT_SWITCH_RETURNED
+```
+
+At the pinned WiiCompiled revision, `0x801A735C` is `OSSendMessage`.
+The renderer remains ready with the same eight bootstrap FIFO writes and no
+display list / drawable work / `GXCopyDisp`; FST publication remains valid and
+no DVD read is reached. The next implementation is therefore the pinned
+message-queue send contract only.
+
+Full evidence is recorded in
+`HARDWARE_RESULTS_2026-09-19_OS_SEND_MESSAGE_FRONTIER.md`.
 
 ## Build
 

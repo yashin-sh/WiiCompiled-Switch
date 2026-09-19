@@ -7,6 +7,7 @@
 
 #include <cstdint>
 
+extern "C" void mkw_switch_hle_os_send_message(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_os_receive_message(CpuContext* cpu) noexcept;
 
 // __OSInitSTM (PAL 0x801AB848). Pinned WiiCompiled skips real /dev/stm/* IOS
@@ -93,6 +94,19 @@ struct KnownNativeCpuCall<0x801A72FCu> {
             // Match the pinned HLE boundary: a guest-memory fault is contained
             // inside the native override rather than escaping into the caller.
         }
+    }
+};
+
+// OSSendMessage (PAL 0x801A735C). Pinned WiiCompiled disables interrupts,
+// appends to the ring buffer when space exists, wakes receivers, and returns
+// success. A full non-blocking send returns 0; a full blocking send parks on
+// the embedded send OSThreadQueue through OSSleepThread and retries.
+template <>
+struct KnownNativeCpuCall<0x801A735Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_os_send_message(cpu);
     }
 };
 

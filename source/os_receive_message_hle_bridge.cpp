@@ -15,6 +15,27 @@ constexpr std::uint32_t kMsgQueueCountOffset = 0x14u;
 constexpr std::uint32_t kMsgQueueFirstOffset = 0x18u;
 constexpr std::uint32_t kMsgQueueUsedOffset = 0x1Cu;
 
+bool QueueIsFull(std::uint32_t queuePtr) {
+    const std::uint32_t used = Memory::Read32(queuePtr + kMsgQueueUsedOffset);
+    const std::uint32_t count = Memory::Read32(queuePtr + kMsgQueueCountOffset);
+    return count != 0u && used >= count;
+}
+
+void EnqueueMessage(std::uint32_t queuePtr, std::uint32_t msg) {
+    const std::uint32_t arrayPtr = Memory::Read32(queuePtr + kMsgQueueArrayOffset);
+    const std::uint32_t count = Memory::Read32(queuePtr + kMsgQueueCountOffset);
+    const std::uint32_t first = Memory::Read32(queuePtr + kMsgQueueFirstOffset);
+    const std::uint32_t used = Memory::Read32(queuePtr + kMsgQueueUsedOffset);
+
+    if (count == 0u) {
+        return;
+    }
+
+    const std::uint32_t index = (first + used) % count;
+    Memory::Write32(arrayPtr + index * 4u, msg);
+    Memory::Write32(queuePtr + kMsgQueueUsedOffset, used + 1u);
+}
+
 std::uint32_t DequeueMessage(std::uint32_t queuePtr) {
     const std::uint32_t arrayPtr = Memory::Read32(queuePtr + kMsgQueueArrayOffset);
     const std::uint32_t count = Memory::Read32(queuePtr + kMsgQueueCountOffset);
@@ -38,6 +59,55 @@ void RestoreInterruptState(CpuContext* cpu, bool enabled) noexcept {
 }
 
 } // namespace
+
+extern "C" void mkw_switch_hle_os_send_message(CpuContext* cpu) noexcept {
+    if (!cpu) {
+        return;
+    }
+
+    const std::uint32_t queuePtr = cpu->gpr[3];
+    const std::uint32_t msg = cpu->gpr[4];
+    const bool block = (cpu->gpr[5] & 1u) != 0u;
+
+    if (queuePtr == 0u) {
+        cpu->gpr[3] = 0u;
+        return;
+    }
+
+    // Match pinned WiiCompiled's MsgQueueOp path used by OSSendMessage:
+    // disable interrupts once, append when space exists and wake receivers.
+    // A full blocking send parks on the embedded send OSThreadQueue and retries.
+    mkw_switch_hle_os_disable_interrupts(cpu);
+    const bool previousInterruptState = cpu->gpr[3] != 0u;
+
+    while (true) {
+        try {
+            if (!QueueIsFull(queuePtr)) {
+                EnqueueMessage(queuePtr, msg);
+
+                cpu->gpr[3] = queuePtr + kMsgQueueRecvOffset;
+                InvokeDirectCpu<0x801AAAA4u>(cpu);
+
+                RestoreInterruptState(cpu, previousInterruptState);
+                cpu->gpr[3] = 1u;
+                return;
+            }
+        } catch (...) {
+            RestoreInterruptState(cpu, previousInterruptState);
+            cpu->gpr[3] = 0u;
+            return;
+        }
+
+        if (!block) {
+            RestoreInterruptState(cpu, previousInterruptState);
+            cpu->gpr[3] = 0u;
+            return;
+        }
+
+        cpu->gpr[3] = queuePtr + kMsgQueueSendOffset;
+        InvokeDirectCpu<0x801AA9B8u>(cpu);
+    }
+}
 
 extern "C" void mkw_switch_hle_os_receive_message(CpuContext* cpu) noexcept {
     if (!cpu) {

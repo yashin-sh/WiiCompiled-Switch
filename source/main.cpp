@@ -17,6 +17,7 @@ extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
 struct CpuContext;
 extern "C" void mkw_switch_hle_os_create_thread(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_select_thread(CpuContext* ctx) noexcept;
+extern "C" void mkw_switch_hle_os_send_message(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_os_receive_message(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_os_sleep_thread(CpuContext* ctx) noexcept;
 #endif
@@ -29,10 +30,12 @@ int main(int, char**) {
     // by public CI without executing guest scheduler semantics against fake state.
     volatile auto os_create_thread_link_anchor = &mkw_switch_hle_os_create_thread;
     volatile auto select_thread_link_anchor = &mkw_switch_hle_select_thread;
+    volatile auto os_send_message_link_anchor = &mkw_switch_hle_os_send_message;
     volatile auto os_receive_message_link_anchor = &mkw_switch_hle_os_receive_message;
     volatile auto os_sleep_thread_link_anchor = &mkw_switch_hle_os_sleep_thread;
     (void)os_create_thread_link_anchor;
     (void)select_thread_link_anchor;
+    (void)os_send_message_link_anchor;
     (void)os_receive_message_link_anchor;
     (void)os_sleep_thread_link_anchor;
 #endif

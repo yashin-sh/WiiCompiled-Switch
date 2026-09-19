@@ -147,7 +147,7 @@ The current hardware-driven method remains deliberate after `main`: execute the 
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The first run after #192 advances to 4,107 translated dispatches / 3,501 post-main dispatches and no longer stops at the old `TaskThread::run` indirect miss, but that run predates a dedicated TaskThread hit counter, so #192 is not yet marked hardware-PASS. The new first durable blocker is PAL `GXSetProjection` at `0x8017301C`. No DVD read, display list, drawable RMCP01 FIFO work, `GXCopyDisp`, or present has been observed yet.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The first run after #193 hardware-proves `TaskThread::run` and `GXSetProjection` with one explicit hit each while scheduler recovery remains intact. The new first durable blocker is PAL `GXSetViewport` at `0x801733B4`. No DVD read, display list, drawable RMCP01 FIFO work, `GXCopyDisp`, or present has been observed yet.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input
@@ -168,8 +168,9 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-validate the `0x90112660` fiber-aware `VIWaitForRetrace` starvation fix: worker parks on `0x80386BC0`, scheduler returns to main
 - [x] hardware-cross PAL `OSSendMessage` (`0x801A735C`) after scheduler recovery
 - [x] hardware-cross PAL `GXDrawDone` (`0x8016EAB0`) using the pinned draw-done bookkeeping and Aurora FIFO drain
-- [ ] hardware-cross virtual `EGG::TaskThread::run` (`0x80242D7C`) with the new explicit hit counter and capture the first resource-job callback / DVD frontier
-- [ ] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
+- [x] hardware-cross virtual `EGG::TaskThread::run` (`0x80242D7C`) with the explicit hit counter
+- [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
+- [ ] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
 - [ ] continue post-main initialization through system/resource initialization
 - [ ] complete game/resource initialization
 - [ ] menus

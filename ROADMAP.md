@@ -147,7 +147,7 @@ The current hardware-driven method remains deliberate after `main`: execute the 
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The first run after #193 hardware-proves `TaskThread::run` and `GXSetProjection` with one explicit hit each while scheduler recovery remains intact. The new first durable blocker is PAL `GXSetViewport` at `0x801733B4`. No DVD read, display list, drawable RMCP01 FIFO work, `GXCopyDisp`, or present has been observed yet.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The first run after #194 hardware-proves `GXSetViewport` with one explicit hit while `GXSetProjection` remains crossed and scheduler recovery remains intact. The new first durable blocker is PAL `GXSetScissor` at `0x80173430`. No DVD read, display list, drawable RMCP01 FIFO work, `GXCopyDisp`, or present has been observed yet.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input
@@ -170,7 +170,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-cross PAL `GXDrawDone` (`0x8016EAB0`) using the pinned draw-done bookkeeping and Aurora FIFO drain
 - [x] hardware-cross virtual `EGG::TaskThread::run` (`0x80242D7C`) with the explicit hit counter
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
-- [ ] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
+- [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
+- [ ] hardware-cross PAL `GXSetScissor` (`0x80173430`) using pinned guest GXData bookkeeping plus Aurora scissor
 - [ ] continue post-main initialization through system/resource initialization
 - [ ] complete game/resource initialization
 - [ ] menus

@@ -19,8 +19,10 @@ public:
     // (HleFifoWrite display-list bursts) keeps its graceful-false handling
     // instead of just aborting.
     class AccessViolation : public std::runtime_error {
-      public:
-        AccessViolation(std::uint32_t address, std::size_t length, std::string_view reason);
+    public:
+        AccessViolation(std::uint32_t address,
+                        std::size_t length,
+                        std::string_view reason);
 
         std::uint32_t address() const noexcept {
             return address_;
@@ -32,7 +34,7 @@ public:
             return reason_;
         }
 
-      private:
+    private:
         std::uint32_t address_ = 0;
         std::size_t length_ = 0;
         std::string reason_;

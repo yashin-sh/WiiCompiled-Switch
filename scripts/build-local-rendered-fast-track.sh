@@ -94,9 +94,16 @@ echo "RMCP01 rendered fast-track ready:"
 echo "  $OUTPUT"
 echo
 echo "This NRO contains locally generated game-derived code. Do not upload or commit it."
+echo
+echo "Current RMCP01 resource gate:"
+echo "  Copy your own extracted PAL RMCP01 DATA directory to:"
+echo "  /switch/WiiCompiled-Switch/DATA"
+echo "  Required now: DATA/sys/boot.bin, DATA/sys/fst.bin, and DATA/files/"
+echo
 echo "Launch it through hbmenu title override/application mode."
 echo
 echo "After the run, return:"
+echo "  /switch/WiiCompiled-Switch/dvd-fst-status.txt"
 echo "  /switch/WiiCompiled-Switch/rendered-fast-track-graphics.txt"
 echo "  /switch/WiiCompiled-Switch/fast-track-progress.txt"
 echo "  /switch/WiiCompiled-Switch/fast-track-heartbeat.txt"

@@ -10,6 +10,7 @@ extern "C" void mkw_switch_hle_gx_init(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_draw_done(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_viewport(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_scissor(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 
@@ -57,6 +58,18 @@ struct KnownNativeCpuCall<0x801733B4u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_viewport(cpu);
+    }
+};
+
+// GXSetScissor (PAL 0x80173430). Pinned WiiCompiled consumes r3..r6 as
+// unsigned left/top/width/height, mirrors the two guest GX scissor BP words
+// and dirty flag, then forwards the rectangle to Aurora GX.
+template <>
+struct KnownNativeCpuCall<0x80173430u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_scissor(cpu);
     }
 };
 

@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer and local FST publication hardware-proven; #193 hardware-proves both `TaskThread::run` and `GXSetProjection`; the current exact blocker is PAL `GXSetViewport` at `0x801733B4`**.
+Status: **renderer and local FST publication hardware-proven; #194 hardware-proves `GXSetViewport`; the current exact blocker is PAL `GXSetScissor` at `0x80173430`**.
 
 ## Purpose
 
@@ -412,6 +412,41 @@ stage  : RMCP01_GX_SET_PROJECTION
 
 Pinned WiiCompiled maps `0x801733B4` to `GXSetViewport`. Its six scalar
 float parameters use PPC `f1..f6` and are forwarded directly to Aurora GX.
+
+Graphics state is otherwise unchanged: eight bootstrap FIFO writes, zero
+display-list calls, no drawable FIFO work, zero `GXCopyDisp`, and zero
+presents. No DVD-read status file is produced.
+
+## Hardware result after #194 — GXSetScissor frontier
+
+The first real-Switch run after #194 records:
+
+```text
+GXSetProjection hits : 1
+GXSetViewport hits   : 1
+```
+
+This hardware-proves the merged viewport bridge. The scheduler remains recovered
+on the default/main thread and FST publication remains valid.
+
+The next exact blocker is:
+
+```text
+kind   : DIRECT
+target : 0x80173430
+r1     : 0x80399008
+r3     : 0x00000000
+stage  : RMCP01_GX_SET_VIEWPORT
+```
+
+Pinned WiiCompiled maps `0x80173430` to `GXSetScissor`. Its native override
+takes unsigned `r3..r6`, updates the guest GX scissor BP words at
+`GXData+0x148/+0x14C`, clears `GXData+2`, then forwards the rectangle to
+Aurora GX.
+
+This specific run reports `TaskThread::run hits = 0`; it therefore does not
+re-prove #192, but the priority-24 worker still reaches guest-fiber entry and
+the previous hardware proof remains valid.
 
 Graphics state is otherwise unchanged: eight bootstrap FIFO writes, zero
 display-list calls, no drawable FIFO work, zero `GXCopyDisp`, and zero

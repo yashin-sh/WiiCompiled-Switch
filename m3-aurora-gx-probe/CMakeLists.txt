@@ -12,6 +12,16 @@ if(NOT TARGET fmt)
         URL_HASH SHA256=ac366b7b4c2e9f0dde63a59b3feb5ee59b67974b14ee5dc9ea8ad78aa2c1ee1e
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
     FetchContent_MakeAvailable(fmt)
+    # newlib (Switch) hides flockfile/putc_unlocked behind feature macros
+    # that stay off in strict C++ modes, while its BSD-derived FILE layout
+    # still matches fmt's apple_file fast path. Force the portable
+    # fwrite-based fallback instead; PUBLIC so consumers instantiating
+    # fmt headers see the same file_ref selection (ODR).
+    target_compile_definitions(fmt PUBLIC FMT_USE_FALLBACK_FILE=1)
+    # newlib hides POSIX declarations (fdopen, flockfile, ...) behind
+    # feature macros that stay off in strict C++ modes. Expose them for
+    # fmt and its consumers; scoped to this target, not global.
+    target_compile_definitions(fmt PUBLIC _DEFAULT_SOURCE)
 endif()
 
 if(NOT TARGET xxhash)
@@ -78,6 +88,10 @@ target_include_directories(m3_aurora_gx PUBLIC
     "${A}/include"
     "${A}/lib"
     "${CMAKE_CURRENT_SOURCE_DIR}/source"
+    # Minimal local SDL3 *type* shims (compat/SDL3): Aurora headers name a
+    # few SDL types but no compiled probe TU calls SDL, and no SDL library
+    # is linked. Must come before any other path that could provide SDL.
+    "${CMAKE_CURRENT_SOURCE_DIR}/compat"
 )
 
 target_compile_features(m3_aurora_gx PUBLIC cxx_std_20)
@@ -97,8 +111,13 @@ target_link_libraries(m3_aurora_gx PUBLIC
     xxhash
     absl::btree
     absl::flat_hash_map
-    TracyClient
 )
+# Profiling is disabled (TRACY_ENABLE OFF): Aurora only needs Tracy's
+# headers (macros expand to no-ops, no TU calls into the client library),
+# and TracyClient itself does not compile for Switch newlib. Use the
+# include directories from its target without building or linking it.
+get_target_property(TRACY_INCLUDE_DIRS TracyClient INTERFACE_INCLUDE_DIRECTORIES)
+target_include_directories(m3_aurora_gx PRIVATE ${TRACY_INCLUDE_DIRS})
 
 target_compile_options(m3_aurora_gx PRIVATE
     -ffunction-sections

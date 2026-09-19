@@ -17,6 +17,7 @@ extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
 struct CpuContext;
 extern "C" void mkw_switch_hle_gx_draw_done(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* ctx) noexcept;
+extern "C" void mkw_switch_hle_gx_set_viewport(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_os_create_thread(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_select_thread(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_os_send_message(CpuContext* ctx) noexcept;
@@ -32,6 +33,7 @@ int main(int, char**) {
     // by public CI without executing guest scheduler semantics against fake state.
     volatile auto gx_draw_done_link_anchor = &mkw_switch_hle_gx_draw_done;
     volatile auto gx_set_projection_link_anchor = &mkw_switch_hle_gx_set_projection;
+    volatile auto gx_set_viewport_link_anchor = &mkw_switch_hle_gx_set_viewport;
     volatile auto os_create_thread_link_anchor = &mkw_switch_hle_os_create_thread;
     volatile auto select_thread_link_anchor = &mkw_switch_hle_select_thread;
     volatile auto os_send_message_link_anchor = &mkw_switch_hle_os_send_message;
@@ -39,6 +41,7 @@ int main(int, char**) {
     volatile auto os_sleep_thread_link_anchor = &mkw_switch_hle_os_sleep_thread;
     (void)gx_draw_done_link_anchor;
     (void)gx_set_projection_link_anchor;
+    (void)gx_set_viewport_link_anchor;
     (void)os_create_thread_link_anchor;
     (void)select_thread_link_anchor;
     (void)os_send_message_link_anchor;

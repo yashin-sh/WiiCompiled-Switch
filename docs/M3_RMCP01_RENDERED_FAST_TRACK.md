@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer and local FST publication hardware-proven; current gate is identifying later priority-6 OSThread `0x90112660` before changing scheduler, DVD or renderer behavior**.
+Status: **renderer and local FST publication hardware-proven; #186 identified later priority-6 OSThread `0x90112660`, and the current hardware gate is the pinned fiber-aware `VIWaitForRetrace` scheduling fix**.
 
 ## Purpose
 
@@ -191,6 +191,37 @@ or the renderer.
 
 The consolidated 2026-09-19 evidence is recorded in
 `HARDWARE_RESULTS_2026-09-19_RMCP01_RESOURCE_THREAD_FRONTIER.md`.
+
+## Hardware result after #186 — VI guest-fiber starvation
+
+The bounded thread lifecycle log identifies the durable worker exactly enough
+to close the scheduler ambiguity:
+
+```text
+thread=0x90112660
+entry=0x8024373c
+arg=0x8042e930
+prio=6
+vtable=0x80270bc0
+vt_run=0x80008d18
+```
+
+This worker is distinct from the initial ProcessMeter thread. At the end of the
+same hardware run the worker remains RUNNING at priority 6 while the default
+thread is READY at priority 16. Counters show 928 `VIWaitForRetrace` calls,
+925 `OSWakeupThread` calls, but only 6 `SelectThread` calls.
+
+The Switch `VIWaitForRetrace` bridge was still using pinned WiiCompiled's
+non-fiber fallback: `svcSleepThread` paces the Horizon host thread but does
+not place the guest OSThread on the VI wait queue. Once HostContext-backed guest
+fibers exist, that leaves a higher-priority guest RUNNING across every retrace
+and starves the default thread.
+
+The next implementation slice therefore mirrors the pin's fiber path:
+`OSSleepThread(0x80386BC0)` while waiting for the retrace count to change,
+plus bounded synchronous time-driven retrace polling from safe runtime call
+boundaries. It does not change guest priorities, DVD reads or renderer
+semantics.
 
 ## Build
 

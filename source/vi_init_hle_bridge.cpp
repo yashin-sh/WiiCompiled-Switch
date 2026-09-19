@@ -47,6 +47,25 @@ std::atomic<bool> g_viFlushArmed{false};
 std::atomic<std::int64_t> g_viLastRetraceNs{0};
 std::atomic<bool> g_viRetraceAdvancing{false};
 
+class ScopedCpuContextRestore {
+  public:
+    explicit ScopedCpuContextRestore(CpuContext* cpu) noexcept
+        : cpu_(cpu), saved_(cpu ? *cpu : CpuContext{}) {}
+
+    ~ScopedCpuContextRestore() noexcept {
+        if (cpu_) {
+            *cpu_ = saved_;
+        }
+    }
+
+    ScopedCpuContextRestore(const ScopedCpuContextRestore&) = delete;
+    ScopedCpuContextRestore& operator=(const ScopedCpuContextRestore&) = delete;
+
+  private:
+    CpuContext* cpu_ = nullptr;
+    CpuContext saved_{};
+};
+
 std::int64_t NowNs() noexcept {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(
                Clock::now().time_since_epoch())
@@ -240,6 +259,15 @@ extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext* cpu) noexcept {
         mkw::switch_guest_fiber::current_thread() == 0u) {
         return;
     }
+
+    // This poll runs at translated call boundaries, which are interrupt-like
+    // service points rather than ABI calls made by the guest. AdvanceRetrace
+    // intentionally uses r3 for OSWakeupThread and retrace callbacks. Preserve
+    // the complete interrupted register file so a due retrace cannot clobber
+    // the next translated callee's arguments (the #188 hardware regression
+    // first reproduced this at EGG::Thread::start, where r3 is the EGG object).
+    // Guest memory, wait queues and scheduler state remain shared and visible.
+    ScopedCpuContextRestore restoreInterruptedCpu(cpu);
 
     // Mirror pinned VI_HLE_PollRetrace: service already-due boundaries from a
     // safe synchronous guest execution point. Never mutate guest RAM from a

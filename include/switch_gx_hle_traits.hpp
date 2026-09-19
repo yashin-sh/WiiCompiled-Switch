@@ -7,6 +7,7 @@ extern "C" void mkw_switch_hle_gx_copy_disp(CpuContext* cpu) noexcept;
 #endif
 
 extern "C" void mkw_switch_hle_gx_init(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_draw_done(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 
@@ -16,6 +17,19 @@ struct KnownNativeCpuCall<0x8016B850u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_init(cpu);
+    }
+};
+
+// GXDrawDone (PAL 0x8016EAB0). Pinned WiiCompiled clears the guest draw-done
+// flag, drains GX, then publishes the PE-finish bit and draw-done flag. The
+// rendered fast-track uses Aurora's real GXDrawDone drain; headless/synthetic
+// builds retain only the guest-visible bookkeeping contract.
+template <>
+struct KnownNativeCpuCall<0x8016EAB0u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_draw_done(cpu);
     }
 };
 

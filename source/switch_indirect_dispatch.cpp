@@ -9,7 +9,7 @@
 #include <cstddef>
 #include <cstdint>
 
-extern "C" void mkw_switch_hle_task_thread_run(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_task_thread_run(CpuContext* cpu);
 
 namespace {
 std::atomic<const StaticIndirectDispatchTable*> g_staticIndirectDispatchTable{nullptr};

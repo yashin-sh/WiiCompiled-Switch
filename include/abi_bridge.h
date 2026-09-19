@@ -50,8 +50,9 @@ void mkw_switch_hle_os_interrupt_init(CpuContext* cpu) noexcept;
 }
 
 inline void ApplyRuntimeCallOptions(std::uint32_t target, CpuContext* cpu) noexcept {
-#if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \\
-    (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
+#if defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION
+    mkw_switch_hle_vi_poll_retrace(cpu);
+#elif defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION
     mkw_switch_hle_vi_poll_retrace(cpu);
 #endif
     mkw_switch_note_translated_dispatch(target, cpu);

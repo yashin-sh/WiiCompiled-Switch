@@ -16,6 +16,7 @@ extern "C" __attribute__((used)) void synthetic_vi_init_hle_probe(CpuContext* ct
     ctx->gpr[3] = 0x12345678u;
     InvokeDirectCpu<0x801B94A4u>(ctx);
     InvokeDirectCpu<0x801B9294u>(ctx);
+    mkw_switch_hle_vi_poll_retrace(ctx);
 }
 
 #endif

@@ -36,6 +36,11 @@ void mkw_switch_hle_os_get_system_time(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_disable_interrupts(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_enable_interrupts(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_restore_interrupts(CpuContext* cpu) noexcept;
+void mkw_switch_hle_os_sleep_thread(CpuContext* cpu) noexcept;
+
+// Time-driven VI service point used once cooperative guest fibers are active.
+// It advances only already-due retraces and is re-entry guarded in the VI HLE.
+void mkw_switch_hle_vi_poll_retrace(CpuContext* cpu) noexcept;
 
 // Switch-native early OS exception/interrupt initialization. WiiCompiled
 // replaces both guest entry points with host HLE to avoid installing Wii
@@ -45,6 +50,11 @@ void mkw_switch_hle_os_interrupt_init(CpuContext* cpu) noexcept;
 }
 
 inline void ApplyRuntimeCallOptions(std::uint32_t target, CpuContext* cpu) noexcept {
+#if defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION
+    mkw_switch_hle_vi_poll_retrace(cpu);
+#elif defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION
+    mkw_switch_hle_vi_poll_retrace(cpu);
+#endif
     mkw_switch_note_translated_dispatch(target, cpu);
 }
 

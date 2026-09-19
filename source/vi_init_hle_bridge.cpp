@@ -3,12 +3,15 @@
 
 #include "abi_bridge.h"
 #include "memory.h"
+#include "switch_guest_fiber.hpp"
 
 #include <switch.h>
 
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+
+extern "C" std::uint32_t mkw_switch_hle_vi_commit_pending_config() noexcept;
 
 namespace {
 
@@ -42,6 +45,7 @@ std::atomic<std::uint32_t> g_viRetraceCount{0u};
 std::atomic<bool> g_viFieldOdd{false};
 std::atomic<bool> g_viFlushArmed{false};
 std::atomic<std::int64_t> g_viLastRetraceNs{0};
+std::atomic<bool> g_viRetraceAdvancing{false};
 
 std::int64_t NowNs() noexcept {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -85,9 +89,62 @@ std::uint32_t Read32IfMapped(std::uint32_t address) noexcept {
     }
 }
 
-} // namespace
+bool AdvanceRetrace(CpuContext* cpu, std::int64_t targetNs) noexcept {
+    if (!cpu) {
+        return false;
+    }
 
-extern "C" std::uint32_t mkw_switch_hle_vi_commit_pending_config() noexcept;
+    bool expected = false;
+    if (!g_viRetraceAdvancing.compare_exchange_strong(
+            expected, true, std::memory_order_acq_rel)) {
+        return false;
+    }
+
+    // Pinned AdvanceRetrace commits pending state only when VIFlush armed it,
+    // then clears the arm before publishing the new retrace count.
+    if (g_viFlushArmed.exchange(false, std::memory_order_acq_rel)) {
+        const std::uint32_t committedTvFormat = mkw_switch_hle_vi_commit_pending_config();
+        g_viActiveTvFormat.store(committedTvFormat, std::memory_order_release);
+        g_viBlack.store(g_viPendingBlack.load(std::memory_order_acquire),
+                        std::memory_order_release);
+        g_viNextFrameBuffer.store(
+            g_viPendingNextFrameBuffer.load(std::memory_order_acquire),
+            std::memory_order_release);
+    }
+
+    const std::uint32_t retraceValue =
+        g_viRetraceCount.fetch_add(1u, std::memory_order_acq_rel) + 1u;
+    g_viFieldOdd.store(!g_viFieldOdd.load(std::memory_order_acquire),
+                       std::memory_order_release);
+    g_viLastRetraceNs.store(targetNs, std::memory_order_release);
+
+    Write32IfMapped(kViRetraceCountAddr, retraceValue);
+    Write32IfMapped(kViNextFrameBufferAddr,
+                    g_viPendingNextFrameBuffer.load(std::memory_order_acquire));
+    Write32IfMapped(kViNextFrameBufferHwAddr,
+                    g_viPendingNextFrameBuffer.load(std::memory_order_acquire));
+
+    // Pinned AdvanceRetrace wakes the VI queue after publishing the count.
+    // OSWakeupThread may cooperatively switch to a higher-priority guest fiber;
+    // this host stack resumes when that guest yields again.
+    cpu->gpr[3] = kViRetraceQueueAddr;
+    InvokeDirectCpu<0x801AAAA4u>(cpu);
+
+    const std::uint32_t preCallback = Read32IfMapped(kViPreRetraceCallbackAddr);
+    const std::uint32_t postCallback = Read32IfMapped(kViPostRetraceCallbackAddr);
+    cpu->gpr[3] = retraceValue;
+    if (preCallback != 0u) {
+        InvokeIndirectCpu(preCallback, cpu);
+    }
+    if (postCallback != 0u && Read32IfMapped(kEggSSystemAddr) != 0u) {
+        InvokeIndirectCpu(postCallback, cpu);
+    }
+
+    g_viRetraceAdvancing.store(false, std::memory_order_release);
+    return true;
+}
+
+} // namespace
 
 extern "C" void mkw_switch_hle_vi_init(CpuContext* cpu) noexcept {
     if (cpu) {
@@ -177,74 +234,75 @@ extern "C" void mkw_switch_hle_vi_set_post_retrace_callback(CpuContext* cpu) noe
     cpu->gpr[3] = previousCallback;
 }
 
+extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext* cpu) noexcept {
+    if (!cpu || !g_viInitialized.load(std::memory_order_acquire) ||
+        !mkw::switch_guest_fiber::available() ||
+        mkw::switch_guest_fiber::current_thread() == 0u) {
+        return;
+    }
+
+    // Mirror pinned VI_HLE_PollRetrace: service already-due boundaries from a
+    // safe synchronous guest execution point. Never mutate guest RAM from a
+    // concurrent Horizon thread. Bound catch-up so one translated call cannot
+    // monopolize the host after a long pause.
+    for (int catchUp = 0; catchUp < 8; ++catchUp) {
+        const std::uint32_t activeTvFormat =
+            g_viActiveTvFormat.load(std::memory_order_acquire);
+        const std::int64_t intervalNs = RetraceIntervalNs(activeTvFormat);
+        const std::int64_t targetNs =
+            g_viLastRetraceNs.load(std::memory_order_acquire) + intervalNs;
+        if (NowNs() < targetNs) {
+            return;
+        }
+        if (!AdvanceRetrace(cpu, targetNs)) {
+            return;
+        }
+    }
+}
+
 extern "C" void mkw_switch_hle_vi_wait_for_retrace(CpuContext* cpu) noexcept {
     if (!cpu) {
         return;
     }
 
-    // The Switch fast-track does not link the desktop GuestFiberManager, so
-    // mirror the pinned VIWaitForRetrace non-fiber path: pace to the next VI
-    // deadline, then advance exactly one retrace. No Aurora/presenter work is
-    // fabricated here.
     mkw_switch_hle_vi_init(cpu);
 
-    const std::uint32_t activeTvFormat = g_viActiveTvFormat.load(std::memory_order_acquire);
+    // The current Switch runtime now has HostContext-backed guest fibers. Match
+    // pinned WiiCompiled's fiber path once a real guest OSThread owns the host
+    // stack: park that guest thread on VI's retrace queue and let SelectThread
+    // run another READY guest until the time-driven VI poll advances the count.
+    if (mkw::switch_guest_fiber::available() &&
+        mkw::switch_guest_fiber::current_thread() != 0u) {
+        mkw_switch_hle_os_disable_interrupts(cpu);
+        const std::uint32_t irqState = cpu->gpr[3];
+        const std::uint32_t retraceCount =
+            g_viRetraceCount.load(std::memory_order_acquire);
+
+        do {
+            cpu->gpr[3] = kViRetraceQueueAddr;
+            mkw_switch_hle_os_sleep_thread(cpu);
+        } while (g_viRetraceCount.load(std::memory_order_acquire) == retraceCount);
+
+        cpu->gpr[3] = irqState;
+        mkw_switch_hle_os_restore_interrupts(cpu);
+        cpu->gpr[3] = 0u;
+        return;
+    }
+
+    // Before a guest fiber is registered (notably the two Video::configure
+    // waits), preserve the pin's non-fiber path: pace this host stack to one VI
+    // deadline and advance exactly one retrace synchronously.
+    const std::uint32_t activeTvFormat =
+        g_viActiveTvFormat.load(std::memory_order_acquire);
     const std::int64_t intervalNs = RetraceIntervalNs(activeTvFormat);
-    const std::int64_t lastRetraceNs = g_viLastRetraceNs.load(std::memory_order_acquire);
-    const std::int64_t targetNs = lastRetraceNs + intervalNs;
+    const std::int64_t targetNs =
+        g_viLastRetraceNs.load(std::memory_order_acquire) + intervalNs;
     const std::int64_t nowNs = NowNs();
     if (nowNs < targetNs) {
         svcSleepThread(targetNs - nowNs);
     }
 
-    // Pinned AdvanceRetrace commits pending state only when VIFlush armed it,
-    // then clears the arm before publishing the new retrace count.
-    if (g_viFlushArmed.exchange(false, std::memory_order_acq_rel)) {
-        const std::uint32_t committedTvFormat = mkw_switch_hle_vi_commit_pending_config();
-        g_viActiveTvFormat.store(committedTvFormat, std::memory_order_release);
-        g_viBlack.store(g_viPendingBlack.load(std::memory_order_acquire),
-                        std::memory_order_release);
-        g_viNextFrameBuffer.store(
-            g_viPendingNextFrameBuffer.load(std::memory_order_acquire),
-            std::memory_order_release);
-    }
-
-    const std::uint32_t retraceValue =
-        g_viRetraceCount.fetch_add(1u, std::memory_order_acq_rel) + 1u;
-    g_viFieldOdd.store(!g_viFieldOdd.load(std::memory_order_acquire),
-                       std::memory_order_release);
-    g_viLastRetraceNs.store(targetNs, std::memory_order_release);
-
-    Write32IfMapped(kViRetraceCountAddr, retraceValue);
-    Write32IfMapped(kViNextFrameBufferAddr,
-                    g_viPendingNextFrameBuffer.load(std::memory_order_acquire));
-    Write32IfMapped(kViNextFrameBufferHwAddr,
-                    g_viPendingNextFrameBuffer.load(std::memory_order_acquire));
-
-    // AdvanceRetrace wakes the VI queue after publishing the count. The queue
-    // is empty during the current early Video::configure path. If later boot
-    // reaches this boundary with sleepers present, hand off to the real guest
-    // OSWakeupThread boundary instead of silently discarding the wakeup.
-    const std::uint32_t queueHead = Read32IfMapped(kViRetraceQueueAddr);
-    const std::uint32_t queueTail = Read32IfMapped(kViRetraceQueueAddr + 4u);
-    if (queueHead != 0u || queueTail != 0u) {
-        cpu->gpr[3] = kViRetraceQueueAddr;
-        InvokeDirectCpu<0x801AAAA4u>(cpu);
-    }
-
-    // Preserve the pin's callback ordering. These are zero in the currently
-    // observed early post-main path, but keeping the handoff explicit prevents
-    // this bridge from silently swallowing callbacks if later boot installs one.
-    const std::uint32_t preCallback = Read32IfMapped(kViPreRetraceCallbackAddr);
-    const std::uint32_t postCallback = Read32IfMapped(kViPostRetraceCallbackAddr);
-    cpu->gpr[3] = retraceValue;
-    if (preCallback != 0u) {
-        InvokeIndirectCpu(preCallback, cpu);
-    }
-    if (postCallback != 0u && Read32IfMapped(kEggSSystemAddr) != 0u) {
-        InvokeIndirectCpu(postCallback, cpu);
-    }
-
+    (void)AdvanceRetrace(cpu, targetNs);
     cpu->gpr[3] = 0u;
 }
 

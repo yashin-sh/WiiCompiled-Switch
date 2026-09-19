@@ -98,3 +98,37 @@ including:
 The next hardware gate is to identify the owner/class and virtual `run()`
 implementation for OSThread `0x90112660`. Scheduler priorities, DVD behavior
 and renderer behavior must remain unchanged until that identity is known.
+
+## #186 result and next exact boundary
+
+The next hardware run produced the lifecycle event that #186 was designed to
+capture:
+
+```text
+thread=0x90112660
+entry=0x8024373c
+arg=0x8042e930
+requested_prio=6
+vtable=0x80270bc0
+vt_dtor=0x80008cb0
+vt_run=0x80008d18
+```
+
+The same run finishes with the default thread READY at priority 16 and
+`0x90112660` RUNNING at priority 6. It records:
+
+```text
+VIWaitForRetrace hits : 928
+OSWakeupThread hits   : 925
+SelectThread hits     : 6
+```
+
+The old Switch `VIWaitForRetrace` implementation used the pin's non-fiber
+fallback even after HostContext guest fibers became available. Sleeping the
+Horizon host thread paced time but did not transition the guest OSThread to
+WAITING, so the priority-6 guest continuously starved the default thread.
+
+The next implementation gate is therefore exact and pinned: use
+`OSSleepThread` on VI queue `0x80386BC0` for active guest fibers and service
+due retraces synchronously from safe runtime call boundaries. The first
+hardware acceptance condition is scheduler progression, not a rendered frame.

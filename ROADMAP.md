@@ -86,6 +86,8 @@
 - [x] hardware-prove local RMCP01 FST publication at `0x97DC0000` with 64,224 bytes / 2,096 entries (#183)
 - [x] disprove `DVDReadPrio` / `DVDReadAsyncPrio` as the current startup frontier: #185 is installed but not reached in the first hardware run
 - [x] isolate the durable priority-6 execution to later OSThread `0x90112660`, distinct from the initial `EGG::ProcessMeter` thread, and add lifecycle/vtable telemetry (#186)
+- [x] identify its virtual `run()` as `0x80008D18` with object `0x8042E930` / vtable `0x80270BC0`, and correlate the starvation with the stale non-fiber `VIWaitForRetrace` path
+- [ ] hardware-validate fiber-aware `VIWaitForRetrace`: priority-6 waiter must park on VI queue `0x80386BC0` and allow the default thread to resume between retraces
 - [x] publish the user-owned RMCP01 FST into guest MEM2 and install the narrow local `DATA/files` DVD read mapping (#183/#185); hardware proves FST publication, while the current startup path has not reached the read override yet
 - [ ] move NAND async completion draining from the fast-track HLE boundary to a verified alarm/IOS scheduling point if later hardware ordering requires it
 - [ ] complete thread/mutex/condition-variable semantics required by the game
@@ -145,7 +147,7 @@ The current hardware-driven method remains deliberate after `main`: execute the 
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered RMCP01 fast-track is now running on real hardware with the renderer ready and FST publication proven. The current gate is identifying later priority-6 OSThread `0x90112660`; no drawable RMCP01 FIFO work has reached `GXCopyDisp` yet.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered RMCP01 fast-track is running on real hardware with the renderer ready and FST publication proven. #186 identified the later priority-6 OSThread; the current gate is hardware-validating the pinned fiber-aware `VIWaitForRetrace` scheduling path. No drawable RMCP01 FIFO work has reached `GXCopyDisp` yet.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input

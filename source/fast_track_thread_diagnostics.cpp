@@ -8,6 +8,8 @@
 #include <cstdint>
 #include <cstdio>
 
+#if defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION
+
 namespace {
 
 constexpr const char* kThreadEventPath =
@@ -72,6 +74,8 @@ void ReadEggVtable(
 
 } // namespace
 
+#endif
+
 extern "C" void mkw_switch_note_guest_thread_event(
     const char* kind,
     CpuContext* cpu,
@@ -79,7 +83,7 @@ extern "C" void mkw_switch_note_guest_thread_event(
     std::uint32_t entryPoint,
     std::uint32_t entryArg,
     std::int32_t requestedPriority) noexcept {
-#if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION)
+#if defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION
     if (g_threadEventCount >= kMaxThreadEvents) {
         return;
     }

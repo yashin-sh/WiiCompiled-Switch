@@ -83,7 +83,10 @@
 - [x] observe callback `r3 = 0x365E`, proving guest VI retrace value advanced to 13,918
 - [x] add an independent Horizon liveness watchdog that records ACTIVE vs STALE translated progress without mutating guest state
 - [x] classify the sustained black-screen path as an active translated/VI display loop rather than a durable translated-thread stall
-- [ ] publish a real local DVD FST/data mapping before resource loading requires it
+- [x] hardware-prove local RMCP01 FST publication at `0x97DC0000` with 64,224 bytes / 2,096 entries (#183)
+- [x] disprove `DVDReadPrio` / `DVDReadAsyncPrio` as the current startup frontier: #185 is installed but not reached in the first hardware run
+- [x] isolate the durable priority-6 execution to later OSThread `0x90112660`, distinct from the initial `EGG::ProcessMeter` thread, and add lifecycle/vtable telemetry (#186)
+- [x] publish the user-owned RMCP01 FST into guest MEM2 and install the narrow local `DATA/files` DVD read mapping (#183/#185); hardware proves FST publication, while the current startup path has not reached the read override yet
 - [ ] move NAND async completion draining from the fast-track HLE boundary to a verified alarm/IOS scheduling point if later hardware ordering requires it
 - [ ] complete thread/mutex/condition-variable semantics required by the game
 - [ ] complete filesystem/NAND/DVD abstractions required by boot
@@ -116,6 +119,7 @@ Hardware evidence is recorded in:
 - `docs/HARDWARE_RESULTS_2026-09-18_M3_VULKAN_CLEAR_FRAME.md`
 - `docs/HARDWARE_RESULTS_2026-09-18_M3_AURORA_GX.md`
 - `docs/HARDWARE_RESULTS_2026-09-18_M3_HLE_FIFO_AURORA.md`
+- `docs/HARDWARE_RESULTS_2026-09-19_RMCP01_RESOURCE_THREAD_FRONTIER.md`
 
 The current hardware-driven method remains deliberate after `main`: execute the broadest safe translated path, stop on the first unsupported native/translated boundary or attributable exception, and when no blocker appears use the independent heartbeat watchdog to distinguish sustained execution from a real stall. New runtime behavior is still added only from hardware evidence and pinned WiiCompiled semantics. Post-main bring-up remains tracked in #117.
 

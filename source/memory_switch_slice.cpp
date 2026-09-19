@@ -51,7 +51,7 @@ GuestFlat::Backing classify_backing(std::uint32_t base) {
 [[noreturn]] void invalid_access(std::uint32_t address, std::size_t length) {
     std::printf("FATAL: Memory access outside mapped regions: addr=0x%08x len=%zu\n",
                 address, length);
-    std::abort();
+    throw Memory::AccessViolation(address, length, "outside mapped regions");
 }
 
 std::uint8_t* require_pointer(std::uint32_t address, std::size_t length) {
@@ -62,6 +62,10 @@ std::uint8_t* require_pointer(std::uint32_t address, std::size_t length) {
 }
 
 } // namespace
+
+Memory::AccessViolation::AccessViolation(std::uint32_t address, std::size_t length,
+                                         std::string_view reason)
+    : std::runtime_error(std::string(reason)), address_(address), length_(length), reason_(reason) {}
 
 Memory::Config Memory::Config::WiiDefaults() {
     Config config;

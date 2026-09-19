@@ -147,7 +147,7 @@ The current hardware-driven method remains deliberate after `main`: execute the 
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. #189 is now hardware-proven: the initial guest fiber again reaches `OSReceiveMessage -> OSSleepThread`, and the later priority-6 `0x90112660` worker parks on VI queue `0x80386BC0`, allowing the default/main thread to run again. The current runtime blocker is PAL `OSSendMessage` at `0x801A735C`. No drawable RMCP01 FIFO work has reached `GXCopyDisp` yet.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. #190 is now hardware-proven: PAL `OSSendMessage` at `0x801A735C` is crossed while the #189 scheduler recovery remains intact. The current runtime blocker is now PAL `GXDrawDone` at `0x8016EAB0`. The renderer is still ready with only the eight bootstrap FIFO writes; no drawable RMCP01 FIFO work has reached `GXCopyDisp` yet.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input
@@ -166,7 +166,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] attribute the #188 first-fiber crash at `0x8042A680 -> 0x8024373C` to runtime-boundary VI polling clobbering the interrupted `CpuContext`
 - [x] hardware-validate register-isolated VI polling and restore the first guest-fiber blocking path
 - [x] hardware-validate the `0x90112660` fiber-aware `VIWaitForRetrace` starvation fix: worker parks on `0x80386BC0`, scheduler returns to main
-- [ ] hardware-cross PAL `OSSendMessage` (`0x801A735C`), the next DIRECT blocker after scheduler recovery
+- [x] hardware-cross PAL `OSSendMessage` (`0x801A735C`) after scheduler recovery
+- [ ] hardware-cross PAL `GXDrawDone` (`0x8016EAB0`) using the pinned draw-done bookkeeping and Aurora FIFO drain
 - [ ] continue post-main initialization through system/resource initialization
 - [ ] complete game/resource initialization
 - [ ] menus

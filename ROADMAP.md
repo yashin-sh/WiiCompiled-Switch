@@ -147,7 +147,7 @@ The current hardware-driven method remains deliberate after `main`: execute the 
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. #190 is now hardware-proven: PAL `OSSendMessage` at `0x801A735C` is crossed while the #189 scheduler recovery remains intact. The current runtime blocker is now PAL `GXDrawDone` at `0x8016EAB0`. The renderer is still ready with only the eight bootstrap FIFO writes; no drawable RMCP01 FIFO work has reached `GXCopyDisp` yet.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. #191 is now hardware-proven: PAL `GXDrawDone` at `0x8016EAB0` is crossed while scheduler recovery remains intact. The current runtime blocker is the virtual native boundary `EGG::TaskThread::run` at `0x80242D7C`, reached by priority-24 OSThread `0x8042E480`, matching RMCP01 ResourceManager's resource worker. No DVD read or drawable RMCP01 FIFO work has been observed yet.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input
@@ -167,7 +167,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-validate register-isolated VI polling and restore the first guest-fiber blocking path
 - [x] hardware-validate the `0x90112660` fiber-aware `VIWaitForRetrace` starvation fix: worker parks on `0x80386BC0`, scheduler returns to main
 - [x] hardware-cross PAL `OSSendMessage` (`0x801A735C`) after scheduler recovery
-- [ ] hardware-cross PAL `GXDrawDone` (`0x8016EAB0`) using the pinned draw-done bookkeeping and Aurora FIFO drain
+- [x] hardware-cross PAL `GXDrawDone` (`0x8016EAB0`) using the pinned draw-done bookkeeping and Aurora FIFO drain
+- [ ] hardware-cross virtual `EGG::TaskThread::run` (`0x80242D7C`) and capture the first resource-job callback / DVD frontier
 - [ ] continue post-main initialization through system/resource initialization
 - [ ] complete game/resource initialization
 - [ ] menus

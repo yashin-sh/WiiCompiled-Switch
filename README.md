@@ -28,7 +28,7 @@ The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge se
 
 The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
 
-The real-Switch validation after #189 closes both VI/scheduler gates. The initial guest thread `0x8042A680` again crosses `EGG::Thread::start` and blocks through `OSReceiveMessage -> OSSleepThread`, while the later priority-6 worker `0x90112660` now parks on VI queue `0x80386BC0` instead of remaining RUNNING. `SelectThread` advances and the default/main thread resumes between retraces. The next concrete blocker is PAL `OSSendMessage` at `0x801A735C`, reached as a DIRECT unsupported dispatch after 2,581 translated dispatches / 1,975 post-main.
+The real-Switch validation after #190 confirms that the VI/scheduler recovery remains intact and hardware-crosses PAL `OSSendMessage` at `0x801A735C`. The initial guest thread `0x8042A680` still blocks correctly, the priority-6 worker `0x90112660` still parks on VI queue `0x80386BC0`, and the default/main thread resumes. The next concrete blocker is now PAL `GXDrawDone` at `0x8016EAB0`, reached as a DIRECT unsupported dispatch after the message-queue boundary was crossed.
 
 ## Milestones
 
@@ -111,7 +111,9 @@ later OSThread 0x90112660 / run 0x80008D18       ✅ identified
   ↓
 0x90112660 VI wait-queue starvation                    ✅ hardware fixed
   ↓
-OSSendMessage (0x801A735C)                             ← current blocker
+OSSendMessage (0x801A735C)                             ✅ hardware crossed
+  ↓
+GXDrawDone (0x8016EAB0)                                 ← current blocker
   ↓
 first rendered RMCP01 frame
 ```

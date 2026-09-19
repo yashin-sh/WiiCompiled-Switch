@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer and local FST publication hardware-proven; #186 identified later priority-6 OSThread `0x90112660`, and the current hardware gate is the pinned fiber-aware `VIWaitForRetrace` scheduling fix**.
+Status: **renderer and local FST publication hardware-proven; #186 identified later priority-6 OSThread `0x90112660`; the first #188 hardware run exposed an earlier VI-poll register-clobber regression at the initial guest-fiber entry, now fixed in code pending hardware revalidation**.
 
 ## Purpose
 
@@ -222,6 +222,51 @@ The next implementation slice therefore mirrors the pin's fiber path:
 plus bounded synchronous time-driven retrace polling from safe runtime call
 boundaries. It does not change guest priorities, DVD reads or renderer
 semantics.
+
+## Hardware result after #188 — runtime-boundary VI poll context regression
+
+The first rendered hardware run after #188 does **not** reach the previously
+identified durable worker `0x90112660`. Instead it stops much earlier while
+entering the initial HostContext-backed guest OSThread:
+
+```text
+thread      : 0x8042A680
+entry       : 0x8024373C  EGG::Thread::start(void*)
+entry arg   : 0x804294E4
+fiber r1    : 0x8042A658
+fiber r3    : 0x804294E4
+blocker kind: GUEST_FIBER_ENTRY_EXCEPTION
+stage       : HOST_CONTEXT_SWITCH_ENTER
+```
+
+At the same point `RKSystem::run`, StaticR, `OSSleepThread` and `SelectThread`
+are still zero. The renderer remains initialized and the FIFO remains at the
+same eight video-bootstrap BP writes, so this is not a DVD or graphics
+regression.
+
+#188 added time-driven VI polling to every translated runtime call boundary.
+That poll advances retraces through the same `CpuContext` that holds the next
+callee's ABI arguments. `AdvanceRetrace` deliberately reuses `r3` for the VI
+wait queue, `OSWakeupThread`, and pre/post-retrace callback arguments. The
+pinned WiiCompiled runtime isolates interrupt-like retrace service from the
+interrupted translated register file; the Switch call-boundary poll did not.
+
+The minimal correction preserves and restores the **complete** interrupted
+`CpuContext` around `mkw_switch_hle_vi_poll_retrace`. Guest memory, VI state,
+wait queues and scheduler state remain shared, but callback/scheduler scratch
+registers cannot leak into the translated callee. No guest priority, DVD,
+Aurora, Dawn or GX semantics are changed.
+
+Hardware acceptance now proceeds in two stages:
+
+1. `0x8042A680` must again cross `EGG::Thread::start` and reach its historical
+   `OSReceiveMessage -> OSSleepThread` path without `GUEST_FIBER_ENTRY_EXCEPTION`;
+2. only then evaluate #188's original goal: `0x90112660` should park on VI queue
+   `0x80386BC0`, with `OSSleepThread` / `SelectThread` increasing and the
+   default thread getting real execution time between retraces.
+
+Full evidence and attribution are recorded in
+`HARDWARE_RESULTS_2026-09-19_VI_POLL_CONTEXT_REGRESSION.md`.
 
 ## Build
 

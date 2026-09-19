@@ -9,6 +9,7 @@ extern "C" void mkw_switch_hle_gx_copy_disp(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_init(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_draw_done(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_viewport(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 
@@ -44,6 +45,18 @@ struct KnownNativeCpuCall<0x8017301Cu> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_projection(cpu);
+    }
+};
+
+// GXSetViewport (PAL 0x801733B4). Pinned WiiCompiled consumes six scalar
+// float arguments from PPC f1..f6 and forwards them to Aurora GX. This is the
+// first exact blocker exposed after hardware-crossing GXSetProjection.
+template <>
+struct KnownNativeCpuCall<0x801733B4u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_viewport(cpu);
     }
 };
 

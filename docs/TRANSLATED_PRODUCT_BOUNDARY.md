@@ -188,5 +188,5 @@ The meaningful boundary is now post-main liveness rather than translated-product
 2. if the display remains black, leave it running long enough to collect the independent watchdog history;
 3. inspect `fast-track-heartbeat-history.txt` to classify ACTIVE vs STALE behavior;
 4. if a new unsupported dispatch or exception appears, attribute that exact boundary against the pinned WiiCompiled revision;
-5. publish real local DVD/FST data only when the hardware path proves resource loading requires it;
-6. move into the real GX → Switch renderer/first-frame track once runtime/resource initialization is sufficiently stable.
+5. use the already-published user-owned FST and installed #185 DVD bridge without extending them unless hardware reaches a new resource boundary;
+6. use `fast-track-thread-events.txt` to identify later OSThread `0x90112660` before changing scheduler or renderer behavior.

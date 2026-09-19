@@ -98,9 +98,9 @@ struct KnownNativeCpuCall<0x801A72FCu> {
 };
 
 // OSSendMessage (PAL 0x801A735C). Pinned WiiCompiled disables interrupts,
- // appends to the ring buffer when space exists, wakes receivers, and returns
- // success. A full non-blocking send returns 0; a full blocking send parks on
- // the embedded send OSThreadQueue through OSSleepThread and retries.
+// appends to the ring buffer when space exists, wakes receivers, and returns
+// success. A full non-blocking send returns 0; a full blocking send parks on
+// the embedded send OSThreadQueue through OSSleepThread and retries.
 template <>
 struct KnownNativeCpuCall<0x801A735Cu> {
     static constexpr bool kAvailable = true;

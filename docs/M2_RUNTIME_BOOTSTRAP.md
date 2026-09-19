@@ -1,6 +1,6 @@
 # M2 — Horizon runtime bootstrap / translated fast-track
 
-Status: **core bootstrap, PAL `main()`, guest thread continuation, the observed post-main OS/VI/WPAD/PAD/time/SC/scheduler path, and sustained translated execution are hardware-validated on Nintendo Switch through 2026-09-17**.
+Status: **core bootstrap, PAL `main()`, guest thread continuation, sustained post-main execution, local RMCP01 FST publication, and the rendered fast-track runtime are hardware-validated on Nintendo Switch through 2026-09-19; the current gate is later priority-6 OSThread `0x90112660` identity**.
 
 Upstream WiiCompiled pin: `a135beb201042b20f390c6695ca6b26768820fb4`.
 
@@ -151,7 +151,7 @@ Consequences:
 
 ## DVD / resource boundary
 
-The fast-track deliberately does not fabricate Nintendo FST/resource data. A real local DVD FST/data mapping from the user's own dump remains pending and should only be wired when the hardware path actually requires it.
+The fast-track does not fabricate Nintendo FST/resource data. The user's own RMCP01 FST is now published into guest MEM2 at `0x97DC0000` and validated on hardware. The narrow local `DATA/files` DVD read bridge is installed, but the current startup path has not yet reached `DVDReadPrio` or `DVDReadAsyncPrio`.
 
 ## Diagnostics
 
@@ -212,7 +212,7 @@ Fast-track changes are expected to pass exactly these five workflows:
 5. measure Tegra X1 CPU overhead, memory use and frame pacing before choosing the backend;
 6. only then connect the private local RMCP01 GX stream;
 7. if a new runtime blocker/exception appears, return to the exact-address/pinned-semantics workflow;
-8. publish real local DVD/FST data only when resource loading proves it is required.
+8. keep the real local FST/DVD path hardware-driven: FST publication is proven; only extend reads beyond #185 when the game actually reaches a new read/resource boundary.
 
 ## Evidence index
 

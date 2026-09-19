@@ -26,7 +26,7 @@ The latest hardware run confirms the prolonged black-screen path is **actively e
 
 The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge sets `r3` to the new retrace value immediately before invoking the post-retrace callback, so this is direct evidence that the VI/retrace loop continued advancing for thousands of retraces.
 
-The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has now hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. A separate local rendered fast-track now connects the real RMCP01 FIFO stream to that proven backend. Its first hardware run is the current graphics frontier.
+The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The local rendered RMCP01 target is also running on hardware. Its current game-facing frontier is no longer renderer bring-up: the user-owned FST is published successfully, #185 local DVD reads are installed but not reached, and the next gate is identifying later priority-6 OSThread `0x90112660`.
 
 ## Milestones
 
@@ -50,7 +50,7 @@ The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless
 | Dawn WGSL triangle / graphics pipeline | ✅ Hardware validated + clean exit |
 | Aurora GX triangle | ✅ Hardware validated (563-frame active loop) |
 | WiiCompiled FIFO → Aurora GX | ✅ Hardware validated (1,435-frame loop) |
-| RMCP01 rendered fast-track | 🟡 Implemented; hardware test next |
+| RMCP01 rendered fast-track | ✅ Running on hardware; renderer ready, no drawable RMCP01 work yet |
 | WiiCompiled/Aurora GX → first RMCP01 frame | 🟡 M3 #162 in progress |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
@@ -99,7 +99,11 @@ Aurora GX triangle                             ✅ hardware validated
   ↓
 HleFifoWrite synthetic FIFO                     ✅ hardware validated, 1,435 frames
   ↓
-RMCP01 rendered fast-track                      ← hardware test next
+RMCP01 rendered fast-track                      ✅ hardware running
+  ↓
+local FST publication @ 0x97DC0000              ✅ hardware validated
+  ↓
+later OSThread 0x90112660 identity               ← current gate
   ↓
 first rendered RMCP01 frame
 ```
@@ -114,7 +118,7 @@ The normal fast-track GX FIFO bridge remains intentionally a sink, so it stays a
 
 ### Filesystem / DVD
 
-The project does not fabricate Nintendo game data. A real local DVD/FST mapping still has to be published from the user's own dump when resource loading requires it.
+The project does not fabricate Nintendo game data. The user's own RMCP01 `DATA/sys/fst.bin` is now hardware-proven to publish into guest MEM2 at `0x97DC0000`, and the narrow `DATA/files` DVD read bridge is installed. The current startup path has not yet reached `DVDReadPrio` / `DVDReadAsyncPrio`, so no claim of real file-read hardware PASS is made yet.
 
 ### Input
 
@@ -153,6 +157,7 @@ The fast-track is intentionally headless. Use the SD diagnostic files instead of
 ```text
 /switch/WiiCompiled-Switch/fast-track-progress.txt
 /switch/WiiCompiled-Switch/fast-track-heartbeat.txt
+/switch/WiiCompiled-Switch/fast-track-thread-events.txt
 /switch/WiiCompiled-Switch/fast-track-heartbeat-history.txt
 /switch/WiiCompiled-Switch/fast-track-main-reached.txt
 /switch/WiiCompiled-Switch/fast-track-dispatch-blocker.txt
@@ -250,6 +255,7 @@ Start with:
 - [`docs/HARDWARE_RESULTS_2026-09-18_M3_VULKAN_TRIANGLE.md`](docs/HARDWARE_RESULTS_2026-09-18_M3_VULKAN_TRIANGLE.md) — real-Switch Vulkan shader/pipeline/rasterisation triangle proof and SD-report follow-up;
 - [`docs/HARDWARE_RESULTS_2026-09-18_M3_AURORA_GX.md`](docs/HARDWARE_RESULTS_2026-09-18_M3_AURORA_GX.md) — real-Switch Aurora GX triangle proof, 563-frame active loop, and clean teardown;
 - [`docs/HARDWARE_RESULTS_2026-09-18_M3_HLE_FIFO_AURORA.md`](docs/HARDWARE_RESULTS_2026-09-18_M3_HLE_FIFO_AURORA.md) — real-Switch exact pinned `HleFifoWrite` → Aurora GX proof with a 1,435-frame active loop;
+- [`docs/HARDWARE_RESULTS_2026-09-19_RMCP01_RESOURCE_THREAD_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-19_RMCP01_RESOURCE_THREAD_FRONTIER.md) — FST publication PASS, #185 DVD-read non-reachability, and later priority-6 thread frontier;
 - [`docs/M3_RMCP01_RENDERED_FAST_TRACK.md`](docs/M3_RMCP01_RENDERED_FAST_TRACK.md) — first local Mario Kart graphics-enabled fast-track.
 
 Older dated `HARDWARE_RESULTS_*` files are historical snapshots. Their “next blocker” wording intentionally reflects what was known on that date and is not rewritten retroactively.

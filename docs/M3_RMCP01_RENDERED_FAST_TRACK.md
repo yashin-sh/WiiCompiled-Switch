@@ -114,6 +114,45 @@ The publication result is written to:
 This slice intentionally does not implement arbitrary DVD file reads yet. The
 next hardware run determines the exact read/REL boundary that must be added.
 
+## Hardware result after local FST publication — 2026-09-19
+
+The first hardware run after #183 proves the SD-backed FST publication path:
+
+```text
+status=published
+address=0x97dc0000
+size=64224
+entries=2096
+```
+
+The FST is already structurally valid when PAL `main()` is reached. The same
+run reaches `System::RKSystem::main`, `System::RKSystem::initialize`,
+`EGG::Video::initialize` and `EGG::Video::configure`. The renderer remains
+ready, but `System::RKSystem::run` and StaticR still have zero dispatches.
+
+The eight RMCP01 FIFO writes remain exactly the video-configuration BP state
+`0x49`, `0x4A`, `0x4D`, `0x4E`; there is still no display list, drawable FIFO
+work, `GXCopyDisp` or presentation.
+
+The durable liveness path then repeatedly reaches `PostRetraceCallback`
+(`0x8020FCD4`) while guest PC remains `EGG::Thread::start(void*)`
+(`0x8024373C`). This proves the VI/worker path remains active, but does not
+prove that the default/main guest thread resumes and completes
+`RKSystem::initialize()`.
+
+The next diagnostic slice is therefore scheduler-focused and behavior-neutral.
+It records:
+
+- `VIWaitForRetrace`, `PostRetraceCallback`, `OSReceiveMessage`,
+  `OSSleepThread`, `OSWakeupThread`, `SelectThread` and `OSLoadContext` hit counts;
+- current guest-fiber and OS current/running thread pointers;
+- default and active thread state/suspend/priority/queue fields;
+- LR and guest-fiber identity in translated trace lines;
+- the first 128 translated dispatches starting at `EGG::Video::configure` in
+  `/switch/WiiCompiled-Switch/fast-track-post-video-trace.txt`.
+
+No guest scheduler, DVD, REL or renderer behavior is changed by this diagnostic.
+
 ## Build
 
 The user's existing local RMCP01 translated product must already be present,

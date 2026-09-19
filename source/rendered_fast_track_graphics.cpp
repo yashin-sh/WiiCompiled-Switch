@@ -58,6 +58,18 @@ uint64_t g_presentedFrames = 0;
 std::atomic_bool g_loggedFirstFifoWrite{false};
 std::atomic_bool g_loggedFirstFifoWork{false};
 std::atomic_uint64_t g_fifoWriteCalls{0};
+std::atomic_uint64_t g_fifoWrite8Calls{0};
+std::atomic_uint64_t g_fifoWrite16Calls{0};
+std::atomic_uint64_t g_fifoWrite32Calls{0};
+std::atomic_uint64_t g_fifoWriteFloatCalls{0};
+std::atomic_uint64_t g_bpReg49Calls{0};
+std::atomic_uint64_t g_bpReg4aCalls{0};
+std::atomic_uint64_t g_bpReg4dCalls{0};
+std::atomic_uint64_t g_bpRegOtherCalls{0};
+std::atomic_uint32_t g_lastFifoValue{0};
+std::atomic_uint32_t g_lastBpWord{0};
+std::atomic_uint8_t g_lastFifoSize{0};
+std::atomic_bool g_pendingBpWord{false};
 std::atomic_uint64_t g_displayListCalls{0};
 std::atomic_uint64_t g_gxCopyDispCalls{0};
 std::atomic_uint64_t g_presentSuccesses{0};
@@ -431,6 +443,18 @@ extern "C" bool mkw_switch_renderer_initialize() noexcept {
         g_loggedFirstFifoWrite.store(false, std::memory_order_release);
         g_loggedFirstFifoWork.store(false, std::memory_order_release);
         g_fifoWriteCalls.store(0u, std::memory_order_release);
+        g_fifoWrite8Calls.store(0u, std::memory_order_release);
+        g_fifoWrite16Calls.store(0u, std::memory_order_release);
+        g_fifoWrite32Calls.store(0u, std::memory_order_release);
+        g_fifoWriteFloatCalls.store(0u, std::memory_order_release);
+        g_bpReg49Calls.store(0u, std::memory_order_release);
+        g_bpReg4aCalls.store(0u, std::memory_order_release);
+        g_bpReg4dCalls.store(0u, std::memory_order_release);
+        g_bpRegOtherCalls.store(0u, std::memory_order_release);
+        g_lastFifoValue.store(0u, std::memory_order_release);
+        g_lastBpWord.store(0u, std::memory_order_release);
+        g_lastFifoSize.store(0u, std::memory_order_release);
+        g_pendingBpWord.store(false, std::memory_order_release);
         g_displayListCalls.store(0u, std::memory_order_release);
         g_gxCopyDispCalls.store(0u, std::memory_order_release);
         g_presentSuccesses.store(0u, std::memory_order_release);
@@ -575,8 +599,53 @@ void EnsureAuroraFrameActive() {
 
 namespace {
 
-void note_rmcp01_fifo_activity() {
-    g_fifoWriteCalls.fetch_add(1u, std::memory_order_relaxed);
+void note_rmcp01_fifo_activity(uint32_t value, uint8_t size, bool isFloat) {
+    const uint64_t ordinal =
+        g_fifoWriteCalls.fetch_add(1u, std::memory_order_relaxed) + 1u;
+    g_lastFifoValue.store(value, std::memory_order_relaxed);
+    g_lastFifoSize.store(size, std::memory_order_relaxed);
+
+    if (isFloat) {
+        g_fifoWriteFloatCalls.fetch_add(1u, std::memory_order_relaxed);
+    } else if (size == 1u) {
+        g_fifoWrite8Calls.fetch_add(1u, std::memory_order_relaxed);
+    } else if (size == 2u) {
+        g_fifoWrite16Calls.fetch_add(1u, std::memory_order_relaxed);
+    } else if (size == 4u) {
+        g_fifoWrite32Calls.fetch_add(1u, std::memory_order_relaxed);
+    }
+
+    if (size == 1u) {
+        g_pendingBpWord.store(value == 0x61u, std::memory_order_release);
+    } else if (size == 4u &&
+               g_pendingBpWord.exchange(false, std::memory_order_acq_rel)) {
+        g_lastBpWord.store(value, std::memory_order_relaxed);
+        switch ((value >> 24u) & 0xFFu) {
+        case 0x49u:
+            g_bpReg49Calls.fetch_add(1u, std::memory_order_relaxed);
+            break;
+        case 0x4Au:
+            g_bpReg4aCalls.fetch_add(1u, std::memory_order_relaxed);
+            break;
+        case 0x4Du:
+            g_bpReg4dCalls.fetch_add(1u, std::memory_order_relaxed);
+            break;
+        default:
+            g_bpRegOtherCalls.fetch_add(1u, std::memory_order_relaxed);
+            break;
+        }
+    } else {
+        g_pendingBpWord.store(false, std::memory_order_release);
+    }
+
+    if (ordinal <= 16u) {
+        report("FIFO EVENT #%llu size=%u value=0x%08x float=%u\n",
+               static_cast<unsigned long long>(ordinal),
+               static_cast<unsigned>(size),
+               value,
+               isFloat ? 1u : 0u);
+    }
+
     if (!g_loggedFirstFifoWrite.exchange(true, std::memory_order_acq_rel)) {
         report("PASS FIRST_RMCP01_FIFO_WRITE\n");
         mkw_switch_set_fast_track_stage("RMCP01_FIFO_ACTIVE");
@@ -595,22 +664,22 @@ extern "C" void GX_HLE_FIFO_WriteFloat(float value) {
     uint32_t raw = 0;
     std::memcpy(&raw, &value, sizeof(raw));
     HleFifoWrite(raw, 4);
-    note_rmcp01_fifo_activity();
+    note_rmcp01_fifo_activity(raw, 4u, true);
 }
 
 extern "C" void GX_HLE_FIFO_Write32(uint32_t value) {
     HleFifoWrite(value, 4);
-    note_rmcp01_fifo_activity();
+    note_rmcp01_fifo_activity(value, 4u, false);
 }
 
 extern "C" void GX_HLE_FIFO_Write16(uint16_t value) {
     HleFifoWrite(static_cast<uint32_t>(value), 2);
-    note_rmcp01_fifo_activity();
+    note_rmcp01_fifo_activity(static_cast<uint32_t>(value), 2u, false);
 }
 
 extern "C" void GX_HLE_FIFO_Write8(uint8_t value) {
     HleFifoWrite(static_cast<uint32_t>(value), 1);
-    note_rmcp01_fifo_activity();
+    note_rmcp01_fifo_activity(static_cast<uint32_t>(value), 1u, false);
 }
 
 extern "C" void GX__CallDisplayList_80172f64(uint32_t listAddr, uint32_t sizeBytes) {
@@ -657,6 +726,17 @@ extern "C" MkwSwitchRendererDiagnostics mkw_switch_renderer_diagnostics_snapshot
         .frame_active = g_auroraFrameActive.load(std::memory_order_acquire),
         .fifo_work_seen = g_loggedFirstFifoWork.load(std::memory_order_acquire),
         .fifo_write_calls = g_fifoWriteCalls.load(std::memory_order_relaxed),
+        .fifo_write8_calls = g_fifoWrite8Calls.load(std::memory_order_relaxed),
+        .fifo_write16_calls = g_fifoWrite16Calls.load(std::memory_order_relaxed),
+        .fifo_write32_calls = g_fifoWrite32Calls.load(std::memory_order_relaxed),
+        .fifo_write_float_calls = g_fifoWriteFloatCalls.load(std::memory_order_relaxed),
+        .bp_reg_49_calls = g_bpReg49Calls.load(std::memory_order_relaxed),
+        .bp_reg_4a_calls = g_bpReg4aCalls.load(std::memory_order_relaxed),
+        .bp_reg_4d_calls = g_bpReg4dCalls.load(std::memory_order_relaxed),
+        .bp_reg_other_calls = g_bpRegOtherCalls.load(std::memory_order_relaxed),
+        .last_fifo_value = g_lastFifoValue.load(std::memory_order_relaxed),
+        .last_bp_word = g_lastBpWord.load(std::memory_order_relaxed),
+        .last_fifo_size = g_lastFifoSize.load(std::memory_order_relaxed),
         .display_list_calls = g_displayListCalls.load(std::memory_order_relaxed),
         .gx_copy_disp_calls = g_gxCopyDispCalls.load(std::memory_order_relaxed),
         .present_successes = g_presentSuccesses.load(std::memory_order_relaxed),

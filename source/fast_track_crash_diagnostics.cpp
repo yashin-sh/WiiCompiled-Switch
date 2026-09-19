@@ -5,6 +5,7 @@
 #define MKW_FAST_TRACK_DIAGNOSTICS 1
 #include "abi_bridge.h"
 #include "guest_flat_memory.h"
+#include "memory.h"
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
 #include "rendered_fast_track_graphics.hpp"
 #endif
@@ -37,6 +38,12 @@ constexpr const char* kPostMainLastDispatchPath =
 constexpr const char* kPostMainTracePath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-post-main-trace.txt";
 constexpr std::uint32_t kPalMainAddress = 0x8000B6B0u;
+constexpr std::uint32_t kRkSystemRunAddress = 0x8000951Cu;
+constexpr std::uint32_t kStaticRTextStart = 0x805103B4u;
+constexpr std::uint32_t kStaticRTextEnd = 0x8088F400u;
+constexpr std::uint32_t kFstAddressLowMem = 0x80000038u;
+constexpr std::uint32_t kFstSizeLowMem = 0x8000003Cu;
+constexpr std::uint32_t kMaxRuntimeFstSize = 0x00200000u;
 constexpr std::uint64_t kDurableEarlyPostMainDispatches = 16u;
 constexpr std::uint64_t kDensePostMainTraceDispatches = 48u;
 constexpr std::uint64_t kMaxPostMainTraceEntries = 64u;
@@ -50,6 +57,37 @@ std::uint64_t g_dispatch_count = 0u;
 std::uint64_t g_post_main_dispatch_count = 0u;
 std::uint64_t g_post_main_trace_entries = 0u;
 std::uint64_t g_last_heartbeat_tick = 0u;
+std::uint64_t g_rksystem_run_dispatch_count = 0u;
+std::uint64_t g_staticr_dispatch_count = 0u;
+
+struct FstSnapshot {
+    std::uint32_t address = 0u;
+    std::uint32_t size = 0u;
+    bool valid = false;
+};
+
+FstSnapshot read_fst_snapshot() noexcept {
+    FstSnapshot snapshot{};
+    if (!Memory::IsInitialized() ||
+        !Memory::Contains(kFstAddressLowMem, 8u)) {
+        return snapshot;
+    }
+
+    snapshot.address = Memory::Read32(kFstAddressLowMem);
+    snapshot.size = Memory::Read32(kFstSizeLowMem);
+    if (snapshot.address == 0u || snapshot.size < 12u ||
+        snapshot.size > kMaxRuntimeFstSize ||
+        !Memory::Contains(snapshot.address, snapshot.size)) {
+        return snapshot;
+    }
+
+    const std::uint32_t rootWord = Memory::Read32(snapshot.address);
+    const std::uint32_t entryCount = Memory::Read32(snapshot.address + 8u);
+    snapshot.valid =
+        (rootWord & 0xFF000000u) == 0x01000000u &&
+        entryCount != 0u && entryCount <= 0x00010000u;
+    return snapshot;
+}
 
 const char* post_main_phase_name(std::uint32_t target) noexcept {
     switch (target) {
@@ -228,12 +266,13 @@ void write_liveness_record(
     const char* title,
     std::uint32_t target,
     CpuContext* cpu) noexcept {
-    char buffer[1024];
+    char buffer[3072];
     const std::uint32_t guest_pc = cpu ? cpu->pc : 0u;
     const std::uint32_t r1 = cpu ? cpu->gpr[1] : 0u;
     const std::uint32_t r2 = cpu ? cpu->gpr[2] : 0u;
     const std::uint32_t r3 = cpu ? cpu->gpr[3] : 0u;
     const std::uint32_t r13 = cpu ? cpu->gpr[13] : 0u;
+    const FstSnapshot fst = read_fst_snapshot();
 
     const int n = std::snprintf(
         buffer,
@@ -250,7 +289,12 @@ void write_liveness_record(
         "r13                   : 0x%08x\n"
         "fast-track stage      : %s\n"
         "PAL main              : 0x%08x\n"
-        "main reached          : %s\n",
+        "main reached          : %s\n"
+        "RKSystem::run hits    : %llu\n"
+        "StaticR dispatches    : %llu\n"
+        "FST address           : 0x%08x\n"
+        "FST size              : 0x%08x\n"
+        "FST structurally valid: %s\n",
         title,
         static_cast<unsigned long long>(g_dispatch_count),
         static_cast<unsigned long long>(g_post_main_dispatch_count),
@@ -262,7 +306,12 @@ void write_liveness_record(
         r13,
         g_fast_track_stage,
         kPalMainAddress,
-        g_main_reached ? "YES" : "NO");
+        g_main_reached ? "YES" : "NO",
+        static_cast<unsigned long long>(g_rksystem_run_dispatch_count),
+        static_cast<unsigned long long>(g_staticr_dispatch_count),
+        fst.address,
+        fst.size,
+        fst.valid ? "YES" : "NO");
     if (n <= 0) {
         return;
     }
@@ -280,6 +329,10 @@ void write_liveness_record(
             "renderer initialized  : %s\n"
             "renderer frame active : %s\n"
             "RMCP01 FIFO writes    : %llu\n"
+            "FIFO write8/16/32/f32 : %llu/%llu/%llu/%llu\n"
+            "BP regs 49/4a/4d/other: %llu/%llu/%llu/%llu\n"
+            "last FIFO size/value  : %u / 0x%08x\n"
+            "last BP word          : 0x%08x\n"
             "display-list calls    : %llu\n"
             "FIFO produced work    : %s\n"
             "GXCopyDisp calls      : %llu\n"
@@ -288,6 +341,17 @@ void write_liveness_record(
             renderer.initialized ? "YES" : "NO",
             renderer.frame_active ? "YES" : "NO",
             static_cast<unsigned long long>(renderer.fifo_write_calls),
+            static_cast<unsigned long long>(renderer.fifo_write8_calls),
+            static_cast<unsigned long long>(renderer.fifo_write16_calls),
+            static_cast<unsigned long long>(renderer.fifo_write32_calls),
+            static_cast<unsigned long long>(renderer.fifo_write_float_calls),
+            static_cast<unsigned long long>(renderer.bp_reg_49_calls),
+            static_cast<unsigned long long>(renderer.bp_reg_4a_calls),
+            static_cast<unsigned long long>(renderer.bp_reg_4d_calls),
+            static_cast<unsigned long long>(renderer.bp_reg_other_calls),
+            static_cast<unsigned>(renderer.last_fifo_size),
+            renderer.last_fifo_value,
+            renderer.last_bp_word,
             static_cast<unsigned long long>(renderer.display_list_calls),
             renderer.fifo_work_seen ? "YES" : "NO",
             static_cast<unsigned long long>(renderer.gx_copy_disp_calls),
@@ -342,6 +406,12 @@ extern "C" void mkw_switch_note_translated_dispatch(
 #if MKW_FAST_TRACK_DIAGNOSTICS
     reset_liveness_files_once();
     ++g_dispatch_count;
+    if (target == kRkSystemRunAddress) {
+        ++g_rksystem_run_dispatch_count;
+    }
+    if (target >= kStaticRTextStart && target < kStaticRTextEnd) {
+        ++g_staticr_dispatch_count;
+    }
 
     if (target == kPalMainAddress && !g_main_reached) {
         g_main_reached = true;

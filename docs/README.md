@@ -59,6 +59,8 @@
 - `HARDWARE_RESULTS_2026-09-18_M3_AURORA_GX.md` — real-Switch Aurora GX triangle PASS with 563-frame active loop and clean teardown
 - `HARDWARE_RESULTS_2026-09-18_M3_HLE_FIFO_AURORA.md` — exact pinned `HleFifoWrite` → Aurora GX PASS with 1,435-frame active loop
 - `HARDWARE_RESULTS_2026-09-19_RMCP01_RESOURCE_THREAD_FRONTIER.md` — FST publication PASS, #185 DVD-read non-reachability, and later priority-6 OSThread `0x90112660` frontier
+- `HARDWARE_RESULTS_2026-09-19_VI_POLL_CONTEXT_REGRESSION.md` — #188 first-fiber register-clobber regression and #189 correction gate
+- `HARDWARE_RESULTS_2026-09-19_OS_SEND_MESSAGE_FRONTIER.md` — #189 scheduler recovery PASS and new PAL `OSSendMessage` blocker
 
 ## Blocker notes
 

@@ -3,7 +3,10 @@
 #include "abi_bridge.h"
 #include "memory.h"
 
+#include <array>
 #include <cstdint>
+#include <cstdio>
+#include <cstring>
 
 namespace mkw::dvd_hle_detail {
 
@@ -52,6 +55,180 @@ inline bool HasPublishedFst() noexcept {
     const std::uint32_t entryCount = Memory::Read32(fstAddress + 8u);
     return (rootWord & 0xFF000000u) == 0x01000000u &&
            entryCount != 0u && entryCount <= 0x00010000u;
+}
+
+inline std::uint32_t ReadBigEndian32(const std::uint8_t* bytes) noexcept {
+    return (static_cast<std::uint32_t>(bytes[0]) << 24u) |
+           (static_cast<std::uint32_t>(bytes[1]) << 16u) |
+           (static_cast<std::uint32_t>(bytes[2]) << 8u) |
+           static_cast<std::uint32_t>(bytes[3]);
+}
+
+inline void WriteFstStatus(
+    const char* status,
+    std::uint32_t address = 0u,
+    std::uint32_t size = 0u,
+    std::uint32_t entries = 0u) noexcept {
+    constexpr const char* kStatusPath =
+        "sdmc:/switch/WiiCompiled-Switch/dvd-fst-status.txt";
+    FILE* out = std::fopen(kStatusPath, "w");
+    if (!out) {
+        return;
+    }
+    std::fprintf(
+        out,
+        "status=%s\naddress=0x%08x\nsize=%u\nentries=%u\n",
+        status ? status : "<null>",
+        address,
+        size,
+        entries);
+    std::fclose(out);
+}
+
+inline bool HasLocalRmcp01Identity() noexcept {
+    constexpr const char* kBootPath =
+        "sdmc:/switch/WiiCompiled-Switch/DATA/sys/boot.bin";
+    constexpr std::array<std::uint8_t, 6> kRmcp01 = {
+        static_cast<std::uint8_t>('R'),
+        static_cast<std::uint8_t>('M'),
+        static_cast<std::uint8_t>('C'),
+        static_cast<std::uint8_t>('P'),
+        static_cast<std::uint8_t>('0'),
+        static_cast<std::uint8_t>('1'),
+    };
+
+    FILE* boot = std::fopen(kBootPath, "rb");
+    if (!boot) {
+        WriteFstStatus("missing-boot-bin");
+        return false;
+    }
+
+    std::array<std::uint8_t, kRmcp01.size()> identity{};
+    const std::size_t read =
+        std::fread(identity.data(), 1u, identity.size(), boot);
+    std::fclose(boot);
+    if (read != identity.size() ||
+        std::memcmp(identity.data(), kRmcp01.data(), kRmcp01.size()) != 0) {
+        WriteFstStatus("invalid-disc-identity");
+        return false;
+    }
+    return true;
+}
+
+inline bool TryPublishLocalFst() noexcept {
+    constexpr const char* kFstPath =
+        "sdmc:/switch/WiiCompiled-Switch/DATA/sys/fst.bin";
+    constexpr std::uint32_t kFstAddressLowMem = 0x80000038u;
+    constexpr std::uint32_t kFstSizeLowMem = 0x8000003Cu;
+    constexpr std::uint32_t kMem2ArenaHiLowMem = 0x80003128u;
+    constexpr std::uint32_t kFstReservationSize = 0x00200000u;
+
+    if (HasPublishedFst()) {
+        return true;
+    }
+    if (!Memory::IsInitialized() ||
+        !Memory::Contains(kFstAddressLowMem, 8u) ||
+        !Memory::Contains(kMem2ArenaHiLowMem, 4u)) {
+        WriteFstStatus("guest-memory-unavailable");
+        return false;
+    }
+    if (!HasLocalRmcp01Identity()) {
+        return false;
+    }
+
+    FILE* fst = std::fopen(kFstPath, "rb");
+    if (!fst) {
+        WriteFstStatus("missing-fst-bin");
+        return false;
+    }
+
+    if (std::fseek(fst, 0, SEEK_END) != 0) {
+        std::fclose(fst);
+        WriteFstStatus("fst-seek-failed");
+        return false;
+    }
+    const long fileSizeLong = std::ftell(fst);
+    if (fileSizeLong < 12 ||
+        static_cast<unsigned long>(fileSizeLong) > kFstReservationSize) {
+        std::fclose(fst);
+        WriteFstStatus("fst-size-invalid");
+        return false;
+    }
+    const std::uint32_t fileSize =
+        static_cast<std::uint32_t>(fileSizeLong);
+    std::rewind(fst);
+
+    std::array<std::uint8_t, 12> header{};
+    if (std::fread(header.data(), 1u, header.size(), fst) != header.size()) {
+        std::fclose(fst);
+        WriteFstStatus("fst-header-read-failed");
+        return false;
+    }
+
+    const std::uint32_t rootWord = ReadBigEndian32(header.data());
+    const std::uint32_t entryCount = ReadBigEndian32(header.data() + 8u);
+    const std::uint64_t entriesBytes =
+        static_cast<std::uint64_t>(entryCount) * 12u;
+    if ((rootWord & 0xFF000000u) != 0x01000000u ||
+        entryCount == 0u || entryCount > 0x00010000u ||
+        entriesBytes >= fileSize) {
+        std::fclose(fst);
+        WriteFstStatus("fst-structure-invalid", 0u, fileSize, entryCount);
+        return false;
+    }
+
+    const std::uint32_t fstAddress = Memory::Read32(kMem2ArenaHiLowMem);
+    if (fstAddress == 0u ||
+        !Memory::Contains(fstAddress, kFstReservationSize)) {
+        std::fclose(fst);
+        WriteFstStatus(
+            "fst-reservation-invalid",
+            fstAddress,
+            fileSize,
+            entryCount);
+        return false;
+    }
+
+    std::rewind(fst);
+    std::array<std::uint8_t, 4096> chunk{};
+    std::uint32_t copied = 0u;
+    while (copied < fileSize) {
+        const std::uint32_t remaining = fileSize - copied;
+        const std::size_t wanted =
+            remaining < chunk.size() ? remaining : chunk.size();
+        if (std::fread(chunk.data(), 1u, wanted, fst) != wanted) {
+            std::fclose(fst);
+            WriteFstStatus(
+                "fst-payload-read-failed",
+                fstAddress,
+                fileSize,
+                entryCount);
+            return false;
+        }
+        for (std::size_t i = 0u; i < wanted; ++i) {
+            Memory::Write8(
+                fstAddress + copied + static_cast<std::uint32_t>(i),
+                chunk[i]);
+        }
+        copied += static_cast<std::uint32_t>(wanted);
+    }
+    std::fclose(fst);
+
+    Memory::Write32(kFstAddressLowMem, fstAddress);
+    Memory::Write32(kFstSizeLowMem, fileSize);
+    if (!HasPublishedFst()) {
+        Memory::Write32(kFstAddressLowMem, 0u);
+        Memory::Write32(kFstSizeLowMem, 0u);
+        WriteFstStatus(
+            "fst-post-publish-validation-failed",
+            fstAddress,
+            fileSize,
+            entryCount);
+        return false;
+    }
+
+    WriteFstStatus("published", fstAddress, fileSize, entryCount);
+    return true;
 }
 
 inline bool GuestBootstrapRangesAvailable() noexcept {
@@ -107,11 +284,14 @@ inline void InitializeDiscHeader() noexcept {
 // state: DVD flags, cancel/wait queues, context sentinels, the low-memory disc
 // header, a runtime FST, then translated __DVDFSInit.
 //
-// The Switch fast-track does not yet have a trustworthy host DVD/FST source, so
-// it mirrors every startup-visible guest write but deliberately does not invent
-// an FST. If low memory already contains a structurally valid FST, dispatch the
-// translated __DVDFSInit exactly like upstream; otherwise leave FST publication
-// for the dedicated DVD-storage bridge instead of fabricating game data.
+// Hardware evidence now shows the rendered RMCP01 path reaches main but not
+// RKSystem::run/StaticR while the guest FST address and size remain zero. The
+// dedicated resource gate is therefore active. Mirror the pinned publication
+// contract from the user's own extracted RMCP01 DATA tree on SD: validate
+// DATA/sys/boot.bin as RMCP01, copy DATA/sys/fst.bin into the 2 MiB MEM2 region
+// already reserved below the IPC arena, publish low-memory address/size, then
+// dispatch translated __DVDFSInit. No game bytes are embedded in this source or
+// in public CI; absence/invalid local data leaves the previous safe path intact.
 template <>
 struct KnownNativeCpuCall<0x8015EA1Cu> {
     static constexpr bool kAvailable = true;
@@ -140,6 +320,9 @@ struct KnownNativeCpuCall<0x8015EA1Cu> {
         mkw::dvd_hle_detail::InitializeContexts();
         mkw::dvd_hle_detail::InitializeDiscHeader();
 
+        if (!mkw::dvd_hle_detail::HasPublishedFst()) {
+            mkw::dvd_hle_detail::TryPublishLocalFst();
+        }
         if (mkw::dvd_hle_detail::HasPublishedFst()) {
             constexpr std::uint32_t kDvdFsInitAddress = 0x8015DF1Cu;
             InvokeIndirectCpu(kDvdFsInitAddress, cpu);

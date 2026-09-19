@@ -1,8 +1,8 @@
 # M3 — local RMCP01 rendered fast-track
 
-Tracking: #117, #162, #4
+Tracking: #117, #162, #154, #4
 
-Status: **implemented; real-Switch hardware test next**.
+Status: **renderer hardware-proven; local DVD/FST publication is the current real-Switch gate**.
 
 ## Purpose
 
@@ -67,6 +67,52 @@ Those are added only if the real game path proves they are required.
 Display-list execution is routed back through the same pinned
 `GX_HLE_FIFO_WriteBurst` decoder from mapped guest memory. The stable
 headless target remains available as the liveness/control baseline.
+
+## Current resource gate — 2026-09-19
+
+The rendered hardware heartbeat proved that the lower renderer is active but the
+game still produces no drawable work. The eight observed FIFO writes classify
+as the video-bootstrap BP registers `0x49`, `0x4A`, `0x4D` and `0x4E`; the last
+word `0x4E000100` is the normal `GXSetDispCopyYScale(1.0)` state write.
+
+The same run reported:
+
+```text
+RKSystem::run hits    : 0
+StaticR dispatches    : 0
+FST address           : 0x00000000
+FST size              : 0x00000000
+FST structurally valid: NO
+FIFO produced work    : NO
+GXCopyDisp calls      : 0
+```
+
+That satisfies the hardware gate tracked by #154. The rendered fast-track now
+mirrors the pinned WiiCompiled guest-publication contract from the user's own
+local extraction:
+
+```text
+/switch/WiiCompiled-Switch/DATA/
+├── files/
+└── sys/
+    ├── boot.bin   # must identify RMCP01
+    └── fst.bin
+```
+
+At `DVDInit`, the runtime validates `boot.bin` as `RMCP01`, validates the
+big-endian FST header, copies `fst.bin` into the already-reserved 2 MiB MEM2
+region below the IPC arena, publishes `0x80000038` / `0x8000003C`, then invokes
+translated `__DVDFSInit`. Missing or invalid local data does not fabricate a
+filesystem and leaves the previous safe path intact.
+
+The publication result is written to:
+
+```text
+/switch/WiiCompiled-Switch/dvd-fst-status.txt
+```
+
+This slice intentionally does not implement arbitrary DVD file reads yet. The
+next hardware run determines the exact read/REL boundary that must be added.
 
 ## Build
 

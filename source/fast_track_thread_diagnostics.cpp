@@ -1,5 +1,7 @@
 #include "fast_track_thread_diagnostics.hpp"
 
+#include "abi_bridge.h"
+
 #include "memory.h"
 #include "switch_guest_fiber.hpp"
 

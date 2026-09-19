@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer hardware-proven; local DVD/FST publication is the current real-Switch gate**.
+Status: **renderer and local FST publication hardware-proven; current gate is identifying later priority-6 OSThread `0x90112660` before changing scheduler, DVD or renderer behavior**.
 
 ## Purpose
 
@@ -177,6 +177,21 @@ including entry point, entry argument, priority, EGG object vtable and the
 `Thread::run` virtual slot. This should identify the exact later thread class
 without changing scheduler or renderer semantics.
 
+PR #186 is merged on `main` as
+`1fa6a0b1395d429cc9dcae979154f76eeb32f2d4`. The new bounded hardware log is:
+
+```text
+/switch/WiiCompiled-Switch/fast-track-thread-events.txt
+```
+
+The next acceptance condition is an event for `thread=0x90112660` exposing
+its entry argument, EGG vtable and especially the virtual `run()` slot. Until
+that identity is known, do not change guest scheduling priority, DVD semantics
+or the renderer.
+
+The consolidated 2026-09-19 evidence is recorded in
+`HARDWARE_RESULTS_2026-09-19_RMCP01_RESOURCE_THREAD_FRONTIER.md`.
+
 ## Build
 
 The user's existing local RMCP01 translated product must already be present,
@@ -226,6 +241,7 @@ progress:
 ```text
 /switch/WiiCompiled-Switch/fast-track-progress.txt
 /switch/WiiCompiled-Switch/fast-track-heartbeat.txt
+/switch/WiiCompiled-Switch/fast-track-thread-events.txt
 /switch/WiiCompiled-Switch/fast-track-dispatch-blocker.txt
 /switch/WiiCompiled-Switch/fast-track-exception.txt
 ```

@@ -12,6 +12,8 @@
 #include <cstdlib>
 #include <cstring>
 
+extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
+
 namespace {
 
 float ReadGuestFloat32(std::uint32_t address) {
@@ -31,8 +33,6 @@ float ReadGuestFloat32(std::uint32_t address) {
 }
 
 } // namespace
-
-extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
 
 extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* cpu) noexcept {
     if (!cpu) {

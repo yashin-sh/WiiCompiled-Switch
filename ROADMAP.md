@@ -147,7 +147,7 @@ The current hardware-driven method remains deliberate after `main`: execute the 
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered RMCP01 fast-track is running on real hardware with the renderer ready and FST publication proven. #186 identified the later priority-6 OSThread. The first #188 hardware run then exposed an earlier `GUEST_FIBER_ENTRY_EXCEPTION` because runtime-boundary VI polling could overwrite the interrupted translated register file. The current gate is hardware-validating full `CpuContext` restoration around that poll; only after the initial guest fiber again reaches its historical `OSReceiveMessage -> OSSleepThread` path can the `0x90112660` starvation fix be judged. No drawable RMCP01 FIFO work has reached `GXCopyDisp` yet.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. #189 is now hardware-proven: the initial guest fiber again reaches `OSReceiveMessage -> OSSleepThread`, and the later priority-6 `0x90112660` worker parks on VI queue `0x80386BC0`, allowing the default/main thread to run again. The current runtime blocker is PAL `OSSendMessage` at `0x801A735C`. No drawable RMCP01 FIFO work has reached `GXCopyDisp` yet.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input
@@ -164,7 +164,9 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] reach sustained translated execution in the EGG display subsystem
 - [x] classify the sustained black-screen path as an active VI/post-retrace loop
 - [x] attribute the #188 first-fiber crash at `0x8042A680 -> 0x8024373C` to runtime-boundary VI polling clobbering the interrupted `CpuContext`
-- [ ] hardware-validate register-isolated VI polling, then re-test the `0x90112660` fiber-aware `VIWaitForRetrace` starvation fix
+- [x] hardware-validate register-isolated VI polling and restore the first guest-fiber blocking path
+- [x] hardware-validate the `0x90112660` fiber-aware `VIWaitForRetrace` starvation fix: worker parks on `0x80386BC0`, scheduler returns to main
+- [ ] hardware-cross PAL `OSSendMessage` (`0x801A735C`), the next DIRECT blocker after scheduler recovery
 - [ ] continue post-main initialization through system/resource initialization
 - [ ] complete game/resource initialization
 - [ ] menus

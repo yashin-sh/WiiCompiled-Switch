@@ -57,7 +57,6 @@ inline bool HasPublishedFst() noexcept {
            entryCount != 0u && entryCount <= 0x00010000u;
 }
 
-
 inline std::uint32_t ReadBigEndian32(const std::uint8_t* bytes) noexcept {
     return (static_cast<std::uint32_t>(bytes[0]) << 24u) |
            (static_cast<std::uint32_t>(bytes[1]) << 16u) |

@@ -57,6 +57,11 @@ bool g_initialized = false;
 uint64_t g_presentedFrames = 0;
 std::atomic_bool g_loggedFirstFifoWrite{false};
 std::atomic_bool g_loggedFirstFifoWork{false};
+std::atomic_uint64_t g_fifoWriteCalls{0};
+std::atomic_uint64_t g_displayListCalls{0};
+std::atomic_uint64_t g_gxCopyDispCalls{0};
+std::atomic_uint64_t g_presentSuccesses{0};
+std::atomic_uint64_t g_presentFailures{0};
 
 wgpu::Instance g_instance;
 wgpu::Adapter g_adapter;
@@ -351,10 +356,12 @@ bool present_frame_locked(bool clear) {
     aurora::gfx::after_submit();
 
     if (!g_surface.Present()) {
+        g_presentFailures.fetch_add(1u, std::memory_order_relaxed);
         report("FRAME PRESENT FAIL frame=%llu\n",
                static_cast<unsigned long long>(g_presentedFrames + 1));
         return false;
     }
+    g_presentSuccesses.fetch_add(1u, std::memory_order_relaxed);
 
     const bool hadWork =
         g_auroraFrameHadWork.load(std::memory_order_acquire);
@@ -423,6 +430,11 @@ extern "C" bool mkw_switch_renderer_initialize() noexcept {
         g_gxFrameCount = 0;
         g_loggedFirstFifoWrite.store(false, std::memory_order_release);
         g_loggedFirstFifoWork.store(false, std::memory_order_release);
+        g_fifoWriteCalls.store(0u, std::memory_order_release);
+        g_displayListCalls.store(0u, std::memory_order_release);
+        g_gxCopyDispCalls.store(0u, std::memory_order_release);
+        g_presentSuccesses.store(0u, std::memory_order_release);
+        g_presentFailures.store(0u, std::memory_order_release);
         g_initialized = true;
 
         if (!begin_frame_locked()) {
@@ -564,6 +576,7 @@ void EnsureAuroraFrameActive() {
 namespace {
 
 void note_rmcp01_fifo_activity() {
+    g_fifoWriteCalls.fetch_add(1u, std::memory_order_relaxed);
     if (!g_loggedFirstFifoWrite.exchange(true, std::memory_order_acq_rel)) {
         report("PASS FIRST_RMCP01_FIFO_WRITE\n");
         mkw_switch_set_fast_track_stage("RMCP01_FIFO_ACTIVE");
@@ -601,6 +614,7 @@ extern "C" void GX_HLE_FIFO_Write8(uint8_t value) {
 }
 
 extern "C" void GX__CallDisplayList_80172f64(uint32_t listAddr, uint32_t sizeBytes) {
+    g_displayListCalls.fetch_add(1u, std::memory_order_relaxed);
     if (listAddr == 0 || sizeBytes == 0 || !Memory::Contains(listAddr, sizeBytes)) {
         report("WARN display-list range rejected addr=0x%08x size=%u\n",
                listAddr,
@@ -637,12 +651,26 @@ extern "C" void mkw_switch_gx_notify_guest_ram_dma_write(
     (void)sizeBytes;
 }
 
+extern "C" MkwSwitchRendererDiagnostics mkw_switch_renderer_diagnostics_snapshot() noexcept {
+    return MkwSwitchRendererDiagnostics{
+        .initialized = g_initialized,
+        .frame_active = g_auroraFrameActive.load(std::memory_order_acquire),
+        .fifo_work_seen = g_loggedFirstFifoWork.load(std::memory_order_acquire),
+        .fifo_write_calls = g_fifoWriteCalls.load(std::memory_order_relaxed),
+        .display_list_calls = g_displayListCalls.load(std::memory_order_relaxed),
+        .gx_copy_disp_calls = g_gxCopyDispCalls.load(std::memory_order_relaxed),
+        .present_successes = g_presentSuccesses.load(std::memory_order_relaxed),
+        .present_failures = g_presentFailures.load(std::memory_order_relaxed),
+    };
+}
+
 extern "C" void mkw_switch_hle_gx_copy_disp(CpuContext* cpu) noexcept {
     if (!cpu) {
         return;
     }
 
     const bool clear = cpu->gpr[4] != 0u;
+    g_gxCopyDispCalls.fetch_add(1u, std::memory_order_relaxed);
     mkw_switch_set_fast_track_stage("RMCP01_GX_COPY_DISP");
 
     std::scoped_lock lock(g_rendererMutex);

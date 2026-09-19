@@ -4,6 +4,8 @@
 #include <cstdint>
 
 static_assert(KnownNativeCpuCall<0x801AAD5Cu>::kAvailable);
+static_assert(KnownNativeCpuCall<0x8015E834u>::kAvailable);
+static_assert(KnownNativeCpuCall<0x8015E74Cu>::kAvailable);
 
 // Nintendo-data-free compile/link coverage for PAL OSGetTime. The pinned HLE
 // reads only the host-backed Broadway time base and returns the stable high/low

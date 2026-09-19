@@ -28,7 +28,7 @@ The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge se
 
 The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
 
-The real-Switch validation after #190 confirms that the VI/scheduler recovery remains intact and hardware-crosses PAL `OSSendMessage` at `0x801A735C`. The initial guest thread `0x8042A680` still blocks correctly, the priority-6 worker `0x90112660` still parks on VI queue `0x80386BC0`, and the default/main thread resumes. The next concrete blocker is now PAL `GXDrawDone` at `0x8016EAB0`, reached as a DIRECT unsupported dispatch after the message-queue boundary was crossed.
+The real-Switch validation after #191 hardware-crosses PAL `GXDrawDone` at `0x8016EAB0` while preserving the recovered scheduler. The next concrete blocker is now a virtual indirect jump to `EGG::TaskThread::run()` at `0x80242D7C`. The matching OSThread is `0x8042E480`, priority 24, with object `0x8042BBF0`; RMCP01's `ResourceManager` creates a priority-24 `EGG::TaskThread` for asynchronous resource jobs, so the fast-track has now reached the resource worker itself.
 
 ## Milestones
 
@@ -113,7 +113,11 @@ later OSThread 0x90112660 / run 0x80008D18       ✅ identified
   ↓
 OSSendMessage (0x801A735C)                             ✅ hardware crossed
   ↓
-GXDrawDone (0x8016EAB0)                                 ← current blocker
+GXDrawDone (0x8016EAB0)                                 ✅ hardware crossed
+  ↓
+EGG::TaskThread::run (0x80242D7C)                         ← current blocker
+  ↓
+resource-job callback / DVD frontier
   ↓
 first rendered RMCP01 frame
 ```
@@ -268,6 +272,8 @@ Start with:
 - [`docs/HARDWARE_RESULTS_2026-09-19_RMCP01_RESOURCE_THREAD_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-19_RMCP01_RESOURCE_THREAD_FRONTIER.md) — FST publication PASS, #185 DVD-read non-reachability, and later priority-6 thread frontier;
 - [`docs/HARDWARE_RESULTS_2026-09-19_VI_POLL_CONTEXT_REGRESSION.md`](docs/HARDWARE_RESULTS_2026-09-19_VI_POLL_CONTEXT_REGRESSION.md) — #188 first-fiber crash attribution and register-isolation fix gate;
 - [`docs/HARDWARE_RESULTS_2026-09-19_OS_SEND_MESSAGE_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-19_OS_SEND_MESSAGE_FRONTIER.md) — #189 hardware PASS, VI starvation fixed, and new `OSSendMessage` blocker;
+- [`docs/HARDWARE_RESULTS_2026-09-19_GX_DRAW_DONE_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-19_GX_DRAW_DONE_FRONTIER.md) — #190 OSSendMessage PASS and new `GXDrawDone` blocker;
+- [`docs/HARDWARE_RESULTS_2026-09-19_TASK_THREAD_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-19_TASK_THREAD_FRONTIER.md) — #191 GXDrawDone PASS and resource `TaskThread::run` frontier;
 - [`docs/M3_RMCP01_RENDERED_FAST_TRACK.md`](docs/M3_RMCP01_RENDERED_FAST_TRACK.md) — first local Mario Kart graphics-enabled fast-track.
 
 Older dated `HARDWARE_RESULTS_*` files are historical snapshots. Their “next blocker” wording intentionally reflects what was known on that date and is not rewritten retroactively.

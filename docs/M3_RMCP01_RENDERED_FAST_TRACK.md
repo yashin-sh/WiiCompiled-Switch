@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer and local FST publication hardware-proven; #190 hardware-crosses `OSSendMessage` while preserving scheduler recovery; the current blocker is PAL `GXDrawDone` at `0x8016EAB0`**.
+Status: **renderer and local FST publication hardware-proven; #191 hardware-crosses `GXDrawDone`; the current blocker is virtual `EGG::TaskThread::run` at `0x80242D7C`, reached by the priority-24 ResourceManager worker**.
 
 ## Purpose
 
@@ -329,6 +329,34 @@ uses Aurora's real `GXDrawDone()` FIFO drain and preserves the separate
 The renderer remains initialized with exactly eight bootstrap FIFO writes and
 still has no display-list call, drawable FIFO work, `GXCopyDisp`, or present.
 FST publication remains valid; `RKSystem::run` and StaticR are still zero.
+
+## Hardware result after #191 — TaskThread resource frontier
+
+The first real-Switch run after #191 crosses `GXDrawDone (0x8016EAB0)`.
+The next durable blocker is an `INDIRECT_JUMP_MISS` to
+`0x80242D7C` from `EGG::Thread::start(void*)`.
+
+The matching thread lifecycle event identifies:
+
+```text
+thread   : 0x8042E480
+arg      : 0x8042BBF0
+priority : 24
+vtable   : 0x802A3F90
+vt_run   : 0x80242D7C
+```
+
+Pinned WiiCompiled maps this target to `EGG::TaskThread::run()`. RMCP01's
+`ResourceManager` creates a priority-24 `EGG::TaskThread` for asynchronous
+resource jobs, so this is the first direct hardware evidence that the
+resource-worker fiber itself is now being entered.
+
+The renderer still reports eight bootstrap FIFO writes, no display list,
+no drawable FIFO work, no `GXCopyDisp`, and no present. FST publication
+remains valid and no DVD-read diagnostic is produced yet.
+
+The next slice mirrors the pinned `TaskThread::run` loop and routes this
+virtual native target before the generated translated indirect table.
 
 ## Build
 

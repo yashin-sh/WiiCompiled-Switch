@@ -9,6 +9,8 @@
 #include <cstddef>
 #include <cstdint>
 
+extern "C" void mkw_switch_hle_task_thread_run(CpuContext* cpu);
+
 namespace {
 std::atomic<const StaticIndirectDispatchTable*> g_staticIndirectDispatchTable{nullptr};
 
@@ -116,6 +118,15 @@ void RegisterStaticIndirectDispatchTable(const StaticIndirectDispatchTable* tabl
 bool mkw_switch_try_dispatch_indirect(std::uint32_t target, CpuContext* cpu) {
     if (!cpu) {
         return false;
+    }
+
+    // PAL EGG::TaskThread::run is a pinned WiiCompiled native override reached
+    // through Thread::start's virtual run() slot, so it never appears in the
+    // generated translated indirect table. Resolve that hardware-proven native
+    // boundary before consulting translated entries.
+    if (target == 0x80242D7Cu) {
+        mkw_switch_hle_task_thread_run(cpu);
+        return true;
     }
 
     const auto* table = g_staticIndirectDispatchTable.load(std::memory_order_acquire);

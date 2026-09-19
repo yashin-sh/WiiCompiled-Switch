@@ -62,6 +62,7 @@
 - `HARDWARE_RESULTS_2026-09-19_VI_POLL_CONTEXT_REGRESSION.md` — #188 first-fiber register-clobber regression and #189 correction gate
 - `HARDWARE_RESULTS_2026-09-19_OS_SEND_MESSAGE_FRONTIER.md` — #189 scheduler recovery PASS and new PAL `OSSendMessage` blocker
 - `HARDWARE_RESULTS_2026-09-19_GX_DRAW_DONE_FRONTIER.md` — #190 OSSendMessage hardware PASS and new PAL `GXDrawDone` blocker
+- `HARDWARE_RESULTS_2026-09-19_TASK_THREAD_FRONTIER.md` — #191 GXDrawDone hardware PASS and priority-24 ResourceManager `TaskThread::run` frontier
 
 ## Blocker notes
 

@@ -50,15 +50,23 @@ file(GLOB M3_FAST_TRACK_SOURCE_ASM CONFIGURE_DEPENDS
 add_executable(mkw_switch_rendered_fast_track
     ${M3_FAST_TRACK_SOURCE_CPP}
     ${M3_FAST_TRACK_SOURCE_ASM}
+    # Hand-written AArch64 coroutine switch (mkw_switch_co_init/switch);
+    # the SOURCES glob above only covers .cpp/.S.
+    "${M3_REPO_ROOT}/source/context_switch.s"
     "${M3_WIICOMPILED_ROOT}/runtime/src/hle/gx/gx_fifo.cpp"
 )
 
 target_include_directories(mkw_switch_rendered_fast_track PRIVATE
+    # Probe-style seams first: hle_stubs.h here shadows the desktop
+    # runtime's parallel ABI world (see seams/hle_stubs.h).
+    "${M3_REPO_ROOT}/local-rendered-fast-track/seams"
     "${M3_REPO_ROOT}/include"
     "${M3_REPO_ROOT}/local-product/generated"
     "${M3_WIICOMPILED_ROOT}/runtime/include"
     "${M3_WIICOMPILED_ROOT}/runtime/src"
     "${M3_WIICOMPILED_ROOT}/runtime/src/hle/gx"
+    # Header-only toml11 used by runtime_config.h (mirrors mkw::toml11).
+    "${M3_WIICOMPILED_ROOT}/runtime/third_party/toml11"
 )
 
 target_compile_features(mkw_switch_rendered_fast_track PRIVATE cxx_std_20)
@@ -132,7 +140,7 @@ add_custom_command(
     COMMAND "${M3_ELF2NRO}"
             "$<TARGET_FILE:mkw_switch_rendered_fast_track>"
             "${M3_NRO}"
-            --nacp="${M3_NACP}"
+            --nacp=${M3_NACP}
     DEPENDS mkw_switch_rendered_fast_track "${M3_NACP}"
     VERBATIM
 )

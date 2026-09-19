@@ -1,7 +1,8 @@
 diff --git a/src/dawn/native/CMakeLists.txt b/src/dawn/native/CMakeLists.txt
+index 147fe8ad90..c68d650f20 100644
 --- a/src/dawn/native/CMakeLists.txt
 +++ b/src/dawn/native/CMakeLists.txt
-@@
+@@ -1105,16 +1105,18 @@ if (DAWN_BUILD_MONOLITHIC_LIBRARY)
              target_include_directories(${target_name} PRIVATE
                  "${DAWN_SWITCH_NVK_ROOT}/include")
              target_link_libraries(${target_name} PRIVATE
@@ -22,3 +23,6 @@ diff --git a/src/dawn/native/CMakeLists.txt b/src/dawn/native/CMakeLists.txt
 +                -Wl,--allow-multiple-definition
 +                -Wl,-u,vk_icdGetInstanceProcAddr
 +                -Wl,-u,vk_icdNegotiateLoaderICDInterfaceVersion)
+ 
+             set(_nacp "${CMAKE_CURRENT_BINARY_DIR}/${target_name}.nacp")
+             set(_nro "${CMAKE_CURRENT_BINARY_DIR}/${target_name}.nro")

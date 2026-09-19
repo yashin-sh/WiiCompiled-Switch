@@ -7,11 +7,36 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 class Memory {
-public:
+  public:
+    // Thrown (after logging) on accesses outside mapped regions. Mirrors the
+    // upstream runtime's Memory::AccessViolation so shared decoder code
+    // (HleFifoWrite display-list bursts) keeps its graceful-false handling
+    // instead of just aborting.
+    class AccessViolation : public std::runtime_error {
+      public:
+        AccessViolation(std::uint32_t address, std::size_t length, std::string_view reason);
+
+        std::uint32_t address() const noexcept {
+            return address_;
+        }
+        std::size_t length() const noexcept {
+            return length_;
+        }
+        std::string_view reason() const noexcept {
+            return reason_;
+        }
+
+      private:
+        std::uint32_t address_ = 0;
+        std::size_t length_ = 0;
+        std::string reason_;
+    };
     static constexpr std::size_t kMem1Size = 24u * 1024u * 1024u;
     static constexpr std::size_t kMem2Size = 128u * 1024u * 1024u;
 

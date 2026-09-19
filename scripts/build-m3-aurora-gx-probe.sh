@@ -19,6 +19,7 @@ readonly WII_DIR="$ROOT_DIR/third_party/WiiCompiled"
 readonly MESA_PATCH="$ROOT_DIR/patches/mesa-switch/m3-linux-build.patch"
 readonly DAWN_PATCH="$ROOT_DIR/patches/dawn-switch/m3-static-nvk-link.patch"
 readonly AURORA_TARGET_PATCH="$ROOT_DIR/patches/dawn-switch/m3-aurora-probe-target.patch"
+readonly WII_GXGEOMETRY_PATCH="$ROOT_DIR/patches/wiicompiled/m3-wiicompiled-switch-build.patch"
 readonly ABSEIL_DIR="$DAWN_DIR/third_party/abseil-cpp"
 readonly ABSEIL_PATCH="$ROOT_DIR/patches/dawn-switch/m3-abseil-switch-newlib.patch"
 readonly PROBE_DIR="$ROOT_DIR/m3-aurora-gx-probe"
@@ -51,6 +52,10 @@ if [[ ! -f "$DAWN_PATCH" ]]; then
 fi
 if [[ ! -f "$AURORA_TARGET_PATCH" ]]; then
     echo "error: missing Dawn Aurora target patch: $AURORA_TARGET_PATCH" >&2
+    exit 1
+fi
+if [[ ! -f "$WII_GXGEOMETRY_PATCH" ]]; then
+    echo "error: missing WiiCompiled GXGeometry patch: $WII_GXGEOMETRY_PATCH" >&2
     exit 1
 fi
 if [[ ! -f "$ABSEIL_PATCH" ]]; then
@@ -86,6 +91,25 @@ if [[ "$actual_wii_pin" != "$WII_PIN" ]]; then
     exit 1
 fi
 echo "      WiiCompiled: $actual_wii_pin"
+
+# aurora-main declares a C++ convenience overload inside an extern "C"
+# block, which cannot compile as C++. Restore the exact pin and apply only
+# our narrow linkage fix.
+git -C "$WII_DIR" restore --source="$WII_PIN" -- \
+    aurora-main/include/dolphin/gx/GXGeometry.h \
+    runtime/include/abi_bridge.h \
+    runtime/include/gx_guest_write.h \
+    runtime/include/runtime_config.h \
+    runtime/include/runtime_log.h \
+    runtime/include/system_bridge.h \
+    runtime/src/hle/gx/gx_dl.cpp \
+    runtime/src/hle/gx/gx_internal.h \
+    runtime/src/hle/gx/gx_stream_common.h
+if ! git -C "$WII_DIR" apply --check "$WII_GXGEOMETRY_PATCH"; then
+    echo "error: WiiCompiled GXGeometry patch no longer applies to $WII_PIN" >&2
+    exit 1
+fi
+git -C "$WII_DIR" apply "$WII_GXGEOMETRY_PATCH"
 
 if [[ ! -d "$MESA_DIR/.git" ]]; then
     echo "[1/7] Cloning pinned mesa-switch dependency..."

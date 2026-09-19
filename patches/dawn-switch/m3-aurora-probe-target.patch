@@ -1,7 +1,10 @@
 diff --git a/src/dawn/native/CMakeLists.txt b/src/dawn/native/CMakeLists.txt
+index 147fe8ad90..b1b947080f 100644
 --- a/src/dawn/native/CMakeLists.txt
 +++ b/src/dawn/native/CMakeLists.txt
-@@
+@@ -1070,6 +1070,21 @@ if (DAWN_BUILD_MONOLITHIC_LIBRARY)
+     endif ()
+ 
      if (DAWN_PLATFORM_SWITCH)
 +        set(DAWN_SWITCH_AURORA_PROBE_DIR "" CACHE PATH
 +            "Optional external Aurora GX probe CMake source directory")
@@ -20,3 +23,4 @@ diff --git a/src/dawn/native/CMakeLists.txt b/src/dawn/native/CMakeLists.txt
 +
          option(DAWN_SWITCH_BUILD_CLEAR_NRO
              "Build the Dawn Switch clear/present NRO smoke test" OFF)
+         option(DAWN_SWITCH_BUILD_TRIANGLE_NRO

@@ -5,6 +5,9 @@
 #define MKW_FAST_TRACK_DIAGNOSTICS 1
 #include "abi_bridge.h"
 #include "guest_flat_memory.h"
+#if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+#include "rendered_fast_track_graphics.hpp"
+#endif
 #include <switch.h>
 #include <cstddef>
 #include <cstdio>
@@ -264,7 +267,42 @@ void write_liveness_record(
         return;
     }
 
-    const std::size_t size = static_cast<std::size_t>(n) < sizeof(buffer) ? static_cast<std::size_t>(n) : sizeof(buffer) - 1;
+    std::size_t size =
+        static_cast<std::size_t>(n) < sizeof(buffer) ? static_cast<std::size_t>(n)
+                                                     : sizeof(buffer) - 1u;
+
+#if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+    const auto renderer = mkw_switch_renderer_diagnostics_snapshot();
+    if (size < sizeof(buffer) - 1u) {
+        const int renderer_n = std::snprintf(
+            buffer + size,
+            sizeof(buffer) - size,
+            "renderer initialized  : %s\n"
+            "renderer frame active : %s\n"
+            "RMCP01 FIFO writes    : %llu\n"
+            "display-list calls    : %llu\n"
+            "FIFO produced work    : %s\n"
+            "GXCopyDisp calls      : %llu\n"
+            "present successes     : %llu\n"
+            "present failures      : %llu\n",
+            renderer.initialized ? "YES" : "NO",
+            renderer.frame_active ? "YES" : "NO",
+            static_cast<unsigned long long>(renderer.fifo_write_calls),
+            static_cast<unsigned long long>(renderer.display_list_calls),
+            renderer.fifo_work_seen ? "YES" : "NO",
+            static_cast<unsigned long long>(renderer.gx_copy_disp_calls),
+            static_cast<unsigned long long>(renderer.present_successes),
+            static_cast<unsigned long long>(renderer.present_failures));
+        if (renderer_n > 0) {
+            const std::size_t appended =
+                static_cast<std::size_t>(renderer_n) < sizeof(buffer) - size
+                    ? static_cast<std::size_t>(renderer_n)
+                    : sizeof(buffer) - size - 1u;
+            size += appended;
+        }
+    }
+#endif
+
     write_atomicish(path, buffer, size);
 }
 

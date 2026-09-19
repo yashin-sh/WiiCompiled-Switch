@@ -72,6 +72,7 @@ docker run --rm \
     -v "$WII_DIR:/wiicompiled:ro" \
     -v "$ROOT_DIR/m3-hle-fifo-probe:/probe:ro" \
     -v "$ROOT_DIR:/repo:ro" \
+    -v "$ROOT_DIR:$ROOT_DIR:ro" \
     "$MESA_IMAGE" \
     bash -lc '
         set -euo pipefail

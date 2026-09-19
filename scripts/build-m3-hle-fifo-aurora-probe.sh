@@ -21,6 +21,7 @@ readonly DAWN_PATCH="$ROOT_DIR/patches/dawn-switch/m3-static-nvk-link.patch"
 readonly AURORA_TARGET_PATCH="$ROOT_DIR/patches/dawn-switch/m3-aurora-probe-target.patch"
 readonly ABSEIL_DIR="$DAWN_DIR/third_party/abseil-cpp"
 readonly ABSEIL_PATCH="$ROOT_DIR/patches/dawn-switch/m3-abseil-switch-newlib.patch"
+readonly WII_GXGEOMETRY_PATCH="$ROOT_DIR/patches/wiicompiled/m3-wiicompiled-switch-build.patch"
 readonly PROBE_DIR="$ROOT_DIR/m3-hle-fifo-probe"
 readonly PROBE_SOURCE="$PROBE_DIR/source/main.cpp"
 readonly OUTPUT_DIR="$PROBE_DIR"
@@ -57,6 +58,10 @@ if [[ ! -f "$ABSEIL_PATCH" ]]; then
     echo "error: missing Abseil Switch/newlib patch: $ABSEIL_PATCH" >&2
     exit 1
 fi
+if [[ ! -f "$WII_GXGEOMETRY_PATCH" ]]; then
+    echo "error: missing WiiCompiled GXGeometry patch: $WII_GXGEOMETRY_PATCH" >&2
+    exit 1
+fi
 if [[ ! -f "$PROBE_SOURCE" || ! -f "$PROBE_DIR/CMakeLists.txt" ]]; then
     echo "error: missing HleFifoWrite/Aurora probe sources under $PROBE_DIR" >&2
     exit 1
@@ -86,6 +91,25 @@ if [[ "$actual_wii_pin" != "$WII_PIN" ]]; then
     exit 1
 fi
 echo "      WiiCompiled: $actual_wii_pin"
+
+# aurora-main declares a C++ convenience overload inside an extern "C"
+# block, which cannot compile as C++. Restore the exact pin and apply only
+# our narrow linkage fix (plus explicit endianness flags at its callers).
+git -C "$WII_DIR" restore --source="$WII_PIN" -- \
+    aurora-main/include/dolphin/gx/GXGeometry.h \
+    runtime/include/abi_bridge.h \
+    runtime/include/gx_guest_write.h \
+    runtime/include/runtime_config.h \
+    runtime/include/runtime_log.h \
+    runtime/include/system_bridge.h \
+    runtime/src/hle/gx/gx_internal.h \
+    runtime/src/hle/gx/gx_stream_common.h \
+    runtime/src/hle/gx/gx_dl.cpp
+if ! git -C "$WII_DIR" apply --check "$WII_GXGEOMETRY_PATCH"; then
+    echo "error: WiiCompiled GXGeometry patch no longer applies to $WII_PIN" >&2
+    exit 1
+fi
+git -C "$WII_DIR" apply "$WII_GXGEOMETRY_PATCH"
 
 if [[ ! -d "$MESA_DIR/.git" ]]; then
     echo "[1/7] Cloning pinned mesa-switch dependency..."

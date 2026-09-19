@@ -2,6 +2,7 @@
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
 #include "abi_bridge.h"
+#include "fast_track_thread_diagnostics.hpp"
 #include "memory.h"
 #include "switch_guest_fiber.hpp"
 
@@ -179,6 +180,14 @@ extern "C" void mkw_switch_hle_os_resume_thread(CpuContext* ctx) noexcept {
         return;
     }
 
+    mkw_switch_note_guest_thread_event(
+        "resume-enter",
+        cpu,
+        threadPtr,
+        0u,
+        0u,
+        -1);
+
     mkw_switch_hle_os_disable_interrupts(cpu);
     const std::uint32_t irqState = cpu->gpr[3];
 
@@ -261,6 +270,13 @@ extern "C" void mkw_switch_hle_os_resume_thread(CpuContext* ctx) noexcept {
     }
 
     RestoreInterrupts(cpu, irqState);
+    mkw_switch_note_guest_thread_event(
+        "resume-return",
+        cpu,
+        threadPtr,
+        0u,
+        0u,
+        -1);
 }
 
 #endif

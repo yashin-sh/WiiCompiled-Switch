@@ -1,4 +1,5 @@
 #include "switch_guest_fiber.hpp"
+#include "fast_track_thread_diagnostics.hpp"
 
 #include "devkita64_gcc_compat.hpp"
 #include "abi_bridge.h"
@@ -97,6 +98,14 @@ void GuestFiberEntry(void* argument) {
         cpu->gpr[3] = record->entry_arg;
         cpu->pc = record->entry_point;
         cpu->srr0 = record->entry_point;
+
+        mkw_switch_note_guest_thread_event(
+            "fiber-entry",
+            cpu,
+            guest_thread,
+            record->entry_point,
+            record->entry_arg,
+            -1);
 
         CpuContextScope scope(cpu);
         InvokeIndirectCpu(record->entry_point, cpu);

@@ -2,6 +2,7 @@
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
 #include "abi_bridge.h"
+#include "fast_track_thread_diagnostics.hpp"
 #include "memory.h"
 #include "switch_guest_fiber.hpp"
 
@@ -212,6 +213,14 @@ extern "C" void mkw_switch_hle_os_create_thread(CpuContext* ctx) noexcept {
         // the existing OSLoadContext fallback for a thread without a host stack.
         (void)mkw::switch_guest_fiber::create(
             threadPtr, entryFunc, entryArg, alignedStack - 8u, cpu);
+
+        mkw_switch_note_guest_thread_event(
+            "create",
+            cpu,
+            threadPtr,
+            entryFunc,
+            entryArg,
+            priority);
 
         cpu->gpr[3] = 1u;
     } catch (...) {

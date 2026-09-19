@@ -149,9 +149,8 @@ SchedulerSnapshot read_scheduler_snapshot() noexcept {
             read32_or_zero(kDefaultThreadContextAddr + kThreadQueueOffset);
     }
 
-    const std::uint32_t active = snapshot.fiber_current != 0u
-        ? snapshot.fiber_current
-        : snapshot.os_running;
+    const std::uint32_t active =
+        snapshot.fiber_current != 0u ? snapshot.fiber_current : snapshot.os_running;
     if (active != 0u &&
         Memory::IsInitialized() &&
         Memory::Contains(active + kThreadQueueOffset, 4u)) {

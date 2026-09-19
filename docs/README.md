@@ -58,6 +58,7 @@
 - `HARDWARE_RESULTS_2026-09-18_M3_DAWN_TRIANGLE.md` — real-Switch WGSL/Dawn graphics-pipeline triangle PASS with clean explicit teardown
 - `HARDWARE_RESULTS_2026-09-18_M3_AURORA_GX.md` — real-Switch Aurora GX triangle PASS with 563-frame active loop and clean teardown
 - `HARDWARE_RESULTS_2026-09-18_M3_HLE_FIFO_AURORA.md` — exact pinned `HleFifoWrite` → Aurora GX PASS with 1,435-frame active loop
+- `HARDWARE_RESULTS_2026-09-19_RMCP01_RESOURCE_THREAD_FRONTIER.md` — FST publication PASS, #185 DVD-read non-reachability, and later priority-6 OSThread `0x90112660` frontier
 
 ## Blocker notes
 

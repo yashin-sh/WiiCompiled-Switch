@@ -132,3 +132,32 @@ The next implementation gate is therefore exact and pinned: use
 `OSSleepThread` on VI queue `0x80386BC0` for active guest fibers and service
 due retraces synchronously from safe runtime call boundaries. The first
 hardware acceptance condition is scheduler progression, not a rendered frame.
+
+
+## Follow-up after #188 — earlier first-fiber regression
+
+The first hardware run with the #188 fiber-aware VI change does not yet test
+the durable `0x90112660` starvation case. It crashes earlier at the initial
+guest-fiber entry:
+
+```text
+thread=0x8042a680
+entry=0x8024373c
+arg=0x804294e4
+fiber-entry r3=0x804294e4
+kind=GUEST_FIBER_ENTRY_EXCEPTION
+stage=HOST_CONTEXT_SWITCH_ENTER
+```
+
+At crash time `OSSleepThread=0`, `SelectThread=0`, `RKSystem::run=0` and
+StaticR remains zero. The renderer is still ready, the FST is still published,
+and the FIFO still contains only the eight video-bootstrap writes. Therefore
+DVD and graphics remain excluded as the immediate blocker.
+
+The regression is attributed to #188's runtime-boundary VI poll using the live
+translated `CpuContext`: retrace service overwrites `r3` for wakeup/callback
+work immediately before dispatching `EGG::Thread::start`. The corrective gate
+is full interrupted-register restoration around the poll, matching the pinned
+runtime's interrupt-context isolation contract. Hardware must first recover the
+historical `0x8042A680 -> OSReceiveMessage -> OSSleepThread` path before the
+later `0x90112660` starvation fix can be accepted.

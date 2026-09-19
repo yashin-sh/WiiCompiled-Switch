@@ -137,7 +137,7 @@ The current hardware-driven method remains deliberate after `main`: execute the 
 - [x] Select the native Switch graphics strategy compatible with WiiCompiled/Aurora — **Aurora GX → Dawn/WebGPU → Vulkan/NVK is the primary path; Deko3D remains fallback**
 - [x] Present an isolated Aurora GX triangle on real Switch — **hardware PASS: first Aurora GX triangle + 563-frame active loop + clean teardown**
 - [x] Prove pinned WiiCompiled `HleFifoWrite` → Aurora GX with a fabricated Nintendo-data-free FIFO stream — **hardware PASS: exact pin, raw-direct path, 1,435-frame stable loop**
-- [ ] Replace the temporary GX FIFO sink with a real GX → Switch command/backend path — **separate RMCP01 rendered fast-track implemented; hardware test next**
+- [ ] Replace the temporary GX FIFO sink with a real GX → Switch command/backend path — **separate RMCP01 rendered fast-track is hardware-running; game has not produced drawable FIFO work yet**
 - [x] Render first native Switch clear frame
 - [ ] GX command path functional
 - [ ] shader/pipeline cache strategy
@@ -145,7 +145,7 @@ The current hardware-driven method remains deliberate after `main`: execute the 
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The separate rendered RMCP01 fast-track now links the hardware-proven pinned FIFO/Aurora/Dawn/NVK path; its first real-Switch run is the current M3 gate.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered RMCP01 fast-track is now running on real hardware with the renderer ready and FST publication proven. The current gate is identifying later priority-6 OSThread `0x90112660`; no drawable RMCP01 FIFO work has reached `GXCopyDisp` yet.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input

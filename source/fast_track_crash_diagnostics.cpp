@@ -6,6 +6,7 @@
 #include "abi_bridge.h"
 #include "guest_flat_memory.h"
 #include "memory.h"
+#include "switch_guest_fiber.hpp"
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
 #include "rendered_fast_track_graphics.hpp"
 #endif
@@ -37,8 +38,25 @@ constexpr const char* kPostMainLastDispatchPath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-post-main-last-dispatch.txt";
 constexpr const char* kPostMainTracePath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-post-main-trace.txt";
+constexpr const char* kPostVideoTracePath =
+    "sdmc:/switch/WiiCompiled-Switch/fast-track-post-video-trace.txt";
 constexpr std::uint32_t kPalMainAddress = 0x8000B6B0u;
 constexpr std::uint32_t kRkSystemRunAddress = 0x8000951Cu;
+constexpr std::uint32_t kEggVideoConfigureAddress = 0x80243D6Cu;
+constexpr std::uint32_t kViWaitForRetraceAddress = 0x801B99ECu;
+constexpr std::uint32_t kPostRetraceCallbackAddress = 0x8020FCD4u;
+constexpr std::uint32_t kOsReceiveMessageAddress = 0x801A7424u;
+constexpr std::uint32_t kOsSleepThreadAddress = 0x801AA9B8u;
+constexpr std::uint32_t kOsWakeupThreadAddress = 0x801AAAA4u;
+constexpr std::uint32_t kSelectThreadAddress = 0x801A9C08u;
+constexpr std::uint32_t kOsLoadContextAddress = 0x801A1F58u;
+constexpr std::uint32_t kDefaultThreadContextAddr = 0x80347498u;
+constexpr std::uint32_t kOSCurrentContextAddr = 0x800000D4u;
+constexpr std::uint32_t kOSRunningContextAddr = 0x800000E4u;
+constexpr std::uint32_t kThreadStateOffset = 0x2C8u;
+constexpr std::uint32_t kThreadSuspendOffset = 0x2CCu;
+constexpr std::uint32_t kThreadPriorityOffset = 0x2D0u;
+constexpr std::uint32_t kThreadQueueOffset = 0x2DCu;
 constexpr std::uint32_t kStaticRTextStart = 0x805103B4u;
 constexpr std::uint32_t kStaticRTextEnd = 0x8088F400u;
 constexpr std::uint32_t kFstAddressLowMem = 0x80000038u;
@@ -48,6 +66,8 @@ constexpr std::uint64_t kDurableEarlyPostMainDispatches = 16u;
 constexpr std::uint64_t kDensePostMainTraceDispatches = 48u;
 constexpr std::uint64_t kMaxPostMainTraceEntries = 64u;
 constexpr std::uint64_t kPostMainTraceFsyncStride = 8u;
+constexpr std::uint64_t kMaxPostVideoTraceEntries = 128u;
+constexpr std::uint64_t kPostVideoTraceFsyncStride = 16u;
 
 const char* volatile g_fast_track_stage = "PROCESS_START";
 bool g_liveness_files_reset = false;
@@ -56,15 +76,93 @@ bool g_post_main_dispatch_recorded = false;
 std::uint64_t g_dispatch_count = 0u;
 std::uint64_t g_post_main_dispatch_count = 0u;
 std::uint64_t g_post_main_trace_entries = 0u;
+std::uint64_t g_post_video_trace_entries = 0u;
+bool g_post_video_trace_started = false;
 std::uint64_t g_last_heartbeat_tick = 0u;
 std::uint64_t g_rksystem_run_dispatch_count = 0u;
 std::uint64_t g_staticr_dispatch_count = 0u;
+std::uint64_t g_vi_wait_for_retrace_dispatch_count = 0u;
+std::uint64_t g_post_retrace_callback_dispatch_count = 0u;
+std::uint64_t g_os_receive_message_dispatch_count = 0u;
+std::uint64_t g_os_sleep_thread_dispatch_count = 0u;
+std::uint64_t g_os_wakeup_thread_dispatch_count = 0u;
+std::uint64_t g_select_thread_dispatch_count = 0u;
+std::uint64_t g_os_load_context_dispatch_count = 0u;
 
 struct FstSnapshot {
     std::uint32_t address = 0u;
     std::uint32_t size = 0u;
     bool valid = false;
 };
+
+std::uint32_t read32_or_zero(std::uint32_t address) noexcept {
+    if (!Memory::IsInitialized() || !Memory::Contains(address, 4u)) {
+        return 0u;
+    }
+    try {
+        return Memory::Read32(address);
+    } catch (...) {
+        return 0u;
+    }
+}
+
+std::uint16_t read16_or_zero(std::uint32_t address) noexcept {
+    if (!Memory::IsInitialized() || !Memory::Contains(address, 2u)) {
+        return 0u;
+    }
+    try {
+        return Memory::Read16(address);
+    } catch (...) {
+        return 0u;
+    }
+}
+
+struct SchedulerSnapshot {
+    std::uint32_t fiber_current = 0u;
+    std::uint32_t os_current = 0u;
+    std::uint32_t os_running = 0u;
+    std::uint16_t default_state = 0u;
+    std::int32_t default_suspend = 0;
+    std::int32_t default_priority = 0;
+    std::uint32_t default_queue = 0u;
+    std::uint16_t active_state = 0u;
+    std::int32_t active_suspend = 0;
+    std::int32_t active_priority = 0;
+    std::uint32_t active_queue = 0u;
+};
+
+SchedulerSnapshot read_scheduler_snapshot() noexcept {
+    SchedulerSnapshot snapshot{};
+    snapshot.fiber_current = mkw::switch_guest_fiber::current_thread();
+    snapshot.os_current = read32_or_zero(kOSCurrentContextAddr);
+    snapshot.os_running = read32_or_zero(kOSRunningContextAddr);
+
+    if (Memory::IsInitialized() &&
+        Memory::Contains(kDefaultThreadContextAddr + kThreadQueueOffset, 4u)) {
+        snapshot.default_state =
+            read16_or_zero(kDefaultThreadContextAddr + kThreadStateOffset);
+        snapshot.default_suspend = static_cast<std::int32_t>(
+            read32_or_zero(kDefaultThreadContextAddr + kThreadSuspendOffset));
+        snapshot.default_priority = static_cast<std::int32_t>(
+            read32_or_zero(kDefaultThreadContextAddr + kThreadPriorityOffset));
+        snapshot.default_queue =
+            read32_or_zero(kDefaultThreadContextAddr + kThreadQueueOffset);
+    }
+
+    const std::uint32_t active =
+        snapshot.fiber_current != 0u ? snapshot.fiber_current : snapshot.os_running;
+    if (active != 0u &&
+        Memory::IsInitialized() &&
+        Memory::Contains(active + kThreadQueueOffset, 4u)) {
+        snapshot.active_state = read16_or_zero(active + kThreadStateOffset);
+        snapshot.active_suspend = static_cast<std::int32_t>(
+            read32_or_zero(active + kThreadSuspendOffset));
+        snapshot.active_priority = static_cast<std::int32_t>(
+            read32_or_zero(active + kThreadPriorityOffset));
+        snapshot.active_queue = read32_or_zero(active + kThreadQueueOffset);
+    }
+    return snapshot;
+}
 
 FstSnapshot read_fst_snapshot() noexcept {
     FstSnapshot snapshot{};
@@ -181,11 +279,13 @@ std::size_t format_post_main_trace_line(
     const std::uint32_t r2 = cpu ? cpu->gpr[2] : 0u;
     const std::uint32_t r3 = cpu ? cpu->gpr[3] : 0u;
     const std::uint32_t r13 = cpu ? cpu->gpr[13] : 0u;
+    const std::uint32_t lr = cpu ? cpu->lr : 0u;
+    const std::uint32_t fiber = mkw::switch_guest_fiber::current_thread();
     const int n = std::snprintf(
         buffer,
         capacity,
         "[%02llu] post-main=%llu dispatch=%llu target=0x%08x pc=0x%08x "
-        "r1=0x%08x r2=0x%08x r3=0x%08x r13=0x%08x stage=%s phase=%s\n",
+        "r1=0x%08x r2=0x%08x r3=0x%08x r13=0x%08x lr=0x%08x fiber=0x%08x stage=%s phase=%s\n",
         static_cast<unsigned long long>(trace_index),
         static_cast<unsigned long long>(g_post_main_dispatch_count),
         static_cast<unsigned long long>(g_dispatch_count),
@@ -195,6 +295,8 @@ std::size_t format_post_main_trace_line(
         r2,
         r3,
         r13,
+        lr,
+        fiber,
         g_fast_track_stage,
         post_main_phase_name(target));
     if (n <= 0) {
@@ -247,6 +349,44 @@ void append_post_main_trace(std::uint32_t target, CpuContext* cpu, bool phase_ta
     ::close(fd);
 }
 
+void append_post_video_trace(std::uint32_t target, CpuContext* cpu) noexcept {
+    if (!g_post_video_trace_started ||
+        g_post_video_trace_entries >= kMaxPostVideoTraceEntries) {
+        return;
+    }
+
+    const int fd = ::open(kPostVideoTracePath, O_WRONLY | O_CREAT | O_APPEND, 0666);
+    if (fd < 0) {
+        return;
+    }
+
+    if (g_post_video_trace_entries == 0u) {
+        constexpr const char kHeader[] =
+            "WiiCompiled-Switch bounded post-video translated trace\n"
+            "======================================================\n";
+        write_all(fd, kHeader, sizeof(kHeader) - 1u);
+    }
+
+    ++g_post_video_trace_entries;
+    char buffer[512];
+    const std::size_t size = format_post_main_trace_line(
+        buffer,
+        sizeof(buffer),
+        g_post_video_trace_entries,
+        target,
+        cpu);
+    if (size != 0u) {
+        write_all(fd, buffer, size);
+    }
+
+    if (g_post_video_trace_entries == 1u ||
+        g_post_video_trace_entries == kMaxPostVideoTraceEntries ||
+        g_post_video_trace_entries % kPostVideoTraceFsyncStride == 0u) {
+        ::fsync(fd);
+    }
+    ::close(fd);
+}
+
 void reset_liveness_files_once() noexcept {
     if (g_liveness_files_reset) {
         return;
@@ -259,6 +399,7 @@ void reset_liveness_files_once() noexcept {
     ::unlink(kPostMainDispatchPath);
     ::unlink(kPostMainLastDispatchPath);
     ::unlink(kPostMainTracePath);
+    ::unlink(kPostVideoTracePath);
 }
 
 void write_liveness_record(
@@ -266,13 +407,14 @@ void write_liveness_record(
     const char* title,
     std::uint32_t target,
     CpuContext* cpu) noexcept {
-    char buffer[3072];
+    char buffer[4096];
     const std::uint32_t guest_pc = cpu ? cpu->pc : 0u;
     const std::uint32_t r1 = cpu ? cpu->gpr[1] : 0u;
     const std::uint32_t r2 = cpu ? cpu->gpr[2] : 0u;
     const std::uint32_t r3 = cpu ? cpu->gpr[3] : 0u;
     const std::uint32_t r13 = cpu ? cpu->gpr[13] : 0u;
     const FstSnapshot fst = read_fst_snapshot();
+    const SchedulerSnapshot scheduler = read_scheduler_snapshot();
 
     const int n = std::snprintf(
         buffer,
@@ -292,6 +434,19 @@ void write_liveness_record(
         "main reached          : %s\n"
         "RKSystem::run hits    : %llu\n"
         "StaticR dispatches    : %llu\n"
+        "VIWaitForRetrace hits : %llu\n"
+        "PostRetrace cb hits   : %llu\n"
+        "OSReceiveMessage hits : %llu\n"
+        "OSSleepThread hits    : %llu\n"
+        "OSWakeupThread hits   : %llu\n"
+        "SelectThread hits     : %llu\n"
+        "OSLoadContext hits    : %llu\n"
+        "guest fiber current   : 0x%08x\n"
+        "OS current/running    : 0x%08x / 0x%08x\n"
+        "default thread s/s/p  : %u / %d / %d\n"
+        "default thread queue  : 0x%08x\n"
+        "active thread s/s/p   : %u / %d / %d\n"
+        "active thread queue   : 0x%08x\n"
         "FST address           : 0x%08x\n"
         "FST size              : 0x%08x\n"
         "FST structurally valid: %s\n",
@@ -309,6 +464,24 @@ void write_liveness_record(
         g_main_reached ? "YES" : "NO",
         static_cast<unsigned long long>(g_rksystem_run_dispatch_count),
         static_cast<unsigned long long>(g_staticr_dispatch_count),
+        static_cast<unsigned long long>(g_vi_wait_for_retrace_dispatch_count),
+        static_cast<unsigned long long>(g_post_retrace_callback_dispatch_count),
+        static_cast<unsigned long long>(g_os_receive_message_dispatch_count),
+        static_cast<unsigned long long>(g_os_sleep_thread_dispatch_count),
+        static_cast<unsigned long long>(g_os_wakeup_thread_dispatch_count),
+        static_cast<unsigned long long>(g_select_thread_dispatch_count),
+        static_cast<unsigned long long>(g_os_load_context_dispatch_count),
+        scheduler.fiber_current,
+        scheduler.os_current,
+        scheduler.os_running,
+        static_cast<unsigned>(scheduler.default_state),
+        scheduler.default_suspend,
+        scheduler.default_priority,
+        scheduler.default_queue,
+        static_cast<unsigned>(scheduler.active_state),
+        scheduler.active_suspend,
+        scheduler.active_priority,
+        scheduler.active_queue,
         fst.address,
         fst.size,
         fst.valid ? "YES" : "NO");
@@ -412,6 +585,30 @@ extern "C" void mkw_switch_note_translated_dispatch(
     if (target >= kStaticRTextStart && target < kStaticRTextEnd) {
         ++g_staticr_dispatch_count;
     }
+    if (target == kViWaitForRetraceAddress) {
+        ++g_vi_wait_for_retrace_dispatch_count;
+    }
+    if (target == kPostRetraceCallbackAddress) {
+        ++g_post_retrace_callback_dispatch_count;
+    }
+    if (target == kOsReceiveMessageAddress) {
+        ++g_os_receive_message_dispatch_count;
+    }
+    if (target == kOsSleepThreadAddress) {
+        ++g_os_sleep_thread_dispatch_count;
+    }
+    if (target == kOsWakeupThreadAddress) {
+        ++g_os_wakeup_thread_dispatch_count;
+    }
+    if (target == kSelectThreadAddress) {
+        ++g_select_thread_dispatch_count;
+    }
+    if (target == kOsLoadContextAddress) {
+        ++g_os_load_context_dispatch_count;
+    }
+    if (target == kEggVideoConfigureAddress && !g_post_video_trace_started) {
+        g_post_video_trace_started = true;
+    }
 
     if (target == kPalMainAddress && !g_main_reached) {
         g_main_reached = true;
@@ -455,6 +652,7 @@ extern "C" void mkw_switch_note_translated_dispatch(
     }
     if (post_main_dispatch) {
         append_post_main_trace(target, cpu, phase_target);
+        append_post_video_trace(target, cpu);
     }
 
     const std::uint64_t now = armGetSystemTick();

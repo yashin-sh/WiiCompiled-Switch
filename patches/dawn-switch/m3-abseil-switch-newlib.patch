@@ -1,13 +1,15 @@
 diff --git a/absl/base/internal/sysinfo.cc b/absl/base/internal/sysinfo.cc
-index a62dd31..0000000 100644
+index a62dd31..865b8f5 100644
 --- a/absl/base/internal/sysinfo.cc
 +++ b/absl/base/internal/sysinfo.cc
-@@ -466,6 +466,20 @@ pid_t GetTID() {
+@@ -466,9 +466,18 @@ pid_t GetTID() {
    return static_cast<pid_t>(zx_thread_self());
  }
  
+-#else
 +#elif defined(__SWITCH__)
-+
+ 
+-// Fallback implementation of `GetTID` using `pthread_self`.
 +pid_t GetTID() {
 +  // newlib's pthread_t is an opaque pointer. Fold the full pointer width into
 +  // the positive pid_t range instead of relying on a narrowing pointer cast.
@@ -17,11 +19,12 @@ index a62dd31..0000000 100644
 +  return static_cast<pid_t>(raw == 0 ? 1 : raw);
 +}
 +
- #else
- 
- // Fallback implementation of `GetTID` using `pthread_self`.
++#else
+ pid_t GetTID() {
+   // `pthread_t` need not be arithmetic per POSIX; platforms where it isn't
+   // should be handled above.
 diff --git a/absl/base/internal/thread_identity.cc b/absl/base/internal/thread_identity.cc
-index 0471a25..0000000 100644
+index 0471a25..aa02313 100644
 --- a/absl/base/internal/thread_identity.cc
 +++ b/absl/base/internal/thread_identity.cc
 @@ -85,9 +85,9 @@ void SetCurrentThreadIdentity(ThreadIdentity* identity,
@@ -38,7 +41,7 @@ index 0471a25..0000000 100644
    // more information.
    pthread_setspecific(thread_identity_pthread_key,
 diff --git a/absl/debugging/internal/elf_mem_image.h b/absl/debugging/internal/elf_mem_image.h
-index c8a1036..0000000 100644
+index c8a1036..21e080c 100644
 --- a/absl/debugging/internal/elf_mem_image.h
 +++ b/absl/debugging/internal/elf_mem_image.h
 @@ -35,7 +35,7 @@
@@ -51,7 +54,7 @@ index c8a1036..0000000 100644
  #endif
  
 diff --git a/absl/time/internal/cctz/src/time_zone_libc.cc b/absl/time/internal/cctz/src/time_zone_libc.cc
-index 362da1a..0000000 100644
+index 362da1a..c894c79 100644
 --- a/absl/time/internal/cctz/src/time_zone_libc.cc
 +++ b/absl/time/internal/cctz/src/time_zone_libc.cc
 @@ -33,6 +33,16 @@ extern long altzone;

@@ -1,8 +1,9 @@
 diff --git a/Docker.rust b/Docker.rust
-index 5dc5058..0000000 100644
+index 2405f300d52..4e6b439ea01 100644
 --- a/Docker.rust
 +++ b/Docker.rust
-@@ -6,7 +6,7 @@ RUN apt-get update && \
+@@ -4,7 +4,7 @@ FROM devkitpro/devkita64:latest
+ RUN apt-get update && \
      apt-get install -y \
          python3-pip python3-setuptools python3-wheel \
 -        ninja-build pkg-config flex bison curl \
@@ -10,7 +11,8 @@ index 5dc5058..0000000 100644
          libclang-dev clang cmake git \
          llvm-15-dev libllvmspirvlib-15-dev libclc-15-dev libclang-15-dev \
      && apt-get clean
-@@ -34,6 +34,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --
+@@ -32,6 +32,7 @@ RUN cd /tmp && \
+ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly && \
      . $HOME/.cargo/env && \
      rustup component add rust-src && \
 +    rustup target add aarch64-unknown-linux-gnu && \
@@ -18,10 +20,10 @@ index 5dc5058..0000000 100644
  
  ENV PATH="/root/.cargo/bin:${PATH}"
 diff --git a/build-switch.sh b/build-switch.sh
-index 64bb44a..0000000 100755
+index cc2722da8cb..435e03f2782 100755
 --- a/build-switch.sh
 +++ b/build-switch.sh
-@@ -1,8 +1,12 @@
+@@ -1,8 +1,14 @@
  #!/bin/bash
  set -e
  
@@ -37,7 +39,7 @@ index 64bb44a..0000000 100755
  
  # Build the Docker image if needed.
  if ! docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
-@@ -13,8 +17,10 @@ fi
+@@ -13,6 +19,8 @@ fi
  # Start the build container.
  docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
  docker run -d --name "$CONTAINER_NAME" \
@@ -45,7 +47,7 @@ index 64bb44a..0000000 100755
 +    -e MESA_SWITCH_RUST_TARGET="$MESA_SWITCH_RUST_TARGET" \
      -v "$(pwd):/project" --workdir "/project" \
      "$IMAGE_NAME" sleep infinity
-
+ 
 @@ -95,7 +103,7 @@ run 'ninja -C /project/builddir-native src/compiler/clc/mesa_clc src/compiler/sp
  # Configure the cross build.
  echo "=== Configuring cross build (Switch + nouveau + nouveau_vk) ==="

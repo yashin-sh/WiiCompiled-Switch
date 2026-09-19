@@ -104,6 +104,7 @@ echo "Launch it through hbmenu title override/application mode."
 echo
 echo "After the run, return:"
 echo "  /switch/WiiCompiled-Switch/dvd-fst-status.txt"
+echo "  /switch/WiiCompiled-Switch/dvd-read-status.txt"
 echo "  /switch/WiiCompiled-Switch/rendered-fast-track-graphics.txt"
 echo "  /switch/WiiCompiled-Switch/fast-track-progress.txt"
 echo "  /switch/WiiCompiled-Switch/fast-track-heartbeat.txt"

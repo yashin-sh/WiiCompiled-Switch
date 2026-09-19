@@ -129,7 +129,7 @@ void ClearTaskJob(std::uint32_t taskThread, std::uint32_t job) {
 
 } // namespace
 
-extern "C" void mkw_switch_hle_task_thread_run(CpuContext* ctx) noexcept {
+extern "C" void mkw_switch_hle_task_thread_run(CpuContext* ctx) {
     if (!ctx) {
         return;
     }

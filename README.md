@@ -26,7 +26,9 @@ The latest hardware run confirms the prolonged black-screen path is **actively e
 
 The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge sets `r3` to the new retrace value immediately before invoking the post-retrace callback, so this is direct evidence that the VI/retrace loop continued advancing for thousands of retraces.
 
-The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`; the current gate is correcting `VIWaitForRetrace` to use the pin's guest-fiber wait-queue path instead of leaving that higher-priority guest RUNNING.
+The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
+
+The first real-Switch run after #188 exposed a new earlier regression before that starvation case can be re-tested: the initial HostContext-backed guest thread `0x8042A680` enters `EGG::Thread::start(void*)` at `0x8024373C` with the correct object argument in `r3=0x804294E4`, then aborts as `GUEST_FIBER_ENTRY_EXCEPTION`. Code review against the pinned WiiCompiled VI interrupt-context contract identified the new runtime-boundary VI poll as clobbering the live translated `CpuContext` while servicing `OSWakeupThread`/retrace callbacks. The current gate is therefore **register-isolating that poll and hardware-revalidating the first guest-fiber handoff**, then returning to the original `0x90112660` starvation acceptance test.
 
 ## Milestones
 
@@ -105,7 +107,11 @@ local FST publication @ 0x97DC0000              ✅ hardware validated
   ↓
 later OSThread 0x90112660 / run 0x80008D18       ✅ identified
   ↓
-fiber-aware VIWaitForRetrace scheduling              ← current gate
+#188 first-fiber VI poll register clobber             ✅ attributed
+  ↓
+register-isolated VI poll + first-fiber revalidation ← current gate
+  ↓
+fiber-aware VIWaitForRetrace starvation validation
   ↓
 first rendered RMCP01 frame
 ```
@@ -258,6 +264,7 @@ Start with:
 - [`docs/HARDWARE_RESULTS_2026-09-18_M3_AURORA_GX.md`](docs/HARDWARE_RESULTS_2026-09-18_M3_AURORA_GX.md) — real-Switch Aurora GX triangle proof, 563-frame active loop, and clean teardown;
 - [`docs/HARDWARE_RESULTS_2026-09-18_M3_HLE_FIFO_AURORA.md`](docs/HARDWARE_RESULTS_2026-09-18_M3_HLE_FIFO_AURORA.md) — real-Switch exact pinned `HleFifoWrite` → Aurora GX proof with a 1,435-frame active loop;
 - [`docs/HARDWARE_RESULTS_2026-09-19_RMCP01_RESOURCE_THREAD_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-19_RMCP01_RESOURCE_THREAD_FRONTIER.md) — FST publication PASS, #185 DVD-read non-reachability, and later priority-6 thread frontier;
+- [`docs/HARDWARE_RESULTS_2026-09-19_VI_POLL_CONTEXT_REGRESSION.md`](docs/HARDWARE_RESULTS_2026-09-19_VI_POLL_CONTEXT_REGRESSION.md) — #188 first-fiber crash attribution and register-isolation fix gate;
 - [`docs/M3_RMCP01_RENDERED_FAST_TRACK.md`](docs/M3_RMCP01_RENDERED_FAST_TRACK.md) — first local Mario Kart graphics-enabled fast-track.
 
 Older dated `HARDWARE_RESULTS_*` files are historical snapshots. Their “next blocker” wording intentionally reflects what was known on that date and is not rewritten retroactively.

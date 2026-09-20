@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer and local FST publication hardware-proven; #196 hardware-proves `GXLoadPosMtxImm` and re-proves `TaskThread::run`; the current exact blocker is PAL `GXSetCurrentMtx` at `0x80173214`**.
+Status: **renderer and local FST publication hardware-proven; #197 hardware-proves `GXSetCurrentMtx`; the current exact blocker is PAL `GXClearVtxDesc` at `0x8016DC34`**.
 
 ## Purpose
 
@@ -520,6 +520,23 @@ to Aurora GX.
 Graphics state remains unchanged: eight bootstrap FIFO writes, zero
 display-list calls, no drawable FIFO work, zero `GXCopyDisp`, and zero
 presents. No DVD-read status file is produced.
+
+## Hardware result after #197 — GXClearVtxDesc frontier
+
+The first real-Switch run after #197 records `GXSetCurrentMtx hits = 1` while
+projection, viewport, scissor and position-matrix remain crossed. The durable
+scheduler snapshot returns to default/main `0x80347498`. This run records
+`TaskThread::run hits = 0`, but the priority-24 worker still reaches guest-
+fiber entry and the prior TaskThread hardware proof remains valid.
+
+The next exact blocker is PAL `GXClearVtxDesc (0x8016DC34)`. Pinned
+WiiCompiled clears all 26 tracked vertex descriptors to `GX_NONE`,
+conditionally invalidates the cached vertex-layout hash, preserves array
+base/stride state, then calls Aurora `GXClearVtxDesc()`.
+
+Graphics state remains unchanged: eight bootstrap FIFO writes, zero display-list
+calls, no drawable FIFO work, zero `GXCopyDisp`, and zero presents. No DVD-read
+status file is produced.
 
 ## Build
 

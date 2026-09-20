@@ -59,6 +59,7 @@ constexpr std::uint32_t kGxSetCurrentMtxAddress = 0x80173214u;
 constexpr std::uint32_t kGxClearVtxDescAddress = 0x8016DC34u;
 constexpr std::uint32_t kGxSetVtxDescAddress = 0x8016D3A4u;
 constexpr std::uint32_t kGxSetVtxAttrFmtAddress = 0x8016DC68u;
+constexpr std::uint32_t kGxSetNumChansAddress = 0x8017054Cu;
 constexpr std::uint32_t kDefaultThreadContextAddr = 0x80347498u;
 constexpr std::uint32_t kOSCurrentContextAddr = 0x800000D4u;
 constexpr std::uint32_t kOSRunningContextAddr = 0x800000E4u;
@@ -106,6 +107,7 @@ std::uint64_t g_gx_set_current_mtx_dispatch_count = 0u;
 std::uint64_t g_gx_clear_vtx_desc_dispatch_count = 0u;
 std::uint64_t g_gx_set_vtx_desc_dispatch_count = 0u;
 std::uint64_t g_gx_set_vtx_attr_fmt_dispatch_count = 0u;
+std::uint64_t g_gx_set_num_chans_dispatch_count = 0u;
 
 struct FstSnapshot {
     std::uint32_t address = 0u;
@@ -237,6 +239,8 @@ const char* post_main_phase_name(std::uint32_t target) noexcept {
         return "GXSetVtxDesc";
     case 0x8016DC68u:
         return "GXSetVtxAttrFmt";
+    case 0x8017054Cu:
+        return "GXSetNumChans";
     default:
         return "-";
     }
@@ -281,6 +285,7 @@ bool is_durable_post_main_phase_target(std::uint32_t target) noexcept {
     case 0x8016DC34u:
     case 0x8016D3A4u:
     case 0x8016DC68u:
+    case 0x8017054Cu:
     case 0x80672CC8u:
         return true;
     default:
@@ -495,6 +500,7 @@ void write_liveness_record(
         "GXClearVtxDesc hits   : %llu\n"
         "GXSetVtxDesc hits     : %llu\n"
         "GXSetVtxAttrFmt hits  : %llu\n"
+        "GXSetNumChans hits    : %llu\n"
         "guest fiber current   : 0x%08x\n"
         "OS current/running    : 0x%08x / 0x%08x\n"
         "default thread s/s/p  : %u / %d / %d\n"
@@ -534,6 +540,7 @@ void write_liveness_record(
         static_cast<unsigned long long>(g_gx_clear_vtx_desc_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_vtx_desc_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_vtx_attr_fmt_dispatch_count),
+        static_cast<unsigned long long>(g_gx_set_num_chans_dispatch_count),
         scheduler.fiber_current,
         scheduler.os_current,
         scheduler.os_running,
@@ -695,6 +702,9 @@ extern "C" void mkw_switch_note_translated_dispatch(
     }
     if (target == kGxSetVtxAttrFmtAddress) {
         ++g_gx_set_vtx_attr_fmt_dispatch_count;
+    }
+    if (target == kGxSetNumChansAddress) {
+        ++g_gx_set_num_chans_dispatch_count;
     }
     if (target == kEggVideoConfigureAddress && !g_post_video_trace_started) {
         g_post_video_trace_started = true;

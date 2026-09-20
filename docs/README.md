@@ -72,6 +72,7 @@
 - `HARDWARE_RESULTS_2026-09-20_GX_SET_VTX_DESC_FRONTIER.md` — #198 hardware PASS for `GXClearVtxDesc`, TaskThread re-proof, first post-bootstrap GX state FIFO byte, and new PAL `GXSetVtxDesc` frontier
 - `HARDWARE_RESULTS_2026-09-20_GX_SET_VTX_ATTR_FMT_FRONTIER.md` — #199 hardware PASS for `GXSetVtxDesc` and new PAL `GXSetVtxAttrFmt` frontier
 - `HARDWARE_RESULTS_2026-09-20_GX_SET_NUM_CHANS_FRONTIER.md` — #200 hardware PASS for `GXSetVtxAttrFmt`, deliberate-abort behavior, and new PAL `GXSetNumChans` frontier
+- `HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_MAT_COLOR_FRONTIER.md` — #201 hardware PASS for `GXSetNumChans`, TaskThread re-proof, and new PAL `GXSetChanMatColor` frontier
 
 ## Blocker notes
 

@@ -61,6 +61,7 @@ constexpr std::uint32_t kGxSetVtxDescAddress = 0x8016D3A4u;
 constexpr std::uint32_t kGxSetVtxAttrFmtAddress = 0x8016DC68u;
 constexpr std::uint32_t kGxSetNumChansAddress = 0x8017054Cu;
 constexpr std::uint32_t kGxSetChanMatColorAddress = 0x80170474u;
+constexpr std::uint32_t kGxSetChanCtrlAddress = 0x80170570u;
 constexpr std::uint32_t kDefaultThreadContextAddr = 0x80347498u;
 constexpr std::uint32_t kOSCurrentContextAddr = 0x800000D4u;
 constexpr std::uint32_t kOSRunningContextAddr = 0x800000E4u;
@@ -110,6 +111,7 @@ std::uint64_t g_gx_set_vtx_desc_dispatch_count = 0u;
 std::uint64_t g_gx_set_vtx_attr_fmt_dispatch_count = 0u;
 std::uint64_t g_gx_set_num_chans_dispatch_count = 0u;
 std::uint64_t g_gx_set_chan_mat_color_dispatch_count = 0u;
+std::uint64_t g_gx_set_chan_ctrl_dispatch_count = 0u;
 
 struct FstSnapshot {
     std::uint32_t address = 0u;
@@ -245,6 +247,8 @@ const char* post_main_phase_name(std::uint32_t target) noexcept {
         return "GXSetNumChans";
     case 0x80170474u:
         return "GXSetChanMatColor";
+    case 0x80170570u:
+        return "GXSetChanCtrl";
     default:
         return "-";
     }
@@ -507,6 +511,7 @@ void write_liveness_record(
         "GXSetVtxAttrFmt hits  : %llu\n"
         "GXSetNumChans hits    : %llu\n"
         "GXSetChanMatColor hits: %llu\n"
+        "GXSetChanCtrl hits    : %llu\n"
         "guest fiber current   : 0x%08x\n"
         "OS current/running    : 0x%08x / 0x%08x\n"
         "default thread s/s/p  : %u / %d / %d\n"
@@ -548,6 +553,7 @@ void write_liveness_record(
         static_cast<unsigned long long>(g_gx_set_vtx_attr_fmt_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_num_chans_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_chan_mat_color_dispatch_count),
+        static_cast<unsigned long long>(g_gx_set_chan_ctrl_dispatch_count),
         scheduler.fiber_current,
         scheduler.os_current,
         scheduler.os_running,
@@ -715,6 +721,9 @@ extern "C" void mkw_switch_note_translated_dispatch(
     }
     if (target == kGxSetChanMatColorAddress) {
         ++g_gx_set_chan_mat_color_dispatch_count;
+    }
+    if (target == kGxSetChanCtrlAddress) {
+        ++g_gx_set_chan_ctrl_dispatch_count;
     }
     if (target == kEggVideoConfigureAddress && !g_post_video_trace_started) {
         g_post_video_trace_started = true;

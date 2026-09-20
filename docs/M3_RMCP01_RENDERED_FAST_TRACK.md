@@ -709,3 +709,34 @@ A successful present with `hadWork=1` proves that real RMCP01 FIFO work reached
 the native Switch graphics backend. Visual correctness is a separate question:
 the first game-facing run may expose the next concrete GX, texture, DVD/FST or
 resource-loading blocker.
+
+## Hardware result after merged #203 — GXSetChanCtrl frontier
+
+The real-Switch run on merged #203 records `GXSetChanMatColor hits = 1`,
+`GXSetNumChans hits = 1`, `TaskThread::run hits = 1`, and scheduler
+recovery to default/main `0x80347498`. The FST remains structurally valid at
+`0x97DC0000`, size 64,224 bytes / 2,096 entries.
+
+The renderer remains initialized and frame-active with nine FIFO writes, but
+still has zero display-list calls, no FIFO-produced drawable work, zero
+`GXCopyDisp` calls, and zero presents.
+
+The next exact blocker is:
+
+```text
+kind   : DIRECT
+target : 0x80170570
+r1     : 0x80399008
+r3     : 0x00000004
+stage  : RMCP01_GX_SET_CHAN_MAT_COLOR
+```
+
+Pinned WiiCompiled maps `0x80170570` to `GXSetChanCtrl` and forwards
+`r3..r9` as channel, enable, ambient/material sources, light mask, diffuse
+function, and attenuation function. Only `r3 = 4` is present in the durable
+blocker report; `r4..r9` are not guessed.
+
+The next local build should include only the pinned `GXSetChanCtrl` boundary.
+Do not pre-port the following texture/light/draw calls before hardware reaches
+them.
+

@@ -147,7 +147,7 @@ The current hardware-driven method remains deliberate after `main`: execute the 
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The first run after #201 hardware-proves `GXSetNumChans`, re-proves `TaskThread::run`, and preserves scheduler recovery. The renderer remains at nine FIFO writes with no drawable work. The new first durable blocker is PAL `GXSetChanMatColor` at `0x80170474` with observed `r3 = 4`; pinned WiiCompiled reads the guest color through `r4`, decodes RGBA, and forwards it to Aurora. No DVD read, display list, drawable RMCP01 FIFO work, `GXCopyDisp`, or present has been observed yet.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The first run after merged #203 hardware-proves `GXSetChanMatColor`, re-proves `TaskThread::run`, and preserves scheduler recovery. The renderer remains at nine FIFO writes with no drawable work. The new first durable blocker is PAL `GXSetChanCtrl` at `0x80170570` with observed `r3 = 4`; pinned WiiCompiled consumes `r3..r9` and forwards channel-control state directly to Aurora. The durable blocker does not record `r4..r9`, so those concrete game values are not guessed. No DVD read, display list, drawable RMCP01 FIFO work, `GXCopyDisp`, or present has been observed yet.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input
@@ -178,7 +178,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-cross PAL `GXSetVtxDesc` (`0x8016D3A4`) using pinned HLE descriptor bookkeeping + Aurora direct-stream contract
 - [x] hardware-cross PAL `GXSetVtxAttrFmt` (`0x8016DC68`) using pinned HLE format bookkeeping + Aurora contract
 - [x] hardware-cross PAL `GXSetNumChans` (`0x8017054C`) using pinned `r3 -> u8 -> Aurora` contract
-- [ ] hardware-cross PAL `GXSetChanMatColor` (`0x80170474`) using pinned guest RGBA read/decode + Aurora contract
+- [x] hardware-cross PAL `GXSetChanMatColor` (`0x80170474`) using pinned guest RGBA read/decode + Aurora contract
+- [ ] hardware-cross PAL `GXSetChanCtrl` (`0x80170570`) using pinned `r3..r9 -> Aurora` channel-control contract
 - [ ] continue post-main initialization through system/resource initialization
 - [ ] complete game/resource initialization
 - [ ] menus

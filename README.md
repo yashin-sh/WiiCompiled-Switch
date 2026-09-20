@@ -28,7 +28,7 @@ The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge se
 
 The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
 
-The first real-Switch run after merged #203 now **hardware-proves PAL `GXSetChanMatColor (0x80170474)`** with `GXSetChanMatColor hits = 1`; `TaskThread::run = 1`, the complete prior GX chain remains crossed, and the scheduler returns to the default/main thread. The renderer remains at nine FIFO writes with no drawable work yet. The new first durable blocker is PAL `GXSetChanCtrl` at `0x80170570`, observed with `r3 = 4`. Pinned WiiCompiled consumes `r3..r9` as channel-control parameters and forwards them directly to Aurora; the blocker does not record `r4..r9`, so those concrete values are not guessed.
+The first real-Switch run after merged #203 **hardware-crosses PAL `GXSetChanMatColor (0x80170474)`**: its hit counter is non-zero and execution progresses to the distinct blocker `GXSetChanCtrl (0x80170570)`. `TaskThread::run = 1`, the complete prior GX chain remains crossed, the scheduler returns to the default/main thread, and the renderer remains at nine FIFO writes with no drawable work yet. PR #204 implements the pinned `GXSetChanCtrl` `r3..r9` contract and is merged on `main` as `70805fb0b038ff447794fd18092a76a56dffbe46`, but **`GXSetChanCtrl` is not hardware-crossed until a new real-Switch run proves progression beyond `0x80170570`**.
 
 ## Milestones
 
@@ -137,7 +137,9 @@ GXSetVtxAttrFmt (0x8016DC68)                                 ✅ hardware crosse
   ↓
 GXSetNumChans (0x8017054C)                                   ✅ hardware crossed
   ↓
-GXSetChanMatColor (0x80170474)                                ← current blocker
+GXSetChanMatColor (0x80170474)                                ✅ hardware crossed
+  ↓
+GXSetChanCtrl (0x80170570)                                    🟡 implemented in #204; hardware validation pending
   ↓
 resource-job callback / next GX/DVD frontier
   ↓
@@ -206,13 +208,15 @@ For future prolonged runs, `fast-track-heartbeat-history.txt` remains the strong
 
 Public CI remains Nintendo-data-free. A real WiiCompiled Mario Kart Wii product is generated locally from a user-owned dump before the Switch build and linked into the NRO. Generated game-derived C++/objects/data and game-containing NRO/ELF artifacts are never committed or uploaded by public CI.
 
-The repository currently validates five CI workflows for fast-track changes:
+The repository currently validates five Nintendo-data-free CI workflows for fast-track changes:
 
 - `lint`;
 - `fast-track-startup`;
 - `stateful-translated-sequence`;
 - `bootstrap-register-prelude`;
 - `build-switch`.
+
+For rendered RMCP01 work, these five checks are **necessary but not sufficient**: the private `scripts/build-local-rendered-fast-track.sh` build is a required sixth gate because public CI cannot include the user-owned generated RMCP01 product or the complete private rendered link graph. A boundary is only called **hardware-crossed** when its hit count is non-zero **and** execution durably progresses beyond that target; a hit counter alone is not a PASS. See [`docs/FAST_TRACK_VALIDATION_POLICY.md`](docs/FAST_TRACK_VALIDATION_POLICY.md).
 
 ## Legal / content policy
 
@@ -281,6 +285,7 @@ generated C++ / RuntimeConfig / data init
 Start with:
 
 - [`ROADMAP.md`](ROADMAP.md) — authoritative current milestone/frontier checklist;
+- [`docs/FAST_TRACK_VALIDATION_POLICY.md`](docs/FAST_TRACK_VALIDATION_POLICY.md) — required validation ladder, strict hardware-cross definition, invariant checklist, and private rendered-build gate;
 - [`docs/M2_RUNTIME_BOOTSTRAP.md`](docs/M2_RUNTIME_BOOTSTRAP.md) — current runtime/bootstrap architecture and hardware method;
 - [`docs/HARDWARE_RESULTS_2026-09-13_MAIN_REACHED.md`](docs/HARDWARE_RESULTS_2026-09-13_MAIN_REACHED.md) — first real `main()` proof;
 - [`docs/HARDWARE_RESULTS_2026-09-16_GUEST_FIBER_CONTINUATION.md`](docs/HARDWARE_RESULTS_2026-09-16_GUEST_FIBER_CONTINUATION.md) — HostContext guest continuation proof;

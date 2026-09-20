@@ -18,6 +18,7 @@ extern "C" void mkw_switch_hle_gx_set_vtx_desc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_vtx_attr_fmt(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 
@@ -162,6 +163,19 @@ struct KnownNativeCpuCall<0x80170474u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_chan_mat_color(cpu);
+    }
+};
+
+// GXSetChanCtrl (PAL 0x80170570). Pinned WiiCompiled consumes
+// r3..r9 = channel/enable/ambient-source/material-source/light-mask/
+// diffuse-function/attenuation-function and forwards those values directly to
+// Aurora GXSetChanCtrl, with enable normalized as non-zero -> true.
+template <>
+struct KnownNativeCpuCall<0x80170570u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_chan_ctrl(cpu);
     }
 };
 

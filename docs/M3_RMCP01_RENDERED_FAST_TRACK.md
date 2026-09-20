@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer and local FST publication hardware-proven; #195 hardware-proves `GXSetScissor`; the current exact blocker is PAL `GXLoadPosMtxImm` at `0x8017310C`**.
+Status: **renderer and local FST publication hardware-proven; #196 hardware-proves `GXLoadPosMtxImm` and re-proves `TaskThread::run`; the current exact blocker is PAL `GXSetCurrentMtx` at `0x80173214`**.
 
 ## Purpose
 
@@ -486,6 +486,40 @@ proof remains valid and the priority-24 worker still reaches guest-fiber entry.
 Graphics state remains unchanged: eight bootstrap FIFO writes, zero display-
 list calls, no drawable FIFO work, zero `GXCopyDisp`, and zero presents.
 No DVD-read status file is produced.
+
+## Hardware result after #196 — GXSetCurrentMtx frontier
+
+The first real-Switch run after #196 records:
+
+```text
+TaskThread::run hits  : 1
+GXSetProjection hits  : 1
+GXSetViewport hits    : 1
+GXSetScissor hits     : 1
+GXLoadPosMtxImm hits  : 1
+```
+
+This hardware-proves the merged position-matrix bridge and independently
+re-proves the priority-24 TaskThread path. The scheduler remains recovered on
+the default/main thread and FST publication remains valid.
+
+The next exact blocker is:
+
+```text
+kind   : DIRECT
+target : 0x80173214
+r1     : 0x80399008
+r3     : 0x00000000
+stage  : RMCP01_GX_LOAD_POS_MTX_IMM
+```
+
+Pinned WiiCompiled maps `0x80173214` to `GXSetCurrentMtx`. Its native
+override consumes only the matrix id from PPC `r3` and forwards it directly
+to Aurora GX.
+
+Graphics state remains unchanged: eight bootstrap FIFO writes, zero
+display-list calls, no drawable FIFO work, zero `GXCopyDisp`, and zero
+presents. No DVD-read status file is produced.
 
 ## Build
 

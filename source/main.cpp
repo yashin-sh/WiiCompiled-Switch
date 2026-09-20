@@ -23,6 +23,7 @@ extern "C" void mkw_switch_hle_gx_load_pos_mtx_imm(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_current_mtx(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_clear_vtx_desc(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_vtx_desc(CpuContext* ctx) noexcept;
+extern "C" void mkw_switch_hle_gx_set_vtx_attr_fmt(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_os_create_thread(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_select_thread(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_os_send_message(CpuContext* ctx) noexcept;
@@ -44,6 +45,7 @@ int main(int, char**) {
     volatile auto gx_set_current_mtx_link_anchor = &mkw_switch_hle_gx_set_current_mtx;
     volatile auto gx_clear_vtx_desc_link_anchor = &mkw_switch_hle_gx_clear_vtx_desc;
     volatile auto gx_set_vtx_desc_link_anchor = &mkw_switch_hle_gx_set_vtx_desc;
+    volatile auto gx_set_vtx_attr_fmt_link_anchor = &mkw_switch_hle_gx_set_vtx_attr_fmt;
     volatile auto os_create_thread_link_anchor = &mkw_switch_hle_os_create_thread;
     volatile auto select_thread_link_anchor = &mkw_switch_hle_select_thread;
     volatile auto os_send_message_link_anchor = &mkw_switch_hle_os_send_message;
@@ -57,6 +59,7 @@ int main(int, char**) {
     (void)gx_set_current_mtx_link_anchor;
     (void)gx_clear_vtx_desc_link_anchor;
     (void)gx_set_vtx_desc_link_anchor;
+    (void)gx_set_vtx_attr_fmt_link_anchor;
     (void)os_create_thread_link_anchor;
     (void)select_thread_link_anchor;
     (void)os_send_message_link_anchor;

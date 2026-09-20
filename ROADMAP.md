@@ -125,6 +125,8 @@ Hardware evidence is recorded in:
 
 The current hardware-driven method remains deliberate after `main`: execute the broadest safe translated path, stop on the first unsupported native/translated boundary or attributable exception, and when no blocker appears use the independent heartbeat watchdog to distinguish sustained execution from a real stall. New runtime behavior is still added only from hardware evidence and pinned WiiCompiled semantics. Post-main bring-up remains tracked in #117.
 
+Validation policy after the 2026-09-20 audit: the five public CI workflows remain mandatory, but rendered RMCP01 changes additionally require a successful private `build-local-rendered-fast-track.sh` build before hardware testing. A dispatch hit counter is telemetry, not a standalone PASS; a boundary is hardware-crossed only when execution durably progresses beyond the tested target. See `docs/FAST_TRACK_VALIDATION_POLICY.md`.
+
 ## M3 — graphics / first frame
 - [ ] Resolve shared upstream GX safety blockers before attributing failures to a Switch backend:
   - [ ] #109 — release-safe FIFO bounds checking

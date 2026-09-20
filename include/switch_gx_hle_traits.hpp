@@ -13,6 +13,7 @@ extern "C" void mkw_switch_hle_gx_set_viewport(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_scissor(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_load_pos_mtx_imm(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_current_mtx(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_clear_vtx_desc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 
@@ -95,6 +96,18 @@ struct KnownNativeCpuCall<0x80173214u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_current_mtx(cpu);
+    }
+};
+
+// GXClearVtxDesc (PAL 0x8016DC34). Pinned WiiCompiled clears all tracked
+// vertex descriptors, invalidates its cached vertex-layout hash if needed,
+// preserves array base/stride state, then forwards GXClearVtxDesc to Aurora.
+template <>
+struct KnownNativeCpuCall<0x8016DC34u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_clear_vtx_desc(cpu);
     }
 };
 

@@ -12,6 +12,7 @@ extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_viewport(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_scissor(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_load_pos_mtx_imm(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_current_mtx(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 
@@ -83,6 +84,17 @@ struct KnownNativeCpuCall<0x8017310Cu> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_load_pos_mtx_imm(cpu);
+    }
+};
+
+// GXSetCurrentMtx (PAL 0x80173214). Pinned WiiCompiled consumes r3 as the
+// current position-matrix id and forwards it directly to Aurora GX.
+template <>
+struct KnownNativeCpuCall<0x80173214u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_current_mtx(cpu);
     }
 };
 

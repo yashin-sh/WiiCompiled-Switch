@@ -20,6 +20,7 @@ extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_viewport(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_scissor(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_load_pos_mtx_imm(CpuContext* ctx) noexcept;
+extern "C" void mkw_switch_hle_gx_set_current_mtx(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_os_create_thread(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_select_thread(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_os_send_message(CpuContext* ctx) noexcept;
@@ -38,6 +39,7 @@ int main(int, char**) {
     volatile auto gx_set_viewport_link_anchor = &mkw_switch_hle_gx_set_viewport;
     volatile auto gx_set_scissor_link_anchor = &mkw_switch_hle_gx_set_scissor;
     volatile auto gx_load_pos_mtx_imm_link_anchor = &mkw_switch_hle_gx_load_pos_mtx_imm;
+    volatile auto gx_set_current_mtx_link_anchor = &mkw_switch_hle_gx_set_current_mtx;
     volatile auto os_create_thread_link_anchor = &mkw_switch_hle_os_create_thread;
     volatile auto select_thread_link_anchor = &mkw_switch_hle_select_thread;
     volatile auto os_send_message_link_anchor = &mkw_switch_hle_os_send_message;
@@ -48,6 +50,7 @@ int main(int, char**) {
     (void)gx_set_viewport_link_anchor;
     (void)gx_set_scissor_link_anchor;
     (void)gx_load_pos_mtx_imm_link_anchor;
+    (void)gx_set_current_mtx_link_anchor;
     (void)os_create_thread_link_anchor;
     (void)select_thread_link_anchor;
     (void)os_send_message_link_anchor;

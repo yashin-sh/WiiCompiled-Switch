@@ -736,7 +736,46 @@ Pinned WiiCompiled maps `0x80170570` to `GXSetChanCtrl` and forwards
 function, and attenuation function. Only `r3 = 4` is present in the durable
 blocker report; `r4..r9` are not guessed.
 
-The next local build should include only the pinned `GXSetChanCtrl` boundary.
-Do not pre-port the following texture/light/draw calls before hardware reaches
-them.
+PR #204 now contains and has merged only the pinned `GXSetChanCtrl` boundary on `main` as `70805fb0b038ff447794fd18092a76a56dffbe46`. The next action is **not** another GX patch: build that exact revision with `scripts/build-local-rendered-fast-track.sh`, run it on real Switch hardware, and require durable progression beyond `0x80170570` before marking `GXSetChanCtrl` hardware-crossed. Do not pre-port the following texture/light/draw calls before hardware reaches them.
+
+## Validation contract after the 2026-09-20 audit
+
+The blocker-driven strategy remains the project default, with a stricter proof
+standard documented in
+[`FAST_TRACK_VALIDATION_POLICY.md`](FAST_TRACK_VALIDATION_POLICY.md).
+
+For rendered RMCP01 changes, validation is now explicitly:
+
+```text
+exact hardware blocker
+→ pinned WiiCompiled attribution
+→ minimal boundary implementation
+→ 5/5 Nintendo-data-free public CI on exact PR HEAD
+→ successful private local-rendered-fast-track build
+→ real-Switch run
+→ durable progression beyond the tested target
+```
+
+The private rendered build is a required **sixth gate** because public CI cannot
+contain the user-owned generated RMCP01 product and therefore does not exercise
+the complete private Aurora/Dawn/NVK link graph.
+
+A `GX... hits` counter alone is not enough to declare a boundary
+hardware-crossed. The accepted proof is:
+
+```text
+hits > 0
+AND blocker target != tested target
+AND execution reaches a later durable dispatch / milestone
+```
+
+Every rendered hardware run must also compare scheduler coherence, FST
+publication/validity, the previously crossed GX chain, FIFO writes,
+display-list calls, drawable FIFO work, `GXCopyDisp`, present
+success/failure, and any native exception against the previous accepted
+baseline.
+
+The current nine FIFO writes with no drawable work remain compatible with the
+GX-state setup frontier reached so far; they do not prove an RMCP01 draw or
+present.
 

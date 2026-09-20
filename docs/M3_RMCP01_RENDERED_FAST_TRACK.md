@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer and local FST publication hardware-proven; #199 hardware-proves `GXSetVtxDesc`, re-proves `TaskThread::run`, and preserves the first post-bootstrap GX FIFO state traffic; the current exact blocker is PAL `GXSetVtxAttrFmt` at `0x8016DC68`**.
+Status: **renderer and local FST publication hardware-proven; #200 hardware-proves `GXSetVtxAttrFmt`; the current exact blocker is PAL `GXSetNumChans` at `0x8017054C`, and the observed hbmenu/error return matches the deliberate unsupported-boundary abort path**.
 
 ## Purpose
 
@@ -598,6 +598,35 @@ The rendered graphics report remains at nine FIFO writes, with the ninth
 `0x48` byte still representing the first post-bootstrap GX/vertex-state
 traffic. There is still no display-list call, drawable FIFO work,
 `GXCopyDisp`, or present. No DVD-read status file is produced.
+
+## Hardware result after #200 — GXSetNumChans frontier
+
+The first real-Switch run after #200 records `GXSetVtxAttrFmt hits = 1` and
+preserves the complete prior GX chain. The scheduler returns to default/main
+`0x80347498`. This run has `TaskThread::run hits = 0`, but the priority-24
+worker still reaches guest-fiber entry, so no TaskThread regression is inferred.
+
+The next exact blocker is:
+
+```text
+kind   : DIRECT
+target : 0x8017054C
+r3     : 0x00000001
+stage  : RMCP01_GX_SET_VTX_ATTR_FMT
+action : abort after durable blocker record
+```
+
+Pinned WiiCompiled maps `0x8017054C` to `GXSetNumChans` and implements it as
+`GXSetNumChans((u8)n)`. The hardware value is `n = 1`.
+
+The user's observed black screen followed by a return to hbmenu and a Switch
+error message is consistent with the current first-blocker mechanism: after the
+durable record is written, unsupported direct calls terminate through
+`std::abort()`. No supplied `fast-track-exception.txt` indicates an
+independent libnx exception for this run.
+
+Graphics remain at nine FIFO writes, with no display list, drawable FIFO work,
+`GXCopyDisp`, or present.
 
 ## Build
 

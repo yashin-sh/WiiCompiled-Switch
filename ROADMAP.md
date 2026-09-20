@@ -147,7 +147,7 @@ The current hardware-driven method remains deliberate after `main`: execute the 
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The first run after #199 hardware-proves `GXSetVtxDesc`, re-proves `TaskThread::run`, and preserves scheduler recovery. The rendered report remains at nine FIFO writes, including the post-bootstrap `0x48` vertex-cache invalidation byte, but still no drawable work. The new first durable blocker is PAL `GXSetVtxAttrFmt` at `0x8016DC68` with observed `r3 = 0` (`GX_VTXFMT0`). No DVD read, display list, drawable RMCP01 FIFO work, `GXCopyDisp`, or present has been observed yet.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The first run after #200 hardware-proves `GXSetVtxAttrFmt` and preserves scheduler recovery; this specific run has `TaskThread::run hits = 0`, while the priority-24 worker still reaches guest-fiber entry. The renderer remains at nine FIFO writes with no drawable work. The new first durable blocker is PAL `GXSetNumChans` at `0x8017054C` with observed `r3 = 1`. The user-visible return to hbmenu / Switch error matches the deliberate unsupported-boundary `std::abort()` path. No DVD read, display list, drawable RMCP01 FIFO work, `GXCopyDisp`, or present has been observed yet.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input
@@ -176,7 +176,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-cross PAL `GXSetCurrentMtx` (`0x80173214`) using the pinned `r3` matrix-id -> Aurora contract
 - [x] hardware-cross PAL `GXClearVtxDesc` (`0x8016DC34`) using pinned descriptor-state reset + Aurora contract
 - [x] hardware-cross PAL `GXSetVtxDesc` (`0x8016D3A4`) using pinned HLE descriptor bookkeeping + Aurora direct-stream contract
-- [ ] hardware-cross PAL `GXSetVtxAttrFmt` (`0x8016DC68`) using pinned HLE format bookkeeping + Aurora contract
+- [x] hardware-cross PAL `GXSetVtxAttrFmt` (`0x8016DC68`) using pinned HLE format bookkeeping + Aurora contract
+- [ ] hardware-cross PAL `GXSetNumChans` (`0x8017054C`) using pinned `r3 -> u8 -> Aurora` contract
 - [ ] continue post-main initialization through system/resource initialization
 - [ ] complete game/resource initialization
 - [ ] menus

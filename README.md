@@ -28,7 +28,7 @@ The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge se
 
 The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
 
-The first real-Switch run after #199 now **hardware-proves PAL `GXSetVtxDesc (0x8016D3A4)`** with `GXSetVtxDesc hits = 1`, while `TaskThread::run = 1`, the full projection/viewport/scissor/matrix/clear-descriptor chain remains crossed, and the scheduler returns to the default/main thread. The rendered report remains at nine FIFO writes, including the post-bootstrap `0x48` vertex-cache invalidation byte, with no drawable work yet. The new first durable blocker is PAL `GXSetVtxAttrFmt` at `0x8016DC68`, observed with `r3 = 0` (`GX_VTXFMT0`).
+The first real-Switch run after #200 now **hardware-proves PAL `GXSetVtxAttrFmt (0x8016DC68)`** with `GXSetVtxAttrFmt hits = 1`; the prior GX chain remains crossed and the scheduler returns to the default/main thread. This run reports `TaskThread::run hits = 0`, but the priority-24 TaskThread still reaches guest-fiber entry, so the earlier TaskThread proof remains valid. The renderer remains at nine FIFO writes with no drawable work yet. The new first durable blocker is PAL `GXSetNumChans` at `0x8017054C`, observed with `r3 = 1`. The visible return to hbmenu / Switch error is consistent with the fast-track's deliberate `std::abort()` after durably recording an unsupported boundary.
 
 ## Milestones
 
@@ -133,7 +133,9 @@ GXInvalidateVtxCache FIFO byte 0x48                          ✅ first post-boot
   ↓
 GXSetVtxDesc (0x8016D3A4)                                   ✅ hardware crossed
   ↓
-GXSetVtxAttrFmt (0x8016DC68)                                 ← current blocker
+GXSetVtxAttrFmt (0x8016DC68)                                 ✅ hardware crossed
+  ↓
+GXSetNumChans (0x8017054C)                                   ← current blocker
   ↓
 resource-job callback / next GX/DVD frontier
   ↓
@@ -300,6 +302,7 @@ Start with:
 - [`docs/HARDWARE_RESULTS_2026-09-20_GX_CLEAR_VTX_DESC_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-20_GX_CLEAR_VTX_DESC_FRONTIER.md) — #197 hardware-proves `GXSetCurrentMtx` and exposes PAL `GXClearVtxDesc`;
 - [`docs/HARDWARE_RESULTS_2026-09-20_GX_SET_VTX_DESC_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-20_GX_SET_VTX_DESC_FRONTIER.md) — #198 hardware-proves `GXClearVtxDesc`, re-proves TaskThread, records first post-bootstrap GX FIFO state traffic, and exposes PAL `GXSetVtxDesc`;
 - [`docs/HARDWARE_RESULTS_2026-09-20_GX_SET_VTX_ATTR_FMT_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-20_GX_SET_VTX_ATTR_FMT_FRONTIER.md) — #199 hardware-proves `GXSetVtxDesc` and exposes PAL `GXSetVtxAttrFmt`;
+- [`docs/HARDWARE_RESULTS_2026-09-20_GX_SET_NUM_CHANS_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-20_GX_SET_NUM_CHANS_FRONTIER.md) — #200 hardware-proves `GXSetVtxAttrFmt`, explains the deliberate abort/return-to-hbmenu behavior, and exposes PAL `GXSetNumChans`;
 - [`docs/M3_RMCP01_RENDERED_FAST_TRACK.md`](docs/M3_RMCP01_RENDERED_FAST_TRACK.md) — first local Mario Kart graphics-enabled fast-track.
 
 Older dated `HARDWARE_RESULTS_*` files are historical snapshots. Their “next blocker” wording intentionally reflects what was known on that date and is not rewritten retroactively.

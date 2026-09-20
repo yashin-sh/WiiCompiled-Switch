@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer and local FST publication hardware-proven; #194 hardware-proves `GXSetViewport`; the current exact blocker is PAL `GXSetScissor` at `0x80173430`**.
+Status: **renderer and local FST publication hardware-proven; #195 hardware-proves `GXSetScissor`; the current exact blocker is PAL `GXLoadPosMtxImm` at `0x8017310C`**.
 
 ## Purpose
 
@@ -451,6 +451,41 @@ the previous hardware proof remains valid.
 Graphics state is otherwise unchanged: eight bootstrap FIFO writes, zero
 display-list calls, no drawable FIFO work, zero `GXCopyDisp`, and zero
 presents. No DVD-read status file is produced.
+
+## Hardware result after #195 — GXLoadPosMtxImm frontier
+
+The first real-Switch run after #195 records:
+
+```text
+GXSetProjection hits : 1
+GXSetViewport hits   : 1
+GXSetScissor hits    : 1
+```
+
+This hardware-proves the merged scissor bridge. The scheduler remains recovered
+on the default/main thread and FST publication remains valid.
+
+The next exact blocker is:
+
+```text
+kind   : DIRECT
+target : 0x8017310C
+r1     : 0x80399008
+r3     : 0x80399018
+stage  : RMCP01_GX_SET_SCISSOR
+```
+
+Pinned WiiCompiled maps `0x8017310C` to `GXLoadPosMtxImm`. Its native
+override reads a guest 3x4 matrix from `r3`, converts twelve big-endian
+float32 values to host order, and forwards the matrix plus `r4` matrix id to
+Aurora GX.
+
+This specific run again reports `TaskThread::run hits = 0`; the prior hardware
+proof remains valid and the priority-24 worker still reaches guest-fiber entry.
+
+Graphics state remains unchanged: eight bootstrap FIFO writes, zero display-
+list calls, no drawable FIFO work, zero `GXCopyDisp`, and zero presents.
+No DVD-read status file is produced.
 
 ## Build
 

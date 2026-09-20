@@ -3,6 +3,8 @@
 
 #include "abi_bridge.h"
 
+#include <cstdint>
+
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
 #include "gx_internal.h"
 #include <dolphin/gx.h>

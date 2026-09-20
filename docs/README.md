@@ -69,6 +69,7 @@
 - `HARDWARE_RESULTS_2026-09-20_GX_LOAD_POS_MTX_IMM_FRONTIER.md` — #195 hardware PASS for scissor and new PAL `GXLoadPosMtxImm` frontier
 - `HARDWARE_RESULTS_2026-09-20_GX_SET_CURRENT_MTX_FRONTIER.md` — #196 hardware PASS for `GXLoadPosMtxImm`, TaskThread re-proof, and new PAL `GXSetCurrentMtx` frontier
 - `HARDWARE_RESULTS_2026-09-20_GX_CLEAR_VTX_DESC_FRONTIER.md` — #197 hardware PASS for `GXSetCurrentMtx` and new PAL `GXClearVtxDesc` frontier
+- `HARDWARE_RESULTS_2026-09-20_GX_SET_VTX_DESC_FRONTIER.md` — #198 hardware PASS for `GXClearVtxDesc`, TaskThread re-proof, first post-bootstrap GX state FIFO byte, and new PAL `GXSetVtxDesc` frontier
 
 ## Blocker notes
 

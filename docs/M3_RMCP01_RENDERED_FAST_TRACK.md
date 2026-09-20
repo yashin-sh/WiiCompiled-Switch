@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer and local FST publication hardware-proven; #200 hardware-proves `GXSetVtxAttrFmt`; the current exact blocker is PAL `GXSetNumChans` at `0x8017054C`, and the observed hbmenu/error return matches the deliberate unsupported-boundary abort path**.
+Status: **renderer and local FST publication hardware-proven; #201 hardware-proves `GXSetNumChans` and re-proves `TaskThread::run`; the current exact blocker is PAL `GXSetChanMatColor` at `0x80170474`**.
 
 ## Purpose
 
@@ -627,6 +627,29 @@ independent libnx exception for this run.
 
 Graphics remain at nine FIFO writes, with no display list, drawable FIFO work,
 `GXCopyDisp`, or present.
+
+## Hardware result after #201 — GXSetChanMatColor frontier
+
+The first real-Switch run after #201 records `TaskThread::run hits = 1`,
+`GXSetNumChans hits = 1`, and the complete prior GX hit chain. The scheduler
+returns to default/main `0x80347498`.
+
+The next exact blocker is:
+
+```text
+kind   : DIRECT
+target : 0x80170474
+r3     : 0x00000004
+stage  : RMCP01_GX_SET_NUM_CHANS
+```
+
+Pinned WiiCompiled maps `0x80170474` to `GXSetChanMatColor`. It consumes
+`r3 = channel` and `r4 = guest color pointer`, ensures the Aurora frame is
+active, reads `Memory::Read32(r4)`, decodes the packed RGBA value, and forwards
+it to Aurora `GXSetChanMatColor`.
+
+Graphics remain at nine FIFO writes, with no display list, drawable FIFO work,
+`GXCopyDisp`, or present. No DVD-read status file is produced.
 
 ## Build
 

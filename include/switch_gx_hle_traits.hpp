@@ -17,6 +17,7 @@ extern "C" void mkw_switch_hle_gx_clear_vtx_desc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_vtx_desc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_vtx_attr_fmt(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 
@@ -149,6 +150,18 @@ struct KnownNativeCpuCall<0x8017054Cu> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_num_chans(cpu);
+    }
+};
+
+// GXSetChanMatColor (PAL 0x80170474). Pinned WiiCompiled consumes r3 as
+// GXChannelID and r4 as a guest pointer to one packed RGBA word, ensures an
+// Aurora frame is active, decodes the guest color, then forwards it to Aurora.
+template <>
+struct KnownNativeCpuCall<0x80170474u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_chan_mat_color(cpu);
     }
 };
 

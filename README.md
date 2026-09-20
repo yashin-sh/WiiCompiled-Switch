@@ -28,7 +28,7 @@ The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge se
 
 The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
 
-The first real-Switch run after #196 now **hardware-proves PAL `GXLoadPosMtxImm (0x8017310C)`** with `GXLoadPosMtxImm hits = 1`; the same run also re-proves `TaskThread::run hits = 1`, keeps projection/viewport/scissor crossed, and returns the scheduler to the default/main thread. The new first durable blocker is PAL `GXSetCurrentMtx` at `0x80173214`. Pinned WiiCompiled consumes only the matrix id in `r3` and forwards it directly to Aurora `GXSetCurrentMtx`.
+The first real-Switch run after #197 now **hardware-proves PAL `GXSetCurrentMtx (0x80173214)`** with `GXSetCurrentMtx hits = 1`, while projection/viewport/scissor/position-matrix remain crossed and the scheduler returns to the default/main thread. This run records `TaskThread::run hits = 0`, but the priority-24 worker still reaches guest-fiber entry and prior TaskThread hardware proof remains valid. The new first durable blocker is PAL `GXClearVtxDesc` at `0x8016DC34`. Pinned WiiCompiled clears its 26 tracked vertex descriptors, conditionally invalidates the vertex-layout hash, preserves vertex-array base/stride state, then calls Aurora `GXClearVtxDesc()`.
 
 ## Milestones
 
@@ -125,7 +125,9 @@ GXSetScissor (0x80173430)                                  ✅ hardware crossed
   ↓
 GXLoadPosMtxImm (0x8017310C)                                ✅ hardware crossed
   ↓
-GXSetCurrentMtx (0x80173214)                                ← current blocker
+GXSetCurrentMtx (0x80173214)                                ✅ hardware crossed
+  ↓
+GXClearVtxDesc (0x8016DC34)                                 ← current blocker
   ↓
 resource-job callback / next GX/DVD frontier
   ↓
@@ -289,6 +291,7 @@ Start with:
 - [`docs/HARDWARE_RESULTS_2026-09-19_GX_SET_SCISSOR_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-19_GX_SET_SCISSOR_FRONTIER.md) — #194 hardware-proves `GXSetViewport` and exposes PAL `GXSetScissor`;
 - [`docs/HARDWARE_RESULTS_2026-09-20_GX_LOAD_POS_MTX_IMM_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-20_GX_LOAD_POS_MTX_IMM_FRONTIER.md) — #195 hardware-proves `GXSetScissor` and exposes PAL `GXLoadPosMtxImm`;
 - [`docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CURRENT_MTX_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CURRENT_MTX_FRONTIER.md) — #196 hardware-proves `GXLoadPosMtxImm`, re-proves `TaskThread::run`, and exposes PAL `GXSetCurrentMtx`;
+- [`docs/HARDWARE_RESULTS_2026-09-20_GX_CLEAR_VTX_DESC_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-20_GX_CLEAR_VTX_DESC_FRONTIER.md) — #197 hardware-proves `GXSetCurrentMtx` and exposes PAL `GXClearVtxDesc`;
 - [`docs/M3_RMCP01_RENDERED_FAST_TRACK.md`](docs/M3_RMCP01_RENDERED_FAST_TRACK.md) — first local Mario Kart graphics-enabled fast-track.
 
 Older dated `HARDWARE_RESULTS_*` files are historical snapshots. Their “next blocker” wording intentionally reflects what was known on that date and is not rewritten retroactively.

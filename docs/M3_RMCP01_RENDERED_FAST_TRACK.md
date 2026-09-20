@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer and local FST publication hardware-proven; #197 hardware-proves `GXSetCurrentMtx`; the current exact blocker is PAL `GXClearVtxDesc` at `0x8016DC34`**.
+Status: **renderer and local FST publication hardware-proven; #198 hardware-proves `GXClearVtxDesc`, re-proves `TaskThread::run`, and records first post-bootstrap GX FIFO state traffic; the current exact blocker is PAL `GXSetVtxDesc` at `0x8016D3A4`**.
 
 ## Purpose
 
@@ -537,6 +537,43 @@ base/stride state, then calls Aurora `GXClearVtxDesc()`.
 Graphics state remains unchanged: eight bootstrap FIFO writes, zero display-list
 calls, no drawable FIFO work, zero `GXCopyDisp`, and zero presents. No DVD-read
 status file is produced.
+
+## Hardware result after #198 — GXSetVtxDesc frontier
+
+The first real-Switch run after #198 records:
+
+```text
+TaskThread::run hits  : 1
+GXSetProjection hits  : 1
+GXSetViewport hits    : 1
+GXSetScissor hits     : 1
+GXLoadPosMtxImm hits  : 1
+GXSetCurrentMtx hits  : 1
+GXClearVtxDesc hits   : 1
+```
+
+This hardware-proves the merged clear-descriptor bridge and independently
+re-proves the priority-24 TaskThread path. The scheduler returns to default/main
+`0x80347498`.
+
+The next exact blocker is:
+
+```text
+kind   : DIRECT
+target : 0x8016D3A4
+r3     : 0x00000009
+stage  : RMCP01_GX_CLEAR_VTX_DESC
+```
+
+Pinned WiiCompiled maps `0x8016D3A4` to `GXSetVtxDesc`. The observed
+attribute is `GX_VA_POS`; the descriptor type is not inferred because the
+blocker diagnostic does not record `r4`.
+
+The graphics report now also records `FIFO EVENT #9 ... value=0x48`. Pinned
+Aurora emits that byte from `GXInvalidateVtxCache()`, making it the first
+post-bootstrap GX/vertex-state FIFO traffic seen from RMCP01. It is not yet a
+draw: display-list calls, drawable FIFO work, `GXCopyDisp`, and presents remain
+zero. No DVD-read status file is produced.
 
 ## Build
 

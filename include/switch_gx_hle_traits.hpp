@@ -11,6 +11,7 @@ extern "C" void mkw_switch_hle_gx_draw_done(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_viewport(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_scissor(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_load_pos_mtx_imm(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 
@@ -70,6 +71,18 @@ struct KnownNativeCpuCall<0x80173430u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_scissor(cpu);
+    }
+};
+
+// GXLoadPosMtxImm (PAL 0x8017310C). Pinned WiiCompiled consumes the guest
+// 3x4 big-endian position matrix from r3 and the matrix id from r4, converts
+// twelve float32 entries to host order, then forwards them to Aurora GX.
+template <>
+struct KnownNativeCpuCall<0x8017310Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_load_pos_mtx_imm(cpu);
     }
 };
 

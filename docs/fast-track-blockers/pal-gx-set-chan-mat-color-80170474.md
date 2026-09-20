@@ -45,8 +45,15 @@ The Switch bridge mirrors the pinned semantics directly:
 - reads guest color pointer from PPC `r4`;
 - calls `EnsureAuroraFrameActive()`;
 - reads the guest color with `Memory::Read32`;
-- decodes through pinned `DecodeGxColor`;
+- decodes the packed `0xRRGGBBAA` word with a local bit-exact copy of pinned
+  WiiCompiled `DecodeGxColor` semantics;
 - forwards to Aurora `GXSetChanMatColor`.
+
+The narrow rendered-fast-track target intentionally does not link all of
+WiiCompiled `gx_utils.cpp`, because that object also owns unrelated GX state
+and helper dependencies. The local decoder preserves only the four byte
+extractions used by the pinned function and avoids the unresolved
+`DecodeGxColor(unsigned int)` link dependency.
 
 Synthetic/headless builds retain the direct-call seam without importing Aurora
 or guest memory into Nintendo-data-free public CI.

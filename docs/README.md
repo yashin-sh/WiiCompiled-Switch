@@ -66,6 +66,7 @@
 - `HARDWARE_RESULTS_2026-09-19_GX_SET_PROJECTION_FRONTIER.md` — first #192 hardware run, TaskThread proof caveat, and PAL `GXSetProjection` frontier
 - `HARDWARE_RESULTS_2026-09-19_GX_SET_VIEWPORT_FRONTIER.md` — #193 hardware PASS for TaskThread/projection and new PAL `GXSetViewport` frontier
 - `HARDWARE_RESULTS_2026-09-19_GX_SET_SCISSOR_FRONTIER.md` — #194 hardware PASS for viewport and new PAL `GXSetScissor` frontier
+- `HARDWARE_RESULTS_2026-09-20_GX_LOAD_POS_MTX_IMM_FRONTIER.md` — #195 hardware PASS for scissor and new PAL `GXLoadPosMtxImm` frontier
 
 ## Blocker notes
 

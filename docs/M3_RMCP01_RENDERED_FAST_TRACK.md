@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer and local FST publication hardware-proven; #198 hardware-proves `GXClearVtxDesc`, re-proves `TaskThread::run`, and records first post-bootstrap GX FIFO state traffic; the current exact blocker is PAL `GXSetVtxDesc` at `0x8016D3A4`**.
+Status: **renderer and local FST publication hardware-proven; #199 hardware-proves `GXSetVtxDesc`, re-proves `TaskThread::run`, and preserves the first post-bootstrap GX FIFO state traffic; the current exact blocker is PAL `GXSetVtxAttrFmt` at `0x8016DC68`**.
 
 ## Purpose
 
@@ -574,6 +574,30 @@ Aurora emits that byte from `GXInvalidateVtxCache()`, making it the first
 post-bootstrap GX/vertex-state FIFO traffic seen from RMCP01. It is not yet a
 draw: display-list calls, drawable FIFO work, `GXCopyDisp`, and presents remain
 zero. No DVD-read status file is produced.
+
+## Hardware result after #199 — GXSetVtxAttrFmt frontier
+
+The first real-Switch run after #199 records `TaskThread::run hits = 1` and
+`GXSetVtxDesc hits = 1`, while the complete prior GX chain remains crossed.
+The scheduler returns to default/main `0x80347498`.
+
+The next exact blocker is:
+
+```text
+kind   : DIRECT
+target : 0x8016DC68
+r3     : 0x00000000
+stage  : RMCP01_GX_SET_VTX_DESC
+```
+
+Pinned WiiCompiled maps `0x8016DC68` to `GXSetVtxAttrFmt`. The observed
+`r3 = 0` is `GX_VTXFMT0`; `r4..r7` are not inferred from the blocker
+because they are not recorded there.
+
+The rendered graphics report remains at nine FIFO writes, with the ninth
+`0x48` byte still representing the first post-bootstrap GX/vertex-state
+traffic. There is still no display-list call, drawable FIFO work,
+`GXCopyDisp`, or present. No DVD-read status file is produced.
 
 ## Build
 

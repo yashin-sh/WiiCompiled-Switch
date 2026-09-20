@@ -14,6 +14,7 @@ extern "C" void mkw_switch_hle_gx_set_scissor(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_load_pos_mtx_imm(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_current_mtx(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_clear_vtx_desc(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_vtx_desc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 
@@ -108,6 +109,19 @@ struct KnownNativeCpuCall<0x8016DC34u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_clear_vtx_desc(cpu);
+    }
+};
+
+// GXSetVtxDesc (PAL 0x8016D3A4). Pinned WiiCompiled consumes attr/type from
+// r3/r4, canonicalizes NBT to NRM for tracked HLE state, invalidates the
+// vertex-layout hash on changes, skips Aurora writes for matrix-index attrs,
+// and expands INDEX8/INDEX16 descriptors to GX_DIRECT for Aurora streaming.
+template <>
+struct KnownNativeCpuCall<0x8016D3A4u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_vtx_desc(cpu);
     }
 };
 

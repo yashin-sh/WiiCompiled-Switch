@@ -10,6 +10,7 @@
 #include <cstdint>
 
 extern "C" void mkw_switch_hle_task_thread_run(CpuContext* cpu);
+extern "C" void mkw_switch_hle_egg_async_display_end_render(CpuContext* cpu) noexcept;
 
 namespace {
 std::atomic<const StaticIndirectDispatchTable*> g_staticIndirectDispatchTable{nullptr};
@@ -126,6 +127,15 @@ bool mkw_switch_try_dispatch_indirect(std::uint32_t target, CpuContext* cpu) {
     // boundary before consulting translated entries.
     if (target == 0x80242D7Cu) {
         mkw_switch_hle_task_thread_run(cpu);
+        return true;
+    }
+
+    // PAL EGG::AsyncDisplay::endRender is another pinned WiiCompiled native
+    // override that is reached through an indirect call and therefore is not
+    // present in the translated table. Hardware first reached it only after
+    // real RMCP01 FIFO render work was produced.
+    if (target == 0x8020FF9Cu) {
+        mkw_switch_hle_egg_async_display_end_render(cpu);
         return true;
     }
 

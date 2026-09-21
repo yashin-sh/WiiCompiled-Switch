@@ -84,6 +84,7 @@
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_Z_MODE_FRONTIER.md` — rendered hardware progression beyond `GXSetAlphaUpdate` and new PAL `GXSetZMode` frontier
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_CULL_MODE_FRONTIER.md` — rendered hardware progression beyond `GXSetZMode` and new PAL `GXSetCullMode` frontier
 - `HARDWARE_RESULTS_2026-09-21_GX_BEGIN_FRONTIER.md` — rendered hardware progression beyond `GXSetCullMode` to the first PAL `GXBegin` draw-primitive frontier
+- `HARDWARE_RESULTS_2026-09-21_GX_SET_COPY_FILTER_FRONTIER.md` — first real FIFO work preserved, `endRender` hardware-crossed, and new PAL `GXSetCopyFilter` copy-path frontier
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes

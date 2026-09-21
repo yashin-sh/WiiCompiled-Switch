@@ -879,3 +879,18 @@ The graphics log remains at eleven FIFO writes. FST/renderer invariants remain
 intact, but there is still no proven display list, drawable FIFO work,
 `GXCopyDisp`, or present. The next candidate implements only this exact
 `GXSetBlendMode` boundary.
+
+## Hardware result — 2026-09-21 GXSetColorUpdate frontier
+
+The rendered real-Switch run after merged #211 progresses beyond
+`GXSetBlendMode (0x8017277C)` and stops at the distinct DIRECT target
+`0x801727CC`, with `r3 = 1` and stage
+`RMCP01_GX_SET_BLEND_MODE`.
+
+Pinned WiiCompiled maps `0x801727CC` to `GXSetColorUpdate` and forwards
+`r3` directly as `GXBool` to Aurora without additional validation.
+
+The graphics log remains at eleven FIFO writes. FST/renderer invariants remain
+intact, but there is still no proven display list, drawable FIFO work,
+`GXCopyDisp`, or present. The next candidate implements only this exact
+`GXSetColorUpdate` boundary.

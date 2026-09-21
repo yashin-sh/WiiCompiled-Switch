@@ -1,0 +1,34 @@
+name: one-shot-branch-cleanup
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  delete-stale-branches:
+    if: "${{ startsWith(github.event.head_commit.message, 'chore: one-shot branch cleanup') }}"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete every branch except main
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const branches = await github.paginate(
+              github.rest.repos.listBranches,
+              { owner, repo, per_page: 100 }
+            );
+
+            for (const { name } of branches) {
+              if (name === 'main') continue;
+              await github.rest.git.deleteRef({
+                owner,
+                repo,
+                ref: `heads/${name}`,
+              });
+              core.info(`deleted: ${name}`);
+            }

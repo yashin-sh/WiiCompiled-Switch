@@ -148,24 +148,31 @@ If a new run:
 
 ## Current frontier
 
-As of the 2026-09-21 real-Switch rendered run after merged #211:
+The latest real-Switch rendered evidence is the 2026-09-21 run after merged
+#211:
 
-- main contains the `GXSetBlendMode (0x8017277C)` bridge;
-- pinned WiiCompiled remains
-  `a135beb201042b20f390c6695ca6b26768820fb4`;
-- the final durable blocker is no longer `0x8017277C`;
+- `GXSetBlendMode (0x8017277C)` is hardware-crossed;
 - the new exact DIRECT blocker is PAL `GXSetColorUpdate (0x801727CC)`,
   captured with `r3 = 1`;
 - its stage is `RMCP01_GX_SET_BLEND_MODE`, proving the previous bridge was
   entered and execution advanced to a later target;
+- pinned WiiCompiled remains
+  `a135beb201042b20f390c6695ca6b26768820fb4`;
 - pinned semantics cast `r3` directly to `GXBool` and call Aurora
   `GXSetColorUpdate`;
 - FIFO traffic remains at eleven writes and there is still no proven display
-  list, drawable work, `GXCopyDisp`, or present;
-- implement only this exact boundary;
-- do not pre-port neighboring pixel/TEV/texture/draw/resource calls;
-- public CI plus the private rendered build remain required before hardware
-  acceptance.
+  list, drawable work, `GXCopyDisp`, or present.
+
+Current `main` is now ahead of that hardware evidence:
+
+- PR #212 merged the exact `GXSetColorUpdate` bridge as
+  `8aea70d0a3a8378311428eb5420760e4f763a40d`;
+- all five public workflows passed on the exact PR HEAD before merge;
+- `GXSetColorUpdate` is **implemented but not yet hardware-crossed**;
+- the private rendered build of the exact merged revision remains the required
+  sixth gate before the next Switch run;
+- the following GX/resource boundary must not be implemented until hardware
+  progresses beyond `0x801727CC`.
 
 ## Governance note
 

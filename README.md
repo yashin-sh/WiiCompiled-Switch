@@ -28,7 +28,7 @@ The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge se
 
 The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
 
-The latest 2026-09-21 rendered real-Switch run hardware-crosses PAL `GXBegin (0x8016F0F0)` and emits `PASS FIRST_RMCP01_FIFO_WORK`: real RMCP01 vertex payload now produces Aurora render work through the pinned `HleFifoWrite` path. The distinct next blocker is an `INDIRECT_CALL_MISS` to `EGG::AsyncDisplay::endRender (0x8020FF9C)`, recorded with stage `RMCP01_FIFO_RENDER_WORK`. Pinned WiiCompiled implements this boundary by dispatching `EGG::Display::copyEFBtoXFB (0x80219FB4)` followed by `GXSetDrawDoneCallback (0x8016ED50)`. The current candidate resolves only `endRender`; no EFB copy, `GXCopyDisp`, or present result is fabricated.
+The latest 2026-09-21 rendered real-Switch run hardware-crosses `EGG::AsyncDisplay::endRender (0x8020FF9C)` and preserves real drawable RMCP01 work: `GXBegin hits = 1`, `AsyncDisplay endRender = 1`, 23 FIFO writes, and `FIFO produced work = YES`. The distinct next DIRECT blocker is `GXSetCopyFilter (0x8016FA40)`, recorded with stage `RMCP01_EGG_ASYNC_DISPLAY_END_RENDER`. Pinned WiiCompiled consumes live `r3..r6` as antialias / sample-pattern guest pointer / vertical-filter enable / vertical-filter guest pointer, copies 24 + 7 bytes from guest RAM, and forwards them to Aurora `GXSetCopyFilter`. The current blocker did not capture `r6`, so it is not inferred; the candidate reads it live and extends future blocker diagnostics through `r6`. `GXCopyDisp` and present remain unproven.
 
 ## Milestones
 
@@ -54,7 +54,7 @@ The latest 2026-09-21 rendered real-Switch run hardware-crosses PAL `GXBegin (0x
 | WiiCompiled FIFO → Aurora GX | ✅ Hardware validated (1,435-frame loop) |
 | RMCP01 rendered fast-track | ✅ Real RMCP01 drawable FIFO/Aurora work hardware-proven |
 | First real RMCP01 drawable work | ✅ `PASS FIRST_RMCP01_FIFO_WORK` |
-| Current render frontier | 🟡 `EGG::AsyncDisplay::endRender (0x8020FF9C)` indirect native override |
+| Current render frontier | 🟡 `GXSetCopyFilter (0x8016FA40)` exact hardware blocker |
 | WiiCompiled/Aurora GX → first RMCP01 frame | 🟡 M3 #162 in progress |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
@@ -169,9 +169,11 @@ real vertex payload through HleFifoWrite                          ✅ hardware c
   ↓
 FIFO produced work = YES                                         ✅ FIRST_RMCP01_FIFO_WORK
   ↓
-EGG::AsyncDisplay::endRender (0x8020FF9C)                         🟡 current exact blocker
+EGG::AsyncDisplay::endRender (0x8020FF9C)                         ✅ hardware crossed
   ↓
-EGG::Display::copyEFBtoXFB / GXCopyDisp / present                 ⬜ hardware proof pending
+GXSetCopyFilter (0x8016FA40)                                      🟡 current exact blocker
+  ↓
+game-facing EFB copy / GXCopyDisp / present                       ⬜ hardware proof pending
   ↓
 first drawable FIFO work / display list / GXCopyDisp / present
   ↓

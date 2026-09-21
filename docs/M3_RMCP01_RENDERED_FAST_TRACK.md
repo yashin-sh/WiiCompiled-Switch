@@ -842,3 +842,22 @@ The graphics log remains at eleven FIFO writes. FST/renderer invariants remain
 intact, but there is still no proven display list, drawable FIFO work,
 `GXCopyDisp`, or present. The next candidate implements only this exact
 `GXSetTevOp` boundary.
+
+## Hardware result — 2026-09-21 GXSetTevOrder frontier
+
+The rendered real-Switch run after merged #209 progresses beyond
+`GXSetTevOp (0x80171C4C)` and stops at the distinct DIRECT target
+`0x8017214C`, with `r3 = 0` and stage
+`RMCP01_GX_SET_TEV_OP`.
+
+Pinned WiiCompiled maps `0x8017214C` to `GXSetTevOrder`, validates the TEV
+stage with `stage < GX_MAX_TEVSTAGE`, and forwards `r3-r6` as
+`GXTevStageID/GXTexCoordID/GXTexMapID/GXChannelID` to Aurora. The blocker
+diagnostic did not capture `r4-r6`, so no hardware texcoord, texmap, or
+channel values are asserted; the candidate consumes the live guest registers
+directly.
+
+The graphics log remains at eleven FIFO writes. FST/renderer invariants remain
+intact, but there is still no proven display list, drawable FIFO work,
+`GXCopyDisp`, or present. The next candidate implements only this exact
+`GXSetTevOrder` boundary.

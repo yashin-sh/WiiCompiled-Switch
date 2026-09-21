@@ -149,7 +149,7 @@ Validation policy after the 2026-09-20 audit: the five public CI workflows remai
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The latest 2026-09-21 rendered hardware run progresses beyond `GXSetNumTexGens (0x8016E5A4)` and exposes PAL `GXSetNumIndStages (0x80171B38)` with captured `r3 = 0`. Pinned WiiCompiled narrows that value to `u8` and forwards it directly to Aurora. The pre-blocker snapshot still has nine FIFO writes and no display list, drawable work, `GXCopyDisp`, or present. No neighboring indirect/TEV/draw/DVD/resource boundary is pre-ported.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The latest 2026-09-21 rendered hardware run progresses beyond `GXSetNumIndStages (0x80171B38)` and exposes PAL `GXSetNumTevStages (0x801722A8)` with captured `r3 = 1`. Pinned WiiCompiled validates the count against `GX_MAX_TEVSTAGE`, narrows valid values to `u8`, and forwards them to Aurora. FIFO traffic advances from nine to eleven writes, but there is still no proven display list, drawable work, `GXCopyDisp`, or present. No neighboring TEV/draw/DVD/resource boundary is pre-ported.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input
@@ -183,7 +183,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-cross PAL `GXSetChanMatColor` (`0x80170474`) using pinned guest RGBA read/decode + Aurora contract
 - [x] hardware-cross PAL `GXSetChanCtrl` (`0x80170570`) and progress to the next distinct durable DIRECT blocker
 - [x] hardware-cross PAL `GXSetNumTexGens` (`0x8016E5A4`) and progress to the next distinct durable DIRECT blocker
-- [ ] hardware-cross PAL `GXSetNumIndStages` (`0x80171B38`) using pinned `r3 -> u8 -> Aurora` contract
+- [x] hardware-cross PAL `GXSetNumIndStages` (`0x80171B38`) and progress to the next distinct durable DIRECT blocker
+- [ ] hardware-cross PAL `GXSetNumTevStages` (`0x801722A8`) with pinned count validation + `u8 -> Aurora` contract
 - [ ] continue post-main initialization through system/resource initialization
 - [ ] complete game/resource initialization
 - [ ] menus

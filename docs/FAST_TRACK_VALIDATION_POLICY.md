@@ -148,20 +148,22 @@ If a new run:
 
 ## Current frontier
 
-As of the 2026-09-21 real-Switch rendered run after merged #207:
+As of the 2026-09-21 real-Switch rendered run after merged #208:
 
-- main contains the `GXSetNumIndStages (0x80171B38)` bridge;
+- main contains the `GXSetNumTevStages (0x801722A8)` bridge;
 - pinned WiiCompiled remains
   `a135beb201042b20f390c6695ca6b26768820fb4`;
-- the final durable blocker is no longer `0x80171B38`;
-- the new exact DIRECT blocker is PAL `GXSetNumTevStages (0x801722A8)`,
-  captured with `r3 = 1`;
-- its stage is `RMCP01_GX_SET_NUM_IND_STAGES`, proving the previous bridge was
+- the final durable blocker is no longer `0x801722A8`;
+- the new exact DIRECT blocker is PAL `GXSetTevOp (0x80171C4C)`,
+  captured with `r3 = 0`;
+- its stage is `RMCP01_GX_SET_NUM_TEV_STAGES`, proving the previous bridge was
   entered and execution advanced to a later target;
-- pinned semantics reject counts above `GX_MAX_TEVSTAGE`, then narrow valid
-  counts to `u8` and call Aurora `GXSetNumTevStages`;
-- FIFO traffic advances from nine to eleven writes, but there is still no
-  proven display list, drawable work, `GXCopyDisp`, or present;
+- pinned semantics consume `r3/r4` as TEV stage/mode, reject
+  `r3 >= GX_MAX_TEVSTAGE`, then call Aurora `GXSetTevOp`;
+- the blocker diagnostic does not contain `r4`, so no hardware mode value is
+  asserted; the implementation reads the live guest `r4`;
+- FIFO traffic remains at eleven writes and there is still no proven display
+  list, drawable work, `GXCopyDisp`, or present;
 - implement only this exact boundary;
 - do not pre-port neighboring TEV/texture/draw/resource calls;
 - public CI plus the private rendered build remain required before hardware

@@ -80,6 +80,7 @@
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_TEV_ORDER_FRONTIER.md` — rendered hardware progression beyond `GXSetTevOp` and new PAL `GXSetTevOrder` frontier
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_BLEND_MODE_FRONTIER.md` — rendered hardware progression beyond `GXSetTevOrder` and new PAL `GXSetBlendMode` frontier
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_COLOR_UPDATE_FRONTIER.md` — rendered hardware progression beyond `GXSetBlendMode` and new PAL `GXSetColorUpdate` frontier
+- `HARDWARE_RESULTS_2026-09-21_GX_SET_ALPHA_UPDATE_FRONTIER.md` — rendered hardware progression beyond `GXSetColorUpdate` and new PAL `GXSetAlphaUpdate` frontier
 
 ## Blocker notes
 
@@ -87,9 +88,9 @@
 
 For the current project status, use `../README.md`, `../ROADMAP.md`,
 `FAST_TRACK_VALIDATION_POLICY.md`, `M2_RUNTIME_BOOTSTRAP.md`, and issue #117.
-The latest hardware evidence exposes PAL `GXSetColorUpdate (0x801727CC)`;
-current `main` already contains its exact bridge from #212 at
-`8aea70d0a3a8378311428eb5420760e4f763a40d`, pending the private rendered
-build and real-Switch hardware-cross proof. Dated hardware result files are
+The latest hardware evidence, from the NRO built at
+`8aea70d0a3a8378311428eb5420760e4f763a40d`, hardware-crosses PAL
+`GXSetColorUpdate (0x801727CC)` and exposes PAL
+`GXSetAlphaUpdate (0x801727F8)` as the next exact frontier. Dated hardware result files are
 historical evidence and intentionally retain the frontier wording that was
 correct when each run was captured.

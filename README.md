@@ -28,7 +28,7 @@ The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge se
 
 The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
 
-The latest 2026-09-21 rendered real-Switch run hardware-crosses PAL `GXSetAlphaUpdate (0x801727F8)` and exposes the distinct next DIRECT blocker `GXSetZMode (0x80172824)`. The blocker captures `r3 = 0` and stage `RMCP01_GX_SET_ALPHA_UPDATE`, proving progression past the previous bridge. Pinned WiiCompiled `a135beb201042b20f390c6695ca6b26768820fb4` consumes live `r3/r4/r5` as compare-enable / `GXCompare` / update-enable and forwards them to Aurora `GXSetZMode`. The current blocker did not record `r4/r5`, so they are not inferred; the candidate reads those registers live and extends future blocker diagnostics to capture them. FIFO traffic remains at eleven writes, while the renderer/FST path remains valid and there is still no proven display list, drawable FIFO work, `GXCopyDisp`, or present.
+The latest 2026-09-21 rendered real-Switch run hardware-crosses PAL `GXSetZMode (0x80172824)` and exposes the distinct next DIRECT blocker `GXSetCullMode (0x8016F3B8)`. The blocker captures `r3 = 2` and stage `RMCP01_GX_SET_Z_MODE`, proving progression past the previous bridge. Pinned WiiCompiled `a135beb201042b20f390c6695ca6b26768820fb4` consumes only live `r3`, casts it directly to `GXCullMode`, and forwards it to Aurora `GXSetCullMode`. FIFO traffic remains at eleven writes, while the renderer/FST path remains valid and there is still no proven display list, drawable FIFO work, `GXCopyDisp`, or present.
 
 ## Milestones
 
@@ -53,7 +53,7 @@ The latest 2026-09-21 rendered real-Switch run hardware-crosses PAL `GXSetAlphaU
 | Aurora GX triangle | ✅ Hardware validated (563-frame active loop) |
 | WiiCompiled FIFO → Aurora GX | ✅ Hardware validated (1,435-frame loop) |
 | RMCP01 rendered fast-track | ✅ Running on hardware; renderer ready, no drawable RMCP01 work yet |
-| Current GX frontier | 🟡 `GXSetZMode (0x80172824)` exact hardware blocker |
+| Current GX frontier | 🟡 `GXSetCullMode (0x8016F3B8)` exact hardware blocker |
 | WiiCompiled/Aurora GX → first RMCP01 frame | 🟡 M3 #162 in progress |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
@@ -158,7 +158,9 @@ GXSetColorUpdate (0x801727CC)                                  ✅ hardware cros
   ↓
 GXSetAlphaUpdate (0x801727F8)                                  ✅ hardware crossed
   ↓
-GXSetZMode (0x80172824)                                         🟡 current exact hardware blocker
+GXSetZMode (0x80172824)                                         ✅ hardware crossed
+  ↓
+GXSetCullMode (0x8016F3B8)                                      🟡 current exact hardware blocker
   ↓
 next exact hardware-observed GX / resource frontier
   ↓

@@ -21,6 +21,7 @@ extern "C" void mkw_switch_hle_gx_set_num_ind_stages(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_tev_stages(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_op(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_order(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_blend_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* cpu) noexcept;
@@ -204,6 +205,18 @@ struct KnownNativeCpuCall<0x8017214Cu> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_tev_order(cpu);
+    }
+};
+
+// GXSetBlendMode (PAL 0x8017277C). Pinned WiiCompiled consumes r3..r6 as
+// blend-mode type / source factor / destination factor / logic op and forwards
+// the four enum values directly to Aurora GXSetBlendMode.
+template <>
+struct KnownNativeCpuCall<0x8017277Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_blend_mode(cpu);
     }
 };
 

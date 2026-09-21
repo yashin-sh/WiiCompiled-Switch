@@ -988,3 +988,22 @@ This closes the "first drawable RMCP01 work" milestone. The next hardware
 question is whether the real endRender/copy path reaches the already prepared
 `GXCopyDisp` present seam. The candidate resolves only endRender and leaves
 both nested guest calls to the normal translated dispatcher.
+
+## Hardware result — 2026-09-21 GXSetCopyFilter frontier
+
+The latest rendered hardware run preserves the first real RMCP01 drawable
+work, hardware-crosses `EGG::AsyncDisplay::endRender (0x8020FF9C)`, and
+stops at the distinct DIRECT target `GXSetCopyFilter (0x8016FA40)`.
+
+The durable snapshot records `GXBegin hits = 1`,
+`AsyncDisplay endRender = 1`, 23 FIFO writes, and
+`FIFO produced work = YES`; `GXCopyDisp` and present remain zero.
+
+Pinned WiiCompiled maps `0x8016FA40` to `GXSetCopyFilter`, consuming
+live r3..r6 and copying 24-byte sample-pattern plus 7-byte vertical-filter
+data from guest RAM. The hardware blocker captured r3/r4/r5 but not r6, so
+the candidate reads r6 live and extends the blocker format rather than
+inventing it.
+
+This places the hardware frontier inside the EFB/XFB copy-configuration path,
+but the exact following copy/present boundary remains hardware-defined.

@@ -149,7 +149,7 @@ Validation policy after the 2026-09-20 audit: the five public CI workflows remai
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The first run after merged #203 hardware-proves `GXSetChanMatColor`, re-proves `TaskThread::run`, and preserves scheduler recovery. The renderer remains at nine FIFO writes with no drawable work. The new first durable blocker is PAL `GXSetChanCtrl` at `0x80170570` with observed `r3 = 4`; pinned WiiCompiled consumes `r3..r9` and forwards channel-control state directly to Aurora. The durable blocker does not record `r4..r9`, so those concrete game values are not guessed. No DVD read, display list, drawable RMCP01 FIFO work, `GXCopyDisp`, or present has been observed yet.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The 2026-09-21 rendered hardware run progresses beyond `GXSetChanCtrl (0x80170570)` and exposes PAL `GXSetNumTexGens (0x8016E5A4)` with captured `r3 = 0`. Pinned WiiCompiled narrows that value to `u8` and forwards it directly to Aurora. The periodic pre-blocker snapshot still shows nine FIFO writes with no display list, drawable work, `GXCopyDisp`, or present. No neighboring texture-coordinate, texture, TEV, draw, DVD, or resource boundary is pre-ported.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input
@@ -181,7 +181,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-cross PAL `GXSetVtxAttrFmt` (`0x8016DC68`) using pinned HLE format bookkeeping + Aurora contract
 - [x] hardware-cross PAL `GXSetNumChans` (`0x8017054C`) using pinned `r3 -> u8 -> Aurora` contract
 - [x] hardware-cross PAL `GXSetChanMatColor` (`0x80170474`) using pinned guest RGBA read/decode + Aurora contract
-- [ ] hardware-cross PAL `GXSetChanCtrl` (`0x80170570`) using pinned `r3..r9 -> Aurora` channel-control contract
+- [x] hardware-cross PAL `GXSetChanCtrl` (`0x80170570`) and progress to the next distinct durable DIRECT blocker
+- [ ] hardware-cross PAL `GXSetNumTexGens` (`0x8016E5A4`) using pinned `r3 -> u8 -> Aurora` contract
 - [ ] continue post-main initialization through system/resource initialization
 - [ ] complete game/resource initialization
 - [ ] menus

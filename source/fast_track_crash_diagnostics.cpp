@@ -51,6 +51,7 @@ constexpr std::uint32_t kOsWakeupThreadAddress = 0x801AAAA4u;
 constexpr std::uint32_t kSelectThreadAddress = 0x801A9C08u;
 constexpr std::uint32_t kOsLoadContextAddress = 0x801A1F58u;
 constexpr std::uint32_t kTaskThreadRunAddress = 0x80242D7Cu;
+constexpr std::uint32_t kEggAsyncDisplayEndRenderAddress = 0x8020FF9Cu;
 constexpr std::uint32_t kGxSetProjectionAddress = 0x8017301Cu;
 constexpr std::uint32_t kGxSetViewportAddress = 0x801733B4u;
 constexpr std::uint32_t kGxSetScissorAddress = 0x80173430u;
@@ -112,6 +113,7 @@ std::uint64_t g_os_wakeup_thread_dispatch_count = 0u;
 std::uint64_t g_select_thread_dispatch_count = 0u;
 std::uint64_t g_os_load_context_dispatch_count = 0u;
 std::uint64_t g_task_thread_run_dispatch_count = 0u;
+std::uint64_t g_egg_async_display_end_render_dispatch_count = 0u;
 std::uint64_t g_gx_set_projection_dispatch_count = 0u;
 std::uint64_t g_gx_set_viewport_dispatch_count = 0u;
 std::uint64_t g_gx_set_scissor_dispatch_count = 0u;
@@ -249,6 +251,8 @@ const char* post_main_phase_name(std::uint32_t target) noexcept {
         return "EGG::Video::configure";
     case 0x80242D7Cu:
         return "EGG::TaskThread::run";
+    case 0x8020FF9Cu:
+        return "EGG::AsyncDisplay::endRender";
     case 0x8017301Cu:
         return "GXSetProjection";
     case 0x801733B4u:
@@ -329,6 +333,7 @@ bool is_durable_post_main_phase_target(std::uint32_t target) noexcept {
     case 0x80229DD8u:
     case 0x801A7424u:
     case 0x80242D7Cu:
+    case 0x8020FF9Cu:
     case 0x8017301Cu:
     case 0x801733B4u:
     case 0x80173430u:
@@ -545,6 +550,7 @@ void write_liveness_record(
         "SelectThread hits     : %llu\n"
         "OSLoadContext hits    : %llu\n"
         "TaskThread::run hits  : %llu\n"
+        "AsyncDisplay endRender: %llu\n"
         "GXSetProjection hits  : %llu\n"
         "GXSetViewport hits    : %llu\n"
         "GXSetScissor hits     : %llu\n"
@@ -598,6 +604,7 @@ void write_liveness_record(
         static_cast<unsigned long long>(g_select_thread_dispatch_count),
         static_cast<unsigned long long>(g_os_load_context_dispatch_count),
         static_cast<unsigned long long>(g_task_thread_run_dispatch_count),
+        static_cast<unsigned long long>(g_egg_async_display_end_render_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_projection_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_viewport_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_scissor_dispatch_count),
@@ -757,6 +764,9 @@ extern "C" void mkw_switch_note_translated_dispatch(
     }
     if (target == kTaskThreadRunAddress) {
         ++g_task_thread_run_dispatch_count;
+    }
+    if (target == kEggAsyncDisplayEndRenderAddress) {
+        ++g_egg_async_display_end_render_dispatch_count;
     }
     if (target == kGxSetProjectionAddress) {
         ++g_gx_set_projection_dispatch_count;

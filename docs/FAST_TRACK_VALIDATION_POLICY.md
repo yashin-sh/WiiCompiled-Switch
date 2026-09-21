@@ -149,27 +149,28 @@ If a new run:
 ## Current frontier
 
 The latest real-Switch rendered evidence is the 2026-09-21 run after the
-merged `EGG::AsyncDisplay::endRender` bridge:
+merged `GXSetCopyFilter` bridge:
 
-- `endRender (0x8020FF9C)` is hardware-crossed;
-- `AsyncDisplay endRender = 1`;
-- `GXBegin hits = 1`;
-- `FIFO produced work = YES` remains proven with 23 RMCP01 FIFO writes;
-- the new exact DIRECT blocker is PAL `GXSetCopyFilter (0x8016FA40)`;
-- the blocker records `r3 = 0`, `r4 = 0x802457FE`, `r5 = 1`, and stage
-  `RMCP01_EGG_ASYNC_DISPLAY_END_RENDER`;
-- the previous blocker format did not capture `r6`, so its value is not
-  inferred;
+- real RMCP01 FIFO work remains proven;
+- the renderer records `PASS FIRST_RMCP01_GX_PRESENT hadWork=1`;
+- that PASS record is emitted only after `g_surface.Present()` succeeds;
+- the final durable blocker is the distinct DIRECT target
+  `GXFlush (0x8016E654)`;
+- its durable stage is `RMCP01_GX_PRESENTED`, which is written only after
+  the `GXCopyDisp` host seam completes a successful present;
+- therefore `GXSetCopyFilter`, the game-facing `GXCopyDisp` boundary, and
+  the first successful RMCP01 GPU present are hardware-crossed/proven;
+- an earlier periodic durable snapshot still reports zero
+  `GXSetCopyFilter`/present counters because it predates the final transition;
+  the later final blocker + renderer PASS are the stronger evidence;
 - pinned WiiCompiled remains
   `a135beb201042b20f390c6695ca6b26768820fb4`;
-- pinned semantics consume live r3..r6, copy a 24-byte sample pattern and
-  7-byte vertical filter from guest RAM when their pointers are non-zero, and
-  call Aurora `GXSetCopyFilter`;
-- `GXCopyDisp = 0` and present successes/failures remain 0/0.
+- pinned `0x8016E654` semantics are the no-argument `GXFlush()` call;
+- the logs prove GPU presentation, not visual correctness of the displayed
+  Mario Kart Wii pixels.
 
-The candidate implements only this exact `GXSetCopyFilter` boundary and
-extends blocker diagnostics through `r6`. No later copy/present boundary may
-be implemented until hardware progresses beyond `0x8016FA40`.
+The candidate implements only `GXFlush`. The following GX/resource/game
+boundary must remain hardware-defined.
 
 ## Governance note
 

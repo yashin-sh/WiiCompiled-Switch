@@ -967,3 +967,24 @@ The run exposing the blocker still reports eleven FIFO state writes and does
 not yet prove drawable FIFO work, `GXCopyDisp`, or present because the
 `GXBegin` bridge had not executed yet. The next hardware run is therefore the
 first one that can legitimately flip `FIFO produced work` to YES.
+
+## Hardware result — 2026-09-21 first RMCP01 FIFO work / endRender frontier
+
+The latest rendered RMCP01 run crosses `GXBegin (0x8016F0F0)` and emits
+`PASS FIRST_RMCP01_FIFO_WORK`. Real game vertex payload is therefore
+reaching the pinned `HleFifoWrite` decoder and producing Aurora frame work.
+
+The new durable blocker is `INDIRECT_CALL_MISS 0x8020FF9C` with stage
+`RMCP01_FIFO_RENDER_WORK`. Pinned WiiCompiled maps that address to
+`EGG::AsyncDisplay::endRender`, which dispatches
+`EGG::Display::copyEFBtoXFB (0x80219FB4)` followed by
+`GXSetDrawDoneCallback (0x8016ED50)`.
+
+An earlier 2,393-dispatch periodic snapshot still reports zero GXBegin hits,
+nine FIFO writes and no work; it predates the later final transition and does
+not contradict the rendered work marker.
+
+This closes the "first drawable RMCP01 work" milestone. The next hardware
+question is whether the real endRender/copy path reaches the already prepared
+`GXCopyDisp` present seam. The candidate resolves only endRender and leaves
+both nested guest calls to the normal translated dispatcher.

@@ -188,7 +188,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-cross PAL `GXSetTevOp` (`0x80171C4C`) and progress to the next distinct durable DIRECT blocker
 - [x] hardware-cross PAL `GXSetTevOrder` (`0x8017214C`) and progress to the next distinct durable DIRECT blocker
 - [x] hardware-cross PAL `GXSetBlendMode` (`0x8017277C`) and progress to the next distinct durable DIRECT blocker
-- [ ] hardware-cross PAL `GXSetColorUpdate` (`0x801727CC`) with pinned `r3 -> GXBool -> Aurora` contract
+- [x] implement PAL `GXSetColorUpdate` (`0x801727CC`) with pinned `r3 -> GXBool -> Aurora` contract (#212)
+- [ ] hardware-cross merged `GXSetColorUpdate` and progress to the next exact hardware-observed boundary
 - [ ] continue post-main initialization through system/resource initialization
 - [ ] complete game/resource initialization
 - [ ] menus

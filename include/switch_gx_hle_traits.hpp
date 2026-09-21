@@ -19,6 +19,7 @@ extern "C" void mkw_switch_hle_gx_set_vtx_attr_fmt(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_tex_gens(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_ind_stages(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_tev_stages(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_op(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* cpu) noexcept;
@@ -178,6 +179,18 @@ struct KnownNativeCpuCall<0x801722A8u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_num_tev_stages(cpu);
+    }
+};
+
+// GXSetTevOp (PAL 0x80171C4C). Pinned WiiCompiled consumes r3/r4 as
+// TEV-stage id / TEV mode, rejects a stage outside GX_MAX_TEVSTAGE, then
+// forwards the two enum values to Aurora GXSetTevOp.
+template <>
+struct KnownNativeCpuCall<0x80171C4Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_op(cpu);
     }
 };
 

@@ -28,7 +28,7 @@ The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge se
 
 The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
 
-The latest 2026-09-21 rendered real-Switch run progresses beyond merged #211's PAL `GXSetBlendMode (0x8017277C)` bridge and exposes the distinct next DIRECT blocker `GXSetColorUpdate (0x801727CC)` with captured `r3 = 1`. Pinned WiiCompiled `a135beb201042b20f390c6695ca6b26768820fb4` casts `r3` directly to `GXBool` and forwards it to Aurora `GXSetColorUpdate`. The final blocker records stage `RMCP01_GX_SET_BLEND_MODE`, proving progression past the previous bridge. FIFO traffic remains at eleven writes, while the renderer/FST path remains valid and there is still no proven display list, drawable FIFO work, `GXCopyDisp`, or present. The next patch is restricted to this exact `GXSetColorUpdate` boundary.
+The latest 2026-09-21 rendered real-Switch run progresses beyond merged #211's PAL `GXSetBlendMode (0x8017277C)` bridge and exposes the distinct next DIRECT blocker `GXSetColorUpdate (0x801727CC)` with captured `r3 = 1`. Pinned WiiCompiled `a135beb201042b20f390c6695ca6b26768820fb4` casts `r3` directly to `GXBool` and forwards it to Aurora `GXSetColorUpdate`. The final blocker records stage `RMCP01_GX_SET_BLEND_MODE`, proving progression past the previous bridge. PR #212 has now merged the exact `GXSetColorUpdate` bridge on `main` as `8aea70d0a3a8378311428eb5420760e4f763a40d` after 5/5 public CI. The next required gate is the private rendered build of that exact revision followed by real-Switch validation; no following GX boundary is selected until hardware progresses beyond `0x801727CC`. FIFO traffic remains at eleven writes, while the renderer/FST path remains valid and there is still no proven display list, drawable FIFO work, `GXCopyDisp`, or present.
 
 ## Milestones
 
@@ -53,6 +53,7 @@ The latest 2026-09-21 rendered real-Switch run progresses beyond merged #211's P
 | Aurora GX triangle | ✅ Hardware validated (563-frame active loop) |
 | WiiCompiled FIFO → Aurora GX | ✅ Hardware validated (1,435-frame loop) |
 | RMCP01 rendered fast-track | ✅ Running on hardware; renderer ready, no drawable RMCP01 work yet |
+| Current GX frontier | 🟡 `GXSetColorUpdate (0x801727CC)` merged in #212; hardware validation pending |
 | WiiCompiled/Aurora GX → first RMCP01 frame | 🟡 M3 #162 in progress |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
@@ -139,9 +140,25 @@ GXSetNumChans (0x8017054C)                                   ✅ hardware crosse
   ↓
 GXSetChanMatColor (0x80170474)                                ✅ hardware crossed
   ↓
-GXSetChanCtrl (0x80170570)                                    🟡 implemented in #204; hardware validation pending
+GXSetChanCtrl (0x80170570)                                    ✅ hardware crossed
   ↓
-resource-job callback / next GX/DVD frontier
+GXSetNumTexGens (0x8016E5A4)                                  ✅ hardware crossed
+  ↓
+GXSetNumIndStages (0x80171B38)                                 ✅ hardware crossed
+  ↓
+GXSetNumTevStages (0x801722A8)                                 ✅ hardware crossed
+  ↓
+GXSetTevOp (0x80171C4C)                                        ✅ hardware crossed
+  ↓
+GXSetTevOrder (0x8017214C)                                     ✅ hardware crossed
+  ↓
+GXSetBlendMode (0x8017277C)                                    ✅ hardware crossed
+  ↓
+GXSetColorUpdate (0x801727CC)                                  🟡 merged in #212; hardware validation pending
+  ↓
+next exact hardware-observed GX / resource frontier
+  ↓
+first drawable FIFO work / display list / GXCopyDisp / present
   ↓
 first rendered RMCP01 frame
 ```

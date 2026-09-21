@@ -892,5 +892,11 @@ Pinned WiiCompiled maps `0x801727CC` to `GXSetColorUpdate` and forwards
 
 The graphics log remains at eleven FIFO writes. FST/renderer invariants remain
 intact, but there is still no proven display list, drawable FIFO work,
-`GXCopyDisp`, or present. The next candidate implements only this exact
-`GXSetColorUpdate` boundary.
+`GXCopyDisp`, or present.
+
+PR #212 now implements only this exact `GXSetColorUpdate` boundary and is
+squash-merged on `main` as
+`8aea70d0a3a8378311428eb5420760e4f763a40d` after 5/5 public CI. The next
+step is the private rendered build of that exact revision and real-Switch
+validation requiring durable progression beyond `0x801727CC`. No following
+pixel/TEV/texture/draw/resource boundary is selected before that hardware run.

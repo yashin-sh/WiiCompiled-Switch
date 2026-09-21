@@ -67,6 +67,7 @@ constexpr std::uint32_t kGxSetTevOrderAddress = 0x8017214Cu;
 constexpr std::uint32_t kGxSetBlendModeAddress = 0x8017277Cu;
 constexpr std::uint32_t kGxSetColorUpdateAddress = 0x801727CCu;
 constexpr std::uint32_t kGxSetAlphaUpdateAddress = 0x801727F8u;
+constexpr std::uint32_t kGxSetZModeAddress = 0x80172824u;
 constexpr std::uint32_t kGxSetNumChansAddress = 0x8017054Cu;
 constexpr std::uint32_t kGxSetChanMatColorAddress = 0x80170474u;
 constexpr std::uint32_t kGxSetChanCtrlAddress = 0x80170570u;
@@ -125,6 +126,7 @@ std::uint64_t g_gx_set_tev_order_dispatch_count = 0u;
 std::uint64_t g_gx_set_blend_mode_dispatch_count = 0u;
 std::uint64_t g_gx_set_color_update_dispatch_count = 0u;
 std::uint64_t g_gx_set_alpha_update_dispatch_count = 0u;
+std::uint64_t g_gx_set_z_mode_dispatch_count = 0u;
 std::uint64_t g_gx_set_num_chans_dispatch_count = 0u;
 std::uint64_t g_gx_set_chan_mat_color_dispatch_count = 0u;
 std::uint64_t g_gx_set_chan_ctrl_dispatch_count = 0u;
@@ -275,6 +277,8 @@ const char* post_main_phase_name(std::uint32_t target) noexcept {
         return "GXSetColorUpdate";
     case 0x801727F8u:
         return "GXSetAlphaUpdate";
+    case 0x80172824u:
+        return "GXSetZMode";
     case 0x8017054Cu:
         return "GXSetNumChans";
     case 0x80170474u:
@@ -549,6 +553,7 @@ void write_liveness_record(
         "GXSetBlendMode hits   : %llu\n"
         "GXSetColorUpdate hits : %llu\n"
         "GXSetAlphaUpdate hits : %llu\n"
+        "GXSetZMode hits       : %llu\n"
         "GXSetNumChans hits    : %llu\n"
         "GXSetChanMatColor hits: %llu\n"
         "GXSetChanCtrl hits    : %llu\n"
@@ -599,6 +604,7 @@ void write_liveness_record(
         static_cast<unsigned long long>(g_gx_set_blend_mode_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_color_update_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_alpha_update_dispatch_count),
+        static_cast<unsigned long long>(g_gx_set_z_mode_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_num_chans_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_chan_mat_color_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_chan_ctrl_dispatch_count),
@@ -788,6 +794,9 @@ extern "C" void mkw_switch_note_translated_dispatch(
     if (target == kGxSetAlphaUpdateAddress) {
         ++g_gx_set_alpha_update_dispatch_count;
     }
+    if (target == kGxSetZModeAddress) {
+        ++g_gx_set_z_mode_dispatch_count;
+    }
     if (target == kGxSetNumChansAddress) {
         ++g_gx_set_num_chans_dispatch_count;
     }
@@ -875,6 +884,8 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
     const std::uint32_t r1 = cpu ? cpu->gpr[1] : 0u;
     const std::uint32_t r2 = cpu ? cpu->gpr[2] : 0u;
     const std::uint32_t r3 = cpu ? cpu->gpr[3] : 0u;
+    const std::uint32_t r4 = cpu ? cpu->gpr[4] : 0u;
+    const std::uint32_t r5 = cpu ? cpu->gpr[5] : 0u;
     const std::uint32_t r13 = cpu ? cpu->gpr[13] : 0u;
 
     const int n = std::snprintf(
@@ -888,6 +899,8 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         "r1                    : 0x%08x\n"
         "r2                    : 0x%08x\n"
         "r3                    : 0x%08x\n"
+        "r4                    : 0x%08x\n"
+        "r5                    : 0x%08x\n"
         "r13                   : 0x%08x\n"
         "fast-track stage      : %s\n"
         "action                : abort after durable blocker record\n",
@@ -897,6 +910,8 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         r1,
         r2,
         r3,
+        r4,
+        r5,
         r13,
         g_fast_track_stage);
     if (n > 0) {

@@ -149,23 +149,27 @@ If a new run:
 ## Current frontier
 
 The latest real-Switch rendered evidence is the 2026-09-21 run after the
-merged `GXSetZMode` bridge:
+merged `GXSetCullMode` bridge:
 
-- `GXSetZMode (0x80172824)` is hardware-crossed;
-- the new exact DIRECT blocker is PAL `GXSetCullMode (0x8016F3B8)`;
-- the blocker records `r3 = 2` and stage `RMCP01_GX_SET_Z_MODE`,
-  proving the previous bridge was entered and execution advanced to a later
-  target;
+- `GXSetCullMode (0x8016F3B8)` is hardware-crossed;
+- the new exact DIRECT blocker is PAL `GXBegin (0x8016F0F0)`;
+- this is the first observed real RMCP01 draw-primitive boundary;
+- the blocker records `r3/r4/r5 = 0x80 / 0 / 4` and stage
+  `RMCP01_GX_SET_CULL_MODE`, proving the previous bridge was entered and
+  execution advanced to a later target;
 - pinned WiiCompiled remains
   `a135beb201042b20f390c6695ca6b26768820fb4`;
-- pinned semantics consume only live `r3`, cast it directly to
-  `GXCullMode`, and call Aurora `GXSetCullMode`;
-- the rendered graphics log still reaches eleven FIFO writes and there is
-  still no proven display list, drawable work, `GXCopyDisp`, or present.
+- pinned semantics consume primitive / vertex format / vertex count, republish
+  tracked vertex state, initialize `g_hleGxState` for incremental FIFO vertex
+  assembly, and leave actual draw submission to the pinned `HleFifoWrite`
+  path;
+- the rendered graphics log still reaches eleven state FIFO writes in the run
+  that exposed this blocker; drawable FIFO work, `GXCopyDisp`, and present
+  remain unproven.
 
-The candidate implements only this exact `GXSetCullMode` boundary. The
-following GX/resource boundary must not be implemented until a later hardware
-run progresses beyond `0x8016F3B8`.
+The candidate implements only this exact `GXBegin` boundary. The following
+GX/resource boundary must not be implemented until a later hardware run
+progresses beyond `0x8016F0F0`.
 
 ## Governance note
 

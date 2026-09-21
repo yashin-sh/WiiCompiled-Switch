@@ -949,3 +949,21 @@ The graphics log still reaches eleven FIFO writes. FST/renderer invariants
 remain intact, but there is still no proven display list, drawable FIFO work,
 `GXCopyDisp`, or present. The next candidate implements only this exact
 `GXSetCullMode` boundary.
+
+## Hardware result — 2026-09-21 GXBegin frontier
+
+The latest rendered RMCP01 hardware run progresses beyond
+`GXSetCullMode (0x8016F3B8)` and stops at the distinct DIRECT target
+`GXBegin (0x8016F0F0)`, with `r3/r4/r5 = 0x80 / 0 / 4` and stage
+`RMCP01_GX_SET_CULL_MODE`.
+
+This is the first observed game-facing primitive boundary. Pinned WiiCompiled
+republishes the tracked VCD/VAT state, initializes `g_hleGxState` for the
+begin packet, and leaves subsequent real vertex payload to the pinned
+`HleFifoWrite` decoder that is already wired to Aurora/Dawn/NVK in this
+rendered target.
+
+The run exposing the blocker still reports eleven FIFO state writes and does
+not yet prove drawable FIFO work, `GXCopyDisp`, or present because the
+`GXBegin` bridge had not executed yet. The next hardware run is therefore the
+first one that can legitimately flip `FIFO produced work` to YES.

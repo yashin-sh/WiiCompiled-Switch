@@ -192,7 +192,9 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-cross merged `GXSetColorUpdate` and progress to the next exact hardware-observed boundary
 - [x] implement and hardware-cross PAL `GXSetAlphaUpdate` (`0x801727F8`) with pinned `r3 -> GXBool -> Aurora` contract
 - [x] implement and hardware-cross PAL `GXSetZMode` (`0x80172824`) with pinned live `r3/r4/r5 -> GXBool/GXCompare/GXBool -> Aurora` contract
-- [ ] implement and hardware-cross PAL `GXSetCullMode` (`0x8016F3B8`) with pinned `r3 -> GXCullMode -> Aurora` contract
+- [x] implement and hardware-cross PAL `GXSetCullMode` (`0x8016F3B8`) with pinned `r3 -> GXCullMode -> Aurora` contract
+- [ ] implement and hardware-cross PAL `GXBegin` (`0x8016F0F0`) with pinned `r3/r4/r5 -> primitive/vtxfmt/count -> HleFifoWrite/Aurora begin-state` contract
+- [ ] prove first real RMCP01 drawable FIFO work
 - [ ] continue post-main initialization through system/resource initialization
 - [ ] complete game/resource initialization
 - [ ] menus

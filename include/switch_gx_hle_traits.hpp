@@ -26,6 +26,7 @@ extern "C" void mkw_switch_hle_gx_set_color_update(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_alpha_update(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_z_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_cull_mode(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_begin(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* cpu) noexcept;
@@ -268,6 +269,19 @@ struct KnownNativeCpuCall<0x8016F3B8u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_cull_mode(cpu);
+    }
+};
+
+// GXBegin (PAL 0x8016F0F0). Pinned WiiCompiled consumes
+// r3/r4/r5 = primitive / vertex-format / vertex-count. The immediate-mode
+// path republishes the tracked vertex state, initializes HleFifoWrite's begin
+// state, and lets subsequent real FIFO payload produce the Aurora draw.
+template <>
+struct KnownNativeCpuCall<0x8016F0F0u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_begin(cpu);
     }
 };
 

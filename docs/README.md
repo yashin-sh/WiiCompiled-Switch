@@ -79,6 +79,7 @@
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_TEV_OP_FRONTIER.md` — rendered hardware progression beyond `GXSetNumTevStages` and new PAL `GXSetTevOp` frontier
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_TEV_ORDER_FRONTIER.md` — rendered hardware progression beyond `GXSetTevOp` and new PAL `GXSetTevOrder` frontier
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_BLEND_MODE_FRONTIER.md` — rendered hardware progression beyond `GXSetTevOrder` and new PAL `GXSetBlendMode` frontier
+- `HARDWARE_RESULTS_2026-09-21_GX_SET_COLOR_UPDATE_FRONTIER.md` — rendered hardware progression beyond `GXSetBlendMode` and new PAL `GXSetColorUpdate` frontier
 
 ## Blocker notes
 

@@ -148,26 +148,27 @@ If a new run:
 
 ## Current frontier
 
-The latest real-Switch rendered evidence is the 2026-09-21 run built from
-merged #212 (`8aea70d0a3a8378311428eb5420760e4f763a40d`):
+The latest real-Switch rendered evidence is the 2026-09-21 run after the
+merged `GXSetAlphaUpdate` bridge:
 
-- `GXSetColorUpdate (0x801727CC)` is hardware-crossed;
-- the new exact DIRECT blocker is PAL `GXSetAlphaUpdate (0x801727F8)`,
-  captured with `r3 = 1`;
-- its stage is `RMCP01_GX_SET_COLOR_UPDATE`, proving the previous bridge was
-  entered and execution advanced to a later target;
+- `GXSetAlphaUpdate (0x801727F8)` is hardware-crossed;
+- the new exact DIRECT blocker is PAL `GXSetZMode (0x80172824)`;
+- the blocker records `r3 = 0` and stage
+  `RMCP01_GX_SET_ALPHA_UPDATE`, proving the previous bridge was entered and
+  execution advanced to a later target;
 - pinned WiiCompiled remains
   `a135beb201042b20f390c6695ca6b26768820fb4`;
-- pinned semantics cast `r3` directly to `GXBool` and call Aurora
-  `GXSetAlphaUpdate`;
-- the periodic durable snapshot predates the final transition, so its zero
-  color/alpha-update hit counts are not the final frontier evidence;
+- pinned semantics consume live `r3/r4/r5` as compare-enable /
+  `GXCompare` / update-enable and call Aurora `GXSetZMode`;
+- the current blocker did not record `r4/r5`; those values are not inferred;
+- the candidate reads live `r3/r4/r5` and extends the durable blocker report
+  to capture `r4/r5` on later runs;
 - the rendered graphics log still reaches eleven FIFO writes and there is
   still no proven display list, drawable work, `GXCopyDisp`, or present.
 
-The candidate implements only this exact `GXSetAlphaUpdate` boundary. The
-following GX/resource boundary must not be implemented until a later hardware
-run progresses beyond `0x801727F8`.
+The candidate implements only this exact `GXSetZMode` boundary. The following
+GX/resource boundary must not be implemented until a later hardware run
+progresses beyond `0x80172824`.
 
 ## Governance note
 

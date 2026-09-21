@@ -793,3 +793,17 @@ preserves the prior GX/FST/scheduler invariants and nine FIFO writes but still
 has no display list, drawable FIFO work, `GXCopyDisp`, or present. The next
 candidate implements only this exact texture-generator-count boundary.
 
+## Hardware result — 2026-09-21 GXSetNumIndStages frontier
+
+The rendered real-Switch run after merged #206 progresses beyond
+`GXSetNumTexGens (0x8016E5A4)` and stops at the distinct DIRECT target
+`0x80171B38`, with `r3 = 0` and stage
+`RMCP01_GX_SET_NUM_TEX_GENS`.
+
+Pinned WiiCompiled maps `0x80171B38` to `GXSetNumIndStages` and consumes
+only `r3`, narrowed to `u8`, before forwarding to Aurora.
+
+The earlier periodic snapshot predates the final transition. It preserves the
+FST/renderer invariants and nine FIFO writes, but still has no display list,
+drawable FIFO work, `GXCopyDisp`, or present. The next candidate implements
+only this exact indirect-stage-count boundary.

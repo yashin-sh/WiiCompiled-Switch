@@ -148,23 +148,22 @@ If a new run:
 
 ## Current frontier
 
-As of the 2026-09-21 real-Switch rendered run:
+As of the 2026-09-21 real-Switch rendered run after merged #206:
 
-- tested main includes merged PR #204's `GXSetChanCtrl (0x80170570)` bridge;
+- main contains the `GXSetNumTexGens (0x8016E5A4)` bridge;
 - pinned WiiCompiled remains
   `a135beb201042b20f390c6695ca6b26768820fb4`;
-- the final durable blocker is no longer `0x80170570`;
-- the new exact DIRECT blocker is PAL `GXSetNumTexGens (0x8016E5A4)`,
-  with captured `r3 = 0`;
-- the blocker records stage `RMCP01_GX_SET_CHAN_CTRL`, proving the run entered
-  and returned from the previous bridge before the later unsupported dispatch;
-- the earlier periodic last-dispatch snapshot predates that final transition,
-  so its `GXSetChanCtrl hits = 0` is retained as a timing fact rather than
-  treated as the final frontier;
-- implement only `GXSetNumTexGens` from the pinned `r3 -> u8 -> Aurora`
-  contract; do not pre-port neighboring GX calls;
-- after public CI, the private rendered build remains the sixth gate before the
-  next real-Switch validation.
+- the final durable blocker is no longer `0x8016E5A4`;
+- the new exact DIRECT blocker is PAL `GXSetNumIndStages (0x80171B38)`,
+  captured with `r3 = 0`;
+- its stage is `RMCP01_GX_SET_NUM_TEX_GENS`, proving the previous bridge was
+  entered and execution advanced to a later target;
+- the earlier periodic snapshot predates that transition and is not the final
+  blocker record;
+- implement only the pinned `r3 -> u8 -> Aurora GXSetNumIndStages` contract;
+- do not pre-port neighboring indirect-texture/TEV/draw/resource calls;
+- public CI plus the private rendered build remain required before hardware
+  acceptance.
 
 ## Governance note
 

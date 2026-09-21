@@ -82,6 +82,7 @@
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_COLOR_UPDATE_FRONTIER.md` — rendered hardware progression beyond `GXSetBlendMode` and new PAL `GXSetColorUpdate` frontier
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_ALPHA_UPDATE_FRONTIER.md` — rendered hardware progression beyond `GXSetColorUpdate` and new PAL `GXSetAlphaUpdate` frontier
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_Z_MODE_FRONTIER.md` — rendered hardware progression beyond `GXSetAlphaUpdate` and new PAL `GXSetZMode` frontier
+- `HARDWARE_RESULTS_2026-09-21_GX_SET_CULL_MODE_FRONTIER.md` — rendered hardware progression beyond `GXSetZMode` and new PAL `GXSetCullMode` frontier
 
 ## Blocker notes
 
@@ -90,8 +91,8 @@
 For the current project status, use `../README.md`, `../ROADMAP.md`,
 `FAST_TRACK_VALIDATION_POLICY.md`, `M2_RUNTIME_BOOTSTRAP.md`, and issue #117.
 The latest hardware evidence hardware-crosses PAL
-`GXSetAlphaUpdate (0x801727F8)` and exposes PAL
-`GXSetZMode (0x80172824)` as the next exact frontier. The current blocker
-captures `r3 = 0`; `r4/r5` were not logged and are not inferred. Dated hardware result files are
+`GXSetZMode (0x80172824)` and exposes PAL
+`GXSetCullMode (0x8016F3B8)` as the next exact frontier, captured with
+`r3 = 2`. Dated hardware result files are
 historical evidence and intentionally retain the frontier wording that was
 correct when each run was captured.

@@ -27,6 +27,7 @@ extern "C" void mkw_switch_hle_gx_set_vtx_attr_fmt(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_tex_gens(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_ind_stages(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_tev_stages(CpuContext* ctx) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_op(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* ctx) noexcept;
@@ -55,6 +56,7 @@ int main(int, char**) {
     volatile auto gx_set_num_tex_gens_link_anchor = &mkw_switch_hle_gx_set_num_tex_gens;
     volatile auto gx_set_num_ind_stages_link_anchor = &mkw_switch_hle_gx_set_num_ind_stages;
     volatile auto gx_set_num_tev_stages_link_anchor = &mkw_switch_hle_gx_set_num_tev_stages;
+    volatile auto gx_set_tev_op_link_anchor = &mkw_switch_hle_gx_set_tev_op;
     volatile auto gx_set_num_chans_link_anchor = &mkw_switch_hle_gx_set_num_chans;
     volatile auto gx_set_chan_mat_color_link_anchor = &mkw_switch_hle_gx_set_chan_mat_color;
     volatile auto gx_set_chan_ctrl_link_anchor = &mkw_switch_hle_gx_set_chan_ctrl;
@@ -75,6 +77,7 @@ int main(int, char**) {
     (void)gx_set_num_tex_gens_link_anchor;
     (void)gx_set_num_ind_stages_link_anchor;
     (void)gx_set_num_tev_stages_link_anchor;
+    (void)gx_set_tev_op_link_anchor;
     (void)gx_set_num_chans_link_anchor;
     (void)gx_set_chan_mat_color_link_anchor;
     (void)gx_set_chan_ctrl_link_anchor;

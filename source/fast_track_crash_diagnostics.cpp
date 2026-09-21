@@ -60,6 +60,7 @@ constexpr std::uint32_t kGxClearVtxDescAddress = 0x8016DC34u;
 constexpr std::uint32_t kGxSetVtxDescAddress = 0x8016D3A4u;
 constexpr std::uint32_t kGxSetVtxAttrFmtAddress = 0x8016DC68u;
 constexpr std::uint32_t kGxSetNumTexGensAddress = 0x8016E5A4u;
+constexpr std::uint32_t kGxSetNumIndStagesAddress = 0x80171B38u;
 constexpr std::uint32_t kGxSetNumChansAddress = 0x8017054Cu;
 constexpr std::uint32_t kGxSetChanMatColorAddress = 0x80170474u;
 constexpr std::uint32_t kGxSetChanCtrlAddress = 0x80170570u;
@@ -111,6 +112,7 @@ std::uint64_t g_gx_clear_vtx_desc_dispatch_count = 0u;
 std::uint64_t g_gx_set_vtx_desc_dispatch_count = 0u;
 std::uint64_t g_gx_set_vtx_attr_fmt_dispatch_count = 0u;
 std::uint64_t g_gx_set_num_tex_gens_dispatch_count = 0u;
+std::uint64_t g_gx_set_num_ind_stages_dispatch_count = 0u;
 std::uint64_t g_gx_set_num_chans_dispatch_count = 0u;
 std::uint64_t g_gx_set_chan_mat_color_dispatch_count = 0u;
 std::uint64_t g_gx_set_chan_ctrl_dispatch_count = 0u;
@@ -247,6 +249,8 @@ const char* post_main_phase_name(std::uint32_t target) noexcept {
         return "GXSetVtxAttrFmt";
     case 0x8016E5A4u:
         return "GXSetNumTexGens";
+    case 0x80171B38u:
+        return "GXSetNumIndStages";
     case 0x8017054Cu:
         return "GXSetNumChans";
     case 0x80170474u:
@@ -514,6 +518,7 @@ void write_liveness_record(
         "GXSetVtxDesc hits     : %llu\n"
         "GXSetVtxAttrFmt hits  : %llu\n"
         "GXSetNumTexGens hits  : %llu\n"
+        "GXSetNumIndStages hits: %llu\n"
         "GXSetNumChans hits    : %llu\n"
         "GXSetChanMatColor hits: %llu\n"
         "GXSetChanCtrl hits    : %llu\n"
@@ -557,6 +562,7 @@ void write_liveness_record(
         static_cast<unsigned long long>(g_gx_set_vtx_desc_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_vtx_attr_fmt_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_num_tex_gens_dispatch_count),
+        static_cast<unsigned long long>(g_gx_set_num_ind_stages_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_num_chans_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_chan_mat_color_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_chan_ctrl_dispatch_count),
@@ -724,6 +730,9 @@ extern "C" void mkw_switch_note_translated_dispatch(
     }
     if (target == kGxSetNumTexGensAddress) {
         ++g_gx_set_num_tex_gens_dispatch_count;
+    }
+    if (target == kGxSetNumIndStagesAddress) {
+        ++g_gx_set_num_ind_stages_dispatch_count;
     }
     if (target == kGxSetNumChansAddress) {
         ++g_gx_set_num_chans_dispatch_count;

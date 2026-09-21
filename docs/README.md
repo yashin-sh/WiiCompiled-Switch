@@ -75,6 +75,7 @@
 - `HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_MAT_COLOR_FRONTIER.md` — #201 hardware PASS for `GXSetNumChans`, TaskThread re-proof, and new PAL `GXSetChanMatColor` frontier
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEX_GENS_FRONTIER.md` — rendered hardware progression beyond `GXSetChanCtrl` and new PAL `GXSetNumTexGens` frontier
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_IND_STAGES_FRONTIER.md` — rendered hardware progression beyond `GXSetNumTexGens` and new PAL `GXSetNumIndStages` frontier
+- `HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEV_STAGES_FRONTIER.md` — rendered hardware progression beyond `GXSetNumIndStages`, eleven FIFO writes, and new PAL `GXSetNumTevStages` frontier
 
 ## Blocker notes
 

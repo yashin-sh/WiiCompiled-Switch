@@ -149,26 +149,23 @@ If a new run:
 ## Current frontier
 
 The latest real-Switch rendered evidence is the 2026-09-21 run after the
-merged `GXSetAlphaUpdate` bridge:
+merged `GXSetZMode` bridge:
 
-- `GXSetAlphaUpdate (0x801727F8)` is hardware-crossed;
-- the new exact DIRECT blocker is PAL `GXSetZMode (0x80172824)`;
-- the blocker records `r3 = 0` and stage
-  `RMCP01_GX_SET_ALPHA_UPDATE`, proving the previous bridge was entered and
-  execution advanced to a later target;
+- `GXSetZMode (0x80172824)` is hardware-crossed;
+- the new exact DIRECT blocker is PAL `GXSetCullMode (0x8016F3B8)`;
+- the blocker records `r3 = 2` and stage `RMCP01_GX_SET_Z_MODE`,
+  proving the previous bridge was entered and execution advanced to a later
+  target;
 - pinned WiiCompiled remains
   `a135beb201042b20f390c6695ca6b26768820fb4`;
-- pinned semantics consume live `r3/r4/r5` as compare-enable /
-  `GXCompare` / update-enable and call Aurora `GXSetZMode`;
-- the current blocker did not record `r4/r5`; those values are not inferred;
-- the candidate reads live `r3/r4/r5` and extends the durable blocker report
-  to capture `r4/r5` on later runs;
+- pinned semantics consume only live `r3`, cast it directly to
+  `GXCullMode`, and call Aurora `GXSetCullMode`;
 - the rendered graphics log still reaches eleven FIFO writes and there is
   still no proven display list, drawable work, `GXCopyDisp`, or present.
 
-The candidate implements only this exact `GXSetZMode` boundary. The following
-GX/resource boundary must not be implemented until a later hardware run
-progresses beyond `0x80172824`.
+The candidate implements only this exact `GXSetCullMode` boundary. The
+following GX/resource boundary must not be implemented until a later hardware
+run progresses beyond `0x8016F3B8`.
 
 ## Governance note
 

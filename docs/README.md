@@ -85,4 +85,11 @@
 
 - `fast-track-blockers/` — blocker-specific mapping, pinned semantics and fix notes
 
-For the current project status, use `../README.md`, `../ROADMAP.md`, `M2_RUNTIME_BOOTSTRAP.md`, and issue #117. Dated hardware result files are historical evidence and intentionally retain the frontier wording that was correct when each run was captured.
+For the current project status, use `../README.md`, `../ROADMAP.md`,
+`FAST_TRACK_VALIDATION_POLICY.md`, `M2_RUNTIME_BOOTSTRAP.md`, and issue #117.
+The latest hardware evidence exposes PAL `GXSetColorUpdate (0x801727CC)`;
+current `main` already contains its exact bridge from #212 at
+`8aea70d0a3a8378311428eb5420760e4f763a40d`, pending the private rendered
+build and real-Switch hardware-cross proof. Dated hardware result files are
+historical evidence and intentionally retain the frontier wording that was
+correct when each run was captured.

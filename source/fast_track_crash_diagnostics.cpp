@@ -52,6 +52,7 @@ constexpr std::uint32_t kSelectThreadAddress = 0x801A9C08u;
 constexpr std::uint32_t kOsLoadContextAddress = 0x801A1F58u;
 constexpr std::uint32_t kTaskThreadRunAddress = 0x80242D7Cu;
 constexpr std::uint32_t kEggAsyncDisplayEndRenderAddress = 0x8020FF9Cu;
+constexpr std::uint32_t kGxSetCopyFilterAddress = 0x8016FA40u;
 constexpr std::uint32_t kGxSetProjectionAddress = 0x8017301Cu;
 constexpr std::uint32_t kGxSetViewportAddress = 0x801733B4u;
 constexpr std::uint32_t kGxSetScissorAddress = 0x80173430u;
@@ -114,6 +115,7 @@ std::uint64_t g_select_thread_dispatch_count = 0u;
 std::uint64_t g_os_load_context_dispatch_count = 0u;
 std::uint64_t g_task_thread_run_dispatch_count = 0u;
 std::uint64_t g_egg_async_display_end_render_dispatch_count = 0u;
+std::uint64_t g_gx_set_copy_filter_dispatch_count = 0u;
 std::uint64_t g_gx_set_projection_dispatch_count = 0u;
 std::uint64_t g_gx_set_viewport_dispatch_count = 0u;
 std::uint64_t g_gx_set_scissor_dispatch_count = 0u;
@@ -253,6 +255,8 @@ const char* post_main_phase_name(std::uint32_t target) noexcept {
         return "EGG::TaskThread::run";
     case 0x8020FF9Cu:
         return "EGG::AsyncDisplay::endRender";
+    case 0x8016FA40u:
+        return "GXSetCopyFilter";
     case 0x8017301Cu:
         return "GXSetProjection";
     case 0x801733B4u:
@@ -551,6 +555,7 @@ void write_liveness_record(
         "OSLoadContext hits    : %llu\n"
         "TaskThread::run hits  : %llu\n"
         "AsyncDisplay endRender: %llu\n"
+        "GXSetCopyFilter hits  : %llu\n"
         "GXSetProjection hits  : %llu\n"
         "GXSetViewport hits    : %llu\n"
         "GXSetScissor hits     : %llu\n"
@@ -605,6 +610,7 @@ void write_liveness_record(
         static_cast<unsigned long long>(g_os_load_context_dispatch_count),
         static_cast<unsigned long long>(g_task_thread_run_dispatch_count),
         static_cast<unsigned long long>(g_egg_async_display_end_render_dispatch_count),
+        static_cast<unsigned long long>(g_gx_set_copy_filter_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_projection_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_viewport_dispatch_count),
         static_cast<unsigned long long>(g_gx_set_scissor_dispatch_count),
@@ -768,6 +774,9 @@ extern "C" void mkw_switch_note_translated_dispatch(
     if (target == kEggAsyncDisplayEndRenderAddress) {
         ++g_egg_async_display_end_render_dispatch_count;
     }
+    if (target == kGxSetCopyFilterAddress) {
+        ++g_gx_set_copy_filter_dispatch_count;
+    }
     if (target == kGxSetProjectionAddress) {
         ++g_gx_set_projection_dispatch_count;
     }
@@ -914,6 +923,7 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
     const std::uint32_t r3 = cpu ? cpu->gpr[3] : 0u;
     const std::uint32_t r4 = cpu ? cpu->gpr[4] : 0u;
     const std::uint32_t r5 = cpu ? cpu->gpr[5] : 0u;
+    const std::uint32_t r6 = cpu ? cpu->gpr[6] : 0u;
     const std::uint32_t r13 = cpu ? cpu->gpr[13] : 0u;
 
     const int n = std::snprintf(
@@ -929,6 +939,7 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         "r3                    : 0x%08x\n"
         "r4                    : 0x%08x\n"
         "r5                    : 0x%08x\n"
+        "r6                    : 0x%08x\n"
         "r13                   : 0x%08x\n"
         "fast-track stage      : %s\n"
         "action                : abort after durable blocker record\n",
@@ -940,6 +951,7 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         r3,
         r4,
         r5,
+        r6,
         r13,
         g_fast_track_stage);
     if (n > 0) {

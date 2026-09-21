@@ -22,6 +22,7 @@ extern "C" void mkw_switch_hle_gx_set_num_tev_stages(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_op(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_order(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_blend_mode(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_color_update(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* cpu) noexcept;
@@ -217,6 +218,18 @@ struct KnownNativeCpuCall<0x8017277Cu> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_blend_mode(cpu);
+    }
+};
+
+// GXSetColorUpdate (PAL 0x801727CC). Pinned WiiCompiled consumes r3 as the
+// color-update enable value, casts it directly to GXBool, and forwards it to
+// Aurora GXSetColorUpdate.
+template <>
+struct KnownNativeCpuCall<0x801727CCu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_color_update(cpu);
     }
 };
 

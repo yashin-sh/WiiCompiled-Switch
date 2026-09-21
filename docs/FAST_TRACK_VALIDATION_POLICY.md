@@ -148,20 +148,22 @@ If a new run:
 
 ## Current frontier
 
-As of the 2026-09-21 real-Switch rendered run after merged #208:
+As of the 2026-09-21 real-Switch rendered run after merged #209:
 
-- main contains the `GXSetNumTevStages (0x801722A8)` bridge;
+- main contains the `GXSetTevOp (0x80171C4C)` bridge;
 - pinned WiiCompiled remains
   `a135beb201042b20f390c6695ca6b26768820fb4`;
-- the final durable blocker is no longer `0x801722A8`;
-- the new exact DIRECT blocker is PAL `GXSetTevOp (0x80171C4C)`,
+- the final durable blocker is no longer `0x80171C4C`;
+- the new exact DIRECT blocker is PAL `GXSetTevOrder (0x8017214C)`,
   captured with `r3 = 0`;
-- its stage is `RMCP01_GX_SET_NUM_TEV_STAGES`, proving the previous bridge was
-  entered and execution advanced to a later target;
-- pinned semantics consume `r3/r4` as TEV stage/mode, reject
-  `r3 >= GX_MAX_TEVSTAGE`, then call Aurora `GXSetTevOp`;
-- the blocker diagnostic does not contain `r4`, so no hardware mode value is
-  asserted; the implementation reads the live guest `r4`;
+- its stage is `RMCP01_GX_SET_TEV_OP`, proving the previous bridge was entered
+  and execution advanced to a later target;
+- pinned semantics consume `r3-r6` as TEV stage / texcoord / texmap /
+  channel, reject `r3 >= GX_MAX_TEVSTAGE`, then call Aurora
+  `GXSetTevOrder`;
+- the blocker diagnostic does not contain `r4-r6`, so no hardware texcoord,
+  texmap, or channel values are asserted; the implementation reads live guest
+  registers;
 - FIFO traffic remains at eleven writes and there is still no proven display
   list, drawable work, `GXCopyDisp`, or present;
 - implement only this exact boundary;

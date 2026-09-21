@@ -77,6 +77,7 @@
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_IND_STAGES_FRONTIER.md` — rendered hardware progression beyond `GXSetNumTexGens` and new PAL `GXSetNumIndStages` frontier
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEV_STAGES_FRONTIER.md` — rendered hardware progression beyond `GXSetNumIndStages`, eleven FIFO writes, and new PAL `GXSetNumTevStages` frontier
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_TEV_OP_FRONTIER.md` — rendered hardware progression beyond `GXSetNumTevStages` and new PAL `GXSetTevOp` frontier
+- `HARDWARE_RESULTS_2026-09-21_GX_SET_TEV_ORDER_FRONTIER.md` — rendered hardware progression beyond `GXSetTevOp` and new PAL `GXSetTevOrder` frontier
 
 ## Blocker notes
 

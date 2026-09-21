@@ -25,6 +25,7 @@ extern "C" void mkw_switch_hle_gx_set_blend_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_color_update(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_alpha_update(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_z_mode(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_cull_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* cpu) noexcept;
@@ -256,6 +257,17 @@ struct KnownNativeCpuCall<0x80172824u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_z_mode(cpu);
+    }
+};
+
+// GXSetCullMode (PAL 0x8016F3B8). Pinned WiiCompiled consumes r3 as the
+// cull-mode enum and forwards it directly to Aurora GXSetCullMode.
+template <>
+struct KnownNativeCpuCall<0x8016F3B8u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_cull_mode(cpu);
     }
 };
 

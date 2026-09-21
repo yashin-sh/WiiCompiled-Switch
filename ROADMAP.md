@@ -191,7 +191,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] implement PAL `GXSetColorUpdate` (`0x801727CC`) with pinned `r3 -> GXBool -> Aurora` contract (#212)
 - [x] hardware-cross merged `GXSetColorUpdate` and progress to the next exact hardware-observed boundary
 - [x] implement and hardware-cross PAL `GXSetAlphaUpdate` (`0x801727F8`) with pinned `r3 -> GXBool -> Aurora` contract
-- [ ] implement and hardware-cross PAL `GXSetZMode` (`0x80172824`) with pinned live `r3/r4/r5 -> GXBool/GXCompare/GXBool -> Aurora` contract
+- [x] implement and hardware-cross PAL `GXSetZMode` (`0x80172824`) with pinned live `r3/r4/r5 -> GXBool/GXCompare/GXBool -> Aurora` contract
+- [ ] implement and hardware-cross PAL `GXSetCullMode` (`0x8016F3B8`) with pinned `r3 -> GXCullMode -> Aurora` contract
 - [ ] continue post-main initialization through system/resource initialization
 - [ ] complete game/resource initialization
 - [ ] menus

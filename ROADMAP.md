@@ -195,7 +195,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] implement and hardware-cross PAL `GXSetCullMode` (`0x8016F3B8`) with pinned `r3 -> GXCullMode -> Aurora` contract
 - [x] implement and hardware-cross PAL `GXBegin` (`0x8016F0F0`) with pinned `r3/r4/r5 -> primitive/vtxfmt/count -> HleFifoWrite/Aurora begin-state` contract
 - [x] prove first real RMCP01 drawable FIFO work — `PASS FIRST_RMCP01_FIFO_WORK`
-- [ ] implement and hardware-cross `EGG::AsyncDisplay::endRender` (`0x8020FF9C`) with pinned nested translated calls
+- [x] implement and hardware-cross `EGG::AsyncDisplay::endRender` (`0x8020FF9C`) with pinned nested translated calls
+- [ ] implement and hardware-cross PAL `GXSetCopyFilter` (`0x8016FA40`) with pinned live `r3..r6` + guest 24-byte/7-byte filter data -> Aurora contract
 - [ ] prove game-facing `GXCopyDisp` / first present
 - [ ] continue post-main initialization through system/resource initialization
 - [ ] complete game/resource initialization

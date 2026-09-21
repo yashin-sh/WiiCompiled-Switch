@@ -141,9 +141,10 @@ Validation policy after the 2026-09-20 audit: the five public CI workflows remai
 - [x] Select the native Switch graphics strategy compatible with WiiCompiled/Aurora — **Aurora GX → Dawn/WebGPU → Vulkan/NVK is the primary path; Deko3D remains fallback**
 - [x] Present an isolated Aurora GX triangle on real Switch — **hardware PASS: first Aurora GX triangle + 563-frame active loop + clean teardown**
 - [x] Prove pinned WiiCompiled `HleFifoWrite` → Aurora GX with a fabricated Nintendo-data-free FIFO stream — **hardware PASS: exact pin, raw-direct path, 1,435-frame stable loop**
-- [ ] Replace the temporary GX FIFO sink with a real GX → Switch command/backend path — **separate RMCP01 rendered fast-track is hardware-running; game has not produced drawable FIFO work yet**
+- [x] Prove a real GX → Switch command/backend path in the separate rendered target while retaining the headless sink as a control — **real RMCP01 FIFO work + first game-facing GPU present hardware-proven**
 - [x] Render first native Switch clear frame
-- [ ] GX command path functional
+- [x] Reach first real RMCP01 GPU present through pinned FIFO → Aurora → Dawn/NVK
+- [ ] Visually confirm the first Mario Kart Wii image and continue GX/game-state correctness
 - [ ] shader/pipeline cache strategy
 - [ ] 720p handheld / 1080p docked policy
 
@@ -196,8 +197,10 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] implement and hardware-cross PAL `GXBegin` (`0x8016F0F0`) with pinned `r3/r4/r5 -> primitive/vtxfmt/count -> HleFifoWrite/Aurora begin-state` contract
 - [x] prove first real RMCP01 drawable FIFO work — `PASS FIRST_RMCP01_FIFO_WORK`
 - [x] implement and hardware-cross `EGG::AsyncDisplay::endRender` (`0x8020FF9C`) with pinned nested translated calls
-- [ ] implement and hardware-cross PAL `GXSetCopyFilter` (`0x8016FA40`) with pinned live `r3..r6` + guest 24-byte/7-byte filter data -> Aurora contract
-- [ ] prove game-facing `GXCopyDisp` / first present
+- [x] implement and hardware-cross PAL `GXSetCopyFilter` (`0x8016FA40`) with pinned live `r3..r6` + guest 24-byte/7-byte filter data -> Aurora contract
+- [x] prove game-facing `GXCopyDisp` / first GPU present — `PASS FIRST_RMCP01_GX_PRESENT hadWork=1`
+- [ ] implement and hardware-cross PAL `GXFlush` (`0x8016E654`) with pinned no-argument Aurora contract
+- [ ] visually confirm the first Mario Kart Wii image
 - [ ] continue post-main initialization through system/resource initialization
 - [ ] complete game/resource initialization
 - [ ] menus

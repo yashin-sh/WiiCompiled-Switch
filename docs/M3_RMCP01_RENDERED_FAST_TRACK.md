@@ -934,3 +934,18 @@ The graphics log still reaches eleven FIFO writes. FST/renderer invariants
 remain intact, but there is still no proven display list, drawable FIFO work,
 `GXCopyDisp`, or present. The next candidate implements only this exact
 `GXSetZMode` boundary.
+
+## Hardware result — 2026-09-21 GXSetCullMode frontier
+
+The latest rendered RMCP01 hardware run progresses beyond
+`GXSetZMode (0x80172824)` and stops at the distinct DIRECT target
+`0x8016F3B8`, with `r3 = 2` and stage
+`RMCP01_GX_SET_Z_MODE`.
+
+Pinned WiiCompiled maps `0x8016F3B8` to `GXSetCullMode`, consuming only
+live `r3` and forwarding it directly as `GXCullMode` to Aurora.
+
+The graphics log still reaches eleven FIFO writes. FST/renderer invariants
+remain intact, but there is still no proven display list, drawable FIFO work,
+`GXCopyDisp`, or present. The next candidate implements only this exact
+`GXSetCullMode` boundary.

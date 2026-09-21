@@ -149,27 +149,24 @@ If a new run:
 ## Current frontier
 
 The latest real-Switch rendered evidence is the 2026-09-21 run after the
-merged `GXSetCullMode` bridge:
+merged `GXBegin` bridge:
 
-- `GXSetCullMode (0x8016F3B8)` is hardware-crossed;
-- the new exact DIRECT blocker is PAL `GXBegin (0x8016F0F0)`;
-- this is the first observed real RMCP01 draw-primitive boundary;
-- the blocker records `r3/r4/r5 = 0x80 / 0 / 4` and stage
-  `RMCP01_GX_SET_CULL_MODE`, proving the previous bridge was entered and
-  execution advanced to a later target;
+- `GXBegin (0x8016F0F0)` is hardware-crossed;
+- the rendered report emits `PASS FIRST_RMCP01_FIFO_WORK`, proving real game
+  vertex payload produced Aurora work through pinned `HleFifoWrite`;
+- the new exact blocker is an `INDIRECT_CALL_MISS` to
+  `EGG::AsyncDisplay::endRender (0x8020FF9C)`;
+- the blocker stage is `RMCP01_FIFO_RENDER_WORK`, providing durable later
+  proof even though an earlier periodic snapshot predates the transition;
 - pinned WiiCompiled remains
   `a135beb201042b20f390c6695ca6b26768820fb4`;
-- pinned semantics consume primitive / vertex format / vertex count, republish
-  tracked vertex state, initialize `g_hleGxState` for incremental FIFO vertex
-  assembly, and leave actual draw submission to the pinned `HleFifoWrite`
-  path;
-- the rendered graphics log still reaches eleven state FIFO writes in the run
-  that exposed this blocker; drawable FIFO work, `GXCopyDisp`, and present
-  remain unproven.
+- pinned endRender semantics preserve `r3`, set LR to `0x8020FF9C`, then
+  dispatch `EGG::Display::copyEFBtoXFB (0x80219FB4)` followed by
+  `GXSetDrawDoneCallback (0x8016ED50)`.
 
-The candidate implements only this exact `GXBegin` boundary. The following
-GX/resource boundary must not be implemented until a later hardware run
-progresses beyond `0x8016F0F0`.
+The candidate resolves only this exact indirect native override. It must not
+manufacture EFB copy success, `GXCopyDisp`, or a present. Missing nested
+translated targets become the next durable hardware frontier.
 
 ## Governance note
 

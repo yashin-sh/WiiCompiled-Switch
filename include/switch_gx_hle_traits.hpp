@@ -30,6 +30,7 @@ extern "C" void mkw_switch_hle_gx_begin(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_copy_filter(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 
@@ -319,6 +320,20 @@ struct KnownNativeCpuCall<0x80170570u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_chan_ctrl(cpu);
+    }
+};
+
+// GXSetCopyFilter (PAL 0x8016FA40). Pinned WiiCompiled consumes
+// r3/r4/r5/r6 = antialias / sample-pattern guest pointer / vertical-filter
+// enable / vertical-filter guest pointer. It copies 24 + 7 bytes from guest
+// RAM when the respective pointer is non-zero, then forwards the local arrays
+// and GXBool values to Aurora GXSetCopyFilter.
+template <>
+struct KnownNativeCpuCall<0x8016FA40u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_copy_filter(cpu);
     }
 };
 

@@ -102,9 +102,9 @@ Track separately:
 - present successes and failures;
 - renderer/frame lifecycle state.
 
-Nine FIFO writes with no drawable work, display list, `GXCopyDisp`, or present
-is currently consistent with the reached GX-state setup frontier. It is **not**
-proof that RMCP01 drawing works.
+The latest accepted run reaches eleven FIFO writes. The two new writes are
+additional GX-state traffic; with no drawable work, display list, `GXCopyDisp`,
+or present they are **not** proof that RMCP01 drawing works.
 
 The first transition to drawable FIFO work, a game-facing display list,
 `GXCopyDisp`, or a successful RMCP01 present is a distinct milestone and must
@@ -148,20 +148,22 @@ If a new run:
 
 ## Current frontier
 
-As of the 2026-09-21 real-Switch rendered run after merged #206:
+As of the 2026-09-21 real-Switch rendered run after merged #207:
 
-- main contains the `GXSetNumTexGens (0x8016E5A4)` bridge;
+- main contains the `GXSetNumIndStages (0x80171B38)` bridge;
 - pinned WiiCompiled remains
   `a135beb201042b20f390c6695ca6b26768820fb4`;
-- the final durable blocker is no longer `0x8016E5A4`;
-- the new exact DIRECT blocker is PAL `GXSetNumIndStages (0x80171B38)`,
-  captured with `r3 = 0`;
-- its stage is `RMCP01_GX_SET_NUM_TEX_GENS`, proving the previous bridge was
+- the final durable blocker is no longer `0x80171B38`;
+- the new exact DIRECT blocker is PAL `GXSetNumTevStages (0x801722A8)`,
+  captured with `r3 = 1`;
+- its stage is `RMCP01_GX_SET_NUM_IND_STAGES`, proving the previous bridge was
   entered and execution advanced to a later target;
-- the earlier periodic snapshot predates that transition and is not the final
-  blocker record;
-- implement only the pinned `r3 -> u8 -> Aurora GXSetNumIndStages` contract;
-- do not pre-port neighboring indirect-texture/TEV/draw/resource calls;
+- pinned semantics reject counts above `GX_MAX_TEVSTAGE`, then narrow valid
+  counts to `u8` and call Aurora `GXSetNumTevStages`;
+- FIFO traffic advances from nine to eleven writes, but there is still no
+  proven display list, drawable work, `GXCopyDisp`, or present;
+- implement only this exact boundary;
+- do not pre-port neighboring TEV/texture/draw/resource calls;
 - public CI plus the private rendered build remain required before hardware
   acceptance.
 

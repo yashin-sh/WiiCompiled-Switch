@@ -775,9 +775,9 @@ display-list calls, drawable FIFO work, `GXCopyDisp`, present
 success/failure, and any native exception against the previous accepted
 baseline.
 
-The current nine FIFO writes with no drawable work remain compatible with the
-GX-state setup frontier reached so far; they do not prove an RMCP01 draw or
-present.
+The latest run advances the FIFO from nine to eleven writes. With no proven
+drawable work, display list, `GXCopyDisp`, or present, that still represents
+GX-state setup rather than an RMCP01 draw/present milestone.
 
 ## Hardware result — 2026-09-21 GXSetNumTexGens frontier
 
@@ -807,3 +807,20 @@ The earlier periodic snapshot predates the final transition. It preserves the
 FST/renderer invariants and nine FIFO writes, but still has no display list,
 drawable FIFO work, `GXCopyDisp`, or present. The next candidate implements
 only this exact indirect-stage-count boundary.
+
+## Hardware result — 2026-09-21 GXSetNumTevStages frontier
+
+The rendered real-Switch run after merged #207 progresses beyond
+`GXSetNumIndStages (0x80171B38)` and stops at the distinct DIRECT target
+`0x801722A8`, with `r3 = 1` and stage
+`RMCP01_GX_SET_NUM_IND_STAGES`.
+
+Pinned WiiCompiled maps `0x801722A8` to `GXSetNumTevStages`, validates the
+count against `GX_MAX_TEVSTAGE`, and for valid counts narrows `r3` to
+`u8` before forwarding to Aurora.
+
+The graphics log advances from nine to eleven FIFO writes, adding `0x61` and
+`0x0F000000` state traffic. FST/renderer invariants remain intact, but there
+is still no proven display list, drawable FIFO work, `GXCopyDisp`, or
+present. The next candidate implements only this exact TEV-stage-count
+boundary.

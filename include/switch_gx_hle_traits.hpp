@@ -31,6 +31,7 @@ extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_copy_filter(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_flush(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 
@@ -334,6 +335,18 @@ struct KnownNativeCpuCall<0x8016FA40u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_copy_filter(cpu);
+    }
+};
+
+// GXFlush (PAL 0x8016E654). Pinned WiiCompiled has no PPC arguments and
+// forwards directly to Aurora GXFlush. This is the first exact blocker exposed
+// after the first successful real RMCP01 GXCopyDisp/present.
+template <>
+struct KnownNativeCpuCall<0x8016E654u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_flush(cpu);
     }
 };
 

@@ -85,6 +85,7 @@
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_CULL_MODE_FRONTIER.md` — rendered hardware progression beyond `GXSetZMode` and new PAL `GXSetCullMode` frontier
 - `HARDWARE_RESULTS_2026-09-21_GX_BEGIN_FRONTIER.md` — rendered hardware progression beyond `GXSetCullMode` to the first PAL `GXBegin` draw-primitive frontier
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_COPY_FILTER_FRONTIER.md` — first real FIFO work preserved, `endRender` hardware-crossed, and new PAL `GXSetCopyFilter` copy-path frontier
+- `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_PRESENT_GX_FLUSH_FRONTIER.md` — first successful game-facing RMCP01 GPU present (`hadWork=1`) and new PAL `GXFlush` frontier
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes
@@ -93,10 +94,11 @@
 
 For the current project status, use `../README.md`, `../ROADMAP.md`,
 `FAST_TRACK_VALIDATION_POLICY.md`, `M2_RUNTIME_BOOTSTRAP.md`, and issue #117.
-The latest hardware evidence hardware-crosses PAL
-`GXBegin (0x8016F0F0)` and proves the first real RMCP01 drawable work with
-`PASS FIRST_RMCP01_FIFO_WORK`. The next exact frontier is
-`EGG::AsyncDisplay::endRender (0x8020FF9C)`, reached as an
-`INDIRECT_CALL_MISS` with stage `RMCP01_FIFO_RENDER_WORK`. Dated hardware result files are
-historical evidence and intentionally retain the frontier wording that was
-correct when each run was captured.
+The latest hardware evidence proves the first successful game-facing RMCP01
+GPU present with `PASS FIRST_RMCP01_GX_PRESENT hadWork=1`. The final durable
+stage `RMCP01_GX_PRESENTED` then exposes PAL `GXFlush (0x8016E654)` as the
+next exact frontier. This proves real FIFO work and a successful surface
+present, while visual correctness of the displayed Mario Kart Wii pixels
+remains a separate milestone. Dated hardware result files are historical
+evidence and intentionally retain the frontier wording that was correct when
+each run was captured.

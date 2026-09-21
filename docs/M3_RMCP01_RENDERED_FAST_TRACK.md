@@ -1007,3 +1007,33 @@ inventing it.
 
 This places the hardware frontier inside the EFB/XFB copy-configuration path,
 but the exact following copy/present boundary remains hardware-defined.
+
+## Hardware result — 2026-09-21 first RMCP01 GPU present / GXFlush frontier
+
+The rendered RMCP01 path now closes the first game-facing presentation gate.
+
+Renderer evidence:
+
+```text
+PASS FIRST_RMCP01_FIFO_WORK
+...
+PASS FIRST_RMCP01_GX_PRESENT hadWork=1
+```
+
+The PASS-present record is emitted only after `g_surface.Present()` succeeds.
+`hadWork=1` confirms that the frame already contained real RMCP01 FIFO/Aurora
+work.
+
+The final durable blocker is then:
+
+```text
+DIRECT 0x8016E654
+stage = RMCP01_GX_PRESENTED
+```
+
+Pinned WiiCompiled maps `0x8016E654` to no-argument `GXFlush()`.
+
+This proves the first real RMCP01 GPU present through
+`HleFifoWrite → Aurora GX → Dawn/WebGPU → Vulkan/NVK → NWindow`.
+It does not by itself prove that the pixels are already a visually correct
+Mario Kart Wii image, so visual confirmation remains a separate milestone.

@@ -8,13 +8,15 @@ Run a legally-owned Mario Kart Wii dump through the WiiCompiled static-recompila
 
 ## Project progress
 
-**Estimated progress toward first rendered Mario Kart Wii frame: ~75%**
+**First game-facing RMCP01 GPU present: ✅ hardware validated**
+
+**Estimated progress toward first visually confirmed Mario Kart Wii image: ~90%**
 
 ```text
-███████████████░░░░░ 75%
+██████████████████░░ 90%
 ```
 
-> This percentage is an engineering estimate, not a function-count metric. The runtime has crossed PAL `main()`, sustained post-main VI/thread execution, and the complete Nintendo-data-free graphics chain through pinned `HleFifoWrite → Aurora GX → Dawn/Vulkan/NVK` is hardware-proven. Real RMCP01 execution has now hardware-crossed `GXBegin` and produced its first proven drawable FIFO/Aurora work. The remaining first-frame gap is the game-facing EFB copy / `GXCopyDisp` / present path.
+> The previous “toward first rendered frame” estimate is retired because a real RMCP01 frame with `hadWork=1` has now successfully crossed `GXCopyDisp` and `g_surface.Present()` on hardware. The remaining percentage tracks visual/game-content confirmation rather than GPU viability: the present is proven, but the logs alone do not prove that the displayed pixels already form a visually correct Mario Kart Wii image.
 
 ## Current status
 
@@ -28,7 +30,7 @@ The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge se
 
 The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
 
-The latest 2026-09-21 rendered real-Switch run hardware-crosses `EGG::AsyncDisplay::endRender (0x8020FF9C)` and preserves real drawable RMCP01 work: `GXBegin hits = 1`, `AsyncDisplay endRender = 1`, 23 FIFO writes, and `FIFO produced work = YES`. The distinct next DIRECT blocker is `GXSetCopyFilter (0x8016FA40)`, recorded with stage `RMCP01_EGG_ASYNC_DISPLAY_END_RENDER`. Pinned WiiCompiled consumes live `r3..r6` as antialias / sample-pattern guest pointer / vertical-filter enable / vertical-filter guest pointer, copies 24 + 7 bytes from guest RAM, and forwards them to Aurora `GXSetCopyFilter`. The current blocker did not capture `r6`, so it is not inferred; the candidate reads it live and extends future blocker diagnostics through `r6`. `GXCopyDisp` and present remain unproven.
+The latest 2026-09-21 rendered real-Switch run reaches the first successful game-facing RMCP01 GPU present. The renderer records `PASS FIRST_RMCP01_GX_PRESENT hadWork=1`, which is emitted only after `g_surface.Present()` succeeds and confirms that the presented Aurora frame contained real RMCP01 FIFO work. The final durable blocker then moves to `GXFlush (0x8016E654)` with stage `RMCP01_GX_PRESENTED`, proving progression beyond `GXSetCopyFilter (0x8016FA40)` and the `GXCopyDisp (0x8016FC38)` present boundary. Pinned WiiCompiled maps `0x8016E654` to the no-argument `GXFlush()` call. The current candidate implements only that exact flush boundary. A successful GPU present is now proven; visual correctness of the Mario Kart Wii pixels still requires direct visual confirmation.
 
 ## Milestones
 
@@ -52,10 +54,12 @@ The latest 2026-09-21 rendered real-Switch run hardware-crosses `EGG::AsyncDispl
 | Dawn WGSL triangle / graphics pipeline | ✅ Hardware validated + clean exit |
 | Aurora GX triangle | ✅ Hardware validated (563-frame active loop) |
 | WiiCompiled FIFO → Aurora GX | ✅ Hardware validated (1,435-frame loop) |
-| RMCP01 rendered fast-track | ✅ Real RMCP01 drawable FIFO/Aurora work hardware-proven |
+| RMCP01 rendered fast-track | ✅ Real RMCP01 drawable work + GPU present hardware-proven |
 | First real RMCP01 drawable work | ✅ `PASS FIRST_RMCP01_FIFO_WORK` |
-| Current render frontier | 🟡 `GXSetCopyFilter (0x8016FA40)` exact hardware blocker |
-| WiiCompiled/Aurora GX → first RMCP01 frame | 🟡 M3 #162 in progress |
+| First game-facing RMCP01 GPU present | ✅ `PASS FIRST_RMCP01_GX_PRESENT hadWork=1` |
+| First visually confirmed Mario Kart Wii image | 🟡 Pending visual confirmation |
+| Current render frontier | 🟡 `GXFlush (0x8016E654)` exact hardware blocker |
+| WiiCompiled/Aurora GX → first RMCP01 GPU present | ✅ Hardware validated |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
 ## Current fast-track path
@@ -171,13 +175,17 @@ FIFO produced work = YES                                         ✅ FIRST_RMCP0
   ↓
 EGG::AsyncDisplay::endRender (0x8020FF9C)                         ✅ hardware crossed
   ↓
-GXSetCopyFilter (0x8016FA40)                                      🟡 current exact blocker
+GXSetCopyFilter (0x8016FA40)                                      ✅ hardware crossed
   ↓
-game-facing EFB copy / GXCopyDisp / present                       ⬜ hardware proof pending
+GXCopyDisp (0x8016FC38) / surface present                          ✅ first RMCP01 GPU present
   ↓
-first drawable FIFO work / display list / GXCopyDisp / present
+PASS FIRST_RMCP01_GX_PRESENT hadWork=1                             ✅ hardware proven
   ↓
-first rendered RMCP01 frame
+GXFlush (0x8016E654)                                               🟡 current exact blocker
+  ↓
+next exact hardware-observed game/resource/GX frontier
+  ↓
+visually confirmed Mario Kart Wii image                            ⬜ pending
 ```
 
 The complete blocker-by-blocker history and current checklist live in [`ROADMAP.md`](ROADMAP.md). Hardware evidence is recorded in dated files under [`docs/`](docs/).
@@ -186,7 +194,7 @@ The complete blocker-by-blocker history and current checklist live in [`ROADMAP.
 
 ### Graphics
 
-The normal fast-track GX FIFO bridge remains intentionally a sink, so it stays a reliable **headless control baseline**. The separate rendered fast-track now uses the hardware-proven `HleFifoWrite → Aurora GX → Dawn/WebGPU → Vulkan/NVK` path and presents at the RMCP01 `GXCopyDisp` boundary. The next unknown is therefore game-facing behavior, not renderer viability.
+The normal fast-track GX FIFO bridge remains intentionally a sink, so it stays a reliable **headless control baseline**. The separate rendered fast-track now has hardware-proven real RMCP01 FIFO work **and a successful game-facing `GXCopyDisp → g_surface.Present()`** with `hadWork=1`. Renderer viability and the first GPU present are therefore proven. The remaining graphics question is visual/game-content correctness and the later game/resource path, not whether Aurora/Dawn/NVK can present RMCP01 work on Switch.
 
 ### Filesystem / DVD
 

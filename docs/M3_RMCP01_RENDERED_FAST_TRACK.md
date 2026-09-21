@@ -900,3 +900,19 @@ squash-merged on `main` as
 step is the private rendered build of that exact revision and real-Switch
 validation requiring durable progression beyond `0x801727CC`. No following
 pixel/TEV/texture/draw/resource boundary is selected before that hardware run.
+
+## Hardware result — 2026-09-21 GXSetAlphaUpdate frontier
+
+The rendered real-Switch run built from merged #212
+(`8aea70d0a3a8378311428eb5420760e4f763a40d`) progresses beyond
+`GXSetColorUpdate (0x801727CC)` and stops at the distinct DIRECT target
+`0x801727F8`, with `r3 = 1` and stage
+`RMCP01_GX_SET_COLOR_UPDATE`.
+
+Pinned WiiCompiled maps `0x801727F8` to `GXSetAlphaUpdate` and forwards
+`r3` directly as `GXBool` to Aurora without additional validation.
+
+The graphics log still reaches eleven FIFO writes. FST/renderer invariants
+remain intact, but there is still no proven display list, drawable FIFO work,
+`GXCopyDisp`, or present. The next candidate implements only this exact
+`GXSetAlphaUpdate` boundary.

@@ -824,3 +824,21 @@ The graphics log advances from nine to eleven FIFO writes, adding `0x61` and
 is still no proven display list, drawable FIFO work, `GXCopyDisp`, or
 present. The next candidate implements only this exact TEV-stage-count
 boundary.
+
+## Hardware result — 2026-09-21 GXSetTevOp frontier
+
+The rendered real-Switch run after merged #208 progresses beyond
+`GXSetNumTevStages (0x801722A8)` and stops at the distinct DIRECT target
+`0x80171C4C`, with `r3 = 0` and stage
+`RMCP01_GX_SET_NUM_TEV_STAGES`.
+
+Pinned WiiCompiled maps `0x80171C4C` to `GXSetTevOp`, validates the TEV
+stage with `stage < GX_MAX_TEVSTAGE`, and forwards `r3/r4` as
+`GXTevStageID/GXTevMode` to Aurora. The blocker diagnostic did not capture
+`r4`, so no hardware mode value is asserted; the candidate consumes the live
+guest register directly.
+
+The graphics log remains at eleven FIFO writes. FST/renderer invariants remain
+intact, but there is still no proven display list, drawable FIFO work,
+`GXCopyDisp`, or present. The next candidate implements only this exact
+`GXSetTevOp` boundary.

@@ -148,19 +148,23 @@ If a new run:
 
 ## Current frontier
 
-As of merged PR #204:
+As of the 2026-09-21 real-Switch rendered run:
 
-- main: `70805fb0b038ff447794fd18092a76a56dffbe46`;
-- pinned WiiCompiled:
+- tested main includes merged PR #204's `GXSetChanCtrl (0x80170570)` bridge;
+- pinned WiiCompiled remains
   `a135beb201042b20f390c6695ca6b26768820fb4`;
-- `GXSetChanMatColor (0x80170474)` is hardware-crossed;
-- `GXSetChanCtrl (0x80170570)` is implemented from pinned `r3..r9`
-  semantics;
-- `GXSetChanCtrl` is **not yet hardware-crossed**;
-- the next action is a private rendered build of the exact main revision,
-  followed by a real-Switch run;
-- no neighboring texture/light/draw boundary should be implemented until that
-  hardware run produces new evidence.
+- the final durable blocker is no longer `0x80170570`;
+- the new exact DIRECT blocker is PAL `GXSetNumTexGens (0x8016E5A4)`,
+  with captured `r3 = 0`;
+- the blocker records stage `RMCP01_GX_SET_CHAN_CTRL`, proving the run entered
+  and returned from the previous bridge before the later unsupported dispatch;
+- the earlier periodic last-dispatch snapshot predates that final transition,
+  so its `GXSetChanCtrl hits = 0` is retained as a timing fact rather than
+  treated as the final frontier;
+- implement only `GXSetNumTexGens` from the pinned `r3 -> u8 -> Aurora`
+  contract; do not pre-port neighboring GX calls;
+- after public CI, the private rendered build remains the sixth gate before the
+  next real-Switch validation.
 
 ## Governance note
 

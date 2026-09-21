@@ -916,3 +916,21 @@ The graphics log still reaches eleven FIFO writes. FST/renderer invariants
 remain intact, but there is still no proven display list, drawable FIFO work,
 `GXCopyDisp`, or present. The next candidate implements only this exact
 `GXSetAlphaUpdate` boundary.
+
+## Hardware result — 2026-09-21 GXSetZMode frontier
+
+The latest rendered RMCP01 hardware run progresses beyond
+`GXSetAlphaUpdate (0x801727F8)` and stops at the distinct DIRECT target
+`0x80172824`, with `r3 = 0` and stage
+`RMCP01_GX_SET_ALPHA_UPDATE`.
+
+Pinned WiiCompiled maps `0x80172824` to `GXSetZMode`, consuming live
+`r3/r4/r5` as compare-enable / `GXCompare` / update-enable. The current
+blocker did not record `r4/r5`; the candidate therefore reads them live rather
+than fabricating values, and expands the next durable blocker record to capture
+them.
+
+The graphics log still reaches eleven FIFO writes. FST/renderer invariants
+remain intact, but there is still no proven display list, drawable FIFO work,
+`GXCopyDisp`, or present. The next candidate implements only this exact
+`GXSetZMode` boundary.

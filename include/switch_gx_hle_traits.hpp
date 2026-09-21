@@ -24,6 +24,7 @@ extern "C" void mkw_switch_hle_gx_set_tev_order(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_blend_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_color_update(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_alpha_update(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_z_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* cpu) noexcept;
@@ -243,6 +244,18 @@ struct KnownNativeCpuCall<0x801727F8u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_alpha_update(cpu);
+    }
+};
+
+// GXSetZMode (PAL 0x80172824). Pinned WiiCompiled consumes
+// r3/r4/r5 = compare-enable / compare-function / update-enable, casts them
+// directly to GXBool/GXCompare/GXBool, and forwards them to Aurora GXSetZMode.
+template <>
+struct KnownNativeCpuCall<0x80172824u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_z_mode(cpu);
     }
 };
 

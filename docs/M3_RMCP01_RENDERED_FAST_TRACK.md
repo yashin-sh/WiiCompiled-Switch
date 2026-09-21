@@ -779,3 +779,17 @@ The current nine FIFO writes with no drawable work remain compatible with the
 GX-state setup frontier reached so far; they do not prove an RMCP01 draw or
 present.
 
+## Hardware result — 2026-09-21 GXSetNumTexGens frontier
+
+The rendered real-Switch run progresses beyond `GXSetChanCtrl (0x80170570)`
+and stops at the distinct DIRECT target `0x8016E5A4`, with `r3 = 0` and
+stage `RMCP01_GX_SET_CHAN_CTRL`.
+
+Pinned WiiCompiled maps `0x8016E5A4` to `GXSetNumTexGens` and consumes only
+`r3`, narrowed to `u8`, before forwarding to Aurora.
+
+The earlier periodic snapshot was written before this final transition. It
+preserves the prior GX/FST/scheduler invariants and nine FIFO writes but still
+has no display list, drawable FIFO work, `GXCopyDisp`, or present. The next
+candidate implements only this exact texture-generator-count boundary.
+

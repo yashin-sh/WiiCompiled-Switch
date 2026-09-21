@@ -1,0 +1,53 @@
+name: one-shot-branch-cleanup
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  delete-stale-branches:
+    if: startsWith(github.event.head_commit.message, 'chore: one-shot branch cleanup')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete every branch except main
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const branches = await github.paginate(
+              github.rest.repos.listBranches,
+              { owner, repo, per_page: 100 }
+            );
+
+            const stale = branches
+              .map(({ name }) => name)
+              .filter((name) => name !== 'main')
+              .sort();
+
+            core.info(`Found ${branches.length} branches; deleting ${stale.length} non-main branches.`);
+
+            const failures = [];
+            for (const name of stale) {
+              try {
+                await github.rest.git.deleteRef({
+                  owner,
+                  repo,
+                  ref: `heads/${name}`,
+                });
+                core.info(`deleted: ${name}`);
+              } catch (error) {
+                failures.push({ name, message: error.message });
+                core.warning(`failed: ${name}: ${error.message}`);
+              }
+            }
+
+            if (failures.length > 0) {
+              core.setFailed(
+                `Failed to delete ${failures.length} branch(es): ` +
+                failures.map(({ name }) => name).join(', ')
+              );
+            }

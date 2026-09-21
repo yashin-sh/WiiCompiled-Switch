@@ -17,6 +17,7 @@ extern "C" void mkw_switch_hle_gx_clear_vtx_desc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_vtx_desc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_vtx_attr_fmt(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_tex_gens(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_num_ind_stages(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* cpu) noexcept;
@@ -152,6 +153,18 @@ struct KnownNativeCpuCall<0x8016E5A4u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_num_tex_gens(cpu);
+    }
+};
+
+// GXSetNumIndStages (PAL 0x80171B38). Pinned WiiCompiled consumes r3 as the
+// requested indirect-texture-stage count, narrows it to u8, and forwards it
+// directly to Aurora GXSetNumIndStages.
+template <>
+struct KnownNativeCpuCall<0x80171B38u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_num_ind_stages(cpu);
     }
 };
 

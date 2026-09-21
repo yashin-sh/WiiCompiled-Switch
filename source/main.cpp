@@ -34,6 +34,7 @@ extern "C" void mkw_switch_hle_gx_set_color_update(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_alpha_update(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_z_mode(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_cull_mode(CpuContext* ctx) noexcept;
+extern "C" void mkw_switch_hle_gx_begin(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* ctx) noexcept;
@@ -69,6 +70,7 @@ int main(int, char**) {
     volatile auto gx_set_alpha_update_link_anchor = &mkw_switch_hle_gx_set_alpha_update;
     volatile auto gx_set_z_mode_link_anchor = &mkw_switch_hle_gx_set_z_mode;
     volatile auto gx_set_cull_mode_link_anchor = &mkw_switch_hle_gx_set_cull_mode;
+    volatile auto gx_begin_link_anchor = &mkw_switch_hle_gx_begin;
     volatile auto gx_set_num_chans_link_anchor = &mkw_switch_hle_gx_set_num_chans;
     volatile auto gx_set_chan_mat_color_link_anchor = &mkw_switch_hle_gx_set_chan_mat_color;
     volatile auto gx_set_chan_ctrl_link_anchor = &mkw_switch_hle_gx_set_chan_ctrl;
@@ -96,6 +98,7 @@ int main(int, char**) {
     (void)gx_set_alpha_update_link_anchor;
     (void)gx_set_z_mode_link_anchor;
     (void)gx_set_cull_mode_link_anchor;
+    (void)gx_begin_link_anchor;
     (void)gx_set_num_chans_link_anchor;
     (void)gx_set_chan_mat_color_link_anchor;
     (void)gx_set_chan_ctrl_link_anchor;

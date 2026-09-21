@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   delete-stale-branches:
-    if: startsWith(github.event.head_commit.message, 'chore: one-shot branch cleanup')
+    if: "${{ startsWith(github.event.head_commit.message, 'chore: one-shot branch cleanup') }}"
     runs-on: ubuntu-latest
     steps:
       - name: Delete every branch except main

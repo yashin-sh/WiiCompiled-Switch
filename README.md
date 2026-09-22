@@ -30,7 +30,7 @@ The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge se
 
 The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
 
-The latest 2026-09-22 rendered real-Switch run keeps the game-facing GPU path healthy through `GXFlush (0x8016E654)`: 23 flushes, 23 `GXCopyDisp` calls, 23 successful presents, zero present failures and `FIFO produced work = YES`. The TaskThread diagnostic now resolves the later resource-worker failure: queue receive returns `job=0x8042E448`, immediately below the worker's live `r1=0x8042E458`, and decoding that memory as `TJob` yields `callback=0x8042E458` and `onDone=OSExitThread (0x801AA0F0)`. This is a stack-shaped non-job pointer, not a missing function. The current candidate instruments only the TaskThread queue allocation fields and send-side `OSSendMessage` source to distinguish producer-send from queue-storage corruption. Visual correctness still requires direct confirmation.
+The latest 2026-09-22 rendered real-Switch run keeps the game-facing GPU path healthy through `GXFlush (0x8016E654)`: 23 flushes, 23 `GXCopyDisp` calls, 23 successful presents, zero present failures and `FIFO produced work = YES`. The TaskThread send-side trace now proves `EGG::TaskThread::request` sends the valid first `mJobs[]` slot (`0x8042E7DC`) into queue `0x8042BBFC` / array `0x8042E7A8`. The worker later reads `0x8042E448` from its `r1-0x20` receive output slot, producing the stack-shaped `callback=0x8042E458`. Therefore the producer is cleared: the current frontier is the exact phase inside or immediately after `OSReceiveMessage` where that output slot is clobbered. Runtime metadata also shows this worker has 5 jobs and a `0x2800` stack, so the earlier ResourceManager attribution is retired. Visual correctness still requires direct confirmation.
 
 ## Milestones
 
@@ -58,7 +58,7 @@ The latest 2026-09-22 rendered real-Switch run keeps the game-facing GPU path he
 | First real RMCP01 drawable work | ✅ `PASS FIRST_RMCP01_FIFO_WORK` |
 | First game-facing RMCP01 GPU present | ✅ `PASS FIRST_RMCP01_GX_PRESENT hadWork=1` |
 | First visually confirmed Mario Kart Wii image | 🟡 Pending visual confirmation |
-| Current hardware frontier | 🟡 TaskThread queue-source attribution: received `job=0x8042E448` aliases worker stack and decodes to `callback=0x8042E458`; determine producer-send vs queue-buffer corruption |
+| Current hardware frontier | 🟡 `OSReceiveMessage` output-slot clobber: `TaskThread::request` sends valid `mJobs[0]=0x8042E7DC`, but worker later reads stack-shaped `0x8042E448` from `r1-0x20` |
 | WiiCompiled/Aurora GX → first RMCP01 GPU present | ✅ Hardware validated |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
@@ -183,8 +183,8 @@ PASS FIRST_RMCP01_GX_PRESENT hadWork=1                             ✅ hardware 
   ↓
 GXFlush (0x8016E654)                                               ✅ hardware crossed
   ↓
-EGG::TaskThread resource-worker indirect dispatch                      🟡 current diagnostic frontier
-  target 0x8042E458 == worker saved guest r1; do not map as code
+EGG::TaskThread blocking receive output slot                           🟡 current diagnostic frontier
+  valid send 0x8042E7DC -> later read 0x8042E448 from r1-0x20
   ↓
 next exact hardware-attributed game/resource frontier
   ↓
@@ -358,6 +358,7 @@ Start with:
 - [`docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_MAT_COLOR_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_MAT_COLOR_FRONTIER.md) — #201 hardware-proves `GXSetNumChans`, re-proves TaskThread, and exposes PAL `GXSetChanMatColor`;
 - [`docs/HARDWARE_RESULTS_2026-09-22_GX_FLUSH_CROSSED_TASK_THREAD_JOB_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-22_GX_FLUSH_CROSSED_TASK_THREAD_JOB_FRONTIER.md) — hardware-crosses `GXFlush` with 23 successful presents and records the current TaskThread job-dispatch diagnostic frontier;
 - [`docs/HARDWARE_RESULTS_2026-09-22_TASK_THREAD_STACK_JOB_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-22_TASK_THREAD_STACK_JOB_FRONTIER.md) — proves the received TaskThread “job” aliases the worker stack and moves the frontier to send-side / queue-buffer source attribution;
+- [`docs/HARDWARE_RESULTS_2026-09-22_TASK_THREAD_VALID_SEND_RECEIVE_SLOT_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-22_TASK_THREAD_VALID_SEND_RECEIVE_SLOT_FRONTIER.md) — proves `TaskThread::request` sends the valid `mJobs[0]` pointer and moves the frontier to the exact `OSReceiveMessage` output-slot clobber phase;
 - [`docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_CTRL_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_CTRL_FRONTIER.md) — merged #203 hardware-proves `GXSetChanMatColor`, preserves the scheduler/GX chain, and exposes PAL `GXSetChanCtrl`;
 - [`docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEX_GENS_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEX_GENS_FRONTIER.md) — real Switch progresses beyond `GXSetChanCtrl` and exposes PAL `GXSetNumTexGens`;
 - [`docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_IND_STAGES_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_IND_STAGES_FRONTIER.md) — real Switch progresses beyond `GXSetNumTexGens` and exposes PAL `GXSetNumIndStages`;

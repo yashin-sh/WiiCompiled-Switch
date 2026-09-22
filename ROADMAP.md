@@ -171,7 +171,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-validate the `0x90112660` fiber-aware `VIWaitForRetrace` starvation fix: worker parks on `0x80386BC0`, scheduler returns to main
 - [x] hardware-cross PAL `OSSendMessage` (`0x801A735C`) after scheduler recovery
 - [x] hardware-cross PAL `GXDrawDone` (`0x8016EAB0`) using the pinned draw-done bookkeeping and Aurora FIFO drain
-- [x] hardware-cross virtual `EGG::TaskThread::run` (`0x80242D7C`) with the explicit hit counter\n- [ ] classify the 2026-09-22 TaskThread indirect-dispatch anomaly (`target=0x8042E458 == saved guest r1`) from captured `job/callback/arg/onDone` telemetry before changing behavior
+- [x] hardware-cross virtual `EGG::TaskThread::run` (`0x80242D7C`) with the explicit hit counter
+- [ ] classify the 2026-09-22 TaskThread indirect-dispatch anomaly (`target=0x8042E458 == saved guest r1`) from captured `job/callback/arg/onDone` telemetry before changing behavior
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
 - [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
 - [x] hardware-cross PAL `GXSetScissor` (`0x80173430`) using pinned guest GXData bookkeeping plus Aurora scissor

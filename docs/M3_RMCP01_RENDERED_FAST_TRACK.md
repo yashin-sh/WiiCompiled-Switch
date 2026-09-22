@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer and local FST publication hardware-proven; #201 hardware-proves `GXSetNumChans` and re-proves `TaskThread::run`; the current exact blocker is PAL `GXSetChanMatColor` at `0x80170474`**.
+Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication and PAL `GXFlush (0x8016E654)` are hardware-proven. The current durable frontier is the priority-24 `EGG::TaskThread` resource-worker indirect dispatch: observed target `0x8042E458` equals that worker's saved guest `r1`, so job/callback attribution is required before any behavioral change.**
 
 ## Purpose
 

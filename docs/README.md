@@ -87,6 +87,7 @@
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_COPY_FILTER_FRONTIER.md` — first real FIFO work preserved, `endRender` hardware-crossed, and new PAL `GXSetCopyFilter` copy-path frontier
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_PRESENT_GX_FLUSH_FRONTIER.md` — first successful game-facing RMCP01 GPU present (`hadWork=1`) and new PAL `GXFlush` frontier
 - `HARDWARE_RESULTS_2026-09-22_GX_FLUSH_CROSSED_TASK_THREAD_JOB_FRONTIER.md` — `GXFlush` hardware-crossed with 23 successful presents; later TaskThread indirect target equals the worker guest stack pointer and requires job-field diagnostics
+- `HARDWARE_RESULTS_2026-09-22_TASK_THREAD_STACK_JOB_FRONTIER.md` — TaskThread telemetry proves the received “job” aliases the worker stack; next gate is producer-send vs queue-buffer attribution
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes

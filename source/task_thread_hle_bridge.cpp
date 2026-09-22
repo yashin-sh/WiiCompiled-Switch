@@ -25,6 +25,17 @@ constexpr std::uint32_t kJobSize = 0x18u;
 constexpr const char* kTaskThreadDispatchPath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-task-thread-last-dispatch.txt";
 
+std::uint32_t Read32OrZero(std::uint32_t address) noexcept {
+    try {
+        if (!Memory::Contains(address, 4u)) {
+            return 0u;
+        }
+        return Memory::Read32(address);
+    } catch (...) {
+        return 0u;
+    }
+}
+
 void WriteTaskThreadDispatchFrontier(
     const char* kind,
     std::uint32_t taskThread,
@@ -43,6 +54,18 @@ void WriteTaskThreadDispatchFrontier(
         return;
     }
 
+    const std::uint32_t queuePtr = taskThread + kTaskMessageQueueOffset;
+    const std::uint32_t queueArray = Read32OrZero(queuePtr + 0x10u);
+    const std::uint32_t queueCount = Read32OrZero(queuePtr + 0x14u);
+    const std::uint32_t queueFirst = Read32OrZero(queuePtr + 0x18u);
+    const std::uint32_t queueUsed = Read32OrZero(queuePtr + 0x1Cu);
+    const std::uint32_t memberMesgBuffer = Read32OrZero(taskThread + 0x2Cu);
+    const std::uint32_t memberMesgCount = Read32OrZero(taskThread + 0x30u);
+    const std::uint32_t stackMemory = Read32OrZero(taskThread + 0x34u);
+    const std::uint32_t stackSize = Read32OrZero(taskThread + 0x38u);
+    const std::uint32_t jobs = Read32OrZero(taskThread + 0x4Cu);
+    const std::uint32_t jobCount = Read32OrZero(taskThread + 0x50u);
+
     std::fprintf(
         out,
         "WiiCompiled-Switch TaskThread last indirect dispatch\n"
@@ -56,6 +79,17 @@ void WriteTaskThreadDispatchFrontier(
         "arg                   : 0x%08x\n"
         "token                 : 0x%08x\n"
         "onDone                : 0x%08x\n"
+        "queue ptr             : 0x%08x\n"
+        "queue array           : 0x%08x\n"
+        "queue count           : 0x%08x\n"
+        "queue first           : 0x%08x\n"
+        "queue used            : 0x%08x\n"
+        "member mesg buffer    : 0x%08x\n"
+        "member mesg count     : 0x%08x\n"
+        "stack memory          : 0x%08x\n"
+        "stack size            : 0x%08x\n"
+        "jobs                  : 0x%08x\n"
+        "job count             : 0x%08x\n"
         "dispatch target       : 0x%08x\n"
         "cpu r1                : 0x%08x\n"
         "cpu r3                : 0x%08x\n"
@@ -70,6 +104,17 @@ void WriteTaskThreadDispatchFrontier(
         arg,
         token,
         onDone,
+        queuePtr,
+        queueArray,
+        queueCount,
+        queueFirst,
+        queueUsed,
+        memberMesgBuffer,
+        memberMesgCount,
+        stackMemory,
+        stackSize,
+        jobs,
+        jobCount,
         target,
         cpu ? cpu->gpr[1] : 0u,
         cpu ? cpu->gpr[3] : 0u,

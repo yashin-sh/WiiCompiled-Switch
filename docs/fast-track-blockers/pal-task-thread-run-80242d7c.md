@@ -28,8 +28,11 @@ The pinned implementation blocks on the embedded message queue, executes queued
 job callbacks, sends optional completion tokens, clears retired job slots, and
 loops. It also seeds GQR2-GQR5 and carries the pin's THP prepare special case.
 
-RMCP01's `ResourceManager` creates an `EGG::TaskThread` at priority 24, so
-this exact hardware object is consistent with the resource-loading worker.
+Later hardware telemetry supersedes the earlier ResourceManager attribution
+for this exact object. The observed worker has `mJobCount=5` and
+`mStackSize=0x2800`; the currently decompiled ResourceManager TaskThread uses
+a different allocation shape. Treat this object only as the priority-24
+`EGG::TaskThread` worker until its owner is proven.
 
 ## Switch implementation
 
@@ -41,5 +44,9 @@ Because this target is reached through a vtable, the Switch indirect resolver
 handles the pinned native target before searching the generated translated
 table.
 
-Acceptance is hardware crossing `0x80242D7C` and identifying the first actual
-resource callback / DVD boundary or the next exact unsupported dispatch.
+The run now hardware-crosses `0x80242D7C`. Follow-up telemetry proves
+`TaskThread::request` sends the valid `mJobs[0]` pointer `0x8042E7DC`,
+but the worker later reads a stack-shaped value from the blocking receive output
+slot. The current acceptance gate is to identify the exact
+`OSReceiveMessage` phase that clobbers that slot; no function mapping or queue
+behavior change is justified before that evidence.

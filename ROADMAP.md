@@ -150,7 +150,7 @@ Validation policy after the 2026-09-20 audit: the five public CI workflows remai
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The latest 2026-09-21 rendered hardware run progresses beyond `GXSetNumIndStages (0x80171B38)` and exposes PAL `GXSetNumTevStages (0x801722A8)` with captured `r3 = 1`. Pinned WiiCompiled validates the count against `GX_MAX_TEVSTAGE`, narrows valid values to `u8`, and forwards them to Aurora. FIFO traffic advances from nine to eleven writes, but there is still no proven display list, drawable work, `GXCopyDisp`, or present. No neighboring TEV/draw/DVD/resource boundary is pre-ported.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The separate rendered path has now hardware-crossed the complete observed chain through real RMCP01 FIFO work, `GXCopyDisp`, successful surface presentation and `GXFlush (0x8016E654)`. The 2026-09-22 durable frontier is no longer a GX function: it is a TaskThread resource-worker indirect dispatch whose target `0x8042E458` equals that worker's saved guest stack pointer. No address is mapped from that value; behavior-neutral job-dispatch telemetry must identify the exact source first.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input
@@ -171,7 +171,7 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-validate the `0x90112660` fiber-aware `VIWaitForRetrace` starvation fix: worker parks on `0x80386BC0`, scheduler returns to main
 - [x] hardware-cross PAL `OSSendMessage` (`0x801A735C`) after scheduler recovery
 - [x] hardware-cross PAL `GXDrawDone` (`0x8016EAB0`) using the pinned draw-done bookkeeping and Aurora FIFO drain
-- [x] hardware-cross virtual `EGG::TaskThread::run` (`0x80242D7C`) with the explicit hit counter
+- [x] hardware-cross virtual `EGG::TaskThread::run` (`0x80242D7C`) with the explicit hit counter\n- [ ] classify the 2026-09-22 TaskThread indirect-dispatch anomaly (`target=0x8042E458 == saved guest r1`) from captured `job/callback/arg/onDone` telemetry before changing behavior
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
 - [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
 - [x] hardware-cross PAL `GXSetScissor` (`0x80173430`) using pinned guest GXData bookkeeping plus Aurora scissor
@@ -199,7 +199,7 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] implement and hardware-cross `EGG::AsyncDisplay::endRender` (`0x8020FF9C`) with pinned nested translated calls
 - [x] implement and hardware-cross PAL `GXSetCopyFilter` (`0x8016FA40`) with pinned live `r3..r6` + guest 24-byte/7-byte filter data -> Aurora contract
 - [x] prove game-facing `GXCopyDisp` / first GPU present — `PASS FIRST_RMCP01_GX_PRESENT hadWork=1`
-- [ ] implement and hardware-cross PAL `GXFlush` (`0x8016E654`) with pinned no-argument Aurora contract
+- [x] implement and hardware-cross PAL `GXFlush` (`0x8016E654`) with pinned no-argument Aurora contract — 23 hits, 23 successful presents and durable later execution
 - [ ] visually confirm the first Mario Kart Wii image
 - [ ] continue post-main initialization through system/resource initialization
 - [ ] complete game/resource initialization

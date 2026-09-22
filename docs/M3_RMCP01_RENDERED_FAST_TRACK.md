@@ -1037,3 +1037,46 @@ This proves the first real RMCP01 GPU present through
 `HleFifoWrite → Aurora GX → Dawn/WebGPU → Vulkan/NVK → NWindow`.
 It does not by itself prove that the pixels are already a visually correct
 Mario Kart Wii image, so visual confirmation remains a separate milestone.
+
+## Hardware result — 2026-09-22 GXFlush crossed / TaskThread dispatch diagnostic frontier
+
+The next rendered hardware run crosses `GXFlush (0x8016E654)` repeatedly and
+continues durably beyond it:
+
+```text
+GXFlush hits          : 23
+GXCopyDisp calls      : 23
+present successes     : 23
+present failures      : 0
+FIFO produced work    : YES
+```
+
+The renderer still records `PASS FIRST_RMCP01_GX_PRESENT hadWork=1`, the FST
+remains valid at `0x97DC0000`, and the watchdog remains ACTIVE. `GXFlush`
+is therefore hardware-crossed.
+
+The later durable blocker is:
+
+```text
+INDIRECT_CALL_MISS 0x8042E458
+guest pc = 0x8024373C
+r1       = 0x8042E458
+r3       = 0x80210078
+r4       = 0x8042E438
+r5       = 1
+stage    = HOST_CONTEXT_SWITCH_RETURNED
+```
+
+Thread telemetry identifies `0x8042E480` as the priority-24
+`EGG::TaskThread` worker with `stored_r1=0x8042E458` and virtual
+`run()=0x80242D7C`. The miss target is therefore the worker's guest stack
+pointer, not a function address.
+
+Pinned `TaskThread_run_HLE_80242d7c` uses `r1 - 0x20` as the blocking
+`OSReceiveMessage` output slot, then reads `job/callback/arg/onDone` and
+dispatches the callback indirectly. The observed `r4 = r1 - 0x20` and
+`r5 = 1` match that path, but the current logs do not capture the job record
+itself. The next candidate therefore adds only
+`fast-track-task-thread-last-dispatch.txt` telemetry immediately before those
+indirect dispatches. No scheduler, HostContext, resource, DVD or GX behavior is
+changed until hardware identifies which job field produced the target.

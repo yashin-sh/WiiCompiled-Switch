@@ -6,6 +6,7 @@
 #include "switch_os_hle_traits.hpp"
 
 #include <cstdint>
+#include <cstdio>
 
 namespace {
 
@@ -20,6 +21,76 @@ constexpr std::uint32_t kJobUnknown3Offset = 0x0Cu;
 constexpr std::uint32_t kJobUnknown4Offset = 0x10u;
 constexpr std::uint32_t kJobOnDoneOffset = 0x14u;
 constexpr std::uint32_t kJobSize = 0x18u;
+
+constexpr const char* kTaskThreadDispatchPath =
+    "sdmc:/switch/WiiCompiled-Switch/fast-track-task-thread-last-dispatch.txt";
+
+void WriteTaskThreadDispatchFrontier(
+    const char* kind,
+    std::uint32_t taskThread,
+    std::uint32_t stackPointer,
+    std::uint32_t outMsgPtr,
+    std::uint32_t job,
+    std::uint32_t callback,
+    std::uint32_t arg,
+    std::uint32_t token,
+    std::uint32_t onDone,
+    std::uint32_t target,
+    CpuContext* cpu) noexcept {
+#if defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION
+    FILE* out = std::fopen(kTaskThreadDispatchPath, "w");
+    if (!out) {
+        return;
+    }
+
+    std::fprintf(
+        out,
+        "WiiCompiled-Switch TaskThread last indirect dispatch\n"
+        "===================================================\n"
+        "kind                  : %s\n"
+        "task thread           : 0x%08x\n"
+        "stack pointer         : 0x%08x\n"
+        "out message pointer   : 0x%08x\n"
+        "job                   : 0x%08x\n"
+        "callback              : 0x%08x\n"
+        "arg                   : 0x%08x\n"
+        "token                 : 0x%08x\n"
+        "onDone                : 0x%08x\n"
+        "dispatch target       : 0x%08x\n"
+        "cpu r1                : 0x%08x\n"
+        "cpu r3                : 0x%08x\n"
+        "cpu r4                : 0x%08x\n"
+        "cpu r5                : 0x%08x\n",
+        kind ? kind : "<null>",
+        taskThread,
+        stackPointer,
+        outMsgPtr,
+        job,
+        callback,
+        arg,
+        token,
+        onDone,
+        target,
+        cpu ? cpu->gpr[1] : 0u,
+        cpu ? cpu->gpr[3] : 0u,
+        cpu ? cpu->gpr[4] : 0u,
+        cpu ? cpu->gpr[5] : 0u);
+    std::fclose(out);
+#else
+    (void)kTaskThreadDispatchPath;
+    (void)kind;
+    (void)taskThread;
+    (void)stackPointer;
+    (void)outMsgPtr;
+    (void)job;
+    (void)callback;
+    (void)arg;
+    (void)token;
+    (void)onDone;
+    (void)target;
+    (void)cpu;
+#endif
+}
 
 bool ShouldRetryThpPrepareAfterClose(
     std::uint32_t callback,
@@ -176,6 +247,18 @@ extern "C" void mkw_switch_hle_task_thread_run(CpuContext* ctx) {
                     RunMovieManagerPrepareAsync(arg, cpu);
                 } else {
                     cpu->gpr[3] = arg;
+                    WriteTaskThreadDispatchFrontier(
+                        "callback",
+                        taskThread,
+                        stackPointer,
+                        outMsgPtr,
+                        job,
+                        callback,
+                        arg,
+                        token,
+                        onDone,
+                        callback,
+                        cpu);
                     InvokeIndirectCpu(callback, cpu);
                 }
             }
@@ -185,6 +268,18 @@ extern "C" void mkw_switch_hle_task_thread_run(CpuContext* ctx) {
             if (currentJob != 0u && onDone != 0u) {
                 CpuContextScope scope(cpu);
                 cpu->gpr[3] = Memory::Read32(currentJob + kJobArgOffset);
+                WriteTaskThreadDispatchFrontier(
+                    "onDone",
+                    taskThread,
+                    stackPointer,
+                    outMsgPtr,
+                    currentJob,
+                    callback,
+                    cpu->gpr[3],
+                    token,
+                    onDone,
+                    onDone,
+                    cpu);
                 InvokeIndirectCpu(onDone, cpu);
             }
 

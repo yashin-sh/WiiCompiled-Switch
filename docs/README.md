@@ -85,7 +85,7 @@
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_CULL_MODE_FRONTIER.md` — rendered hardware progression beyond `GXSetZMode` and new PAL `GXSetCullMode` frontier
 - `HARDWARE_RESULTS_2026-09-21_GX_BEGIN_FRONTIER.md` — rendered hardware progression beyond `GXSetCullMode` to the first PAL `GXBegin` draw-primitive frontier
 - `HARDWARE_RESULTS_2026-09-21_GX_SET_COPY_FILTER_FRONTIER.md` — first real FIFO work preserved, `endRender` hardware-crossed, and new PAL `GXSetCopyFilter` copy-path frontier
-- `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_PRESENT_GX_FLUSH_FRONTIER.md` — first successful game-facing RMCP01 GPU present (`hadWork=1`) and new PAL `GXFlush` frontier
+- `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_PRESENT_GX_FLUSH_FRONTIER.md` — first successful game-facing RMCP01 GPU present (`hadWork=1`) and new PAL `GXFlush` frontier\n- `HARDWARE_RESULTS_2026-09-22_GX_FLUSH_CROSSED_TASK_THREAD_JOB_FRONTIER.md` — `GXFlush` hardware-crossed with 23 successful presents; later TaskThread indirect target equals the worker guest stack pointer and requires job-field diagnostics
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes
@@ -94,11 +94,13 @@
 
 For the current project status, use `../README.md`, `../ROADMAP.md`,
 `FAST_TRACK_VALIDATION_POLICY.md`, `M2_RUNTIME_BOOTSTRAP.md`, and issue #117.
-The latest hardware evidence proves the first successful game-facing RMCP01
-GPU present with `PASS FIRST_RMCP01_GX_PRESENT hadWork=1`. The final durable
-stage `RMCP01_GX_PRESENTED` then exposes PAL `GXFlush (0x8016E654)` as the
-next exact frontier. This proves real FIFO work and a successful surface
-present, while visual correctness of the displayed Mario Kart Wii pixels
-remains a separate milestone. Dated hardware result files are historical
+The latest 2026-09-22 hardware evidence keeps `PASS FIRST_RMCP01_GX_PRESENT hadWork=1`
+and hardware-crosses PAL `GXFlush (0x8016E654)`: 23 flush hits lead to 23
+successful presents with no failures and durable later execution. The next
+blocker is a TaskThread resource-worker `INDIRECT_CALL_MISS` whose target
+`0x8042E458` equals that worker's saved guest `r1`; it is not mapped as
+code. Job/callback telemetry is required before the next behavioral change.
+Visual correctness of the displayed Mario Kart Wii pixels remains a separate
+milestone. Dated hardware result files are historical
 evidence and intentionally retain the frontier wording that was correct when
 each run was captured.

@@ -30,7 +30,7 @@ The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge se
 
 The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
 
-The latest 2026-09-21 rendered real-Switch run reaches the first successful game-facing RMCP01 GPU present. The renderer records `PASS FIRST_RMCP01_GX_PRESENT hadWork=1`, which is emitted only after `g_surface.Present()` succeeds and confirms that the presented Aurora frame contained real RMCP01 FIFO work. The final durable blocker then moves to `GXFlush (0x8016E654)` with stage `RMCP01_GX_PRESENTED`, proving progression beyond `GXSetCopyFilter (0x8016FA40)` and the `GXCopyDisp (0x8016FC38)` present boundary. Pinned WiiCompiled maps `0x8016E654` to the no-argument `GXFlush()` call. The current candidate implements only that exact flush boundary. A successful GPU present is now proven; visual correctness of the Mario Kart Wii pixels still requires direct visual confirmation.
+The latest 2026-09-22 rendered real-Switch run hardware-crosses `GXFlush (0x8016E654)` and keeps the game-facing GPU path healthy: 23 `GXFlush` hits, 23 `GXCopyDisp` calls, 23 successful presents, zero present failures and `FIFO produced work = YES`. The independent watchdog remains ACTIVE well beyond the first flush, so this is durable progression rather than a hit-only claim. The new blocker is an `INDIRECT_CALL_MISS` to `0x8042E458` while the priority-24 `EGG::TaskThread` resource worker is active; that value is exactly the worker's saved guest `r1`, so it is not being mapped as code. The current candidate adds only behavior-neutral TaskThread job-dispatch telemetry to capture the actual `job/callback/arg/onDone` tuple before any behavioral correction. Visual correctness of the presented Mario Kart Wii pixels still requires direct confirmation.
 
 ## Milestones
 
@@ -58,7 +58,7 @@ The latest 2026-09-21 rendered real-Switch run reaches the first successful game
 | First real RMCP01 drawable work | ✅ `PASS FIRST_RMCP01_FIFO_WORK` |
 | First game-facing RMCP01 GPU present | ✅ `PASS FIRST_RMCP01_GX_PRESENT hadWork=1` |
 | First visually confirmed Mario Kart Wii image | 🟡 Pending visual confirmation |
-| Current render frontier | 🟡 `GXFlush (0x8016E654)` exact hardware blocker |
+| Current hardware frontier | 🟡 TaskThread resource-worker indirect dispatch; observed target `0x8042E458` equals saved guest `r1`, diagnostic attribution pending |
 | WiiCompiled/Aurora GX → first RMCP01 GPU present | ✅ Hardware validated |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
@@ -181,9 +181,12 @@ GXCopyDisp (0x8016FC38) / surface present                          ✅ first RMC
   ↓
 PASS FIRST_RMCP01_GX_PRESENT hadWork=1                             ✅ hardware proven
   ↓
-GXFlush (0x8016E654)                                               🟡 current exact blocker
+GXFlush (0x8016E654)                                               ✅ hardware crossed
   ↓
-next exact hardware-observed game/resource/GX frontier
+EGG::TaskThread resource-worker indirect dispatch                      🟡 current diagnostic frontier
+  target 0x8042E458 == worker saved guest r1; do not map as code
+  ↓
+next exact hardware-attributed game/resource frontier
   ↓
 visually confirmed Mario Kart Wii image                            ⬜ pending
 ```

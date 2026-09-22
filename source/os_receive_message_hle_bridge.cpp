@@ -20,6 +20,9 @@ constexpr std::uint32_t kMsgQueueUsedOffset = 0x1Cu;
 constexpr const char* kOsMessageEventsPath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-os-message-events.txt";
 std::uint32_t gOsMessageEventSequence = 0u;
+constexpr const char* kOsReceiveMessageFrontierPath =
+    "sdmc:/switch/WiiCompiled-Switch/fast-track-os-receive-message-frontier.txt";
+std::uint32_t gOsReceiveMessageFrontierSequence = 0u;
 
 std::uint32_t ReadQueue32OrZero(std::uint32_t address) noexcept {
     try {
@@ -30,6 +33,63 @@ std::uint32_t ReadQueue32OrZero(std::uint32_t address) noexcept {
     } catch (...) {
         return 0u;
     }
+}
+
+void WriteReceiveMessageFrontier(
+    const char* phase,
+    std::uint32_t queuePtr,
+    std::uint32_t outMsgPtr,
+    std::uint32_t msg,
+    CpuContext* cpu) noexcept {
+    const char* mode = gOsReceiveMessageFrontierSequence == 0u ? "w" : "a";
+    FILE* out = std::fopen(kOsReceiveMessageFrontierPath, mode);
+    if (!out) {
+        return;
+    }
+
+    ++gOsReceiveMessageFrontierSequence;
+    const std::uint32_t arrayPtr = ReadQueue32OrZero(queuePtr + kMsgQueueArrayOffset);
+    const std::uint32_t count = ReadQueue32OrZero(queuePtr + kMsgQueueCountOffset);
+    const std::uint32_t first = ReadQueue32OrZero(queuePtr + kMsgQueueFirstOffset);
+    const std::uint32_t used = ReadQueue32OrZero(queuePtr + kMsgQueueUsedOffset);
+    const std::uint32_t sendHead = ReadQueue32OrZero(queuePtr + 0x00u);
+    const std::uint32_t sendTail = ReadQueue32OrZero(queuePtr + 0x04u);
+    const std::uint32_t recvHead = ReadQueue32OrZero(queuePtr + 0x08u);
+    const std::uint32_t recvTail = ReadQueue32OrZero(queuePtr + 0x0Cu);
+    const std::uint32_t outValue =
+        outMsgPtr != 0u ? ReadQueue32OrZero(outMsgPtr) : 0u;
+    const std::uint32_t currentThread = ReadQueue32OrZero(0x800000D4u);
+    const std::uint32_t runningThread = ReadQueue32OrZero(0x800000E4u);
+
+    std::fprintf(
+        out,
+        "event=%u phase=%s queue=0x%08x out=0x%08x msg=0x%08x out_value=0x%08x "
+        "array=0x%08x count=%u first=%u used=%u send_head=0x%08x send_tail=0x%08x "
+        "recv_head=0x%08x recv_tail=0x%08x os_current=0x%08x os_running=0x%08x "
+        "pc=0x%08x r1=0x%08x r3=0x%08x r4=0x%08x r5=0x%08x lr=0x%08x\n",
+        gOsReceiveMessageFrontierSequence,
+        phase ? phase : "<null>",
+        queuePtr,
+        outMsgPtr,
+        msg,
+        outValue,
+        arrayPtr,
+        count,
+        first,
+        used,
+        sendHead,
+        sendTail,
+        recvHead,
+        recvTail,
+        currentThread,
+        runningThread,
+        cpu ? cpu->pc : 0u,
+        cpu ? cpu->gpr[1] : 0u,
+        cpu ? cpu->gpr[3] : 0u,
+        cpu ? cpu->gpr[4] : 0u,
+        cpu ? cpu->gpr[5] : 0u,
+        cpu ? cpu->lr : 0u);
+    std::fclose(out);
 }
 
 void WriteSendMessageEvent(
@@ -68,6 +128,8 @@ void WriteSendMessageEvent(
     std::fclose(out);
 }
 #else
+void WriteReceiveMessageFrontier(
+    const char*, std::uint32_t, std::uint32_t, std::uint32_t, CpuContext*) noexcept {}
 void WriteSendMessageEvent(std::uint32_t, std::uint32_t, CpuContext*) noexcept {}
 #endif
 
@@ -190,18 +252,28 @@ extern "C" void mkw_switch_hle_os_receive_message(CpuContext* cpu) noexcept {
         try {
             const std::uint32_t used = Memory::Read32(queuePtr + kMsgQueueUsedOffset);
             if (used != 0u) {
+                WriteReceiveMessageFrontier(
+                    "ready-before-dequeue", queuePtr, outMsgPtr, 0u, cpu);
                 const std::uint32_t msg = DequeueMessage(queuePtr);
+                WriteReceiveMessageFrontier(
+                    "after-dequeue", queuePtr, outMsgPtr, msg, cpu);
                 if (outMsgPtr != 0u) {
                     Memory::Write32(outMsgPtr, msg);
                 }
+                WriteReceiveMessageFrontier(
+                    "after-output-write", queuePtr, outMsgPtr, msg, cpu);
 
                 // Pinned OSReceiveMessage wakes senders after making one slot
                 // available. Keep OSWakeupThread as the next explicit native
                 // boundary until hardware proves that scheduler path is needed.
                 cpu->gpr[3] = queuePtr + kMsgQueueSendOffset;
                 InvokeDirectCpu<0x801AAAA4u>(cpu);
+                WriteReceiveMessageFrontier(
+                    "after-wakeup-senders", queuePtr, outMsgPtr, msg, cpu);
 
                 RestoreInterruptState(cpu, previousInterruptState);
+                WriteReceiveMessageFrontier(
+                    "after-restore-interrupts", queuePtr, outMsgPtr, msg, cpu);
                 cpu->gpr[3] = 1u;
                 return;
             }
@@ -220,8 +292,12 @@ extern "C" void mkw_switch_hle_os_receive_message(CpuContext* cpu) noexcept {
         // Empty blocking receive: pinned WiiCompiled parks the current thread
         // on the receive wait queue, then rechecks after it is woken. Do not
         // fabricate OSSleepThread semantics before hardware reaches that target.
+        WriteReceiveMessageFrontier(
+            "before-block-sleep", queuePtr, outMsgPtr, 0u, cpu);
         cpu->gpr[3] = queuePtr + kMsgQueueRecvOffset;
         InvokeDirectCpu<0x801AA9B8u>(cpu);
+        WriteReceiveMessageFrontier(
+            "after-block-sleep", queuePtr, outMsgPtr, 0u, cpu);
     }
 }
 

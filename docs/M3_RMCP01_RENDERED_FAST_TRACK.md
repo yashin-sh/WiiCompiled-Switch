@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication and PAL `GXFlush (0x8016E654)` are hardware-proven. TaskThread telemetry now proves the worker receives `job=0x8042E448`, a pointer into its own guest stack whose decoded callback is `0x8042E458`. The current gate is identifying whether that invalid message originates at the producer send or from queue array/metadata state.**
+Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication and PAL `GXFlush (0x8016E654)` are hardware-proven. Send-side telemetry now proves `TaskThread::request` sends the valid `mJobs[0]=0x8042E7DC` pointer into the correct queue. The worker later reads stack-shaped `0x8042E448` from its `r1-0x20` receive output slot, so the current gate is phase-level `OSReceiveMessage` clobber attribution.**
 
 ## Purpose
 
@@ -1104,3 +1104,38 @@ The next candidate is diagnostics-only: extend the TaskThread record with its
 queue/buffer/job-array fields and capture each rendered `OSSendMessage`
 queue/message pair. Hardware must establish whether the producer sends the bad
 stack pointer or the queue storage returns it before any behavioral fix.
+
+## Hardware result — 2026-09-22 valid TaskThread send / receive-slot frontier
+
+The next rendered run resolves the producer side:
+
+```text
+TaskThread::request send:
+queue       = 0x8042BBFC
+msg         = 0x8042E7DC
+array       = 0x8042E7A8
+count       = 5
+first       = 0
+used_before = 0
+
+later TaskThread dispatch:
+queue first = 1
+queue used  = 0
+jobs        = 0x8042E7DC
+job count   = 5
+out slot    = 0x8042E438
+job read    = 0x8042E448
+callback    = 0x8042E458
+```
+
+The producer therefore supplies the correct first `mJobs[]` pointer and the
+queue consumes one element. The invalid value appears at the blocking receive
+output slot after that valid send. Its stack-shaped chain is consistent with a
+guest frame overwrite, but the exact clobbering phase is not yet proven.
+
+The worker metadata is `mJobCount=5`, `mStackSize=0x2800`; this supersedes
+the earlier ResourceManager attribution for this exact object.
+
+The next candidate adds diagnostics only around each
+`OSReceiveMessage` phase: dequeue, output write, wakeup-senders, interrupt
+restore and blocking-sleep return.

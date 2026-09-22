@@ -96,3 +96,17 @@ After the TaskThread native bridge is merged:
 4. record whether `DVDReadPrio` / `DVDReadAsyncPrio` are finally reached;
 5. separately record any new drawable FIFO / display-list / `GXCopyDisp`
    activity.
+
+## Later attribution correction
+
+Follow-up hardware telemetry on 2026-09-22 shows that this exact priority-24
+TaskThread object has `mJobCount=5` and `mStackSize=0x2800`. That concrete
+runtime shape does not match the currently decompiled
+`System::ResourceManager` TaskThread creation shape. The historical
+ResourceManager attribution above is therefore superseded for this exact
+object; the hardware fact that remains valid is only that it is the
+priority-24 `EGG::TaskThread` at `0x8042BBF0`.
+
+The later send-side trace also proves `TaskThread::request` sends a valid
+`mJobs[]` pointer. The active frontier is now the blocking
+`OSReceiveMessage` output-slot clobber, not callback mapping.

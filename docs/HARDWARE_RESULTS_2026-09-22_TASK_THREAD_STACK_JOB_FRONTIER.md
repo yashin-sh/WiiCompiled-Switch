@@ -41,3 +41,15 @@ and add `fast-track-os-message-events.txt` recording each rendered
 
 No queue, scheduler, HostContext, TaskThread, DVD, GX or resource semantics are
 changed.
+
+## Follow-up resolution
+
+The next hardware run resolves the producer-vs-queue question from this
+document. `TaskThread::request` sends the valid first job slot
+`0x8042E7DC` into queue `0x8042BBFC` / array `0x8042E7A8`. The queue
+later shows `first=1`, `used=0`, while the worker reads stack-shaped
+`0x8042E448` from its output slot.
+
+The producer-send hypothesis is therefore closed. The active frontier is now
+the exact `OSReceiveMessage` phase that clobbers the output slot.
+See `HARDWARE_RESULTS_2026-09-22_TASK_THREAD_VALID_SEND_RECEIVE_SLOT_FRONTIER.md`.

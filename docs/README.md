@@ -88,6 +88,7 @@
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_PRESENT_GX_FLUSH_FRONTIER.md` — first successful game-facing RMCP01 GPU present (`hadWork=1`) and new PAL `GXFlush` frontier
 - `HARDWARE_RESULTS_2026-09-22_GX_FLUSH_CROSSED_TASK_THREAD_JOB_FRONTIER.md` — `GXFlush` hardware-crossed with 23 successful presents; later TaskThread indirect target equals the worker guest stack pointer and requires job-field diagnostics
 - `HARDWARE_RESULTS_2026-09-22_TASK_THREAD_STACK_JOB_FRONTIER.md` — TaskThread telemetry proves the received “job” aliases the worker stack; next gate is producer-send vs queue-buffer attribution
+- `HARDWARE_RESULTS_2026-09-22_TASK_THREAD_VALID_SEND_RECEIVE_SLOT_FRONTIER.md` — proves `TaskThread::request` sends the valid `mJobs[0]` pointer; current frontier is the exact `OSReceiveMessage` output-slot clobber phase
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes
@@ -96,13 +97,6 @@
 
 For the current project status, use `../README.md`, `../ROADMAP.md`,
 `FAST_TRACK_VALIDATION_POLICY.md`, `M2_RUNTIME_BOOTSTRAP.md`, and issue #117.
-The latest 2026-09-22 hardware evidence keeps `PASS FIRST_RMCP01_GX_PRESENT hadWork=1`
-and hardware-crosses PAL `GXFlush (0x8016E654)`: 23 flush hits lead to 23
-successful presents with no failures and durable later execution. The next
-blocker is a TaskThread resource-worker `INDIRECT_CALL_MISS` whose target
-`0x8042E458` equals that worker's saved guest `r1`; it is not mapped as
-code. Job/callback telemetry is required before the next behavioral change.
-Visual correctness of the displayed Mario Kart Wii pixels remains a separate
-milestone. Dated hardware result files are historical
+The latest 2026-09-22 hardware evidence keeps `PASS FIRST_RMCP01_GX_PRESENT hadWork=1` and hardware-crosses PAL `GXFlush (0x8016E654)`. Follow-up TaskThread telemetry proves `TaskThread::request` sends the valid `mJobs[0]=0x8042E7DC` pointer into the correct queue, while the worker later reads stack-shaped `0x8042E448` from its `r1-0x20` receive output slot. The current gate is phase-level `OSReceiveMessage` clobber attribution; `0x8042E458` remains explicitly not mapped as code. Runtime metadata also supersedes the earlier ResourceManager attribution for this exact worker: it has 5 jobs and a `0x2800` stack. Visual correctness of the displayed Mario Kart Wii pixels remains a separate milestone. Dated hardware result files are historical
 evidence and intentionally retain the frontier wording that was correct when
 each run was captured.

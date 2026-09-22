@@ -77,6 +77,7 @@ void WriteTaskThreadDispatchFrontier(
         cpu ? cpu->gpr[5] : 0u);
     std::fclose(out);
 #else
+    (void)kTaskThreadDispatchPath;
     (void)kind;
     (void)taskThread;
     (void)stackPointer;
@@ -273,9 +274,9 @@ extern "C" void mkw_switch_hle_task_thread_run(CpuContext* ctx) {
                     stackPointer,
                     outMsgPtr,
                     currentJob,
-                    Memory::Read32(currentJob + kJobCallbackOffset),
+                    callback,
                     cpu->gpr[3],
-                    Memory::Read32(currentJob + kJobTokenOffset),
+                    token,
                     onDone,
                     onDone,
                     cpu);

@@ -150,7 +150,7 @@ Validation policy after the 2026-09-20 audit: the five public CI workflows remai
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered path is hardware-proven through real RMCP01 FIFO work, `GXCopyDisp`, successful presentation and `GXFlush (0x8016E654)`. TaskThread telemetry now proves the worker receives `job=0x8042E448`, which aliases its own guest stack and decodes to `callback=0x8042E458`. The next gate is send-side / queue-buffer attribution; no address is mapped from that stack value and no behavioral queue fix is applied yet.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered path remains hardware-proven through real RMCP01 FIFO work, `GXCopyDisp`, successful presentation and `GXFlush (0x8016E654)`. Send-side telemetry now proves `TaskThread::request` places the valid `mJobs[0]=0x8042E7DC` pointer into the correct queue. The worker later reads `0x8042E448` from its `r1-0x20` receive slot, so the current gate is phase-level `OSReceiveMessage` clobber attribution. The observed worker has 5 jobs / `0x2800` stack; do not label it ResourceManager without further proof.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input
@@ -173,7 +173,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-cross PAL `GXDrawDone` (`0x8016EAB0`) using the pinned draw-done bookkeeping and Aurora FIFO drain
 - [x] hardware-cross virtual `EGG::TaskThread::run` (`0x80242D7C`) with the explicit hit counter
 - [x] classify the 2026-09-22 TaskThread indirect-dispatch anomaly: received `job=0x8042E448` aliases the worker stack and decodes to `callback=0x8042E458`, `onDone=0x801AA0F0`
-- [ ] identify whether the invalid TaskThread message is supplied by the translated producer or introduced by message-queue array/metadata state before changing behavior
+- [x] prove the translated producer path is correct: `TaskThread::request` sends `mJobs[0]=0x8042E7DC` into the matching queue/buffer
+- [ ] identify the first `OSReceiveMessage` phase where the `r1-0x20` output slot changes from `0x8042E7DC` to the stack-shaped value before changing behavior
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
 - [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
 - [x] hardware-cross PAL `GXSetScissor` (`0x80173430`) using pinned guest GXData bookkeeping plus Aurora scissor

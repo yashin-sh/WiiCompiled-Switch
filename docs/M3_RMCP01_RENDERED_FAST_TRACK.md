@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication and PAL `GXFlush (0x8016E654)` are hardware-proven. The current durable frontier is the priority-24 `EGG::TaskThread` resource-worker indirect dispatch: observed target `0x8042E458` equals that worker's saved guest `r1`, so job/callback attribution is required before any behavioral change.**
+Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication and PAL `GXFlush (0x8016E654)` are hardware-proven. TaskThread telemetry now proves the worker receives `job=0x8042E448`, a pointer into its own guest stack whose decoded callback is `0x8042E458`. The current gate is identifying whether that invalid message originates at the producer send or from queue array/metadata state.**
 
 ## Purpose
 
@@ -1080,3 +1080,27 @@ itself. The next candidate therefore adds only
 `fast-track-task-thread-last-dispatch.txt` telemetry immediately before those
 indirect dispatches. No scheduler, HostContext, resource, DVD or GX behavior is
 changed until hardware identifies which job field produced the target.
+
+## Hardware result — 2026-09-22 TaskThread stack-job attribution
+
+The follow-up rendered run preserves the first RMCP01 present and repeated GX
+path, while the dedicated TaskThread diagnostic captures:
+
+```text
+job      = 0x8042E448
+callback = 0x8042E458
+arg      = 0x80210078
+token    = 0
+onDone   = 0x801AA0F0
+r1       = 0x8042E458
+```
+
+RMCP01's EGG implementation sends a pointer to a heap-allocated `TJob` slot
+through the inherited message queue. The observed job instead aliases the
+worker stack and decodes its stack pointer as the callback. This excludes a
+missing callback translation as the immediate cause.
+
+The next candidate is diagnostics-only: extend the TaskThread record with its
+queue/buffer/job-array fields and capture each rendered `OSSendMessage`
+queue/message pair. Hardware must establish whether the producer sends the bad
+stack pointer or the queue storage returns it before any behavioral fix.

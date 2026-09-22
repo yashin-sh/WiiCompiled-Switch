@@ -5,6 +5,7 @@
 #include "memory.h"
 
 #include <cstdint>
+#include <cstdio>
 
 namespace {
 
@@ -14,6 +15,61 @@ constexpr std::uint32_t kMsgQueueArrayOffset = 0x10u;
 constexpr std::uint32_t kMsgQueueCountOffset = 0x14u;
 constexpr std::uint32_t kMsgQueueFirstOffset = 0x18u;
 constexpr std::uint32_t kMsgQueueUsedOffset = 0x1Cu;
+
+#if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+constexpr const char* kOsMessageEventsPath =
+    "sdmc:/switch/WiiCompiled-Switch/fast-track-os-message-events.txt";
+std::uint32_t gOsMessageEventSequence = 0u;
+
+std::uint32_t ReadQueue32OrZero(std::uint32_t address) noexcept {
+    try {
+        if (!Memory::Contains(address, 4u)) {
+            return 0u;
+        }
+        return Memory::Read32(address);
+    } catch (...) {
+        return 0u;
+    }
+}
+
+void WriteSendMessageEvent(
+    std::uint32_t queuePtr,
+    std::uint32_t msg,
+    CpuContext* cpu) noexcept {
+    const char* mode = gOsMessageEventSequence == 0u ? "w" : "a";
+    FILE* out = std::fopen(kOsMessageEventsPath, mode);
+    if (!out) {
+        return;
+    }
+
+    ++gOsMessageEventSequence;
+    const std::uint32_t arrayPtr = ReadQueue32OrZero(queuePtr + kMsgQueueArrayOffset);
+    const std::uint32_t count = ReadQueue32OrZero(queuePtr + kMsgQueueCountOffset);
+    const std::uint32_t first = ReadQueue32OrZero(queuePtr + kMsgQueueFirstOffset);
+    const std::uint32_t used = ReadQueue32OrZero(queuePtr + kMsgQueueUsedOffset);
+
+    std::fprintf(
+        out,
+        "event=%u kind=send queue=0x%08x msg=0x%08x array=0x%08x count=%u first=%u used_before=%u "
+        "pc=0x%08x r1=0x%08x r3=0x%08x r4=0x%08x r5=0x%08x lr=0x%08x\n",
+        gOsMessageEventSequence,
+        queuePtr,
+        msg,
+        arrayPtr,
+        count,
+        first,
+        used,
+        cpu ? cpu->pc : 0u,
+        cpu ? cpu->gpr[1] : 0u,
+        cpu ? cpu->gpr[3] : 0u,
+        cpu ? cpu->gpr[4] : 0u,
+        cpu ? cpu->gpr[5] : 0u,
+        cpu ? cpu->lr : 0u);
+    std::fclose(out);
+}
+#else
+void WriteSendMessageEvent(std::uint32_t, std::uint32_t, CpuContext*) noexcept {}
+#endif
 
 bool QueueIsFull(std::uint32_t queuePtr) {
     const std::uint32_t used = Memory::Read32(queuePtr + kMsgQueueUsedOffset);
@@ -73,6 +129,8 @@ extern "C" void mkw_switch_hle_os_send_message(CpuContext* cpu) noexcept {
         cpu->gpr[3] = 0u;
         return;
     }
+
+    WriteSendMessageEvent(queuePtr, msg, cpu);
 
     // Match pinned WiiCompiled's MsgQueueOp path used by OSSendMessage:
     // disable interrupts once, append when space exists and wake receivers.

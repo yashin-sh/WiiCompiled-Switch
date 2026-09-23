@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication and PAL `GXFlush (0x8016E654)` are hardware-proven. The 2026-09-23 receive-phase trace proves `OSReceiveMessage` dequeues and writes the valid `mJobs[0]=0x8042E7DC`, then the slot changes to stack-shaped `0x8042E448` across the `InvokeDirectCpu<OSWakeupThread>` boundary. With an empty sender wait queue, the Switch-specific pre-call VI poll is the active cause candidate; the current correction suppresses VI retrace polling while guest interrupts are disabled.**
+Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication and PAL `GXFlush (0x8016E654)` are hardware-proven. The 2026-09-23 interrupt-mask correction is now hardware-validated: TaskThread receives the real `mJobs[0]=0x8042E7DC`, dispatches callback `0x8000B53C`, and the local DVD bridge successfully reads `/Boot/Strap/eu/English.szs`. The current frontier is `SELECTTHREAD_IDLE_POLL`, where no runnable thread remains after the TaskThread blocks again.**
 
 ## Purpose
 
@@ -1173,3 +1173,44 @@ section.
 Hardware acceptance is that `0x8042E7DC` remains in the output slot through
 `after-wakeup-senders` and that the next durable blocker moves beyond the
 stack-pointer callback `0x8042E458`.
+
+## Hardware result — 2026-09-23 first DVD read / idle scheduler frontier
+
+The next rendered run validates the masked-VI-poll correction:
+
+```text
+after-output-write     = 0x8042E7DC
+after-wakeup-senders   = 0x8042E7DC
+after-restore-interrupts = 0x8042E7DC
+```
+
+TaskThread therefore dispatches the real job:
+
+```text
+job      = 0x8042E7DC
+callback = 0x8000B53C
+arg      = 0
+onDone   = 0
+```
+
+That callback reaches the local DVD bridge and produces:
+
+```text
+status = read-pass
+path   = /Boot/Strap/eu/English.szs
+size   = 299969
+result = 299969
+```
+
+The new blocker is `SELECTTHREAD_IDLE_POLL` at PAL
+`SelectThread (0x801A9C08)` after the priority-24 TaskThread loops back into
+a blocking receive and no runnable thread remains. The default thread is
+already WAITING on queue `0x804294A4`.
+
+The current candidate adds diagnostics only to `OSSleepThread` and the idle
+frontier to identify who parked that default thread and which pinned wake
+source is actually required. No idle-loop subsystem is enabled yet.
+
+This run aborts before the previously hardware-proven drawable/present path;
+that earlier GPU proof remains valid but is not re-exercised by this shorter
+resource/scheduler run.

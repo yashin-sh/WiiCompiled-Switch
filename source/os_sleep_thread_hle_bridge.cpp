@@ -6,6 +6,7 @@
 #include "switch_guest_fiber.hpp"
 
 #include <cstdint>
+#include <cstdio>
 
 namespace {
 
@@ -23,6 +24,72 @@ constexpr std::uint32_t kThreadPrevOffset = 0x2E4u;
 
 constexpr std::uint16_t kThreadStateRunning = 2u;
 constexpr std::uint16_t kThreadStateWaiting = 4u;
+
+#if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+constexpr const char* kOsSleepEventsPath =
+    "sdmc:/switch/WiiCompiled-Switch/fast-track-os-sleep-events.txt";
+std::uint32_t gOsSleepEventSequence = 0u;
+
+std::uint32_t Read32OrZero(std::uint32_t address) noexcept {
+    try {
+        if (!Memory::IsInitialized() ||
+            !Memory::Contains(address, sizeof(std::uint32_t))) {
+            return 0u;
+        }
+        return Memory::Read32(address);
+    } catch (...) {
+        return 0u;
+    }
+}
+
+std::uint16_t Read16OrZero(std::uint32_t address) noexcept {
+    try {
+        if (!Memory::IsInitialized() ||
+            !Memory::Contains(address, sizeof(std::uint16_t))) {
+            return 0u;
+        }
+        return Memory::Read16(address);
+    } catch (...) {
+        return 0u;
+    }
+}
+
+void WriteSleepEvent(
+    std::uint32_t queuePtr,
+    std::uint32_t currentThread,
+    CpuContext* cpu) noexcept {
+    const char* mode = gOsSleepEventSequence == 0u ? "w" : "a";
+    FILE* out = std::fopen(kOsSleepEventsPath, mode);
+    if (!out) {
+        return;
+    }
+
+    ++gOsSleepEventSequence;
+    std::fprintf(
+        out,
+        "event=%u thread=0x%08x queue=0x%08x state=%u priority=%d "
+        "queue_head=0x%08x queue_tail=0x%08x os_current=0x%08x os_running=0x%08x "
+        "pc=0x%08x r1=0x%08x r3=0x%08x r4=0x%08x r5=0x%08x lr=0x%08x\n",
+        gOsSleepEventSequence,
+        currentThread,
+        queuePtr,
+        static_cast<unsigned>(Read16OrZero(currentThread + kThreadStateOffset)),
+        static_cast<std::int32_t>(Read32OrZero(currentThread + kThreadPriorityOffset)),
+        Read32OrZero(queuePtr),
+        Read32OrZero(queuePtr + 4u),
+        Read32OrZero(kOSCurrentContextAddr),
+        Read32OrZero(kOSRunningContextAddr),
+        cpu ? cpu->pc : 0u,
+        cpu ? cpu->gpr[1] : 0u,
+        cpu ? cpu->gpr[3] : 0u,
+        cpu ? cpu->gpr[4] : 0u,
+        cpu ? cpu->gpr[5] : 0u,
+        cpu ? cpu->lr : 0u);
+    std::fclose(out);
+}
+#else
+void WriteSleepEvent(std::uint32_t, std::uint32_t, CpuContext*) noexcept {}
+#endif
 
 bool Mapped32(std::uint32_t address) noexcept {
     return Memory::IsInitialized() && Memory::Contains(address, sizeof(std::uint32_t));
@@ -148,6 +215,8 @@ extern "C" void mkw_switch_hle_os_sleep_thread(CpuContext* ctx) noexcept {
             RestoreInterrupts(cpu, irqState);
             return;
         }
+
+        WriteSleepEvent(queuePtr, currentThread, cpu);
 
         // Pinned WiiCompiled refuses to park while OSDisableScheduler nesting is
         // non-zero. Leave the thread and wait queue untouched so the caller can

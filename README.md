@@ -30,7 +30,7 @@ The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge se
 
 The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
 
-The latest 2026-09-23 rendered real-Switch run keeps the game-facing GPU path healthy through `GXFlush (0x8016E654)`: 23 flushes, 23 `GXCopyDisp` calls, 23 successful presents, zero present failures and `FIFO produced work = YES`. The receive-phase trace now pinpoints the TaskThread corruption: `OSReceiveMessage` dequeues the valid `mJobs[0]=0x8042E7DC` and writes it correctly to `r1-0x20`, but that slot becomes the stack-shaped `0x8042E448` across the `InvokeDirectCpu<OSWakeupThread>` boundary. The sender wait queue is empty, so the native wakeup body has nothing to reschedule. The Switch-specific pre-call VI poll is therefore the active frontier: it was allowed to inject a retrace while guest interrupts were disabled inside the receive critical section. The current candidate suppresses VI polling while guest interrupts are disabled; no queue/TaskThread/scheduler/GX semantics are changed. Visual correctness still requires direct confirmation.
+The latest 2026-09-23 rendered real-Switch run hardware-validates the VI interrupt-mask correction: the TaskThread receive slot keeps the valid `mJobs[0]=0x8042E7DC` value through `after-wakeup-senders` and `after-restore-interrupts`, and the real callback is now `0x8000B53C` instead of the old stack-pointer target. That callback reaches the local DVD bridge and successfully reads `/Boot/Strap/eu/English.szs` (`299969` bytes). The next exact blocker is `SELECTTHREAD_IDLE_POLL` in PAL `SelectThread (0x801A9C08)` when the TaskThread performs its next blocking receive and no runnable thread remains. The default thread is already WAITING on queue `0x804294A4`; the current diagnostic candidate records the exact sleep caller and idle ownership before implementing any specific timer/VI/alarm/audio wake source. This run stops before the previously hardware-proven drawable/present sequence, so the earlier 23-present/GXFlush proof remains valid but is not re-exercised by this shorter run. Visual correctness still requires direct confirmation.
 
 ## Milestones
 
@@ -58,7 +58,7 @@ The latest 2026-09-23 rendered real-Switch run keeps the game-facing GPU path he
 | First real RMCP01 drawable work | ✅ `PASS FIRST_RMCP01_FIFO_WORK` |
 | First game-facing RMCP01 GPU present | ✅ `PASS FIRST_RMCP01_GX_PRESENT hadWork=1` |
 | First visually confirmed Mario Kart Wii image | 🟡 Pending visual confirmation |
-| Current hardware frontier | 🟡 VI poll interrupt-mask fix: `OSReceiveMessage` writes valid `0x8042E7DC`, then the pre-call retrace service across `OSWakeupThread` clobbers the `r1-0x20` slot while guest interrupts are disabled |
+| Current hardware frontier | 🟡 `SELECTTHREAD_IDLE_POLL`: first real `/Boot/Strap/eu/English.szs` DVD read succeeds, then priority-24 TaskThread blocks again with no runnable thread; identify what parked/wakes default thread queue `0x804294A4` before porting an idle wake source |
 | WiiCompiled/Aurora GX → first RMCP01 GPU present | ✅ Hardware validated |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
@@ -183,11 +183,15 @@ PASS FIRST_RMCP01_GX_PRESENT hadWork=1                             ✅ hardware 
   ↓
 GXFlush (0x8016E654)                                               ✅ hardware crossed
   ↓
-EGG::TaskThread blocking receive output slot                           ✅ clobber phase hardware-attributed
-  valid 0x8042E7DC after output write -> 0x8042E448 across wakeup call boundary
+EGG::TaskThread receive slot / VI interrupt-mask fix                    ✅ hardware validated
+  valid 0x8042E7DC survives wakeup + interrupt restore
   ↓
-Switch translated-call VI poll while interrupts disabled               🟡 current correction frontier
-  suppress retrace delivery until guest interrupts are enabled
+TaskThread real callback 0x8000B53C                                      ✅ hardware crossed
+  ↓
+local DVD read /Boot/Strap/eu/English.szs                                ✅ hardware read-pass (299969 bytes)
+  ↓
+SelectThread idle path (0x801A9C08)                                      🟡 current diagnostic frontier
+  default thread WAITING on 0x804294A4; identify exact wake source
   ↓
 next exact hardware-attributed game/resource frontier
   ↓
@@ -204,7 +208,7 @@ The normal fast-track GX FIFO bridge remains intentionally a sink, so it stays a
 
 ### Filesystem / DVD
 
-The project does not fabricate Nintendo game data. The user's own RMCP01 `DATA/sys/fst.bin` is now hardware-proven to publish into guest MEM2 at `0x97DC0000`, and the narrow `DATA/files` DVD read bridge is installed. The current startup path has not yet reached `DVDReadPrio` / `DVDReadAsyncPrio`, so no claim of real file-read hardware PASS is made yet.
+The project does not fabricate Nintendo game data. The user's own RMCP01 `DATA/sys/fst.bin` is hardware-proven to publish into guest MEM2 at `0x97DC0000`, and the narrow local `DATA/files` DVD bridge is now hardware-proven to service a real boot resource read: `/Boot/Strap/eu/English.szs`, 299,969 bytes. This validates the FST/file mapping on the current boot path; broader DVD semantics remain incomplete and continue to be added only when hardware reaches them.
 
 ### Input
 
@@ -363,6 +367,7 @@ Start with:
 - [`docs/HARDWARE_RESULTS_2026-09-22_TASK_THREAD_STACK_JOB_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-22_TASK_THREAD_STACK_JOB_FRONTIER.md) — proves the received TaskThread “job” aliases the worker stack and moves the frontier to send-side / queue-buffer source attribution;
 - [`docs/HARDWARE_RESULTS_2026-09-22_TASK_THREAD_VALID_SEND_RECEIVE_SLOT_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-22_TASK_THREAD_VALID_SEND_RECEIVE_SLOT_FRONTIER.md) — proves `TaskThread::request` sends the valid `mJobs[0]` pointer and moves the frontier to the exact `OSReceiveMessage` output-slot clobber phase;
 - [`docs/HARDWARE_RESULTS_2026-09-23_VI_POLL_INTERRUPT_MASK_TASK_THREAD_FIX.md`](docs/HARDWARE_RESULTS_2026-09-23_VI_POLL_INTERRUPT_MASK_TASK_THREAD_FIX.md) — phase trace proves the receive slot is correct until the `OSWakeupThread` call boundary; attributes the clobber to Switch pre-call VI retrace delivery while guest interrupts are disabled and defines the minimal interrupt-mask fix;
+- [`docs/HARDWARE_RESULTS_2026-09-23_TASK_THREAD_DVD_READ_IDLE_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-23_TASK_THREAD_DVD_READ_IDLE_FRONTIER.md) — hardware-validates the interrupt-mask fix, records the first real `/Boot/Strap/eu/English.szs` read-pass, and moves the frontier to `SELECTTHREAD_IDLE_POLL`;
 - [`docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_CTRL_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_CTRL_FRONTIER.md) — merged #203 hardware-proves `GXSetChanMatColor`, preserves the scheduler/GX chain, and exposes PAL `GXSetChanCtrl`;
 - [`docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEX_GENS_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEX_GENS_FRONTIER.md) — real Switch progresses beyond `GXSetChanCtrl` and exposes PAL `GXSetNumTexGens`;
 - [`docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_IND_STAGES_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_IND_STAGES_FRONTIER.md) — real Switch progresses beyond `GXSetNumTexGens` and exposes PAL `GXSetNumIndStages`;

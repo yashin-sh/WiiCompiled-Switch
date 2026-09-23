@@ -84,11 +84,12 @@
 - [x] add an independent Horizon liveness watchdog that records ACTIVE vs STALE translated progress without mutating guest state
 - [x] classify the sustained black-screen path as an active translated/VI display loop rather than a durable translated-thread stall
 - [x] hardware-prove local RMCP01 FST publication at `0x97DC0000` with 64,224 bytes / 2,096 entries (#183)
-- [x] disprove `DVDReadPrio` / `DVDReadAsyncPrio` as the current startup frontier: #185 is installed but not reached in the first hardware run
+- [x] disprove `DVDReadPrio` / `DVDReadAsyncPrio` as the earlier startup frontier: #185 was not reached in that first hardware run
+- [x] hardware-prove the local RMCP01 DVD/FST path with a real `/Boot/Strap/eu/English.szs` read-pass (`299969` bytes)
 - [x] isolate the durable priority-6 execution to later OSThread `0x90112660`, distinct from the initial `EGG::ProcessMeter` thread, and add lifecycle/vtable telemetry (#186)
 - [x] identify its virtual `run()` as `0x80008D18` with object `0x8042E930` / vtable `0x80270BC0`, and correlate the starvation with the stale non-fiber `VIWaitForRetrace` path
 - [ ] hardware-validate fiber-aware `VIWaitForRetrace`: priority-6 waiter must park on VI queue `0x80386BC0` and allow the default thread to resume between retraces
-- [x] publish the user-owned RMCP01 FST into guest MEM2 and install the narrow local `DATA/files` DVD read mapping (#183/#185); hardware proves FST publication, while the current startup path has not reached the read override yet
+- [x] publish the user-owned RMCP01 FST into guest MEM2 and install the narrow local `DATA/files` DVD read mapping (#183/#185); hardware now proves both FST publication and a real `/Boot/Strap/eu/English.szs` read-pass
 - [ ] move NAND async completion draining from the fast-track HLE boundary to a verified alarm/IOS scheduling point if later hardware ordering requires it
 - [ ] complete thread/mutex/condition-variable semantics required by the game
 - [ ] complete filesystem/NAND/DVD abstractions required by boot
@@ -150,7 +151,7 @@ Validation policy after the 2026-09-20 audit: the five public CI workflows remai
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered path remains hardware-proven through real RMCP01 FIFO work, `GXCopyDisp`, successful presentation and `GXFlush (0x8016E654)`. The 2026-09-23 phase trace proves `OSReceiveMessage` dequeues/writes the valid `mJobs[0]=0x8042E7DC`, then the slot is clobbered across the `InvokeDirectCpu<OSWakeupThread>` boundary while the sender wait queue is empty. The Switch call-boundary VI poll was servicing retraces despite guest interrupts being disabled. The current candidate only suppresses that poll while interrupts are masked.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered path remains hardware-proven through real RMCP01 FIFO work, `GXCopyDisp`, successful presentation and `GXFlush (0x8016E654)`. The 2026-09-23 interrupt-mask fix is now hardware-validated: `mJobs[0]=0x8042E7DC` survives the receive completion, callback `0x8000B53C` executes, and `/Boot/Strap/eu/English.szs` reads successfully. The next exact blocker is `SELECTTHREAD_IDLE_POLL`; diagnostics now target the default thread wait queue `0x804294A4` before any timer/VI/alarm/audio idle source is ported.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input
@@ -176,7 +177,9 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] prove the translated producer path is correct: `TaskThread::request` sends `mJobs[0]=0x8042E7DC` into the matching queue/buffer
 - [x] identify the clobber phase: `after-output-write` is `0x8042E7DC`, then `after-wakeup-senders` is `0x8042E448`
 - [x] attribute the empty-waiter wakeup boundary to the Switch pre-call VI poll while guest interrupts are disabled
-- [ ] hardware-validate that masking VI polling during disabled guest interrupts preserves `0x8042E7DC` across the wakeup boundary and advances to the next exact blocker
+- [x] hardware-validate that masking VI polling during disabled guest interrupts preserves `0x8042E7DC` across wakeup/interrupt restore and advances to the real callback `0x8000B53C`
+- [x] hardware-cross the real TaskThread callback far enough to read `/Boot/Strap/eu/English.szs` successfully through the local DVD bridge
+- [ ] attribute `SELECTTHREAD_IDLE_POLL`: identify the caller that parked the default thread on `0x804294A4` and the exact wake source before porting any idle-loop subsystem
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
 - [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
 - [x] hardware-cross PAL `GXSetScissor` (`0x80173430`) using pinned guest GXData bookkeeping plus Aurora scissor

@@ -106,3 +106,26 @@ After public CI and the private rendered build:
    `0x8042E458`;
 5. follow the next exact durable blocker if execution advances beyond this
    TaskThread job.
+
+## Hardware validation
+
+The next rendered run validates this correction. The TaskThread receive slot
+contains `0x8042E7DC` after the output write, after the sender-wakeup
+boundary, and after interrupt restore. The old stack-shaped
+`0x8042E448 -> callback 0x8042E458` path is gone.
+
+The real job dispatch is:
+
+```text
+job      = 0x8042E7DC
+callback = 0x8000B53C
+arg      = 0
+onDone   = 0
+```
+
+Execution progresses through a successful local DVD read of
+`/Boot/Strap/eu/English.szs` before reaching the distinct
+`SELECTTHREAD_IDLE_POLL` scheduler frontier.
+
+See
+`HARDWARE_RESULTS_2026-09-23_TASK_THREAD_DVD_READ_IDLE_FRONTIER.md`.

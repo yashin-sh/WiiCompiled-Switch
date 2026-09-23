@@ -39,9 +39,14 @@ void mkw_switch_hle_os_restore_interrupts(CpuContext* cpu) noexcept;
 bool mkw_switch_hle_os_interrupts_enabled() noexcept;
 void mkw_switch_hle_os_sleep_thread(CpuContext* cpu) noexcept;
 
-// Time-driven VI service point used once cooperative guest fibers are active.
-// It advances only already-due retraces and is re-entry guarded in the VI HLE.
+// Time-driven VI service points used once cooperative guest fibers are active.
+// poll_retrace advances only already-due retraces. wait_for_next_retrace_poll
+// performs the host-side idle wait used by SelectThread when VI is the proven
+// wake source. retrace_advancing mirrors pinned VI_HLE_IsAdvancingRetrace so
+// OSWakeupThread does not recursively reschedule from inside a retrace callback.
 void mkw_switch_hle_vi_poll_retrace(CpuContext* cpu) noexcept;
+void mkw_switch_hle_vi_wait_for_next_retrace_poll() noexcept;
+bool mkw_switch_hle_vi_retrace_advancing() noexcept;
 
 // Switch-native early OS exception/interrupt initialization. WiiCompiled
 // replaces both guest entry points with host HLE to avoid installing Wii

@@ -162,10 +162,13 @@ extern "C" void mkw_switch_hle_os_wakeup_thread(CpuContext* ctx) noexcept {
             ++woke;
         }
 
-        // The hardware-proven invocation is a translated OSWakeupThread call, not
-        // a re-entrant VI retrace callback. Mirror the pin's immediate-reschedule
-        // path and reuse the already validated SelectThread/HostContext bridge.
-        if (resched) {
+        // Pinned WiiCompiled suppresses immediate SelectThread recursion while
+        // AdvanceRetrace is delivering VI callbacks. The 2026-09-23 hardware
+        // trace proves AsyncDisplay's sync queue is woken from PostRetrace while
+        // SelectThread itself is in the idle VI pump, so mirror that guard here.
+        // The outer SelectThread observes the pending bit and performs the switch
+        // after the retrace callback has unwound.
+        if (resched && !mkw_switch_hle_vi_retrace_advancing()) {
             cpu->gpr[3] = 0u;
             InvokeDirectCpu<0x801A9C08u>(cpu);
         }

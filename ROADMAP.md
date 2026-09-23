@@ -151,7 +151,7 @@ Validation policy after the 2026-09-20 audit: the five public CI workflows remai
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered path remains hardware-proven through real RMCP01 FIFO work, `GXCopyDisp`, successful presentation and `GXFlush (0x8016E654)`. The 2026-09-23 interrupt-mask fix is now hardware-validated: `mJobs[0]=0x8042E7DC` survives the receive completion, callback `0x8000B53C` executes, and `/Boot/Strap/eu/English.szs` reads successfully. The next exact blocker is `SELECTTHREAD_IDLE_POLL`; diagnostics now target the default thread wait queue `0x804294A4` before any timer/VI/alarm/audio idle source is ported.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered path remains hardware-proven through real RMCP01 FIFO work, `GXCopyDisp`, successful presentation and `GXFlush (0x8016E654)`. The 2026-09-23 interrupt-mask fix is hardware-validated, callback `0x8000B53C` reads `/Boot/Strap/eu/English.szs`, and the idle blocker is now attributed to `AsyncDisplay::syncTick`: default thread `0x80347498` sleeps on object+`0x58 = 0x804294A4`, whose matching EGG wake is `postVRetrace()`. The current candidate therefore adds only VI polling/waiting to SelectThread idle plus the pinned no-recursive-reschedule guard during `AdvanceRetrace`; timers/audio/alarms remain untouched.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input
@@ -179,7 +179,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] attribute the empty-waiter wakeup boundary to the Switch pre-call VI poll while guest interrupts are disabled
 - [x] hardware-validate that masking VI polling during disabled guest interrupts preserves `0x8042E7DC` across wakeup/interrupt restore and advances to the real callback `0x8000B53C`
 - [x] hardware-cross the real TaskThread callback far enough to read `/Boot/Strap/eu/English.szs` successfully through the local DVD bridge
-- [ ] attribute `SELECTTHREAD_IDLE_POLL`: identify the caller that parked the default thread on `0x804294A4` and the exact wake source before porting any idle-loop subsystem
+- [x] attribute `SELECTTHREAD_IDLE_POLL`: default thread `0x80347498` parks on `0x804294A4` from `LR=0x8020FE50`; queue is `AsyncDisplay + 0x58` and EGG `postVRetrace()` is the matching wake source
+- [ ] hardware-validate the VI-only SelectThread idle wake: next retrace must wake AsyncDisplay/default thread and advance beyond `SELECTTHREAD_IDLE_POLL` without enabling timer/audio/alarm idle sources
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
 - [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
 - [x] hardware-cross PAL `GXSetScissor` (`0x80173430`) using pinned guest GXData bookkeeping plus Aurora scissor

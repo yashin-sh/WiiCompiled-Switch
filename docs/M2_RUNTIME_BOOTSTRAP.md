@@ -1,6 +1,6 @@
 # M2 — Horizon runtime bootstrap / translated fast-track
 
-Status: **core bootstrap, PAL `main()`, guest thread continuation, sustained post-main execution, local RMCP01 FST publication, and the rendered fast-track runtime are hardware-validated on Nintendo Switch through 2026-09-19; the current gate is later priority-6 OSThread `0x90112660` identity**.
+Status: **core bootstrap, PAL `main()`, guest thread continuation, sustained post-main execution, local RMCP01 FST publication, first local RMCP01 boot-resource read, and the rendered fast-track runtime are hardware-validated on Nintendo Switch through 2026-09-23; the current gate is `SELECTTHREAD_IDLE_POLL` after the priority-24 TaskThread reads `/Boot/Strap/eu/English.szs`.**.
 
 Upstream WiiCompiled pin: `a135beb201042b20f390c6695ca6b26768820fb4`.
 
@@ -151,7 +151,7 @@ Consequences:
 
 ## DVD / resource boundary
 
-The fast-track does not fabricate Nintendo FST/resource data. The user's own RMCP01 FST is now published into guest MEM2 at `0x97DC0000` and validated on hardware. The narrow local `DATA/files` DVD read bridge is installed, but the current startup path has not yet reached `DVDReadPrio` or `DVDReadAsyncPrio`.
+The fast-track does not fabricate Nintendo FST/resource data. The user's own RMCP01 FST is published into guest MEM2 at `0x97DC0000` and validated on hardware. The narrow local `DATA/files` DVD bridge is now also hardware-proven to service a real boot-resource read: `/Boot/Strap/eu/English.szs`, 299,969 bytes.
 
 ## Diagnostics
 
@@ -212,7 +212,7 @@ Fast-track changes are expected to pass exactly these five workflows:
 5. measure Tegra X1 CPU overhead, memory use and frame pacing before choosing the backend;
 6. only then connect the private local RMCP01 GX stream;
 7. if a new runtime blocker/exception appears, return to the exact-address/pinned-semantics workflow;
-8. keep the real local FST/DVD path hardware-driven: FST publication is proven; only extend reads beyond #185 when the game actually reaches a new read/resource boundary.
+8. keep the real local FST/DVD path hardware-driven: FST publication and the first `/Boot/Strap/eu/English.szs` read are proven; extend semantics only when the game reaches a new read/resource boundary.
 
 ## Evidence index
 

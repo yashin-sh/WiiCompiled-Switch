@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication and PAL `GXFlush (0x8016E654)` are hardware-proven. The 2026-09-23 interrupt-mask correction is now hardware-validated: TaskThread receives the real `mJobs[0]=0x8042E7DC`, dispatches callback `0x8000B53C`, and the local DVD bridge successfully reads `/Boot/Strap/eu/English.szs`. The current frontier is `SELECTTHREAD_IDLE_POLL`, where no runnable thread remains after the TaskThread blocks again.**
+Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication and PAL `GXFlush (0x8016E654)` are hardware-proven. The 2026-09-23 interrupt-mask correction is hardware-validated: TaskThread receives `mJobs[0]=0x8042E7DC`, dispatches callback `0x8000B53C`, and the local DVD bridge reads `/Boot/Strap/eu/English.szs`. The `SELECTTHREAD_IDLE_POLL` frontier is now attributed to `AsyncDisplay::syncTick` waiting on its object+0x58 sync queue; the matching wake is VI `postVRetrace()`, so the current candidate ports only that VI idle service.**
 
 ## Purpose
 
@@ -1214,3 +1214,37 @@ source is actually required. No idle-loop subsystem is enabled yet.
 This run aborts before the previously hardware-proven drawable/present path;
 that earlier GPU proof remains valid but is not re-exercised by this shorter
 resource/scheduler run.
+
+## Hardware result — 2026-09-23 AsyncDisplay VI idle wake attribution
+
+The new scheduler telemetry identifies the default-thread wait exactly:
+
+```text
+thread   = 0x80347498
+queue    = 0x804294A4
+priority = 16
+lr       = 0x8020FE50
+```
+
+The same run records the active `EGG::AsyncDisplay` object at
+`0x8042944C`. RMCP01's class layout places its thread/sync queue at
+`+0x58`, so:
+
+```text
+0x8042944C + 0x58 = 0x804294A4
+```
+
+The EGG reference implementation used by the RMCP01 header source has
+`syncTick()` call `OSSleepThread(&mSyncQueue)` and `postVRetrace()`
+call `OSWakeupThread(&mSyncQueue)`. The required idle wake source is
+therefore VI/post-retrace.
+
+Pinned WiiCompiled's `SelectThread` already polls VI and waits toward the
+next retrace deadline when no guest thread is runnable. The Switch candidate
+ports only that VI slice and mirrors the pin's
+`VI_HLE_IsAdvancingRetrace()` guard so `OSWakeupThread` marks the awakened
+thread runnable without recursively rescheduling from inside the retrace
+callback.
+
+Timers, alarms and audio idle pumps remain unimplemented until hardware asks
+for them.

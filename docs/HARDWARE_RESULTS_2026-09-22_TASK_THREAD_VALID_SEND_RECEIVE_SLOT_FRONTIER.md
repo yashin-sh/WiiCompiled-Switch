@@ -138,3 +138,15 @@ The next real-Switch run must determine the first phase where
   later reads the stack value, the return/context bridge becomes the frontier.
 
 No behavioral correction is justified before that phase is hardware-proven.
+
+## Follow-up phase attribution
+
+The 2026-09-23 run resolves the phase requested by this document:
+`after-output-write` contains the correct `0x8042E7DC`, while
+`after-wakeup-senders` contains `0x8042E448`.
+
+The sender wait queue is empty on that call. The current source attribution is
+therefore the Switch `InvokeDirectCpu` pre-call VI poll, which can deliver a
+due retrace while `OSReceiveMessage` still has guest interrupts disabled.
+See
+`HARDWARE_RESULTS_2026-09-23_VI_POLL_INTERRUPT_MASK_TASK_THREAD_FIX.md`.

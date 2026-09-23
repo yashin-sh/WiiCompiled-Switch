@@ -50,3 +50,15 @@ but the worker later reads a stack-shaped value from the blocking receive output
 slot. The current acceptance gate is to identify the exact
 `OSReceiveMessage` phase that clobbers that slot; no function mapping or queue
 behavior change is justified before that evidence.
+
+## 2026-09-23 phase trace
+
+Follow-up hardware now proves the TaskThread job itself is not corrupt in the
+queue or dequeue path. `OSReceiveMessage` dequeues `0x8042E7DC` and writes
+that exact value to the caller's `r1-0x20` output slot. The slot changes to
+`0x8042E448` only across the subsequent
+`InvokeDirectCpu<0x801AAAA4>` wakeup boundary.
+
+The sender wait queue is empty, so the active correction frontier is the
+Switch-specific pre-call VI poll running while guest interrupts are disabled,
+not TaskThread callback mapping or OSMessageQueue storage.

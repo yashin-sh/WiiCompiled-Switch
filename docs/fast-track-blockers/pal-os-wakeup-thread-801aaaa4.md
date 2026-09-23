@@ -23,3 +23,15 @@ Switch implementation policy:
 - reuse the hardware-validated PAL `SelectThread` bridge for immediate rescheduling;
 - do not add timer, alarm, VI or other wakeup sources speculatively;
 - do not alter adjacent scheduler APIs until hardware reaches them.
+
+## 2026-09-23 TaskThread receive-slot attribution
+
+A later priority-24 TaskThread run reaches this boundary with an empty sender
+wait queue. The receive output slot is correct immediately before
+`InvokeDirectCpu<0x801AAAA4>` and stack-shaped immediately after it.
+
+Because `InvokeDirectCpu` runs the Switch time-driven VI poll before the
+native OSWakeupThread body, and `OSReceiveMessage` still has guest interrupts
+disabled at this point, the current correction is to suppress VI retrace
+polling while interrupts are masked. No OSWakeupThread queue/scheduler
+semantics are changed by that fix.

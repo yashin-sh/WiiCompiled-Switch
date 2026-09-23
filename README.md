@@ -30,7 +30,7 @@ The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge se
 
 The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
 
-The latest 2026-09-22 rendered real-Switch run keeps the game-facing GPU path healthy through `GXFlush (0x8016E654)`: 23 flushes, 23 `GXCopyDisp` calls, 23 successful presents, zero present failures and `FIFO produced work = YES`. The TaskThread send-side trace now proves `EGG::TaskThread::request` sends the valid first `mJobs[]` slot (`0x8042E7DC`) into queue `0x8042BBFC` / array `0x8042E7A8`. The worker later reads `0x8042E448` from its `r1-0x20` receive output slot, producing the stack-shaped `callback=0x8042E458`. Therefore the producer is cleared: the current frontier is the exact phase inside or immediately after `OSReceiveMessage` where that output slot is clobbered. Runtime metadata also shows this worker has 5 jobs and a `0x2800` stack, so the earlier ResourceManager attribution is retired. Visual correctness still requires direct confirmation.
+The latest 2026-09-23 rendered real-Switch run keeps the game-facing GPU path healthy through `GXFlush (0x8016E654)`: 23 flushes, 23 `GXCopyDisp` calls, 23 successful presents, zero present failures and `FIFO produced work = YES`. The receive-phase trace now pinpoints the TaskThread corruption: `OSReceiveMessage` dequeues the valid `mJobs[0]=0x8042E7DC` and writes it correctly to `r1-0x20`, but that slot becomes the stack-shaped `0x8042E448` across the `InvokeDirectCpu<OSWakeupThread>` boundary. The sender wait queue is empty, so the native wakeup body has nothing to reschedule. The Switch-specific pre-call VI poll is therefore the active frontier: it was allowed to inject a retrace while guest interrupts were disabled inside the receive critical section. The current candidate suppresses VI polling while guest interrupts are disabled; no queue/TaskThread/scheduler/GX semantics are changed. Visual correctness still requires direct confirmation.
 
 ## Milestones
 
@@ -58,7 +58,7 @@ The latest 2026-09-22 rendered real-Switch run keeps the game-facing GPU path he
 | First real RMCP01 drawable work | ✅ `PASS FIRST_RMCP01_FIFO_WORK` |
 | First game-facing RMCP01 GPU present | ✅ `PASS FIRST_RMCP01_GX_PRESENT hadWork=1` |
 | First visually confirmed Mario Kart Wii image | 🟡 Pending visual confirmation |
-| Current hardware frontier | 🟡 `OSReceiveMessage` output-slot clobber: `TaskThread::request` sends valid `mJobs[0]=0x8042E7DC`, but worker later reads stack-shaped `0x8042E448` from `r1-0x20` |
+| Current hardware frontier | 🟡 VI poll interrupt-mask fix: `OSReceiveMessage` writes valid `0x8042E7DC`, then the pre-call retrace service across `OSWakeupThread` clobbers the `r1-0x20` slot while guest interrupts are disabled |
 | WiiCompiled/Aurora GX → first RMCP01 GPU present | ✅ Hardware validated |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
@@ -183,8 +183,11 @@ PASS FIRST_RMCP01_GX_PRESENT hadWork=1                             ✅ hardware 
   ↓
 GXFlush (0x8016E654)                                               ✅ hardware crossed
   ↓
-EGG::TaskThread blocking receive output slot                           🟡 current diagnostic frontier
-  valid send 0x8042E7DC -> later read 0x8042E448 from r1-0x20
+EGG::TaskThread blocking receive output slot                           ✅ clobber phase hardware-attributed
+  valid 0x8042E7DC after output write -> 0x8042E448 across wakeup call boundary
+  ↓
+Switch translated-call VI poll while interrupts disabled               🟡 current correction frontier
+  suppress retrace delivery until guest interrupts are enabled
   ↓
 next exact hardware-attributed game/resource frontier
   ↓
@@ -359,6 +362,7 @@ Start with:
 - [`docs/HARDWARE_RESULTS_2026-09-22_GX_FLUSH_CROSSED_TASK_THREAD_JOB_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-22_GX_FLUSH_CROSSED_TASK_THREAD_JOB_FRONTIER.md) — hardware-crosses `GXFlush` with 23 successful presents and records the current TaskThread job-dispatch diagnostic frontier;
 - [`docs/HARDWARE_RESULTS_2026-09-22_TASK_THREAD_STACK_JOB_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-22_TASK_THREAD_STACK_JOB_FRONTIER.md) — proves the received TaskThread “job” aliases the worker stack and moves the frontier to send-side / queue-buffer source attribution;
 - [`docs/HARDWARE_RESULTS_2026-09-22_TASK_THREAD_VALID_SEND_RECEIVE_SLOT_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-22_TASK_THREAD_VALID_SEND_RECEIVE_SLOT_FRONTIER.md) — proves `TaskThread::request` sends the valid `mJobs[0]` pointer and moves the frontier to the exact `OSReceiveMessage` output-slot clobber phase;
+- [`docs/HARDWARE_RESULTS_2026-09-23_VI_POLL_INTERRUPT_MASK_TASK_THREAD_FIX.md`](docs/HARDWARE_RESULTS_2026-09-23_VI_POLL_INTERRUPT_MASK_TASK_THREAD_FIX.md) — phase trace proves the receive slot is correct until the `OSWakeupThread` call boundary; attributes the clobber to Switch pre-call VI retrace delivery while guest interrupts are disabled and defines the minimal interrupt-mask fix;
 - [`docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_CTRL_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_CTRL_FRONTIER.md) — merged #203 hardware-proves `GXSetChanMatColor`, preserves the scheduler/GX chain, and exposes PAL `GXSetChanCtrl`;
 - [`docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEX_GENS_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEX_GENS_FRONTIER.md) — real Switch progresses beyond `GXSetChanCtrl` and exposes PAL `GXSetNumTexGens`;
 - [`docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_IND_STAGES_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_IND_STAGES_FRONTIER.md) — real Switch progresses beyond `GXSetNumTexGens` and exposes PAL `GXSetNumIndStages`;

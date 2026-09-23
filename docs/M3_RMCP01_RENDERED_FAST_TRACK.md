@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication and PAL `GXFlush (0x8016E654)` are hardware-proven. Send-side telemetry now proves `TaskThread::request` sends the valid `mJobs[0]=0x8042E7DC` pointer into the correct queue. The worker later reads stack-shaped `0x8042E448` from its `r1-0x20` receive output slot, so the current gate is phase-level `OSReceiveMessage` clobber attribution.**
+Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication and PAL `GXFlush (0x8016E654)` are hardware-proven. The 2026-09-23 receive-phase trace proves `OSReceiveMessage` dequeues and writes the valid `mJobs[0]=0x8042E7DC`, then the slot changes to stack-shaped `0x8042E448` across the `InvokeDirectCpu<OSWakeupThread>` boundary. With an empty sender wait queue, the Switch-specific pre-call VI poll is the active cause candidate; the current correction suppresses VI retrace polling while guest interrupts are disabled.**
 
 ## Purpose
 
@@ -1139,3 +1139,37 @@ the earlier ResourceManager attribution for this exact object.
 The next candidate adds diagnostics only around each
 `OSReceiveMessage` phase: dequeue, output write, wakeup-senders, interrupt
 restore and blocking-sleep return.
+
+## Hardware result — 2026-09-23 masked VI poll correction frontier
+
+The phase-level hardware trace now closes the previous receive-slot attribution:
+
+```text
+after-dequeue:
+  msg       = 0x8042E7DC
+  out_value = 0x8042E448
+
+after-output-write:
+  msg       = 0x8042E7DC
+  out_value = 0x8042E7DC
+
+after-wakeup-senders:
+  msg       = 0x8042E7DC
+  out_value = 0x8042E448
+```
+
+The sender wait queue is empty (`send_head=0`, `send_tail=0`) on this call,
+so the native wakeup body has no runnable sender to process. The Switch
+`InvokeDirectCpu` path nevertheless executes the time-driven VI poll before
+the native call. `OSReceiveMessage` has guest interrupts disabled throughout
+this critical section.
+
+The current correction therefore changes only the Switch VI service policy:
+`mkw_switch_hle_vi_poll_retrace` returns while guest interrupts are disabled.
+This matches the pinned runtime's interrupt-aware deferred callback policy and
+avoids injecting retrace callbacks into an interrupt-masked guest critical
+section.
+
+Hardware acceptance is that `0x8042E7DC` remains in the output slot through
+`after-wakeup-senders` and that the next durable blocker moves beyond the
+stack-pointer callback `0x8042E458`.

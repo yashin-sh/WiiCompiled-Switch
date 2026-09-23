@@ -205,6 +205,10 @@ extern "C" void mkw_switch_hle_os_restore_interrupts(CpuContext* cpu) noexcept {
     }
 }
 
+extern "C" bool mkw_switch_hle_os_interrupts_enabled() noexcept {
+    return g_interruptsEnabled.load(std::memory_order_acquire);
+}
+
 // PAL OS__ExceptionInit (0x801A00E0). The pinned WiiCompiled HLE deliberately
 // skips installing Wii exception vectors on the host and simply returns 0.
 extern "C" void mkw_switch_hle_os_exception_init(CpuContext* cpu) noexcept {

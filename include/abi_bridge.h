@@ -36,6 +36,7 @@ void mkw_switch_hle_os_get_system_time(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_disable_interrupts(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_enable_interrupts(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_restore_interrupts(CpuContext* cpu) noexcept;
+bool mkw_switch_hle_os_interrupts_enabled() noexcept;
 void mkw_switch_hle_os_sleep_thread(CpuContext* cpu) noexcept;
 
 // Time-driven VI service point used once cooperative guest fibers are active.

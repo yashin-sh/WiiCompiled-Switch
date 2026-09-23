@@ -297,6 +297,35 @@ extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext* cpu) noexcept {
     }
 }
 
+extern "C" bool mkw_switch_hle_vi_retrace_advancing() noexcept {
+    return g_viRetraceAdvancing.load(std::memory_order_acquire);
+}
+
+extern "C" void mkw_switch_hle_vi_wait_for_next_retrace_poll() noexcept {
+    if (!g_viInitialized.load(std::memory_order_acquire)) {
+        return;
+    }
+
+    // Match pinned VI_HLE_WaitForNextRetracePoll's host-side idle pacing. The
+    // current hardware frontier proves VI/post-retrace is the wake source for
+    // AsyncDisplay's sync queue. Keep the wait bounded to 1 ms so this remains
+    // an idle service point rather than manufacturing any timer/alarm/audio
+    // guest event that hardware has not requested.
+    constexpr std::int64_t kIdleSliceNs = 1'000'000ll;
+    const std::uint32_t activeTvFormat =
+        g_viActiveTvFormat.load(std::memory_order_acquire);
+    const std::int64_t intervalNs = RetraceIntervalNs(activeTvFormat);
+    const std::int64_t targetNs =
+        g_viLastRetraceNs.load(std::memory_order_acquire) + intervalNs;
+    const std::int64_t nowNs = NowNs();
+    if (nowNs >= targetNs) {
+        return;
+    }
+
+    const std::int64_t remainingNs = targetNs - nowNs;
+    svcSleepThread(remainingNs < kIdleSliceNs ? remainingNs : kIdleSliceNs);
+}
+
 extern "C" void mkw_switch_hle_vi_wait_for_retrace(CpuContext* cpu) noexcept {
     if (!cpu) {
         return;

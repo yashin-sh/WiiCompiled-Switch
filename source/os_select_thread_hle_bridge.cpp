@@ -71,6 +71,13 @@ void WriteSelectThreadIdleFrontier(
 
     const std::uint32_t runningQueue =
         runningContext != 0u ? ReadSelect32OrZero(runningContext + kThreadQueueOffset) : 0u;
+    const std::uint16_t runningState =
+        runningContext != 0u ? ReadSelect16OrZero(runningContext + kThreadStateOffset) : 0u;
+    const std::int32_t runningPriority =
+        runningContext != 0u
+            ? static_cast<std::int32_t>(
+                  ReadSelect32OrZero(runningContext + kThreadPriorityOffset))
+            : 0;
     const std::uint32_t defaultQueue =
         ReadSelect32OrZero(kDefaultThreadContextAddr + kThreadQueueOffset);
 
@@ -105,10 +112,8 @@ void WriteSelectThreadIdleFrontier(
         ReadSelect32OrZero(kSchedulerIdleFlagAddr),
         ReadSelect32OrZero(kSchedulerReschedCounterAddr),
         ReadSelect32OrZero(kSchedulerPendingFlagAddr),
-        static_cast<unsigned>(runningContext != 0u
-            ? ReadSelect16OrZero(runningContext + kThreadStateOffset) : 0u),
-        static_cast<std::int32_t>(runningContext != 0u
-            ? ReadSelect32OrZero(runningContext + kThreadPriorityOffset) : 0u),
+        static_cast<unsigned>(runningState),
+        runningPriority,
         runningQueue,
         runningQueue != 0u ? ReadSelect32OrZero(runningQueue) : 0u,
         runningQueue != 0u ? ReadSelect32OrZero(runningQueue + 4u) : 0u,

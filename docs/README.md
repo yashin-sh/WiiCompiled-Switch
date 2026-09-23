@@ -90,6 +90,7 @@
 - `HARDWARE_RESULTS_2026-09-22_TASK_THREAD_STACK_JOB_FRONTIER.md` — TaskThread telemetry proves the received “job” aliases the worker stack; next gate is producer-send vs queue-buffer attribution
 - `HARDWARE_RESULTS_2026-09-22_TASK_THREAD_VALID_SEND_RECEIVE_SLOT_FRONTIER.md` — proves `TaskThread::request` sends the valid `mJobs[0]` pointer; current frontier is the exact `OSReceiveMessage` output-slot clobber phase
 - `HARDWARE_RESULTS_2026-09-23_VI_POLL_INTERRUPT_MASK_TASK_THREAD_FIX.md` — phase trace proves the slot is correct until the wakeup call boundary and defines the minimal fix: no VI retrace polling while guest interrupts are disabled
+- `HARDWARE_RESULTS_2026-09-23_TASK_THREAD_DVD_READ_IDLE_FRONTIER.md` — hardware-validates the VI interrupt-mask fix, records the first real `/Boot/Strap/eu/English.szs` read-pass, and moves the frontier to `SELECTTHREAD_IDLE_POLL`
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes
@@ -98,6 +99,6 @@
 
 For the current project status, use `../README.md`, `../ROADMAP.md`,
 `FAST_TRACK_VALIDATION_POLICY.md`, `M2_RUNTIME_BOOTSTRAP.md`, and issue #117.
-The latest 2026-09-23 hardware evidence keeps `PASS FIRST_RMCP01_GX_PRESENT hadWork=1`, 23 successful presents and PAL `GXFlush (0x8016E654)` hardware-crossed. The TaskThread receive trace now proves the valid `0x8042E7DC` job is written successfully, then overwritten across the `OSWakeupThread` call boundary while the sender wait queue is empty. The Switch pre-call VI poll was allowed to deliver retraces while guest interrupts were disabled; the current candidate suppresses that poll until interrupts are enabled. `0x8042E458` remains explicitly not mapped as code. Visual correctness remains a separate milestone. Dated hardware result files are historical
+The latest 2026-09-23 hardware evidence validates the VI interrupt-mask correction: the TaskThread receive slot keeps `0x8042E7DC`, callback `0x8000B53C` executes, and `/Boot/Strap/eu/English.szs` is read successfully through the local DVD bridge. The next exact blocker is `SELECTTHREAD_IDLE_POLL` with the default thread already WAITING on queue `0x804294A4`; diagnostics now target the exact sleep caller and wake ownership before any idle-loop source is ported. The earlier real FIFO / `GXCopyDisp` / 23-present / `GXFlush` proof remains valid, although this shorter run stops before re-reaching that graphics sequence. Visual correctness remains a separate milestone. Dated hardware result files are historical
 evidence and intentionally retain the frontier wording that was correct when
 each run was captured.

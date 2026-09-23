@@ -256,10 +256,19 @@ extern "C" void mkw_switch_hle_vi_set_post_retrace_callback(CpuContext* cpu) noe
 extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext* cpu) noexcept {
     if (!cpu || !g_viInitialized.load(std::memory_order_acquire) ||
         !mkw::switch_guest_fiber::available() ||
-        mkw::switch_guest_fiber::current_thread() == 0u) {
+        mkw::switch_guest_fiber::current_thread() == 0u ||
+        !mkw_switch_hle_os_interrupts_enabled()) {
         return;
     }
 
+    // A translated call boundary is only a safe interrupt-like service point
+    // while guest interrupts are enabled. In particular, OSReceiveMessage
+    // disables interrupts across its dequeue/output/wakeup critical section;
+    // injecting a VI retrace there lets callback stack frames overwrite the
+    // caller-owned r1-relative message slot. The pinned runtime services normal
+    // VI polling from interrupt-enabled scheduler points and gates deferred
+    // retrace callbacks on the same interrupt-enabled state.
+    //
     // This poll runs at translated call boundaries, which are interrupt-like
     // service points rather than ABI calls made by the guest. AdvanceRetrace
     // intentionally uses r3 for OSWakeupThread and retrace callbacks. Preserve

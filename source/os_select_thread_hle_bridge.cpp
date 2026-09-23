@@ -14,6 +14,7 @@ namespace {
 constexpr std::uint32_t kOSCurrentContextAddr = 0x800000D4u;
 constexpr std::uint32_t kOSRunningContextAddr = 0x800000E4u;
 constexpr std::uint32_t kDefaultThreadContextAddr = 0x80347498u;
+constexpr std::uint32_t kIdleThreadContextAddr = 0x803478B0u;
 constexpr std::uint32_t kThreadQueueArrayAddr = 0x803477B0u;
 constexpr std::uint32_t kThreadQueueArrayBytes = 0x100u;
 constexpr std::uint32_t kSwitchThreadCallbackPtrAddr = 0x80385AE0u;
@@ -43,6 +44,8 @@ bool Mapped16(std::uint32_t address) noexcept {
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
 constexpr const char* kSelectThreadIdleFrontierPath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-select-thread-idle-frontier.txt";
+constexpr const char* kSelectThreadIdleRecoveryPath =
+    "sdmc:/switch/WiiCompiled-Switch/fast-track-select-thread-idle-recovery.txt";
 
 std::uint32_t ReadSelect32OrZero(std::uint32_t address) noexcept {
     try {
@@ -131,9 +134,50 @@ void WriteSelectThreadIdleFrontier(
         cpu ? cpu->lr : 0u);
     std::fclose(out);
 }
+
+void WriteSelectThreadIdleRecovery(CpuContext* cpu) noexcept {
+    FILE* out = std::fopen(kSelectThreadIdleRecoveryPath, "w");
+    if (!out) {
+        return;
+    }
+
+    const std::uint32_t defaultQueue =
+        ReadSelect32OrZero(kDefaultThreadContextAddr + kThreadQueueOffset);
+    std::fprintf(
+        out,
+        "scheduler_pending=0x%08x\n"
+        "default_state=%u\n"
+        "default_priority=%d\n"
+        "default_queue=0x%08x\n"
+        "default_queue_head=0x%08x\n"
+        "default_queue_tail=0x%08x\n"
+        "os_current=0x%08x\n"
+        "os_running=0x%08x\n"
+        "guest_fiber=0x%08x\n"
+        "pc=0x%08x\n"
+        "r1=0x%08x\n"
+        "lr=0x%08x\n",
+        ReadSelect32OrZero(kSchedulerPendingFlagAddr),
+        static_cast<unsigned>(
+            ReadSelect16OrZero(kDefaultThreadContextAddr + kThreadStateOffset)),
+        static_cast<std::int32_t>(
+            ReadSelect32OrZero(kDefaultThreadContextAddr + kThreadPriorityOffset)),
+        defaultQueue,
+        defaultQueue != 0u ? ReadSelect32OrZero(defaultQueue) : 0u,
+        defaultQueue != 0u ? ReadSelect32OrZero(defaultQueue + 4u) : 0u,
+        ReadSelect32OrZero(kOSCurrentContextAddr),
+        ReadSelect32OrZero(kOSRunningContextAddr),
+        mkw::switch_guest_fiber::current_thread(),
+        cpu ? cpu->pc : 0u,
+        cpu ? cpu->gpr[1] : 0u,
+        cpu ? cpu->lr : 0u);
+    std::fclose(out);
+}
+
 #else
 void WriteSelectThreadIdleFrontier(
     std::uint32_t, std::uint32_t, CpuContext*) noexcept {}
+void WriteSelectThreadIdleRecovery(CpuContext*) noexcept {}
 #endif
 
 [[noreturn]] void AbortSelectBoundary(const char* kind, CpuContext* cpu) noexcept {
@@ -324,10 +368,36 @@ extern "C" void mkw_switch_hle_select_thread(CpuContext* ctx) noexcept {
         if (pendingMask == 0u) {
             WriteSelectThreadIdleFrontier(currentContext, runningContext, cpu);
 
-            // The pin enters a host-driven idle loop that pumps sleep timers,
-            // audio, alarms and VI retraces. None of those independent host
-            // pumps is proven on Horizon yet, so do not spin or fake a wakeup.
-            AbortSelectBoundary("SELECTTHREAD_IDLE_POLL", cpu);
+            // The hardware trace now attributes this exact idle boundary to
+            // EGG::AsyncDisplay::syncTick: the default thread sleeps on the
+            // AsyncDisplay sync queue and its matching wake is issued by the
+            // translated PostRetrace callback. Mirror only the pinned VI slice
+            // of SelectThread's host idle loop; do not pre-port timers, audio,
+            // alarms or any other unproven wake source.
+            TryInvokeSwitchCallback(runningContext, 0u, cpu);
+            Memory::Write32(kOSRunningContextAddr, 0u);
+
+            cpu->gpr[3] = kIdleThreadContextAddr;
+            InvokeDirectCpu<0x801A1E70u>(cpu); // OSSetCurrentContext(idle)
+
+            while (pendingMask == 0u) {
+                mkw_switch_hle_os_enable_interrupts(cpu);
+
+                while (Memory::Read32(kSchedulerPendingFlagAddr) == 0u) {
+                    mkw_switch_hle_vi_poll_retrace(cpu);
+                    if (Memory::Read32(kSchedulerPendingFlagAddr) != 0u) {
+                        break;
+                    }
+                    mkw_switch_hle_vi_wait_for_next_retrace_poll();
+                }
+
+                mkw_switch_hle_os_disable_interrupts(cpu);
+                pendingMask = Memory::Read32(kSchedulerPendingFlagAddr);
+            }
+
+            cpu->gpr[3] = kIdleThreadContextAddr;
+            InvokeDirectCpu<0x801A2098u>(cpu); // OSClearContext(idle)
+            WriteSelectThreadIdleRecovery(cpu);
         }
 
         Memory::Write32(kSchedulerReschedCounterAddr, 0u);

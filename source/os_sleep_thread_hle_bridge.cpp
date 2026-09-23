@@ -32,9 +32,11 @@ std::uint32_t gOsSleepEventSequence = 0u;
 
 std::uint32_t Read32OrZero(std::uint32_t address) noexcept {
     try {
-        return Memory::IsInitialized() && Memory::Contains(address, sizeof(std::uint32_t))
-            ? Memory::Read32(address)
-            : 0u;
+        if (!Memory::IsInitialized() ||
+            !Memory::Contains(address, sizeof(std::uint32_t))) {
+            return 0u;
+        }
+        return Memory::Read32(address);
     } catch (...) {
         return 0u;
     }
@@ -42,9 +44,11 @@ std::uint32_t Read32OrZero(std::uint32_t address) noexcept {
 
 std::uint16_t Read16OrZero(std::uint32_t address) noexcept {
     try {
-        return Memory::IsInitialized() && Memory::Contains(address, sizeof(std::uint16_t))
-            ? Memory::Read16(address)
-            : 0u;
+        if (!Memory::IsInitialized() ||
+            !Memory::Contains(address, sizeof(std::uint16_t))) {
+            return 0u;
+        }
+        return Memory::Read16(address);
     } catch (...) {
         return 0u;
     }

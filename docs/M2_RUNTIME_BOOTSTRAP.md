@@ -1,6 +1,6 @@
 # M2 — Horizon runtime bootstrap / translated fast-track
 
-Status: **core bootstrap, PAL `main()`, guest thread continuation, sustained post-main execution, local RMCP01 FST publication, first local RMCP01 boot-resource read, and the rendered fast-track runtime are hardware-validated on Nintendo Switch through 2026-09-23; the current gate is `SELECTTHREAD_IDLE_POLL` after the priority-24 TaskThread reads `/Boot/Strap/eu/English.szs`.**.
+Status: **core bootstrap, PAL `main()`, guest thread continuation, sustained post-main execution, local RMCP01 FST publication, first local RMCP01 boot-resource read, and the rendered fast-track runtime are hardware-validated on Nintendo Switch through 2026-09-23; `SELECTTHREAD_IDLE_POLL` is now attributed to `EGG::AsyncDisplay::syncTick` waiting for the next VI post-retrace wake, and the current gate is hardware validation of that VI-only idle service.**
 
 Upstream WiiCompiled pin: `a135beb201042b20f390c6695ca6b26768820fb4`.
 

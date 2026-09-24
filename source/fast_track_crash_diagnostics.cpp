@@ -967,9 +967,12 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
     const std::uint32_t r4 = cpu ? cpu->gpr[4] : 0u;
     const std::uint32_t r5 = cpu ? cpu->gpr[5] : 0u;
     const std::uint32_t r6 = cpu ? cpu->gpr[6] : 0u;
+    const std::uint32_t r7 = cpu ? cpu->gpr[7] : 0u;
+    const std::uint32_t r8 = cpu ? cpu->gpr[8] : 0u;
     const std::uint32_t r13 = cpu ? cpu->gpr[13] : 0u;
 
     constexpr std::uint32_t kIosOpenAddress = 0x801938F8u;
+    constexpr std::uint32_t kIosIoctlAddress = 0x80194290u;
     char iosOpenPath[256]{};
     const bool iosOpenPathValid =
         target == kIosOpenAddress && read_guest_cstring(r3, iosOpenPath, sizeof(iosOpenPath));
@@ -988,10 +991,16 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         "r4                    : 0x%08x\n"
         "r5                    : 0x%08x\n"
         "r6                    : 0x%08x\n"
+        "r7                    : 0x%08x\n"
+        "r8                    : 0x%08x\n"
         "r13                   : 0x%08x\n"
         "fast-track stage      : %s\n"
         "ios open path         : %s\n"
         "ios open mode         : %u\n"
+        "ios ioctl fd          : 0x%08x\n"
+        "ios ioctl cmd         : 0x%08x\n"
+        "ios ioctl in ptr/len  : 0x%08x / 0x%08x\n"
+        "ios ioctl out ptr/len : 0x%08x / 0x%08x\n"
         "action                : abort after durable blocker record\n",
         kind ? kind : "UNKNOWN",
         target,
@@ -1002,12 +1011,20 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         r4,
         r5,
         r6,
+        r7,
+        r8,
         r13,
         g_fast_track_stage,
         target == kIosOpenAddress
             ? (iosOpenPathValid ? iosOpenPath : "<unreadable>")
             : "-",
-        target == kIosOpenAddress ? r4 : 0u);
+        target == kIosOpenAddress ? r4 : 0u,
+        target == kIosIoctlAddress ? r3 : 0u,
+        target == kIosIoctlAddress ? r4 : 0u,
+        target == kIosIoctlAddress ? r5 : 0u,
+        target == kIosIoctlAddress ? r6 : 0u,
+        target == kIosIoctlAddress ? r7 : 0u,
+        target == kIosIoctlAddress ? r8 : 0u);
     if (n > 0) {
         const std::size_t size = static_cast<std::size_t>(n) < sizeof(buffer)
             ? static_cast<std::size_t>(n)

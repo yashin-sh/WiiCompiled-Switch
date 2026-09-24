@@ -183,7 +183,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-validate the VI-only SelectThread idle wake: AsyncDisplay/default thread leaves `0x804294A4`, becomes READY, resumes, and recovers real FIFO/present work
 - [x] hardware-cross pinned `EGG::Decomp::decodeSZS (0x80218C2C)`: `English.szs` consumes 299,969 compressed bytes and produces 2,627,200 decompressed bytes
 - [x] hardware-cross pinned `GXInitTexObj (0x801707F8)` using the live texture format/wrap/mipmap registers without pre-porting `GXLoadTexObj`, CI, LOD or TLUT neighbors
-- [ ] attribute pinned `NAND_IOS_Open (0x801938F8)`: capture the exact guest path at `r3=0x802A2160` and mode `r4=0` before selecting device-vs-NAND behavior
+- [x] attribute pinned `NAND_IOS_Open (0x801938F8)`: hardware path is `/dev/net/kd/request`, mode 0
+- [ ] hardware-cross only the pinned KD-request device allocation (first fd 2000); do not pre-port IOS ioctl/ioctlv/close or neighboring network devices
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
 - [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
 - [x] hardware-cross PAL `GXSetScissor` (`0x80173430`) using pinned guest GXData bookkeeping plus Aurora scissor

@@ -1331,3 +1331,17 @@ The current durable record does not include the C string pointed to by
 `r3`. Since pinned behavior differs for IOS devices versus NAND files, the
 candidate adds diagnostics only for the exact path and mode. No IOS/NAND/ISFS
 behavior is added before hardware identifies that path.
+
+## Hardware result — 2026-09-24 IOS_Open KD request frontier
+
+The diagnostic run identifies the exact `IOS_Open (0x801938F8)` request as
+`/dev/net/kd/request`, mode 0. Pinned WiiCompiled classifies this as
+`DeviceKind::KdRequest` and allocates network-device handles from fd 2000
+when networking is enabled, which is the pinned default.
+
+The same run records `GXInitTexObj status=init-pass` for the 832x456 texture,
+so that graphics boundary is now hardware-crossed.
+
+The candidate mirrors only this exact KD-request open. It deliberately leaves
+IOS ioctl/ioctlv/close, KD commands, NCD, IP, SSL, DNS and sockets unsupported
+until hardware reaches them.

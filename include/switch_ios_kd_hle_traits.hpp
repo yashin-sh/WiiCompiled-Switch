@@ -3,6 +3,7 @@
 #include "abi_bridge.h"
 #include "memory.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>

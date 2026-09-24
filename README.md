@@ -24,18 +24,37 @@ The project executes real WiiCompiled-translated Mario Kart Wii code on real Swi
 
 The post-`main` fast-track tracked in issue #117 has now hardware-crossed the observed path through guest thread/context switching, VI/GX bootstrap, WPAD/PAD initialization, timing, power-callback state, console-area lookup, and `OSWakeupThread`.
 
-The latest hardware run confirms the prolonged black-screen path is **actively executing**, not sitting at a durable translated-thread stall. It reached **126,563 translated dispatches total, including 125,958 after `main()`**. RMCP01 maps the sampled target `0x8020FCD4` exactly to `PostRetraceCallback`, while guest PC `0x8024373C` is `EGG::Thread::start(void*)`.
+The rendered fast-track has since advanced far beyond that early sustained-retrace milestone. The latest accepted 2026-09-24 hardware evidence proves the following boot/resource/render chain:
 
-The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge sets `r3` to the new retrace value immediately before invoking the post-retrace callback, so this is direct evidence that the VI/retrace loop continued advancing for thousands of retraces.
+- user-owned FST published at `0x97DC0000` (64,224 bytes / 2,096 entries);
+- real `/Boot/Strap/eu/English.szs` DVD read completed with 299,969 bytes;
+- pinned `EGG::Decomp::decodeSZS (0x80218C2C)` expanded it to 2,627,200 bytes;
+- VI/post-retrace wakes the sleeping AsyncDisplay/default thread and execution resumes;
+- real RMCP01 FIFO work reaches Aurora/Dawn/NVK and a game-facing present succeeds;
+- pinned `GXInitTexObj (0x801707F8)` is hardware-crossed with `status=init-pass` for the observed 832x456 boot texture;
+- the following exact IOS request is `/dev/net/kd/request`, mode 0.
 
-The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
+PR #232 implements only that hardware-observed `IOS_Open (0x801938F8)` request using the pinned KD device-allocation contract. It is merged on `main` as
+`4f1d0188c61d0e12267e5468c1b6591df1d29a4d` after all five public CI gates passed. **That KD open bridge is merged but not yet hardware-crossed**; the next real-Switch run must prove `open-pass`, first `fd=2000`, and durable execution beyond `0x801938F8`.
 
-The latest 2026-09-24 rendered real-Switch run hardware-crosses the new `GXInitTexObj (0x801707F8)                                                  ✅ hardware crossed
+```text
+PAL main / post-main runtime                                       ✅ hardware crossed
   ↓
-NAND_IOS_Open (0x801938F8)                                                  🟡 current diagnostic frontier
-  r3=0x802A2160 r4=0; capture exact path before porting semantics
+TaskThread → local DVD read of English.szs                         ✅ hardware crossed
   ↓
-next exact hardware-attributed game/resource frontier
+AsyncDisplay VI idle wake                                          ✅ hardware crossed
+  ↓
+EGG::Decomp::decodeSZS                                             ✅ hardware crossed
+  ↓
+real RMCP01 FIFO → GXCopyDisp → successful GPU present             ✅ hardware crossed
+  ↓
+GXInitTexObj (0x801707F8)                                          ✅ hardware crossed
+  ↓
+IOS_Open path attribution: /dev/net/kd/request, mode 0             ✅ hardware observed
+  ↓
+exact KD-request open bridge (#232, first fd 2000)                 🟡 merged; hardware validation pending
+  ↓
+next exact hardware-attributed IOS/network/resource/game frontier  ⬜ pending
   ↓
 visually confirmed Mario Kart Wii image                            ⬜ pending
 ```
@@ -51,6 +70,10 @@ The normal fast-track GX FIFO bridge remains intentionally a sink, so it stays a
 ### Filesystem / DVD
 
 The project does not fabricate Nintendo game data. The user's own RMCP01 `DATA/sys/fst.bin` is hardware-proven to publish into guest MEM2 at `0x97DC0000`, and the narrow local `DATA/files` DVD bridge is now hardware-proven to service a real boot resource read: `/Boot/Strap/eu/English.szs`, 299,969 bytes. This validates the FST/file mapping on the current boot path; broader DVD semantics remain incomplete and continue to be added only when hardware reaches them.
+
+### IOS / network
+
+The first observed IOS network request is `/dev/net/kd/request`, mode 0. The current `main` mirrors only the pinned device-handle allocation for that exact request. It does **not** yet claim support for KD commands, IOS ioctl/ioctlv/close, NCD, IP, SSL, DNS, sockets, or online play; those remain hardware-driven follow-up boundaries.
 
 ### Input
 

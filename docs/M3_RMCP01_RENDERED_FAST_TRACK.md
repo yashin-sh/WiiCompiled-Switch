@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication, first local `English.szs` read, VI-only AsyncDisplay idle recovery, complete `English.szs` SZS expansion, `GXInitTexObj`, and PAL `GXFlush (0x8016E654)` are hardware-proven. The latest 2026-09-24 run reaches pinned `NAND_IOS_Open (0x801938F8)`; the exact guest path is the current diagnostic frontier.**
+Status: **renderer, real RMCP01 FIFO work, successful game-facing GPU presentation, local FST publication, real `English.szs` read, VI-only AsyncDisplay idle recovery, complete SZS expansion, `GXInitTexObj`, and PAL `GXFlush` are hardware-proven. Hardware identifies the current IOS request as `/dev/net/kd/request`, mode 0. The exact KD-request open bridge is merged in #232 and awaits real-Switch validation.**
 
 ## Purpose
 
@@ -1340,8 +1340,24 @@ The diagnostic run identifies the exact `IOS_Open (0x801938F8)` request as
 when networking is enabled, which is the pinned default.
 
 The same run records `GXInitTexObj status=init-pass` for the 832x456 texture,
-so that graphics boundary is now hardware-crossed.
+so that graphics boundary is hardware-crossed.
 
-The candidate mirrors only this exact KD-request open. It deliberately leaves
-IOS ioctl/ioctlv/close, KD commands, NCD, IP, SSL, DNS and sockets unsupported
-until hardware reaches them.
+PR #232 now mirrors only this exact KD-request open and is squash-merged on
+`main` as `4f1d0188c61d0e12267e5468c1b6591df1d29a4d` after all five required
+public CI workflows passed. It deliberately leaves IOS ioctl/ioctlv/close, KD
+commands, NCD, IP, SSL, DNS and sockets unsupported until hardware reaches
+them.
+
+The next real-Switch acceptance gate is:
+
+```text
+fast-track-ios-open-kd-request.txt:
+  status=open-pass
+  path=/dev/net/kd/request
+  mode=0
+  fd=2000
+```
+
+Execution must then durably progress beyond `0x801938F8` while preserving the
+already proven DVD/SZS/scheduler/render invariants. The next distinct hardware
+blocker, not a predicted neighbor, becomes the following frontier.

@@ -104,6 +104,20 @@
 
 For the current project status, use `../README.md`, `../ROADMAP.md`,
 `FAST_TRACK_VALIDATION_POLICY.md`, `M2_RUNTIME_BOOTSTRAP.md`, and issue #117.
-The latest 2026-09-23 hardware evidence validates the VI interrupt-mask correction, the real TaskThread callback and the `/Boot/Strap/eu/English.szs` read. Scheduler diagnostics now identify `0x804294A4` as `AsyncDisplay + 0x58`; EGG `syncTick()` sleeps there and `postVRetrace()` wakes it. The current candidate therefore ports only the pinned VI idle poll/wait plus the no-recursive-reschedule guard while a retrace is active. Timer/audio/alarm idle sources remain untouched. The earlier real FIFO / `GXCopyDisp` / 23-present / `GXFlush` proof remains valid, although this shorter run stops before re-reaching that graphics sequence. Visual correctness remains a separate milestone. Dated hardware result files are historical
-evidence and intentionally retain the frontier wording that was correct when
-each run was captured.
+
+The latest 2026-09-24 hardware evidence validates the first real local
+`English.szs` read, VI-only AsyncDisplay idle recovery, complete SZS/Yaz0
+expansion, real RMCP01 FIFO/present work, and `GXInitTexObj status=init-pass`.
+The following `IOS_Open (0x801938F8)` request is now attributed exactly to
+`/dev/net/kd/request`, mode 0.
+
+PR #232 mirrors only the pinned KD device allocation beginning at fd 2000 and
+is merged on `main` as `4f1d0188c61d0e12267e5468c1b6591df1d29a4d` after
+5/5 public CI. Hardware validation of that merged bridge is pending; IOS
+ioctl/ioctlv/close and neighboring network devices remain untouched until a
+real run reaches them.
+
+The earlier real FIFO / `GXCopyDisp` / repeated-present / `GXFlush` proof
+remains valid. Visual correctness remains a separate milestone. Dated hardware
+result files are historical evidence and intentionally retain the frontier
+wording that was correct when each run was captured.

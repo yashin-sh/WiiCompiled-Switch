@@ -57,3 +57,20 @@ behavior is pre-ported.
 3. execution durably progresses beyond `0x801938F8`;
 4. existing resource/scheduler/render invariants remain healthy;
 5. the next exact IOS/network/application blocker becomes the new frontier.
+
+## Implementation state
+
+PR #232 implements the minimal correction above and is squash-merged on
+`main` as:
+
+```text
+4f1d0188c61d0e12267e5468c1b6591df1d29a4d
+```
+
+Its exact PR head passed all five required public CI workflows:
+`lint`, `fast-track-startup`, `bootstrap-register-prelude`,
+`stateful-translated-sequence`, and `build-switch`.
+
+This does **not** upgrade the boundary to hardware-crossed. The next private
+rendered build and real-Switch run must still prove `open-pass`, first
+`fd=2000`, and durable progression beyond `0x801938F8`.

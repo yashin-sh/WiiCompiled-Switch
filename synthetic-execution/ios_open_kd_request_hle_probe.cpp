@@ -10,7 +10,7 @@ static_assert(KnownNativeCpuCall<0x80194290u>::kAvailable);
 
 extern "C" __attribute__((used)) bool synthetic_ios_open_kd_request_hle_probe() {
     return KnownNativeCpuCall<0x801938F8u>::kAvailable &&
-        KnownNativeCpuCall<0x80194290u>::kAvailable;
+           KnownNativeCpuCall<0x80194290u>::kAvailable;
 }
 
 #endif

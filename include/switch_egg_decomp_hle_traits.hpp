@@ -67,6 +67,7 @@ inline void WriteDecodeStatus(
 inline std::uint8_t ReadByte(
     CpuContext* cpu,
     std::uint32_t address,
+    const char* faultStatus,
     std::uint32_t src,
     std::uint32_t dst,
     std::uint32_t expandSize,
@@ -74,7 +75,7 @@ inline std::uint8_t ReadByte(
     std::uint32_t dstProduced) {
     if (!Memory::Contains(address, 1u)) {
         AbortDecode(
-            "SZS_SOURCE_UNMAPPED",
+            faultStatus,
             cpu,
             src,
             dst,
@@ -146,6 +147,7 @@ inline std::uint32_t DecodeSZS(CpuContext* cpu) {
             flags = ReadByte(
                 cpu,
                 src + srcIdx,
+                "SZS_SOURCE_UNMAPPED",
                 src,
                 dst,
                 expandSize,
@@ -159,6 +161,7 @@ inline std::uint32_t DecodeSZS(CpuContext* cpu) {
             const std::uint8_t value = ReadByte(
                 cpu,
                 src + srcIdx,
+                "SZS_SOURCE_UNMAPPED",
                 src,
                 dst,
                 expandSize,
@@ -179,6 +182,7 @@ inline std::uint32_t DecodeSZS(CpuContext* cpu) {
             const std::uint32_t high = ReadByte(
                 cpu,
                 src + srcIdx,
+                "SZS_SOURCE_UNMAPPED",
                 src,
                 dst,
                 expandSize,
@@ -187,6 +191,7 @@ inline std::uint32_t DecodeSZS(CpuContext* cpu) {
             const std::uint32_t low = ReadByte(
                 cpu,
                 src + srcIdx + 1u,
+                "SZS_SOURCE_UNMAPPED",
                 src,
                 dst,
                 expandSize,
@@ -216,6 +221,7 @@ inline std::uint32_t DecodeSZS(CpuContext* cpu) {
                     static_cast<std::uint32_t>(ReadByte(
                         cpu,
                         src + srcIdx,
+                        "SZS_SOURCE_UNMAPPED",
                         src,
                         dst,
                         expandSize,
@@ -239,6 +245,7 @@ inline std::uint32_t DecodeSZS(CpuContext* cpu) {
                 const std::uint8_t value = ReadByte(
                     cpu,
                     dst + copyIdx,
+                    "SZS_BACKREF_UNMAPPED",
                     src,
                     dst,
                     expandSize,

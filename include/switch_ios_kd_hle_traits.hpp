@@ -222,7 +222,8 @@ inline void HandleFirstKdTrySuspend(CpuContext* cpu) noexcept {
 
 // IOS_Open / NAND_IOS_Open_HLE (PAL 0x801938F8). Hardware identifies the
 // first live request exactly as "/dev/net/kd/request", mode 0. Mirror only the
-// pinned device-allocation result here. IOCTL/IOCTLV/close and all neighboring
+// pinned device-allocation result here. The separate specialization below
+// covers only the first proven KD command-2 ioctl; ioctlv/close and neighboring
 // IOS/network devices remain unsupported until hardware reaches them.
 template <>
 struct KnownNativeCpuCall<0x801938F8u> {
@@ -234,7 +235,6 @@ struct KnownNativeCpuCall<0x801938F8u> {
         }
     }
 };
-
 
 // IOS_Ioctl / NAND_IOS_Ioctl_Entry_HLE (PAL 0x80194290). Hardware has
 // captured only the first KD/NWC24 try-suspend-scheduler probe. Mirror that

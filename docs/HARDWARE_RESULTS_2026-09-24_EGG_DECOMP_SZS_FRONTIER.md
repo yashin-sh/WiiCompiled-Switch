@@ -148,3 +148,23 @@ A PASS requires:
 3. the TaskThread job and `English.szs` read remain healthy;
 4. the VI idle recovery remains crossed;
 5. the next distinct hardware blocker becomes the new frontier.
+
+## Hardware validation
+
+The next rendered run validates the pinned decoder completely:
+
+```text
+status       = decode-pass
+src          = 0x94226C20
+dst          = 0x80F10300
+expand_size  = 2627200
+src_consumed = 299969
+dst_produced = 2627200
+```
+
+Execution then advances to the distinct `GXInitTexObj (0x801707F8)`
+boundary, with image data `0x80F103E0` inside the decompressed resource and
+dimensions 832x456.
+
+See
+`HARDWARE_RESULTS_2026-09-24_SZS_CROSSED_GX_INIT_TEX_OBJ_FRONTIER.md`.

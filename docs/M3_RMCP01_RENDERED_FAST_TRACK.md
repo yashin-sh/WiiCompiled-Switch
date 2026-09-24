@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication, first local `English.szs` read, VI-only AsyncDisplay idle recovery, and PAL `GXFlush (0x8016E654)` are hardware-proven. The 2026-09-24 run recovers a real present after idle wake and reaches the next exact resource blocker: `EGG::Decomp::decodeSZS (0x80218C2C)`.**
+Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication, first local `English.szs` read, VI-only AsyncDisplay idle recovery, complete `English.szs` SZS expansion, and PAL `GXFlush (0x8016E654)` are hardware-proven. The latest 2026-09-24 run reaches the next exact graphics/resource boundary: `GXInitTexObj (0x801707F8)`.**
 
 ## Purpose
 
@@ -1277,3 +1277,34 @@ Pinned WiiCompiled maps `0x80218C2C` exactly to
 `/Boot/Strap/eu/English.szs` DVD buffer, so the candidate ports only this
 exact native Yaz0 decoder boundary. Neighboring ASH/ASR/resource functions
 remain untouched until hardware reaches them.
+
+## Hardware result — 2026-09-24 SZS crossed / GXInitTexObj frontier
+
+The rendered run hardware-validates the pinned SZS decoder:
+
+```text
+decode-pass
+299969 compressed bytes consumed
+2627200 decompressed bytes produced
+```
+
+The existing TaskThread, DVD and VI-idle invariants remain healthy, and the
+graphics report again records both `FIRST_RMCP01_FIFO_WORK` and
+`FIRST_RMCP01_GX_PRESENT hadWork=1`.
+
+The new durable blocker is:
+
+```text
+DIRECT 0x801707F8
+r3 = 0x901136B4
+r4 = 0x80F103E0
+r5 = 0x00000340
+r6 = 0x000001C8
+```
+
+RMCP01 maps this exactly to `GXInitTexObj`. The image data begins only
+`0xE0` bytes into the decompressed `English.szs` output. The blocker does
+not capture r7-r10, so the candidate consumes the live guest registers for
+format/wrapS/wrapT/mipmap and mirrors only the pinned `GXInitTexObj`
+contract. Texture load/LOD/CI/TLUT neighbors remain unported until hardware
+reaches them.

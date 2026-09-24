@@ -30,7 +30,7 @@ The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge se
 
 The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
 
-The latest 2026-09-24 rendered real-Switch run hardware-validates the VI-only `SelectThread` idle recovery: `scheduler_pending` becomes `0x02008000`, default thread `0x80347498` becomes READY, then resumes as the running guest thread. The rendered path recovers real FIFO work and a successful `GXCopyDisp` present. TaskThread still dispatches the valid job `0x8042E7DC -> callback 0x8000B53C`, and `/Boot/Strap/eu/English.szs` again reads successfully into `0x94226C20`. The new exact blocker is `DIRECT 0x80218C2C`, which RMCP01 and pinned WiiCompiled map to `EGG::Decomp::decodeSZS(src=0x94226C20, dst=0x80F10300)`. The current candidate ports only that pinned Yaz0/SZS decoder boundary. Visual correctness still requires direct confirmation.
+The latest 2026-09-24 rendered real-Switch run hardware-validates the pinned `EGG::Decomp::decodeSZS (0x80218C2C)` boundary: the 299,969-byte `/Boot/Strap/eu/English.szs` input at `0x94226C20` expands completely to 2,627,200 bytes at `0x80F10300`. The previous TaskThread receive, DVD read and VI-only AsyncDisplay idle recovery invariants remain healthy, and the rendered path again records `PASS FIRST_RMCP01_FIFO_WORK` plus `PASS FIRST_RMCP01_GX_PRESENT hadWork=1`. The new exact blocker is `DIRECT 0x801707F8`, which RMCP01 and pinned WiiCompiled map to `GXInitTexObj`; its first live arguments describe a texture object at `0x901136B4` backed by decompressed data `0x80F103E0` with dimensions 832×456. The current candidate ports only that exact texture-object initialization boundary. Visual correctness still requires direct confirmation.
 
 ## Milestones
 
@@ -58,7 +58,7 @@ The latest 2026-09-24 rendered real-Switch run hardware-validates the VI-only `S
 | First real RMCP01 drawable work | ✅ `PASS FIRST_RMCP01_FIFO_WORK` |
 | First game-facing RMCP01 GPU present | ✅ `PASS FIRST_RMCP01_GX_PRESENT hadWork=1` |
 | First visually confirmed Mario Kart Wii image | 🟡 Pending visual confirmation |
-| Current hardware frontier | 🟡 `EGG::Decomp::decodeSZS (0x80218C2C)`: VI idle recovery is hardware-crossed, real present recovers, and the freshly read `/Boot/Strap/eu/English.szs` buffer is now handed to the pinned Yaz0 decoder |
+| Current hardware frontier | 🟡 `GXInitTexObj (0x801707F8)`: `English.szs` fully decodes on hardware, then the game constructs an 832×456 texture from data inside the decompressed resource |
 | WiiCompiled/Aurora GX → first RMCP01 GPU present | ✅ Hardware validated |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
@@ -193,8 +193,11 @@ local DVD read /Boot/Strap/eu/English.szs                                ✅ har
 SelectThread idle path (0x801A9C08)                                      ✅ hardware crossed
   VI/post-retrace wakes AsyncDisplay; default thread resumes
   ↓
-EGG::Decomp::decodeSZS (0x80218C2C)                                      🟡 current hardware frontier
-  src = English.szs buffer 0x94226C20; dst = 0x80F10300
+EGG::Decomp::decodeSZS (0x80218C2C)                                      ✅ hardware crossed
+  299969 compressed bytes -> 2627200 decompressed bytes
+  ↓
+GXInitTexObj (0x801707F8)                                                  🟡 current hardware frontier
+  obj=0x901136B4 data=0x80F103E0 size=832x456; consume live r7-r10
   ↓
 next exact hardware-attributed game/resource frontier
   ↓
@@ -373,6 +376,7 @@ Start with:
 - [`docs/HARDWARE_RESULTS_2026-09-23_TASK_THREAD_DVD_READ_IDLE_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-23_TASK_THREAD_DVD_READ_IDLE_FRONTIER.md) — hardware-validates the interrupt-mask fix, records the first real `/Boot/Strap/eu/English.szs` read-pass, and moves the frontier to `SELECTTHREAD_IDLE_POLL`;
 - [`docs/HARDWARE_RESULTS_2026-09-23_ASYNC_DISPLAY_IDLE_VI_WAKE_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-23_ASYNC_DISPLAY_IDLE_VI_WAKE_FRONTIER.md) — attributes the idle blocker to `AsyncDisplay::syncTick` and the required wake to VI `PostRetraceCallback`, defining the VI-only scheduler idle candidate;
 - [`docs/HARDWARE_RESULTS_2026-09-24_EGG_DECOMP_SZS_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-24_EGG_DECOMP_SZS_FRONTIER.md) — hardware-validates AsyncDisplay idle recovery, recovers the real GPU present path, and moves the frontier to pinned `EGG::Decomp::decodeSZS (0x80218C2C)`;
+- [`docs/HARDWARE_RESULTS_2026-09-24_SZS_CROSSED_GX_INIT_TEX_OBJ_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-24_SZS_CROSSED_GX_INIT_TEX_OBJ_FRONTIER.md) — hardware-validates complete `English.szs` Yaz0 expansion and moves the exact frontier to `GXInitTexObj (0x801707F8)`;
 - [`docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_CTRL_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_CTRL_FRONTIER.md) — merged #203 hardware-proves `GXSetChanMatColor`, preserves the scheduler/GX chain, and exposes PAL `GXSetChanCtrl`;
 - [`docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEX_GENS_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEX_GENS_FRONTIER.md) — real Switch progresses beyond `GXSetChanCtrl` and exposes PAL `GXSetNumTexGens`;
 - [`docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_IND_STAGES_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_IND_STAGES_FRONTIER.md) — real Switch progresses beyond `GXSetNumTexGens` and exposes PAL `GXSetNumIndStages`;

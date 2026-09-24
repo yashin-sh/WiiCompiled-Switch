@@ -1,6 +1,6 @@
 # M2 — Horizon runtime bootstrap / translated fast-track
 
-Status: **core bootstrap, PAL `main()`, guest thread continuation, sustained post-main execution, local RMCP01 FST publication, first local RMCP01 boot-resource read, VI-only AsyncDisplay idle recovery, and the rendered fast-track runtime are hardware-validated on Nintendo Switch through 2026-09-24; the current gate is pinned `EGG::Decomp::decodeSZS (0x80218C2C)` on `/Boot/Strap/eu/English.szs`.**
+Status: **core bootstrap, PAL `main()`, guest thread continuation, sustained post-main execution, local RMCP01 FST publication, first local RMCP01 boot-resource read, VI-only AsyncDisplay idle recovery, complete `English.szs` SZS expansion, and the rendered fast-track runtime are hardware-validated on Nintendo Switch through 2026-09-24; the current gate is `GXInitTexObj (0x801707F8)` on image data inside the decompressed boot resource.**
 
 Upstream WiiCompiled pin: `a135beb201042b20f390c6695ca6b26768820fb4`.
 
@@ -252,3 +252,30 @@ r4 = 0x80F10300
 RMCP01 maps that address to `EGG::Decomp::decodeSZS`; `r3` is exactly the
 buffer filled by the successful `/Boot/Strap/eu/English.szs` read. The
 current candidate mirrors only the pinned native Yaz0/SZS decoder.
+
+## 2026-09-24 GXInitTexObj frontier
+
+The pinned `EGG::Decomp::decodeSZS (0x80218C2C)` boundary is now
+hardware-crossed:
+
+```text
+status       = decode-pass
+src          = 0x94226C20
+dst          = 0x80F10300
+expand_size  = 2627200
+src_consumed = 299969
+dst_produced = 2627200
+```
+
+The next exact blocker is `GXInitTexObj (0x801707F8)`:
+
+```text
+obj       = 0x901136B4
+image_ptr = 0x80F103E0
+width     = 832
+height    = 456
+```
+
+The image pointer lies inside the freshly decompressed `English.szs`
+resource. The candidate consumes live r7-r10 for format/wrap/mipmap and ports
+only this exact pinned texture-object initialization boundary.

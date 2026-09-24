@@ -34,6 +34,7 @@ extern "C" void mkw_switch_hle_gx_set_copy_filter(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_flush(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_init_tex_obj(CpuContext* cpu) noexcept;
 
 template <>
 struct KnownNativeCpuCall<0x8016B850u> {
@@ -284,6 +285,19 @@ struct KnownNativeCpuCall<0x8016F0F0u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_begin(cpu);
+    }
+};
+
+// GXInitTexObj (PAL 0x801707F8). Pinned WiiCompiled consumes
+// r3..r10 = guest GXTexObj / image data / width / height / format / wrapS /
+// wrapT / mipmap, constructs the Aurora host texture object, and mirrors the
+// 32-byte SDK GXTexObj layout back into guest RAM.
+template <>
+struct KnownNativeCpuCall<0x801707F8u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_init_tex_obj(cpu);
     }
 };
 

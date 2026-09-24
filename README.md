@@ -34,8 +34,16 @@ The rendered fast-track has since advanced far beyond that early sustained-retra
 - pinned `GXInitTexObj (0x801707F8)` is hardware-crossed with `status=init-pass` for the observed 832x456 boot texture;
 - the following exact IOS request is `/dev/net/kd/request`, mode 0.
 
-PR #232 implements only that hardware-observed `IOS_Open (0x801938F8)` request using the pinned KD device-allocation contract. It is merged on `main` as
-`4f1d0188c61d0e12267e5468c1b6591df1d29a4d` after all five public CI gates passed. **That KD open bridge is merged but not yet hardware-crossed**; the next real-Switch run must prove `open-pass`, first `fd=2000`, and durable execution beyond `0x801938F8`.
+PR #232's exact `IOS_Open (0x801938F8)` bridge is now **hardware-crossed**:
+`/dev/net/kd/request`, mode 0, returns `fd=2000` and execution durably
+continues into the next IOS boundary.
+
+The new exact blocker is `IOS_Ioctl (0x80194290)` with live
+`fd=2000`, `cmd=2`, `inBuf=0x80356F20`, and `inLen=0x20`.
+Pinned WiiCompiled identifies KD command 2 as the boot-time NWC24
+"try suspend scheduler" request. The current blocker does not yet capture
+`r7/r8` (output pointer/length), so the active candidate adds diagnostics
+only; no ioctl behavior is pre-ported.
 
 ```text
 PAL main / post-main runtime                                       ✅ hardware crossed
@@ -50,9 +58,10 @@ real RMCP01 FIFO → GXCopyDisp → successful GPU present             ✅ hardw
   ↓
 GXInitTexObj (0x801707F8)                                          ✅ hardware crossed
   ↓
-IOS_Open path attribution: /dev/net/kd/request, mode 0             ✅ hardware observed
+IOS_Open /dev/net/kd/request → fd 2000                             ✅ hardware crossed
   ↓
-exact KD-request open bridge (#232, first fd 2000)                 🟡 merged; hardware validation pending
+IOS_Ioctl (0x80194290), fd 2000, cmd 2                             🟡 current diagnostic frontier
+  r5=0x80356F20 r6=0x20; capture live r7/r8 before porting
   ↓
 next exact hardware-attributed IOS/network/resource/game frontier  ⬜ pending
   ↓
@@ -238,6 +247,7 @@ Start with:
 - [`docs/HARDWARE_RESULTS_2026-09-24_SZS_CROSSED_GX_INIT_TEX_OBJ_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-24_SZS_CROSSED_GX_INIT_TEX_OBJ_FRONTIER.md) — hardware-validates complete `English.szs` Yaz0 expansion and moves the exact frontier to `GXInitTexObj (0x801707F8)`;
 - [`docs/HARDWARE_RESULTS_2026-09-24_GX_INIT_TEX_OBJ_CROSSED_IOS_OPEN_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-24_GX_INIT_TEX_OBJ_CROSSED_IOS_OPEN_FRONTIER.md) — hardware-crosses `GXInitTexObj`, preserves one successful GPU present, and moves the exact frontier to `NAND_IOS_Open (0x801938F8)` with path diagnostics only;
 - [`docs/HARDWARE_RESULTS_2026-09-24_IOS_OPEN_KD_REQUEST_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-24_IOS_OPEN_KD_REQUEST_FRONTIER.md) — identifies the exact IOS path as `/dev/net/kd/request`, mode 0, and defines the minimal pinned device-handle open candidate;
+- [`docs/HARDWARE_RESULTS_2026-09-24_KD_OPEN_CROSSED_IOS_IOCTL_CMD2_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-24_KD_OPEN_CROSSED_IOS_IOCTL_CMD2_FRONTIER.md) — hardware-crosses the KD open with fd 2000 and moves the exact frontier to `IOS_Ioctl (0x80194290)`, command 2, pending live `r7/r8`;
 - [`docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_CTRL_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_CTRL_FRONTIER.md) — merged #203 hardware-proves `GXSetChanMatColor`, preserves the scheduler/GX chain, and exposes PAL `GXSetChanCtrl`;
 - [`docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEX_GENS_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEX_GENS_FRONTIER.md) — real Switch progresses beyond `GXSetChanCtrl` and exposes PAL `GXSetNumTexGens`;
 - [`docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_IND_STAGES_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_IND_STAGES_FRONTIER.md) — real Switch progresses beyond `GXSetNumTexGens` and exposes PAL `GXSetNumIndStages`;

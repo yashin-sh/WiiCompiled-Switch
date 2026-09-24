@@ -151,7 +151,7 @@ Validation policy after the 2026-09-20 audit: the five public CI workflows remai
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered path is hardware-proven through local `English.szs` read/decode, VI-idle recovery, real FIFO/presentation, `GXInitTexObj`, and the exact `/dev/net/kd/request` open returning fd 2000. The new frontier is pinned `IOS_Ioctl (0x80194290)`, KD command 2; live `r7/r8` output-buffer arguments must be captured before any ioctl behavior is added.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered path is hardware-proven through local `English.szs` read/decode, VI-idle recovery, real FIFO/presentation, `GXInitTexObj`, and the exact `/dev/net/kd/request` open returning fd 2000. Hardware now captures the full first `IOS_Ioctl (0x80194290)` KD command-2 tuple, including outBuf `0x80356F40` / outLen `0x20`; the current candidate mirrors only its Boot-phase `-42` output + IOS return `0` and awaits hardware validation.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input
@@ -186,7 +186,9 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] attribute pinned `NAND_IOS_Open (0x801938F8)`: hardware path is `/dev/net/kd/request`, mode 0
 - [x] merge exact `/dev/net/kd/request`, mode 0, device-allocation bridge as PR #232 after 5/5 public CI
 - [x] hardware-cross only the pinned KD-request device allocation (first fd 2000); do not pre-port neighboring network devices
-- [ ] capture live `r7/r8` for pinned `IOS_Ioctl (0x80194290)` with fd 2000 / KD command 2 before porting its output-buffer semantics
+- [x] capture live `r7/r8` for pinned `IOS_Ioctl (0x80194290)`: outBuf `0x80356F40`, outLen `0x20`, with fd 2000 / KD command 2
+- [x] implement only the first Boot-phase KD command-2 reply: write WC24 `-42` to the live output word and return IOS result `0`; repeated command 2 and command 1/3 remain unsupported
+- [ ] hardware-cross the merged first KD command-2 probe and let the next durable blocker define the following frontier
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
 - [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
 - [x] hardware-cross PAL `GXSetScissor` (`0x80173430`) using pinned guest GXData bookkeeping plus Aurora scissor

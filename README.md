@@ -38,12 +38,13 @@ PR #232's exact `IOS_Open (0x801938F8)` bridge is now **hardware-crossed**:
 `/dev/net/kd/request`, mode 0, returns `fd=2000` and execution durably
 continues into the next IOS boundary.
 
-The new exact blocker is `IOS_Ioctl (0x80194290)` with live
-`fd=2000`, `cmd=2`, `inBuf=0x80356F20`, and `inLen=0x20`.
-Pinned WiiCompiled identifies KD command 2 as the boot-time NWC24
-"try suspend scheduler" request. The current blocker does not yet capture
-`r7/r8` (output pointer/length), so the active candidate adds diagnostics
-only; no ioctl behavior is pre-ported.
+The exact blocker remains `IOS_Ioctl (0x80194290)` with live
+`fd=2000`, `cmd=2`, `inBuf=0x80356F20`, `inLen=0x20`,
+`outBuf=0x80356F40`, and `outLen=0x20`. Pinned WiiCompiled identifies
+command 2 as the boot-time NWC24 "try suspend scheduler" request. The first
+Boot-phase probe writes WC24 result `-42` to the output word and returns IOS
+result `0`. The candidate mirrors only that one hardware-observed probe;
+later KD commands and repeated command 2 remain unsupported.
 
 ```text
 PAL main / post-main runtime                                       ✅ hardware crossed
@@ -60,8 +61,8 @@ GXInitTexObj (0x801707F8)                                          ✅ hardware 
   ↓
 IOS_Open /dev/net/kd/request → fd 2000                             ✅ hardware crossed
   ↓
-IOS_Ioctl (0x80194290), fd 2000, cmd 2                             🟡 current diagnostic frontier
-  r5=0x80356F20 r6=0x20; capture live r7/r8 before porting
+IOS_Ioctl (0x80194290), fd 2000, cmd 2                             🟡 exact candidate; hardware validation pending
+  in=0x80356F20/0x20 out=0x80356F40/0x20; reply word=-42, r3=0
   ↓
 next exact hardware-attributed IOS/network/resource/game frontier  ⬜ pending
   ↓
@@ -82,7 +83,7 @@ The project does not fabricate Nintendo game data. The user's own RMCP01 `DATA/s
 
 ### IOS / network
 
-The first observed IOS network request is `/dev/net/kd/request`, mode 0. The current `main` mirrors only the pinned device-handle allocation for that exact request. It does **not** yet claim support for KD commands, IOS ioctl/ioctlv/close, NCD, IP, SSL, DNS, sockets, or online play; those remain hardware-driven follow-up boundaries.
+The first observed IOS network request is `/dev/net/kd/request`, mode 0, and its fd-2000 open is hardware-crossed. Hardware now also captures the first `IOS_Ioctl` request exactly as KD command 2 with 0x20-byte input/output buffers. The current candidate mirrors only that first Boot-phase try-suspend reply (`-42` in the output word, IOS return `0`). It does **not** claim command 1/3, repeated command 2, ioctlv/close, NCD, IP, SSL, DNS, sockets, or online play.
 
 ### Input
 
@@ -247,7 +248,7 @@ Start with:
 - [`docs/HARDWARE_RESULTS_2026-09-24_SZS_CROSSED_GX_INIT_TEX_OBJ_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-24_SZS_CROSSED_GX_INIT_TEX_OBJ_FRONTIER.md) — hardware-validates complete `English.szs` Yaz0 expansion and moves the exact frontier to `GXInitTexObj (0x801707F8)`;
 - [`docs/HARDWARE_RESULTS_2026-09-24_GX_INIT_TEX_OBJ_CROSSED_IOS_OPEN_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-24_GX_INIT_TEX_OBJ_CROSSED_IOS_OPEN_FRONTIER.md) — hardware-crosses `GXInitTexObj`, preserves one successful GPU present, and moves the exact frontier to `NAND_IOS_Open (0x801938F8)` with path diagnostics only;
 - [`docs/HARDWARE_RESULTS_2026-09-24_IOS_OPEN_KD_REQUEST_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-24_IOS_OPEN_KD_REQUEST_FRONTIER.md) — identifies the exact IOS path as `/dev/net/kd/request`, mode 0, and defines the minimal pinned device-handle open candidate;
-- [`docs/HARDWARE_RESULTS_2026-09-24_KD_OPEN_CROSSED_IOS_IOCTL_CMD2_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-24_KD_OPEN_CROSSED_IOS_IOCTL_CMD2_FRONTIER.md) — hardware-crosses the KD open with fd 2000 and moves the exact frontier to `IOS_Ioctl (0x80194290)`, command 2, pending live `r7/r8`;
+- [`docs/HARDWARE_RESULTS_2026-09-24_KD_OPEN_CROSSED_IOS_IOCTL_CMD2_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-24_KD_OPEN_CROSSED_IOS_IOCTL_CMD2_FRONTIER.md) — hardware-crosses the KD open, captures the full fd/cmd/in/out tuple for `IOS_Ioctl (0x80194290)` command 2, and defines the one-shot Boot-phase `-42` reply candidate;
 - [`docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_CTRL_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_CTRL_FRONTIER.md) — merged #203 hardware-proves `GXSetChanMatColor`, preserves the scheduler/GX chain, and exposes PAL `GXSetChanCtrl`;
 - [`docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEX_GENS_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEX_GENS_FRONTIER.md) — real Switch progresses beyond `GXSetChanCtrl` and exposes PAL `GXSetNumTexGens`;
 - [`docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_IND_STAGES_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_IND_STAGES_FRONTIER.md) — real Switch progresses beyond `GXSetNumTexGens` and exposes PAL `GXSetNumIndStages`;

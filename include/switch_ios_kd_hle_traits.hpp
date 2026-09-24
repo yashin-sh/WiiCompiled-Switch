@@ -12,8 +12,12 @@
 namespace mkw::switch_ios_kd_hle {
 
 constexpr std::uint32_t kIosOpenAddress = 0x801938F8u;
+constexpr std::uint32_t kIosIoctlAddress = 0x80194290u;
 constexpr const char* kKdRequestPath = "/dev/net/kd/request";
 constexpr std::uint32_t kFirstNetworkDeviceFd = 2000u;
+constexpr std::uint32_t kKdTrySuspendSchedulerCommand = 2u;
+constexpr std::uint32_t kKdBootProbeInputLength = 0x20u;
+constexpr std::uint32_t kKdBootProbeOutputLength = 0x20u;
 
 inline bool ReadGuestCString(std::uint32_t address, char* out, std::size_t capacity) noexcept {
     if (!out || capacity == 0u || address == 0u || !Memory::IsInitialized()) {
@@ -72,6 +76,48 @@ inline void WriteStatus(
 inline void WriteStatus(const char*, const char*, std::uint32_t, std::uint32_t) noexcept {}
 #endif
 
+#if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+inline void WriteIoctlStatus(
+    const char* status,
+    std::uint32_t fd,
+    std::uint32_t cmd,
+    std::uint32_t inBuf,
+    std::uint32_t inLen,
+    std::uint32_t outBuf,
+    std::uint32_t outLen) noexcept {
+    constexpr const char* kStatusPath =
+        "sdmc:/switch/WiiCompiled-Switch/fast-track-ios-ioctl-kd-cmd2.txt";
+    FILE* out = std::fopen(kStatusPath, "w");
+    if (!out) {
+        return;
+    }
+    std::fprintf(
+        out,
+        "status=%s\n"
+        "fd=%u\n"
+        "cmd=%u\n"
+        "in=0x%08x/0x%08x\n"
+        "out=0x%08x/0x%08x\n",
+        status ? status : "<null>",
+        fd,
+        cmd,
+        inBuf,
+        inLen,
+        outBuf,
+        outLen);
+    std::fclose(out);
+}
+#else
+inline void WriteIoctlStatus(
+    const char*,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t) noexcept {}
+#endif
+
 [[noreturn]] inline void AbortBoundary(
     const char* status,
     CpuContext* cpu,
@@ -113,11 +159,71 @@ inline std::uint32_t OpenKdRequest(CpuContext* cpu) noexcept {
     return fd;
 }
 
+[[noreturn]] inline void AbortIoctlBoundary(const char* status, CpuContext* cpu) noexcept {
+    if (cpu) {
+        WriteIoctlStatus(
+            status,
+            cpu->gpr[3],
+            cpu->gpr[4],
+            cpu->gpr[5],
+            cpu->gpr[6],
+            cpu->gpr[7],
+            cpu->gpr[8]);
+    }
+    mkw_switch_report_unsupported_translated_dispatch(status, kIosIoctlAddress, cpu);
+    std::abort();
+}
+
+inline void HandleFirstKdTrySuspend(CpuContext* cpu) noexcept {
+    if (!cpu) {
+        return;
+    }
+
+    const std::uint32_t fd = cpu->gpr[3];
+    const std::uint32_t cmd = cpu->gpr[4];
+    const std::uint32_t inBuf = cpu->gpr[5];
+    const std::uint32_t inLen = cpu->gpr[6];
+    const std::uint32_t outBuf = cpu->gpr[7];
+    const std::uint32_t outLen = cpu->gpr[8];
+
+    // Hardware proves exactly the first /dev/net/kd/request command-2 probe:
+    // fd 2000, 0x20-byte input, and 0x20-byte output. Keep later KD commands
+    // and later command-2 phases as fresh hardware-defined frontiers.
+    if (fd != kFirstNetworkDeviceFd ||
+        cmd != kKdTrySuspendSchedulerCommand ||
+        inLen != kKdBootProbeInputLength ||
+        outLen != kKdBootProbeOutputLength ||
+        inBuf == 0u ||
+        outBuf == 0u) {
+        AbortIoctlBoundary("IOS_IOCTL_KD_CMD2_UNPROVEN_ARGUMENTS", cpu);
+    }
+
+    if (!Memory::IsInitialized() ||
+        !Memory::Contains(inBuf, inLen) ||
+        !Memory::Contains(outBuf, 4u)) {
+        AbortIoctlBoundary("IOS_IOCTL_KD_CMD2_INVALID_BUFFER", cpu);
+    }
+
+    static bool bootProbeSeen = false;
+    if (bootProbeSeen) {
+        AbortIoctlBoundary("IOS_IOCTL_KD_CMD2_REPEAT_UNPROVEN", cpu);
+    }
+
+    // Pinned WiiCompiled HandleKdIoctl(cmd=2) in Boot phase writes the WC24
+    // result word -42 to outBuf and returns IOS result 0. Memory::Write32 uses
+    // the guest big-endian representation, matching the pinned WriteReturn().
+    Memory::Write32(outBuf, static_cast<std::uint32_t>(-42));
+    bootProbeSeen = true;
+    WriteIoctlStatus("cmd2-boot-probe-pass", fd, cmd, inBuf, inLen, outBuf, outLen);
+    cpu->gpr[3] = 0u;
+}
+
 } // namespace mkw::switch_ios_kd_hle
 
 // IOS_Open / NAND_IOS_Open_HLE (PAL 0x801938F8). Hardware identifies the
 // first live request exactly as "/dev/net/kd/request", mode 0. Mirror only the
-// pinned device-allocation result here. IOCTL/IOCTLV/close and all neighboring
+// pinned device-allocation result here. The separate specialization below
+// covers only the first proven KD command-2 ioctl; ioctlv/close and neighboring
 // IOS/network devices remain unsupported until hardware reaches them.
 template <>
 struct KnownNativeCpuCall<0x801938F8u> {
@@ -127,5 +233,19 @@ struct KnownNativeCpuCall<0x801938F8u> {
         if (cpu) {
             cpu->gpr[3] = mkw::switch_ios_kd_hle::OpenKdRequest(cpu);
         }
+    }
+};
+
+// IOS_Ioctl / NAND_IOS_Ioctl_Entry_HLE (PAL 0x80194290). Hardware has
+// captured only the first KD/NWC24 try-suspend-scheduler probe. Mirror that
+// Boot-phase reply only: write -42 to the live output result word and return
+// IOS result 0. Command 1/3, repeated command 2, ioctlv and other network
+// services remain unsupported until hardware reaches them.
+template <>
+struct KnownNativeCpuCall<0x80194290u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw::switch_ios_kd_hle::HandleFirstKdTrySuspend(cpu);
     }
 };

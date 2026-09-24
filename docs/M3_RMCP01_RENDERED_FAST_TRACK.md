@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, successful GPU presentation, local FST/DVD/SZS path, VI-only idle recovery, `GXInitTexObj`, PAL `GXFlush`, and `/dev/net/kd/request` open with fd 2000 are hardware-proven. The current frontier is pinned `IOS_Ioctl (0x80194290)`, KD command 2; live `r7/r8` must be captured before porting it.**
+Status: **renderer, real RMCP01 FIFO work, successful GPU presentation, local FST/DVD/SZS path, VI-only idle recovery, `GXInitTexObj`, PAL `GXFlush`, and `/dev/net/kd/request` open with fd 2000 are hardware-proven. The full first `IOS_Ioctl (0x80194290)` KD command-2 tuple is now captured; the exact Boot-phase `-42` output / IOS-return-0 candidate awaits hardware validation.**
 
 ## Purpose
 
@@ -1373,7 +1373,8 @@ mode=0
 fd=2000
 ```
 
-Execution then reaches the distinct blocker:
+Execution then reaches the distinct blocker. The diagnostic revision now
+captures the complete call:
 
 ```text
 DIRECT 0x80194290
@@ -1381,11 +1382,18 @@ r3 = 0x000007D0
 r4 = 0x00000002
 r5 = 0x80356F20
 r6 = 0x00000020
+r7 = 0x80356F40
+r8 = 0x00000020
 ```
 
 Pinned WiiCompiled maps this to `NAND_IOS_Ioctl_Entry_HLE`; fd 2000 selects
 the KD request device and command 2 is the NWC24 try-suspend-scheduler probe.
-The current blocker lacks `r7/r8`, which are the output buffer pointer and
-length required by the pinned reply contract. The next candidate therefore
-adds those diagnostics only. No IOS_Ioctl/KD behavior is added until hardware
-captures them.
+In the initial Boot phase, `HandleKdIoctl` writes `-42` to the result word at
+`outBuf` and returns IOS result 0.
+
+The candidate mirrors only that first hardware-observed probe. It validates
+fd 2000 / command 2 / 0x20-byte input and output buffers, writes `-42` through
+the live output pointer, returns 0 in r3, and marks that Boot probe consumed.
+A repeated command 2, command 1/3, ioctlv, sockets, DNS, NCD, IP, SSL and other
+network services remain unsupported until a later hardware blocker proves
+them.

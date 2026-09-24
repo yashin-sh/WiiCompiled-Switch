@@ -30,7 +30,7 @@ The sampled callback carried `r3 = 0x365E` (**13,918**). The Switch VI bridge se
 
 The normal #117 fast-track deliberately keeps its FIFO sink as a stable headless control baseline. Separately, M3 has hardware-validated native Vulkan, Dawn/WebGPU, Aurora GX and the exact pinned WiiCompiled `HleFifoWrite` path; the synthetic decoder run remained active for 1,435 frames. The rendered RMCP01 target is running on hardware, its user-owned FST is published successfully, and #185 local DVD reads are installed but not reached. #186 identified the durable priority-6 OSThread as `0x90112660` with virtual `run()` `0x80008D18`.
 
-The latest 2026-09-23 rendered real-Switch run hardware-validates the VI interrupt-mask correction and preserves the real TaskThread job `mJobs[0]=0x8042E7DC`. Callback `0x8000B53C` again reads `/Boot/Strap/eu/English.szs` successfully. The new scheduler diagnostics now close the `SELECTTHREAD_IDLE_POLL` attribution: default thread `0x80347498` parks on queue `0x804294A4` from caller `LR=0x8020FE50`; the active `EGG::AsyncDisplay` object is `0x8042944C`, making that queue exactly object+`0x58`, the AsyncDisplay sync queue. EGG `syncTick()` sleeps on that queue and `postVRetrace()` wakes it, so the proven missing idle source is VI/post-retrace, not generic timers/audio/alarms. The current candidate ports only pinned VI polling/waiting inside SelectThread idle and suppresses nested rescheduling while a retrace callback is active. This run still stops before the previously hardware-proven drawable/present sequence, so the earlier 23-present/GXFlush proof remains valid but is not re-exercised by this shorter run. Visual correctness still requires direct confirmation.
+The latest 2026-09-24 rendered real-Switch run hardware-validates the VI-only `SelectThread` idle recovery: `scheduler_pending` becomes `0x02008000`, default thread `0x80347498` becomes READY, then resumes as the running guest thread. The rendered path recovers real FIFO work and a successful `GXCopyDisp` present. TaskThread still dispatches the valid job `0x8042E7DC -> callback 0x8000B53C`, and `/Boot/Strap/eu/English.szs` again reads successfully into `0x94226C20`. The new exact blocker is `DIRECT 0x80218C2C`, which RMCP01 and pinned WiiCompiled map to `EGG::Decomp::decodeSZS(src=0x94226C20, dst=0x80F10300)`. The current candidate ports only that pinned Yaz0/SZS decoder boundary. Visual correctness still requires direct confirmation.
 
 ## Milestones
 
@@ -58,7 +58,7 @@ The latest 2026-09-23 rendered real-Switch run hardware-validates the VI interru
 | First real RMCP01 drawable work | ✅ `PASS FIRST_RMCP01_FIFO_WORK` |
 | First game-facing RMCP01 GPU present | ✅ `PASS FIRST_RMCP01_GX_PRESENT hadWork=1` |
 | First visually confirmed Mario Kart Wii image | 🟡 Pending visual confirmation |
-| Current hardware frontier | 🟡 `SELECTTHREAD_IDLE_POLL` attributed to `EGG::AsyncDisplay::syncTick` waiting on `0x804294A4`; candidate services only the proven VI/post-retrace idle wake and defers nested wakeup rescheduling during `AdvanceRetrace` |
+| Current hardware frontier | 🟡 `EGG::Decomp::decodeSZS (0x80218C2C)`: VI idle recovery is hardware-crossed, real present recovers, and the freshly read `/Boot/Strap/eu/English.szs` buffer is now handed to the pinned Yaz0 decoder |
 | WiiCompiled/Aurora GX → first RMCP01 GPU present | ✅ Hardware validated |
 | Input/audio/filesystem completeness and gameplay | ⬜ Pending |
 
@@ -190,8 +190,11 @@ TaskThread real callback 0x8000B53C                                      ✅ har
   ↓
 local DVD read /Boot/Strap/eu/English.szs                                ✅ hardware read-pass (299969 bytes)
   ↓
-SelectThread idle path (0x801A9C08)                                      🟡 current diagnostic frontier
-  default thread WAITING on 0x804294A4; AsyncDisplay VI/post-retrace wake identified
+SelectThread idle path (0x801A9C08)                                      ✅ hardware crossed
+  VI/post-retrace wakes AsyncDisplay; default thread resumes
+  ↓
+EGG::Decomp::decodeSZS (0x80218C2C)                                      🟡 current hardware frontier
+  src = English.szs buffer 0x94226C20; dst = 0x80F10300
   ↓
 next exact hardware-attributed game/resource frontier
   ↓
@@ -369,6 +372,7 @@ Start with:
 - [`docs/HARDWARE_RESULTS_2026-09-23_VI_POLL_INTERRUPT_MASK_TASK_THREAD_FIX.md`](docs/HARDWARE_RESULTS_2026-09-23_VI_POLL_INTERRUPT_MASK_TASK_THREAD_FIX.md) — phase trace proves the receive slot is correct until the `OSWakeupThread` call boundary; attributes the clobber to Switch pre-call VI retrace delivery while guest interrupts are disabled and defines the minimal interrupt-mask fix;
 - [`docs/HARDWARE_RESULTS_2026-09-23_TASK_THREAD_DVD_READ_IDLE_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-23_TASK_THREAD_DVD_READ_IDLE_FRONTIER.md) — hardware-validates the interrupt-mask fix, records the first real `/Boot/Strap/eu/English.szs` read-pass, and moves the frontier to `SELECTTHREAD_IDLE_POLL`;
 - [`docs/HARDWARE_RESULTS_2026-09-23_ASYNC_DISPLAY_IDLE_VI_WAKE_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-23_ASYNC_DISPLAY_IDLE_VI_WAKE_FRONTIER.md) — attributes the idle blocker to `AsyncDisplay::syncTick` and the required wake to VI `PostRetraceCallback`, defining the VI-only scheduler idle candidate;
+- [`docs/HARDWARE_RESULTS_2026-09-24_EGG_DECOMP_SZS_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-24_EGG_DECOMP_SZS_FRONTIER.md) — hardware-validates AsyncDisplay idle recovery, recovers the real GPU present path, and moves the frontier to pinned `EGG::Decomp::decodeSZS (0x80218C2C)`;
 - [`docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_CTRL_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-20_GX_SET_CHAN_CTRL_FRONTIER.md) — merged #203 hardware-proves `GXSetChanMatColor`, preserves the scheduler/GX chain, and exposes PAL `GXSetChanCtrl`;
 - [`docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEX_GENS_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_TEX_GENS_FRONTIER.md) — real Switch progresses beyond `GXSetChanCtrl` and exposes PAL `GXSetNumTexGens`;
 - [`docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_IND_STAGES_FRONTIER.md`](docs/HARDWARE_RESULTS_2026-09-21_GX_SET_NUM_IND_STAGES_FRONTIER.md) — real Switch progresses beyond `GXSetNumTexGens` and exposes PAL `GXSetNumIndStages`;

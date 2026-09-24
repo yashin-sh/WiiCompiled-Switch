@@ -2,8 +2,9 @@
 
 #if defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK
 
-// Mapping/link-only coverage. Hardware proves the exact PAL IOS_Open address,
-// guest path and mode; public CI deliberately does not fabricate a game call.
+// Mapping/link-only coverage. Hardware proves the exact PAL IOS_Open request
+// and first IOS_Ioctl KD command-2 boundary; public CI deliberately does not
+// fabricate guest buffers or a game call.
 static_assert(KnownNativeCpuCall<0x801938F8u>::kAvailable);
 static_assert(KnownNativeCpuCall<0x80194290u>::kAvailable);
 

@@ -93,6 +93,7 @@
 - `HARDWARE_RESULTS_2026-09-23_TASK_THREAD_DVD_READ_IDLE_FRONTIER.md` — hardware-validates the VI interrupt-mask fix, records the first real `/Boot/Strap/eu/English.szs` read-pass, and moves the frontier to `SELECTTHREAD_IDLE_POLL`
 - `HARDWARE_RESULTS_2026-09-23_ASYNC_DISPLAY_IDLE_VI_WAKE_FRONTIER.md` — identifies default-thread queue `0x804294A4` as `AsyncDisplay + 0x58` and attributes the required idle wake to VI `postVRetrace()`
 - `HARDWARE_RESULTS_2026-09-24_EGG_DECOMP_SZS_FRONTIER.md` — hardware-validates the VI-only AsyncDisplay idle wake, recovers real FIFO/present work, and moves the exact resource frontier to pinned `EGG::Decomp::decodeSZS (0x80218C2C)`
+- `HARDWARE_RESULTS_2026-09-24_SZS_CROSSED_GX_INIT_TEX_OBJ_FRONTIER.md` — proves full `English.szs` SZS expansion and moves the exact rendered frontier to `GXInitTexObj (0x801707F8)`
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes

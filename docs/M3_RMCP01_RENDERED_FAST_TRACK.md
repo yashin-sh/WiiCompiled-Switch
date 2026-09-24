@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, successful game-facing GPU presentation, local FST publication, real `English.szs` read, VI-only AsyncDisplay idle recovery, complete SZS expansion, `GXInitTexObj`, and PAL `GXFlush` are hardware-proven. Hardware identifies the current IOS request as `/dev/net/kd/request`, mode 0. The exact KD-request open bridge is merged in #232 and awaits real-Switch validation.**
+Status: **renderer, real RMCP01 FIFO work, successful GPU presentation, local FST/DVD/SZS path, VI-only idle recovery, `GXInitTexObj`, PAL `GXFlush`, and `/dev/net/kd/request` open with fd 2000 are hardware-proven. The current frontier is pinned `IOS_Ioctl (0x80194290)`, KD command 2; live `r7/r8` must be captured before porting it.**
 
 ## Purpose
 
@@ -1361,3 +1361,31 @@ fast-track-ios-open-kd-request.txt:
 Execution must then durably progress beyond `0x801938F8` while preserving the
 already proven DVD/SZS/scheduler/render invariants. The next distinct hardware
 blocker, not a predicted neighbor, becomes the following frontier.
+
+## Hardware result — 2026-09-24 KD open crossed / IOS_Ioctl cmd 2 frontier
+
+The real-Switch run validates the merged #232 bridge:
+
+```text
+status=open-pass
+path=/dev/net/kd/request
+mode=0
+fd=2000
+```
+
+Execution then reaches the distinct blocker:
+
+```text
+DIRECT 0x80194290
+r3 = 0x000007D0
+r4 = 0x00000002
+r5 = 0x80356F20
+r6 = 0x00000020
+```
+
+Pinned WiiCompiled maps this to `NAND_IOS_Ioctl_Entry_HLE`; fd 2000 selects
+the KD request device and command 2 is the NWC24 try-suspend-scheduler probe.
+The current blocker lacks `r7/r8`, which are the output buffer pointer and
+length required by the pinned reply contract. The next candidate therefore
+adds those diagnostics only. No IOS_Ioctl/KD behavior is added until hardware
+captures them.

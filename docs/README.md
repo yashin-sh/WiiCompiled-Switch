@@ -96,6 +96,7 @@
 - `HARDWARE_RESULTS_2026-09-24_SZS_CROSSED_GX_INIT_TEX_OBJ_FRONTIER.md` — proves full `English.szs` SZS expansion and moves the exact rendered frontier to `GXInitTexObj (0x801707F8)`
 - `HARDWARE_RESULTS_2026-09-24_GX_INIT_TEX_OBJ_CROSSED_IOS_OPEN_FRONTIER.md` — hardware-crosses `GXInitTexObj`, preserves the real FIFO/present path, and moves the frontier to pinned `NAND_IOS_Open (0x801938F8)` with path/mode diagnostics only
 - `HARDWARE_RESULTS_2026-09-24_IOS_OPEN_KD_REQUEST_FRONTIER.md` — identifies `/dev/net/kd/request`, mode 0, as the exact IOS_Open request and constrains the next candidate to pinned KD device-handle allocation only
+- `HARDWARE_RESULTS_2026-09-24_KD_OPEN_CROSSED_IOS_IOCTL_CMD2_FRONTIER.md` — hardware-crosses the KD open at fd 2000 and moves the frontier to pinned `IOS_Ioctl (0x80194290)`, command 2, with `r7/r8` diagnostics required before implementation
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes
@@ -111,11 +112,7 @@ expansion, real RMCP01 FIFO/present work, and `GXInitTexObj status=init-pass`.
 The following `IOS_Open (0x801938F8)` request is now attributed exactly to
 `/dev/net/kd/request`, mode 0.
 
-PR #232 mirrors only the pinned KD device allocation beginning at fd 2000 and
-is merged on `main` as `4f1d0188c61d0e12267e5468c1b6591df1d29a4d` after
-5/5 public CI. Hardware validation of that merged bridge is pending; IOS
-ioctl/ioctlv/close and neighboring network devices remain untouched until a
-real run reaches them.
+PR #232 is now hardware-crossed: `/dev/net/kd/request`, mode 0, returns fd 2000 and execution proceeds to pinned `IOS_Ioctl (0x80194290)`. The live request is fd 2000 / command 2 / input `0x80356F20` length `0x20`. Output pointer/length (`r7/r8`) are not yet in the blocker record, so the current candidate is diagnostics-only. Neighboring IOS/network behavior remains untouched.
 
 The earlier real FIFO / `GXCopyDisp` / repeated-present / `GXFlush` proof
 remains valid. Visual correctness remains a separate milestone. Dated hardware

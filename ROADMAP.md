@@ -151,7 +151,7 @@ Validation policy after the 2026-09-20 audit: the five public CI workflows remai
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered path remains hardware-proven through real RMCP01 FIFO work and GPU presentation. The 2026-09-24 run hardware-validates the VI-only scheduler idle wake: the default thread becomes READY and resumes, then the rendered path reaches a successful present. The next exact resource blocker is `EGG::Decomp::decodeSZS (0x80218C2C)` with the source pointer equal to the successfully read `English.szs` buffer. The current candidate mirrors only the pinned native Yaz0 decoder.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered path remains hardware-proven through real RMCP01 FIFO work and GPU presentation. The 2026-09-24 run hardware-validates complete `English.szs` Yaz0 expansion (299,969 -> 2,627,200 bytes) and immediately exposes `GXInitTexObj (0x801707F8)` with object `0x901136B4`, decompressed image data `0x80F103E0`, width 832 and height 456. The current candidate ports only that exact pinned texture-object initialization boundary.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input
@@ -181,7 +181,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-cross the real TaskThread callback far enough to read `/Boot/Strap/eu/English.szs` successfully through the local DVD bridge
 - [x] attribute `SELECTTHREAD_IDLE_POLL`: default thread `0x80347498` parks on `0x804294A4` from `LR=0x8020FE50`; queue is `AsyncDisplay + 0x58` and EGG `postVRetrace()` is the matching wake source
 - [x] hardware-validate the VI-only SelectThread idle wake: AsyncDisplay/default thread leaves `0x804294A4`, becomes READY, resumes, and recovers real FIFO/present work
-- [ ] hardware-cross pinned `EGG::Decomp::decodeSZS (0x80218C2C)` for the freshly read `/Boot/Strap/eu/English.szs` buffer without pre-porting neighboring decoders
+- [x] hardware-cross pinned `EGG::Decomp::decodeSZS (0x80218C2C)`: `English.szs` consumes 299,969 compressed bytes and produces 2,627,200 decompressed bytes
+- [ ] hardware-cross pinned `GXInitTexObj (0x801707F8)` using the live texture format/wrap/mipmap registers without pre-porting `GXLoadTexObj`, CI, LOD or TLUT neighbors
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
 - [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
 - [x] hardware-cross PAL `GXSetScissor` (`0x80173430`) using pinned guest GXData bookkeeping plus Aurora scissor

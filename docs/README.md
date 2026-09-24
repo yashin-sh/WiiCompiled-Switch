@@ -92,6 +92,7 @@
 - `HARDWARE_RESULTS_2026-09-23_VI_POLL_INTERRUPT_MASK_TASK_THREAD_FIX.md` — phase trace proves the slot is correct until the wakeup call boundary and defines the minimal fix: no VI retrace polling while guest interrupts are disabled
 - `HARDWARE_RESULTS_2026-09-23_TASK_THREAD_DVD_READ_IDLE_FRONTIER.md` — hardware-validates the VI interrupt-mask fix, records the first real `/Boot/Strap/eu/English.szs` read-pass, and moves the frontier to `SELECTTHREAD_IDLE_POLL`
 - `HARDWARE_RESULTS_2026-09-23_ASYNC_DISPLAY_IDLE_VI_WAKE_FRONTIER.md` — identifies default-thread queue `0x804294A4` as `AsyncDisplay + 0x58` and attributes the required idle wake to VI `postVRetrace()`
+- `HARDWARE_RESULTS_2026-09-24_EGG_DECOMP_SZS_FRONTIER.md` — hardware-validates the VI-only AsyncDisplay idle wake, recovers real FIFO/present work, and moves the exact resource frontier to pinned `EGG::Decomp::decodeSZS (0x80218C2C)`
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes

@@ -1,6 +1,6 @@
 # M2 — Horizon runtime bootstrap / translated fast-track
 
-Status: **core bootstrap, PAL `main()`, guest thread continuation, sustained post-main execution, local RMCP01 FST publication, first local RMCP01 boot-resource read, and the rendered fast-track runtime are hardware-validated on Nintendo Switch through 2026-09-23; `SELECTTHREAD_IDLE_POLL` is now attributed to `EGG::AsyncDisplay::syncTick` waiting for the next VI post-retrace wake, and the current gate is hardware validation of that VI-only idle service.**
+Status: **core bootstrap, PAL `main()`, guest thread continuation, sustained post-main execution, local RMCP01 FST publication, first local RMCP01 boot-resource read, VI-only AsyncDisplay idle recovery, and the rendered fast-track runtime are hardware-validated on Nintendo Switch through 2026-09-24; the current gate is pinned `EGG::Decomp::decodeSZS (0x80218C2C)` on `/Boot/Strap/eu/English.szs`.**
 
 Upstream WiiCompiled pin: `a135beb201042b20f390c6695ca6b26768820fb4`.
 
@@ -234,3 +234,21 @@ Use `ROADMAP.md` as the authoritative current checklist. Key evidence includes:
 - `HARDWARE_RESULTS_2026-09-18_ACTIVE_RETRACE_LOOP.md`.
 
 Older dated hardware result files are historical snapshots and intentionally retain the frontier wording that was true when each run was captured.
+
+## 2026-09-24 decodeSZS frontier
+
+The VI-only SelectThread idle correction is hardware-crossed. The default
+thread leaves the AsyncDisplay sync queue, becomes READY, resumes, and the
+rendered path recovers real FIFO work plus a successful GPU present.
+
+The same run keeps the TaskThread/DVD invariants intact and then stops at:
+
+```text
+DIRECT 0x80218C2C
+r3 = 0x94226C20
+r4 = 0x80F10300
+```
+
+RMCP01 maps that address to `EGG::Decomp::decodeSZS`; `r3` is exactly the
+buffer filled by the successful `/Boot/Strap/eu/English.szs` read. The
+current candidate mirrors only the pinned native Yaz0/SZS decoder.

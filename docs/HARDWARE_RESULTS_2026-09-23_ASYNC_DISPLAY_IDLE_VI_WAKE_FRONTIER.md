@@ -122,3 +122,16 @@ A hardware PASS requires:
 - the existing TaskThread job/DVD invariants to remain valid.
 
 The next distinct blocker, not a hit counter alone, becomes the new frontier.
+
+## Hardware validation
+
+The next rendered run validates the VI-only idle correction.
+
+`fast-track-select-thread-idle-recovery.txt` records the default thread
+READY on its priority run queue with `scheduler_pending=0x02008000`.
+Execution then resumes default thread `0x80347498`, recovers real FIFO work
+and one successful GPU present, and reaches the distinct resource boundary
+`EGG::Decomp::decodeSZS (0x80218C2C)`.
+
+See
+`HARDWARE_RESULTS_2026-09-24_EGG_DECOMP_SZS_FRONTIER.md`.

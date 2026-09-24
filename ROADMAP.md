@@ -180,7 +180,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-validate that masking VI polling during disabled guest interrupts preserves `0x8042E7DC` across wakeup/interrupt restore and advances to the real callback `0x8000B53C`
 - [x] hardware-cross the real TaskThread callback far enough to read `/Boot/Strap/eu/English.szs` successfully through the local DVD bridge
 - [x] attribute `SELECTTHREAD_IDLE_POLL`: default thread `0x80347498` parks on `0x804294A4` from `LR=0x8020FE50`; queue is `AsyncDisplay + 0x58` and EGG `postVRetrace()` is the matching wake source
-- [ ] hardware-validate the VI-only SelectThread idle wake: next retrace must wake AsyncDisplay/default thread and advance beyond `SELECTTHREAD_IDLE_POLL` without enabling timer/audio/alarm idle sources
+- [x] hardware-validate the VI-only SelectThread idle wake: AsyncDisplay/default thread leaves `0x804294A4`, becomes READY, resumes, and recovers real FIFO/present work
+- [ ] hardware-cross pinned `EGG::Decomp::decodeSZS (0x80218C2C)` for the freshly read `/Boot/Strap/eu/English.szs` buffer without pre-porting neighboring decoders
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
 - [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
 - [x] hardware-cross PAL `GXSetScissor` (`0x80173430`) using pinned guest GXData bookkeeping plus Aurora scissor

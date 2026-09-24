@@ -151,7 +151,7 @@ Validation policy after the 2026-09-20 audit: the five public CI workflows remai
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered path remains hardware-proven through real RMCP01 FIFO work, `GXCopyDisp`, successful presentation and `GXFlush (0x8016E654)`. The 2026-09-23 interrupt-mask fix is hardware-validated, callback `0x8000B53C` reads `/Boot/Strap/eu/English.szs`, and the idle blocker is now attributed to `AsyncDisplay::syncTick`: default thread `0x80347498` sleeps on object+`0x58 = 0x804294A4`, whose matching EGG wake is `postVRetrace()`. The current candidate therefore adds only VI polling/waiting to SelectThread idle plus the pinned no-recursive-reschedule guard during `AdvanceRetrace`; timers/audio/alarms remain untouched.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered path remains hardware-proven through real RMCP01 FIFO work and GPU presentation. The 2026-09-24 run hardware-validates the VI-only scheduler idle wake: the default thread becomes READY and resumes, then the rendered path reaches a successful present. The next exact resource blocker is `EGG::Decomp::decodeSZS (0x80218C2C)` with the source pointer equal to the successfully read `English.szs` buffer. The current candidate mirrors only the pinned native Yaz0 decoder.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input

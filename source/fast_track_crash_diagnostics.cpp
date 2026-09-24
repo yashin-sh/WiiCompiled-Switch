@@ -169,6 +169,40 @@ std::uint16_t read16_or_zero(std::uint32_t address) noexcept {
     }
 }
 
+bool read_guest_cstring(
+    std::uint32_t address,
+    char* out,
+    std::size_t capacity) noexcept {
+    if (!out || capacity == 0u) {
+        return false;
+    }
+    out[0] = '\0';
+    if (address == 0u || !Memory::IsInitialized()) {
+        return false;
+    }
+
+    for (std::size_t i = 0; i + 1u < capacity; ++i) {
+        if (!Memory::Contains(address + static_cast<std::uint32_t>(i), 1u)) {
+            out[i] = '\0';
+            return false;
+        }
+        try {
+            const char ch = static_cast<char>(
+                Memory::Read8(address + static_cast<std::uint32_t>(i)));
+            out[i] = ch;
+            if (ch == '\0') {
+                return true;
+            }
+        } catch (...) {
+            out[i] = '\0';
+            return false;
+        }
+    }
+
+    out[capacity - 1u] = '\0';
+    return false;
+}
+
 struct SchedulerSnapshot {
     std::uint32_t fiber_current = 0u;
     std::uint32_t os_current = 0u;
@@ -925,7 +959,7 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
     std::uint32_t target,
     CpuContext* cpu) noexcept {
 #if MKW_FAST_TRACK_DIAGNOSTICS
-    char buffer[1024];
+    char buffer[1536];
     const std::uint32_t guest_pc = cpu ? cpu->pc : 0u;
     const std::uint32_t r1 = cpu ? cpu->gpr[1] : 0u;
     const std::uint32_t r2 = cpu ? cpu->gpr[2] : 0u;
@@ -934,6 +968,11 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
     const std::uint32_t r5 = cpu ? cpu->gpr[5] : 0u;
     const std::uint32_t r6 = cpu ? cpu->gpr[6] : 0u;
     const std::uint32_t r13 = cpu ? cpu->gpr[13] : 0u;
+
+    constexpr std::uint32_t kIosOpenAddress = 0x801938F8u;
+    char iosOpenPath[256]{};
+    const bool iosOpenPathValid =
+        target == kIosOpenAddress && read_guest_cstring(r3, iosOpenPath, sizeof(iosOpenPath));
 
     const int n = std::snprintf(
         buffer,
@@ -951,6 +990,8 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         "r6                    : 0x%08x\n"
         "r13                   : 0x%08x\n"
         "fast-track stage      : %s\n"
+        "ios open path         : %s\n"
+        "ios open mode         : %u\n"
         "action                : abort after durable blocker record\n",
         kind ? kind : "UNKNOWN",
         target,
@@ -962,7 +1003,11 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         r5,
         r6,
         r13,
-        g_fast_track_stage);
+        g_fast_track_stage,
+        target == kIosOpenAddress
+            ? (iosOpenPathValid ? iosOpenPath : "<unreadable>")
+            : "-",
+        target == kIosOpenAddress ? r4 : 0u);
     if (n > 0) {
         const std::size_t size = static_cast<std::size_t>(n) < sizeof(buffer)
             ? static_cast<std::size_t>(n)

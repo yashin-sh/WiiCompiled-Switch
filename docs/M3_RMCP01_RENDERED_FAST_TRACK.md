@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication, first local `English.szs` read, VI-only AsyncDisplay idle recovery, complete `English.szs` SZS expansion, and PAL `GXFlush (0x8016E654)` are hardware-proven. The latest 2026-09-24 run reaches the next exact graphics/resource boundary: `GXInitTexObj (0x801707F8)`.**
+Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication, first local `English.szs` read, VI-only AsyncDisplay idle recovery, complete `English.szs` SZS expansion, `GXInitTexObj`, and PAL `GXFlush (0x8016E654)` are hardware-proven. The latest 2026-09-24 run reaches pinned `NAND_IOS_Open (0x801938F8)`; the exact guest path is the current diagnostic frontier.**
 
 ## Purpose
 
@@ -1308,3 +1308,26 @@ not capture r7-r10, so the candidate consumes the live guest registers for
 format/wrapS/wrapT/mipmap and mirrors only the pinned `GXInitTexObj`
 contract. Texture load/LOD/CI/TLUT neighbors remain unported until hardware
 reaches them.
+
+## Hardware result — 2026-09-24 GXInitTexObj crossed / IOS_Open frontier
+
+The rendered run crosses `GXInitTexObj (0x801707F8)` and preserves the
+resource/render invariants, including real RMCP01 FIFO work, one
+`GXCopyDisp`, one successful present and zero present failures.
+
+The new blocker is:
+
+```text
+DIRECT 0x801938F8
+r3 = 0x802A2160
+r4 = 0
+r5 = 0x803990A0
+r6 = 0
+stage = HOST_CONTEXT_SWITCH_RETURNED
+```
+
+Pinned WiiCompiled maps this exactly to `NAND_IOS_Open_HLE(pathPtr, mode)`.
+The current durable record does not include the C string pointed to by
+`r3`. Since pinned behavior differs for IOS devices versus NAND files, the
+candidate adds diagnostics only for the exact path and mode. No IOS/NAND/ISFS
+behavior is added before hardware identifies that path.

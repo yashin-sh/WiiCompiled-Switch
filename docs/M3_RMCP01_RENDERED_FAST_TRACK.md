@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication and PAL `GXFlush (0x8016E654)` are hardware-proven. The 2026-09-23 interrupt-mask correction is hardware-validated: TaskThread receives `mJobs[0]=0x8042E7DC`, dispatches callback `0x8000B53C`, and the local DVD bridge reads `/Boot/Strap/eu/English.szs`. The `SELECTTHREAD_IDLE_POLL` frontier is now attributed to `AsyncDisplay::syncTick` waiting on its object+0x58 sync queue; the matching wake is VI `postVRetrace()`, so the current candidate ports only that VI idle service.**
+Status: **renderer, real RMCP01 FIFO work, first game-facing GPU present, local FST publication, first local `English.szs` read, VI-only AsyncDisplay idle recovery, and PAL `GXFlush (0x8016E654)` are hardware-proven. The 2026-09-24 run recovers a real present after idle wake and reaches the next exact resource blocker: `EGG::Decomp::decodeSZS (0x80218C2C)`.**
 
 ## Purpose
 
@@ -1248,3 +1248,32 @@ callback.
 
 Timers, alarms and audio idle pumps remain unimplemented until hardware asks
 for them.
+
+## Hardware result — 2026-09-24 decodeSZS frontier
+
+The SelectThread VI idle wake is now hardware-validated:
+
+```text
+scheduler_pending = 0x02008000
+default_state     = READY
+default_queue     = 0x80347830
+```
+
+The default thread later runs again with no wait queue, and the rendered path
+recovers `FIRST_RMCP01_FIFO_WORK`, `GXCopyDisp=1`, one successful present
+and zero present failures.
+
+The next durable blocker is:
+
+```text
+DIRECT 0x80218C2C
+r3 = 0x94226C20
+r4 = 0x80F10300
+stage = RMCP01_GX_FLUSH
+```
+
+Pinned WiiCompiled maps `0x80218C2C` exactly to
+`EGG::Decomp::decodeSZS`. The source pointer equals the successful
+`/Boot/Strap/eu/English.szs` DVD buffer, so the candidate ports only this
+exact native Yaz0 decoder boundary. Neighboring ASH/ASR/resource functions
+remain untouched until hardware reaches them.

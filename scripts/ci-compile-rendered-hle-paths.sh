@@ -25,7 +25,8 @@ for required in \
     "$RUNTIME_DIR/include/host_context.h" \
     "$RUNTIME_DIR/src/hle/gx/gx_internal.h" \
     "$AURORA_DIR/include/dolphin/gx.h" \
-    "$ROOT_DIR/local-rendered-fast-track/seams/hle_stubs.h"; do
+    "$ROOT_DIR/local-rendered-fast-track/seams/hle_stubs.h" \
+    "$ROOT_DIR/ci-rendered-compile-seams/aurora_events.h"; do
     if [[ ! -f "$required" ]]; then
         echo "error: missing rendered compile dependency: $required" >&2
         exit 2
@@ -60,6 +61,7 @@ common_flags=(
     -DMKW_LOCAL_RENDERED_FAST_TRACK=1
     -DMKW_ENABLE_DATA_INIT_HANDOFF=1
     -DMKW_ENABLE_TRANSLATED_EXECUTION_HANDOFF=1
+    -I"$ROOT_DIR/ci-rendered-compile-seams"
     -I"$ROOT_DIR/local-rendered-fast-track/seams"
     -I"$ROOT_DIR/include"
     -I"$RUNTIME_DIR/include"

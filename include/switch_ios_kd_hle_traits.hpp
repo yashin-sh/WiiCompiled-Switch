@@ -16,11 +16,14 @@ constexpr std::uint32_t kIosCloseAddress = 0x80193AD8u;
 constexpr std::uint32_t kIosIoctlAddress = 0x80194290u;
 constexpr const char* kKdRequestPath = "/dev/net/kd/request";
 constexpr std::uint32_t kFirstNetworkDeviceFd = 2000u;
+constexpr std::uint32_t kSecondNetworkDeviceFd = 2001u;
+constexpr std::uint32_t kKdSuspendSchedulerCommand = 1u;
 constexpr std::uint32_t kKdTrySuspendSchedulerCommand = 2u;
 constexpr std::uint32_t kKdBootProbeInputLength = 0x20u;
 constexpr std::uint32_t kKdBootProbeOutputLength = 0x20u;
 
 inline bool gFirstKdRequestOpen = false;
+inline bool gSecondKdRequestOpen = false;
 
 inline bool ReadGuestCString(std::uint32_t address, char* out, std::size_t capacity) noexcept {
     if (!out || capacity == 0u || address == 0u || !Memory::IsInitialized()) {
@@ -179,6 +182,8 @@ inline std::uint32_t OpenKdRequest(CpuContext* cpu) noexcept {
     const std::uint32_t fd = nextDeviceFd++;
     if (fd == kFirstNetworkDeviceFd) {
         gFirstKdRequestOpen = true;
+    } else if (fd == kSecondNetworkDeviceFd) {
+        gSecondKdRequestOpen = true;
     }
 
     WriteStatus("open-pass", path, mode, fd);
@@ -245,6 +250,67 @@ inline void HandleFirstKdTrySuspend(CpuContext* cpu) noexcept {
     cpu->gpr[3] = 0u;
 }
 
+inline void HandleSecondKdSuspendScheduler(CpuContext* cpu) noexcept {
+    if (!cpu) {
+        return;
+    }
+
+    const std::uint32_t fd = cpu->gpr[3];
+    const std::uint32_t cmd = cpu->gpr[4];
+    const std::uint32_t inBuf = cpu->gpr[5];
+    const std::uint32_t inLen = cpu->gpr[6];
+    const std::uint32_t outBuf = cpu->gpr[7];
+    const std::uint32_t outLen = cpu->gpr[8];
+
+    // Hardware proves exactly the second /dev/net/kd/request command-1 call:
+    // fd 2001, no input buffer, and a 0x20-byte output buffer.
+    if (fd != kSecondNetworkDeviceFd ||
+        !gSecondKdRequestOpen ||
+        cmd != kKdSuspendSchedulerCommand ||
+        inBuf != 0u ||
+        inLen != 0u ||
+        outBuf == 0u ||
+        outLen != kKdBootProbeOutputLength) {
+        AbortIoctlBoundary("IOS_IOCTL_KD_CMD1_UNPROVEN_ARGUMENTS", cpu);
+    }
+
+    if (!Memory::IsInitialized() || !Memory::Contains(outBuf, 4u)) {
+        AbortIoctlBoundary("IOS_IOCTL_KD_CMD1_INVALID_BUFFER", cpu);
+    }
+
+    static bool secondSuspendSeen = false;
+    if (secondSuspendSeen) {
+        AbortIoctlBoundary("IOS_IOCTL_KD_CMD1_REPEAT_UNPROVEN", cpu);
+    }
+
+    // Pinned WiiCompiled HandleKdIoctl(cmd=1) writes WC24 result 0 at out+0
+    // and returns IOS result 0. No socket or scheduler host side effect occurs.
+    Memory::Write32(outBuf, 0u);
+    secondSuspendSeen = true;
+    WriteIoctlStatus("cmd1-second-request-suspend-pass", fd, cmd, inBuf, inLen, outBuf, outLen);
+    cpu->gpr[3] = 0u;
+}
+
+inline void HandleObservedKdIoctl(CpuContext* cpu) noexcept {
+    if (!cpu) {
+        return;
+    }
+
+    if (cpu->gpr[3] == kFirstNetworkDeviceFd &&
+        cpu->gpr[4] == kKdTrySuspendSchedulerCommand) {
+        HandleFirstKdTrySuspend(cpu);
+        return;
+    }
+
+    if (cpu->gpr[3] == kSecondNetworkDeviceFd &&
+        cpu->gpr[4] == kKdSuspendSchedulerCommand) {
+        HandleSecondKdSuspendScheduler(cpu);
+        return;
+    }
+
+    AbortIoctlBoundary("IOS_IOCTL_KD_UNPROVEN_TUPLE", cpu);
+}
+
 [[noreturn]] inline void AbortCloseBoundary(const char* status, CpuContext* cpu) noexcept {
     if (cpu) {
         WriteCloseStatus(status, cpu->gpr[3]);
@@ -291,16 +357,16 @@ struct KnownNativeCpuCall<0x801938F8u> {
 };
 
 // IOS_Ioctl / NAND_IOS_Ioctl_Entry_HLE (PAL 0x80194290). Hardware has
-// captured only the first KD/NWC24 try-suspend-scheduler probe. Mirror that
-// Boot-phase reply only: write -42 to the live output result word and return
-// IOS result 0. Command 1/3, repeated command 2, ioctlv and other network
-// services remain unsupported until hardware reaches them.
+// captured the first fd-2000 command-2 Boot probe and the later fd-2001
+// command-1 suspend-scheduler call. Mirror only those exact live tuples.
+// Repeated/variant calls, command 3, ioctlv and other network services remain
+// unsupported until hardware reaches them.
 template <>
 struct KnownNativeCpuCall<0x80194290u> {
     static constexpr bool kAvailable = true;
 
     static inline void Invoke(CpuContext* cpu) noexcept {
-        mkw::switch_ios_kd_hle::HandleFirstKdTrySuspend(cpu);
+        mkw::switch_ios_kd_hle::HandleObservedKdIoctl(cpu);
     }
 };
 

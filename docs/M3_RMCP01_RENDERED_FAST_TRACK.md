@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, successful GPU presentation, local FST/DVD/SZS path, VI-only idle recovery, `GXInitTexObj`, PAL `GXFlush`, the KD open/cmd2/close sequence, `RKSystem::run`, `StaticR.rel`, and the first `GXLoadTexObj` are hardware-proven. The current exact frontier is `GXSetTexCoordGen2 (0x8016E37C)` with one observed identity/default tuple.**
+Status: **renderer, local FST/DVD/SZS, KD open/cmd2/close, `RKSystem::run`, `StaticR.rel`, the first texture load, and the exact `GXSetTexCoordGen2` tuple are hardware-proven. The rendered path now sustains 60 successful presents. The current exact frontier is pinned `StrapScene::CheckInput (0x800077C8)`.**
 
 ## Purpose
 
@@ -1561,3 +1561,43 @@ The candidate forwards only this exact six-value tuple to Aurora. Any argument
 variation aborts at the same boundary as `GX_SET_TEX_COORD_GEN2_UNPROVEN_ARGS`.
 No neighboring texture-coordinate, array, matrix-load, or offset function is
 ported.
+
+
+## Hardware result — 2026-09-25 GXSetTexCoordGen2 crossed / StrapScene frontier
+
+The merged exact `GXSetTexCoordGen2` tuple is durably crossed. The latest
+real-Switch run reaches:
+
+```text
+dispatch count        = 19718
+post-main dispatch    = 19112
+RMCP01 FIFO writes    = 758
+GXCopyDisp calls      = 60
+present successes     = 60
+present failures      = 0
+AsyncDisplay endRender= 61
+GXFlush hits          = 60
+```
+
+Resource/runtime invariants remain intact: FST 64,224 bytes / 2,096 entries,
+`English.szs` read-pass 299,969 bytes, SZS output 2,627,200 bytes,
+`/rel/StaticR.rel` read-pass 4,903,876 bytes, `RKSystem::run=1`, and
+`TaskThread::run=2`.
+
+The new distinct blocker is:
+
+```text
+DIRECT 0x800077C8
+r3 = 0x90112A34
+stage = RMCP01_GX_FLUSH
+```
+
+Pinned WiiCompiled maps `0x800077C8` to
+`StrapScene__CheckInput_Skip(uint32_t scenePtr)`. Upstream deliberately
+ignores `scenePtr`, notifies only its desktop settings overlay, and returns
+`1` to the guest after the StrapScene loading/timing gates have completed.
+
+The Switch rendered fast-track does not include that desktop/ImGui startup
+overlay, so the exact guest-visible candidate is only `cpu->gpr[3] = 1`.
+No PAD, Wii Remote, input mapping, or neighboring StrapScene function is
+pre-ported.

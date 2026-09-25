@@ -36,7 +36,14 @@ Every blocker-driven change should pass these stages in order:
    - add or update narrow synthetic/link coverage where practical;
    - require the five repository workflows to pass on the exact PR HEAD:
      `lint`, `fast-track-startup`, `bootstrap-register-prelude`,
-     `stateful-translated-sequence`, and `build-switch`.
+     `stateful-translated-sequence`, and `build-switch`;
+   - `build-switch` must additionally syntax-compile every
+     `source/*_hle_bridge.cpp` that contains a
+     `MKW_LOCAL_RENDERED_FAST_TRACK` branch with that branch enabled, using
+     devkitA64 plus the pinned WiiCompiled/Aurora headers. This compile gate is
+     Nintendo-data-free and exists specifically to catch rendered-only C++
+     errors (header collisions, ambiguous overloads, missing declarations,
+     signature drift) before merge.
 5. **Private rendered build gate**
    - build `scripts/build-local-rendered-fast-track.sh` successfully from the
      exact candidate revision;

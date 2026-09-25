@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, successful GPU presentation, local FST/DVD/SZS path, VI-only idle recovery, `GXInitTexObj`, PAL `GXFlush`, and `/dev/net/kd/request` open with fd 2000 are hardware-proven. The full first `IOS_Ioctl (0x80194290)` KD command-2 tuple is now captured; the exact Boot-phase `-42` output / IOS-return-0 candidate awaits hardware validation.**
+Status: **renderer, real RMCP01 FIFO work, successful GPU presentation, local FST/DVD/SZS path, VI-only idle recovery, `GXInitTexObj`, PAL `GXFlush`, `/dev/net/kd/request` open fd 2000, and the first KD command-2 Boot probe are hardware-proven. The current exact frontier is `IOS_Close (0x80193AD8)` with fd 2000.**
 
 ## Purpose
 
@@ -1397,3 +1397,42 @@ the live output pointer, returns 0 in r3, and marks that Boot probe consumed.
 A repeated command 2, command 1/3, ioctlv, sockets, DNS, NCD, IP, SSL and other
 network services remain unsupported until a later hardware blocker proves
 them.
+
+
+## Hardware result — 2026-09-25 KD cmd2 crossed / IOS_Close frontier
+
+The real-Switch run built from merged PR #235 proves durable progression beyond
+the first KD command-2 Boot probe:
+
+```text
+fast-track-ios-ioctl-kd-cmd2.txt
+status=cmd2-boot-probe-pass
+fd=2000
+cmd=2
+in=0x80356F20/0x20
+out=0x80356F40/0x20
+```
+
+The established resource/scheduler/render path is preserved: FST remains
+published at 64,224 bytes / 2,096 entries; `English.szs` remains read-pass at
+299,969 bytes and decode-pass at 2,627,200 bytes; `GXInitTexObj` remains
+832x456 format 4; TaskThread/scheduler activity remains healthy; real RMCP01
+FIFO work and one successful `GXCopyDisp` presentation are still observed.
+
+The later distinct blocker is:
+
+```text
+DIRECT 0x80193AD8
+r3 = 0x000007D0
+stage = HOST_CONTEXT_SWITCH_RETURNED
+```
+
+Pinned WiiCompiled maps `0x80193AD8` exactly to
+`NAND_IOS_Close_HLE(fd)`. fd 2000 is the same first KD request handle. For a
+network fd, pinned behavior calls `Network_HLE_Close`, removes that device
+from the network handle map, and returns 0.
+
+The candidate mirrors only this exact close. It tracks only the proven first KD
+handle, retires it on fd 2000, returns IOS result 0 in r3, and aborts on any
+other close as a fresh hardware-defined frontier. It does not add another KD
+command, ioctlv, NCD, IP, SSL, DNS, socket, or generic IOS-close support.

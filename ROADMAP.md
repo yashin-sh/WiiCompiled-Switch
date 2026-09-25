@@ -195,7 +195,7 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-validate local DVD read of `/rel/StaticR.rel`: 4,903,876 bytes
 - [x] attribute the next exact blocker `0x80170F2C` to pinned `GXLoadTexObj(oa, tid)`; live oa=`0x901136B4`, tid=0
 - [x] capture the exact 32-byte guest GXTexObj at `0x901136B4`: words `90/0/471f3f/7881f/0/4/0/5ca00202`, decoded as 832x456 format 4, clamp/clamp, no mipmaps, data `0x00F103E0`
-- [x] implement only that exact first `GXLoadTexObj`: validate all eight words, mapped 0x172800-byte payload, reconstruct Aurora GXTexObj, apply decoded linear/linear LOD state, bind map 0, and mirror pinned GXData dirty state
+- [x] implement only that exact first `GXLoadTexObj`: validate all eight words, mapped 0xB9400-byte payload, reconstruct Aurora GXTexObj, apply decoded linear/linear LOD state, bind map 0, and mirror pinned GXData dirty state
 - [ ] hardware-cross the exact first GXLoadTexObj and let the next durable blocker or descriptor variation define the following frontier
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
 - [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract

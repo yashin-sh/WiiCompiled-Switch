@@ -11,6 +11,7 @@ namespace mkw::switch_input_hle {
 // entry points can share it without constructing any Wii Bluetooth objects.
 inline bool g_wpad_initialized = false;
 inline std::uint8_t g_wpad_dpd_sensitivity = 3u;
+inline std::uint32_t g_wpad_sync_device_callback = 0u;
 
 // Pinned Aurora PADInit is idempotent host-side initialization. The desktop
 // implementation also seeds SDL/keyboard mappings, which are not constructed
@@ -66,6 +67,25 @@ struct KnownNativeCpuCall<0x801BF64Cu> {
         }
 
         cpu->gpr[3] = mkw::switch_input_hle::g_wpad_initialized ? 3u : 0u;
+    }
+};
+
+// WPADSetSyncDeviceCallback (PAL 0x801BF640). Pinned WiiCompiled only swaps a
+// host-side callback pointer: return the previous value in r3, then remember the
+// new r3 argument. Do not invoke the callback or pre-port simple-sync behavior.
+template <>
+struct KnownNativeCpuCall<0x801BF640u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        const std::uint32_t callback = cpu->gpr[3];
+        const std::uint32_t previous = mkw::switch_input_hle::g_wpad_sync_device_callback;
+        mkw::switch_input_hle::g_wpad_sync_device_callback = callback;
+        cpu->gpr[3] = previous;
     }
 };
 

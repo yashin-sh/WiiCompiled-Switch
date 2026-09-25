@@ -183,7 +183,7 @@ The repository currently validates five Nintendo-data-free CI workflows for fast
 - `bootstrap-register-prelude`;
 - `build-switch`.
 
-For rendered RMCP01 work, these five checks are **necessary but not sufficient**: the private `scripts/build-local-rendered-fast-track.sh` build is a required sixth gate because public CI cannot include the user-owned generated RMCP01 product or the complete private rendered link graph. A boundary is only called **hardware-crossed** when its hit count is non-zero **and** execution durably progresses beyond that target; a hit counter alone is not a PASS. See [`docs/FAST_TRACK_VALIDATION_POLICY.md`](docs/FAST_TRACK_VALIDATION_POLICY.md).
+For rendered RMCP01 work, these five checks are **necessary but not sufficient**. The public `build-switch` workflow now also compiles every rendered HLE bridge with `MKW_LOCAL_RENDERED_FAST_TRACK=1` against the pinned WiiCompiled/Aurora headers, which catches rendered-only C++ regressions before merge. The private `scripts/build-local-rendered-fast-track.sh` build remains a required sixth gate because public CI still cannot include the user-owned generated RMCP01 product or the complete private rendered link graph. A boundary is only called **hardware-crossed** when its hit count is non-zero **and** execution durably progresses beyond that target; a hit counter alone is not a PASS. See [`docs/FAST_TRACK_VALIDATION_POLICY.md`](docs/FAST_TRACK_VALIDATION_POLICY.md).
 
 ## Legal / content policy
 

@@ -12,12 +12,15 @@
 namespace mkw::switch_ios_kd_hle {
 
 constexpr std::uint32_t kIosOpenAddress = 0x801938F8u;
+constexpr std::uint32_t kIosCloseAddress = 0x80193AD8u;
 constexpr std::uint32_t kIosIoctlAddress = 0x80194290u;
 constexpr const char* kKdRequestPath = "/dev/net/kd/request";
 constexpr std::uint32_t kFirstNetworkDeviceFd = 2000u;
 constexpr std::uint32_t kKdTrySuspendSchedulerCommand = 2u;
 constexpr std::uint32_t kKdBootProbeInputLength = 0x20u;
 constexpr std::uint32_t kKdBootProbeOutputLength = 0x20u;
+
+inline bool gFirstKdRequestOpen = false;
 
 inline bool ReadGuestCString(std::uint32_t address, char* out, std::size_t capacity) noexcept {
     if (!out || capacity == 0u || address == 0u || !Memory::IsInitialized()) {
@@ -118,6 +121,26 @@ inline void WriteIoctlStatus(
     std::uint32_t) noexcept {}
 #endif
 
+#if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+inline void WriteCloseStatus(const char* status, std::uint32_t fd) noexcept {
+    constexpr const char* kStatusPath =
+        "sdmc:/switch/WiiCompiled-Switch/fast-track-ios-close-kd-request.txt";
+    FILE* out = std::fopen(kStatusPath, "w");
+    if (!out) {
+        return;
+    }
+    std::fprintf(
+        out,
+        "status=%s\n"
+        "fd=%u\n",
+        status ? status : "<null>",
+        fd);
+    std::fclose(out);
+}
+#else
+inline void WriteCloseStatus(const char*, std::uint32_t) noexcept {}
+#endif
+
 [[noreturn]] inline void AbortBoundary(
     const char* status,
     CpuContext* cpu,
@@ -154,6 +177,9 @@ inline std::uint32_t OpenKdRequest(CpuContext* cpu) noexcept {
     // activity occurs merely from opening /dev/net/kd/request.
     static std::uint32_t nextDeviceFd = kFirstNetworkDeviceFd;
     const std::uint32_t fd = nextDeviceFd++;
+    if (fd == kFirstNetworkDeviceFd) {
+        gFirstKdRequestOpen = true;
+    }
 
     WriteStatus("open-pass", path, mode, fd);
     return fd;
@@ -190,6 +216,7 @@ inline void HandleFirstKdTrySuspend(CpuContext* cpu) noexcept {
     // fd 2000, 0x20-byte input, and 0x20-byte output. Keep later KD commands
     // and later command-2 phases as fresh hardware-defined frontiers.
     if (fd != kFirstNetworkDeviceFd ||
+        !gFirstKdRequestOpen ||
         cmd != kKdTrySuspendSchedulerCommand ||
         inLen != kKdBootProbeInputLength ||
         outLen != kKdBootProbeOutputLength ||
@@ -218,13 +245,40 @@ inline void HandleFirstKdTrySuspend(CpuContext* cpu) noexcept {
     cpu->gpr[3] = 0u;
 }
 
+[[noreturn]] inline void AbortCloseBoundary(const char* status, CpuContext* cpu) noexcept {
+    if (cpu) {
+        WriteCloseStatus(status, cpu->gpr[3]);
+    }
+    mkw_switch_report_unsupported_translated_dispatch(status, kIosCloseAddress, cpu);
+    std::abort();
+}
+
+inline void CloseFirstKdRequest(CpuContext* cpu) noexcept {
+    if (!cpu) {
+        return;
+    }
+
+    const std::uint32_t fd = cpu->gpr[3];
+
+    // Hardware proves only the first KD request handle returned by IOS_Open.
+    // Pinned Network_HLE_Close removes that handle and returns IOS result 0.
+    if (fd != kFirstNetworkDeviceFd || !gFirstKdRequestOpen) {
+        AbortCloseBoundary("IOS_CLOSE_KD_UNPROVEN_FD", cpu);
+    }
+
+    gFirstKdRequestOpen = false;
+    WriteCloseStatus("close-pass", fd);
+    cpu->gpr[3] = 0u;
+}
+
 } // namespace mkw::switch_ios_kd_hle
 
 // IOS_Open / NAND_IOS_Open_HLE (PAL 0x801938F8). Hardware identifies the
 // first live request exactly as "/dev/net/kd/request", mode 0. Mirror only the
-// pinned device-allocation result here. The separate specialization below
-// covers only the first proven KD command-2 ioctl; ioctlv/close and neighboring
-// IOS/network devices remain unsupported until hardware reaches them.
+// pinned device-allocation result here. The specializations below cover only
+// the first proven KD command-2 ioctl and the exact fd-2000 close; ioctlv and
+// neighboring IOS/network devices remain unsupported until hardware reaches
+// them.
 template <>
 struct KnownNativeCpuCall<0x801938F8u> {
     static constexpr bool kAvailable = true;
@@ -247,5 +301,18 @@ struct KnownNativeCpuCall<0x80194290u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw::switch_ios_kd_hle::HandleFirstKdTrySuspend(cpu);
+    }
+};
+
+
+// IOS_Close / NAND_IOS_Close_HLE (PAL 0x80193AD8). Hardware reaches this
+// boundary only after the first KD command-2 Boot probe and passes r3=2000.
+// Mirror only the pinned Network_HLE_Close result for that exact live handle.
+template <>
+struct KnownNativeCpuCall<0x80193AD8u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw::switch_ios_kd_hle::CloseFirstKdRequest(cpu);
     }
 };

@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, local FST/DVD/SZS/StaticR resource loading, KD open/cmd2/close, the first texture load, the observed GXSetTexCoordGen2 tuple, StrapScene::CheckInput, StaticR.rel RelProlog, and the first OSDetachThread path are hardware-proven. The latest run reaches 27,052 dispatches, 269 StaticR dispatches and 84 successful presents / 0 failures. The current exact frontier is pinned OSCancelThread (0x801AA1D4); hardware proves the first TaskThread cancel path is WAITING, detached, singleton wait queue, no joiners/mutexes, and non-current fiber.**
+Status: **renderer, local FST/DVD/SZS/StaticR resource loading, KD open/cmd2/close, the first texture load, the observed GXSetTexCoordGen2 tuple, StrapScene::CheckInput, StaticR.rel RelProlog, OSDetachThread and the first exact OSCancelThread path are hardware-proven. The latest run reaches 38,262 dispatches, 421 StaticR dispatches and 92 successful presents / 0 failures while loading Home Button/UI resources. The current exact frontier is pinned GXInitTexObjLOD (0x80170A4C), with f1/f2/f3 diagnostics pending.**
 
 ## Purpose
 
@@ -1663,3 +1663,25 @@ existing guest OSContext, removes the detached global-list tail, writes state
 0, destroys only the proven non-current HostContext, preserves the empty mutex
 and join semantics, and hands control back through the already-proven
 SelectThread seam. Any state/layout variation remains unsupported.
+
+
+## Hardware result — OSCancelThread crossed / GXInitTexObjLOD frontier
+
+Merged PR #246 is durably crossed. The latest run reaches 38,262 translated
+dispatches / 37,656 post-main dispatches, 421 StaticR dispatches, three
+TaskThread::run hits, 1,408 RMCP01 FIFO writes and 92 successful presents with
+zero failures.
+
+The same run reads HomeButton.arc, HomeButtonSe.arc, homeBtn_ENG.szs,
+SpeakerSe.arc, home.csv, config.txt, homeBtnIcon.tpl and HomeButtonSe.arc, and
+expands the HBM SZS to 432,160 bytes.
+
+The distinct blocker is `DIRECT 0x80170A4C`, pinned
+`GXInitTexObjLOD`, for object `0x9018E120`. The preceding GXInitTexObj
+constructs a 64x64 format-0 repeat/repeat non-mipmap texture backed by
+`0x901532E0`.
+
+The integer LOD arguments are already known as minFilter=1, magFilter=1,
+biasClamp=0, edgeLod=0, maxAniso=0. The PPC f1/f2/f3 values are not present in
+the current blocker, so the patch is diagnostics-only and records their exact
+effective f32 values/bit patterns plus all eight guest GXTexObj words.

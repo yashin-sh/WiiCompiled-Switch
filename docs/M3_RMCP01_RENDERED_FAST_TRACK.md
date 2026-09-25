@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, local FST/DVD/SZS/StaticR resource loading, KD open/cmd2/close, the first texture load, the observed GXSetTexCoordGen2 tuple, StrapScene::CheckInput, StaticR.rel RelProlog, and the first OSDetachThread path are hardware-proven. The latest run preserves 269 StaticR dispatches and 84 successful presents / 0 failures. The current exact frontier is pinned OSCancelThread (0x801AA1D4), with diagnostics-only capture pending before thread termination is implemented.**
+Status: **renderer, local FST/DVD/SZS/StaticR resource loading, KD open/cmd2/close, the first texture load, the observed GXSetTexCoordGen2 tuple, StrapScene::CheckInput, StaticR.rel RelProlog, and the first OSDetachThread path are hardware-proven. The latest run reaches 27,052 dispatches, 269 StaticR dispatches and 84 successful presents / 0 failures. The current exact frontier is pinned OSCancelThread (0x801AA1D4); hardware proves the first TaskThread cancel path is WAITING, detached, singleton wait queue, no joiners/mutexes, and non-current fiber.**
 
 ## Purpose
 
@@ -1647,3 +1647,19 @@ unlocking owned mutexes, waking joiners and possibly rescheduling. The current
 Switch guest-fiber seam has no exact termination primitive. The current patch
 therefore captures queue/mutex/list/scheduler/fiber state only and does not
 mutate scheduler state.
+
+
+## Hardware result — exact OSCancelThread path captured
+
+The diagnostic run confirms the first blocker remains `0x801AA1D4` and
+captures the complete TaskThread cancellation state: WAITING state 4,
+attributes 1, queue `0x90113730` containing only the TaskThread, no joiners,
+no owned mutexes, global-list tail ownership, resched=1, pending
+`0x02000000`, and a known non-current guest fiber while the default thread
+remains OS current/running.
+
+The exact candidate removes only that singleton wait-queue node, clears the
+existing guest OSContext, removes the detached global-list tail, writes state
+0, destroys only the proven non-current HostContext, preserves the empty mutex
+and join semantics, and hands control back through the already-proven
+SelectThread seam. Any state/layout variation remains unsupported.

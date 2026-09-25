@@ -105,6 +105,7 @@
 - `HARDWARE_RESULTS_2026-09-25_STRAP_CHECK_INPUT_CROSSED_STATICR_REL_PROLOG_FRONTIER.md` — hardware-crosses StrapScene::CheckInput, records 61 successful presents / 0 failures, and attributes the first StaticR native-wrapper frontier to RelProlog at 0x8055531C
 - `HARDWARE_RESULTS_2026-09-25_STATICR_REL_PROLOG_CROSSED_OS_DETACH_THREAD_FRONTIER.md` — hardware-crosses StaticR RelProlog and moves the frontier to OSDetachThread diagnostics
 - `HARDWARE_RESULTS_2026-09-25_OS_DETACH_THREAD_LIVE_PATH.md` — captures the exact WAITING/already-detached/empty-join TaskThread state and defines the strict first OSDetachThread candidate
+- `HARDWARE_RESULTS_2026-09-25_OS_DETACH_THREAD_CROSSED_OS_CANCEL_THREAD_FRONTIER.md` — hardware-crosses OSDetachThread and moves the exact frontier to OSCancelThread diagnostics
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes

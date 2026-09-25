@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, successful GPU presentation, local FST/DVD/SZS path, VI-only idle recovery, `GXInitTexObj`, PAL `GXFlush`, the KD open/cmd2/close sequence, `RKSystem::run`, and a real `StaticR.rel` read are hardware-proven. The current exact frontier is the first `GXLoadTexObj (0x80170F2C)`; its full descriptor is hardware-captured and an exact one-descriptor bind candidate awaits validation.**
+Status: **renderer, real RMCP01 FIFO work, successful GPU presentation, local FST/DVD/SZS path, VI-only idle recovery, `GXInitTexObj`, PAL `GXFlush`, the KD open/cmd2/close sequence, `RKSystem::run`, `StaticR.rel`, and the first `GXLoadTexObj` are hardware-proven. The current exact frontier is `GXSetTexCoordGen2 (0x8016E37C)` with one observed identity/default tuple.**
 
 ## Purpose
 
@@ -1528,3 +1528,36 @@ only map 0, then mirrors the pinned GXData dirty/writeback side effects.
 Any different object address, map id, descriptor word, format, dimensions,
 wrap, mipmap state or backing becomes a fresh `GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR`
 frontier. No neighboring CI/TLUT/LOD/invalidation API is pre-ported.
+
+
+## Hardware result — 2026-09-25 GXLoadTexObj crossed / GXSetTexCoordGen2 frontier
+
+The exact first texture-load bridge records `load-pass` and the same run
+continues durably to 3,363 translated dispatches. Multiple later GX state
+calls execute again, including additional GXSetVtxDesc/GXSetVtxAttrFmt hits,
+while the renderer remains initialized with one successful present and zero
+present failures. This later distinct blocker proves `0x80170F2C` crossed.
+
+The new blocker is:
+
+```text
+DIRECT 0x8016E37C
+r3 = 0
+r4 = 1
+r5 = 4
+r6 = 60
+r7 = 0
+r8 = 125
+```
+
+Pinned WiiCompiled maps it exactly to
+`GXSetTexCoordGen2(dc,type,src,mtx,normalize,postMtx)`.
+
+The live values map to:
+`GX_TEXCOORD0`, `GX_TG_MTX2x4`, `GX_TG_TEX0`, `GX_IDENTITY`,
+`GX_FALSE`, `GX_PTIDENTITY`.
+
+The candidate forwards only this exact six-value tuple to Aurora. Any argument
+variation aborts at the same boundary as `GX_SET_TEX_COORD_GEN2_UNPROVEN_ARGS`.
+No neighboring texture-coordinate, array, matrix-load, or offset function is
+ported.

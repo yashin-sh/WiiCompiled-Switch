@@ -51,6 +51,9 @@ jobs:
           echo "NM_TOOL=$NM_TOOL" >> "$GITHUB_ENV"
           echo "CXX_TOOL=$CXX_TOOL" >> "$GITHUB_ENV"
 
+      - name: Compile rendered HLE branches (Nintendo-data-free)
+        run: bash scripts/ci-compile-rendered-hle-paths.sh "$CXX_TOOL"
+
       - name: Verify GCC state-free return normalization
         run: |
           cat > /tmp/statefree-return-probe.cpp <<'EOF'

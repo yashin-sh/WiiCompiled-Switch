@@ -78,7 +78,7 @@ IOS_Close (0x80193AD8), fd 2000                                    ✅ hardware 
   4,903,876 bytes; RKSystem::run reached
   ↓
 GXLoadTexObj (0x80170F2C), oa=0x901136B4 tid=0                     🟡 exact candidate; hardware validation pending
-  832x456 RGBA8, clamp/clamp, no mipmaps, data=0x00F103E0
+  832x456 RGB565, clamp/clamp, no mipmaps, data=0x00F103E0
   ↓
 next exact hardware-attributed graphics/resource/game frontier     ⬜ pending
   ↓

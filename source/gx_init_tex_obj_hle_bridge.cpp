@@ -625,22 +625,22 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
             hostData,
             kObservedWidth,
             kObservedHeight,
-            static_cast<GXTexFmt>(kObservedFormat),
-            static_cast<GXTexWrapMode>(0u),
-            static_cast<GXTexWrapMode>(0u),
-            static_cast<GXBool>(0u));
+            GX_TF_RGB565,
+            GX_CLAMP,
+            GX_CLAMP,
+            GX_FALSE);
         GXInitTexObjLOD(
             hostObj,
-            static_cast<GXTexFilter>(1u),
-            static_cast<GXTexFilter>(1u),
+            GX_LINEAR,
+            GX_LINEAR,
             0.0f,
             0.0f,
             0.0f,
             GX_FALSE,
             GX_TRUE,
-            static_cast<GXAnisotropy>(0u));
+            GX_ANISO_1);
         GXInitTexObjUserData(hostObj, nullptr);
-        GXLoadTexObj(hostObj, static_cast<GXTexMapID>(tid));
+        GXLoadTexObj(hostObj, GX_TEXMAP0);
     } catch (...) {
         AbortLoadBoundary(
             "GX_LOAD_TEX_OBJ_HOST_EXCEPTION",

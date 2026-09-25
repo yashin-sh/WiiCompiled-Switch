@@ -48,11 +48,11 @@ execution durably advances far beyond the IOS boundary.
 
 The same run reaches `RKSystem::run`, services a second real DVD read for
 `/rel/StaticR.rel` (4,903,876 bytes), and continues through another round of
-GX state setup. The new exact blocker is `GXLoadTexObj (0x80170F2C)` with
-`oa=0x901136B4`, `tid=0`. Because that guest GXTexObj differs from the
-previously initialized object at `0x901136D4`, the current candidate is
-diagnostics-only: capture its 32 guest bytes and pinned-decoded texture metadata
-before implementing any load behavior.
+GX state setup. The exact blocker remains `GXLoadTexObj (0x80170F2C)` with
+`oa=0x901136B4`, `tid=0`, but the merged diagnostics now capture the full
+32-byte descriptor: 832x456, format 4, clamp/clamp, no mipmaps, backing
+`0x00F103E0`. The current candidate implements only that exact observed
+descriptor and leaves every later texture-load variation unsupported.
 
 ```text
 PAL main / post-main runtime                                       ✅ hardware crossed
@@ -77,8 +77,8 @@ IOS_Close (0x80193AD8), fd 2000                                    ✅ hardware 
 /rel/StaticR.rel local DVD read                                    ✅ hardware crossed
   4,903,876 bytes; RKSystem::run reached
   ↓
-GXLoadTexObj (0x80170F2C), oa=0x901136B4 tid=0                     🟡 diagnostic frontier
-  capture exact 32-byte guest GXTexObj before implementing load
+GXLoadTexObj (0x80170F2C), oa=0x901136B4 tid=0                     🟡 exact candidate; hardware validation pending
+  832x456 RGBA8, clamp/clamp, no mipmaps, data=0x00F103E0
   ↓
 next exact hardware-attributed graphics/resource/game frontier     ⬜ pending
   ↓

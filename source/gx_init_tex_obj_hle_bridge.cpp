@@ -42,7 +42,7 @@ constexpr std::uint32_t kObservedData = 0x00F103E0u;
 constexpr std::uint16_t kObservedWidth = 832u;
 constexpr std::uint16_t kObservedHeight = 456u;
 constexpr std::uint32_t kObservedFormat = 4u;
-constexpr std::uint32_t kObservedTextureSize = 0x00172800u;
+constexpr std::uint32_t kObservedTextureSize = 0x000B9400u;
 
 std::uint32_t CanonicalizeGuestMainRamAddress(std::uint32_t addr) noexcept {
     if (addr < 0x01800000u) {

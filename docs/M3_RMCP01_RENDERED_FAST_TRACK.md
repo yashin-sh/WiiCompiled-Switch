@@ -1515,9 +1515,9 @@ wrap   = clamp / clamp
 mipmap = false
 ```
 
-Format 4 uses 4x4 RGBA8 blocks. At 832x456 this is 208x114 = 23,712
-blocks, matching the descriptor's block count. At 64 bytes per block the exact
-payload is `0x172800` bytes.
+Format 4 uses 4x4 RGB565 blocks. At 832x456 this is 208x114 = 23,712
+blocks, matching the descriptor's block count. At 32 bytes per block the exact
+payload is `0xB9400` bytes.
 
 This is a non-CI descriptor; no TLUT behavior is required by the observed call.
 The candidate therefore accepts only the exact eight hardware-captured words,

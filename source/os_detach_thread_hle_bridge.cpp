@@ -30,6 +30,17 @@ constexpr std::uint16_t kObservedAttr = 0x0001u;
     std::abort();
 }
 
+[[noreturn]] void RestoreAndAbort(
+    CpuContext* cpu,
+    std::uint32_t irqState,
+    const char* kind) noexcept {
+    if (cpu) {
+        cpu->gpr[3] = irqState;
+        mkw_switch_hle_os_restore_interrupts(cpu);
+    }
+    AbortUnproven(cpu, kind);
+}
+
 bool ContainsObservedThread() noexcept {
     return Memory::IsInitialized() &&
            Memory::Contains(kObservedThread + kThreadStateOffset, sizeof(std::uint16_t)) &&
@@ -47,6 +58,9 @@ extern "C" void mkw_switch_hle_os_detach_thread(CpuContext* ctx) noexcept {
         AbortUnproven(cpu, "OSDETACHTHREAD_UNPROVEN_THREAD");
     }
 
+    mkw_switch_hle_os_disable_interrupts(cpu);
+    const std::uint32_t irqState = cpu->gpr[3];
+
     try {
         const std::uint16_t state = Memory::Read16(threadPtr + kThreadStateOffset);
         const std::uint16_t attr = Memory::Read16(threadPtr + kThreadAttrOffset);
@@ -62,11 +76,8 @@ extern "C" void mkw_switch_hle_os_detach_thread(CpuContext* ctx) noexcept {
             attr != kObservedAttr ||
             joinHead != 0u ||
             joinTail != 0u) {
-            AbortUnproven(cpu, "OSDETACHTHREAD_UNPROVEN_STATE");
+            RestoreAndAbort(cpu, irqState, "OSDETACHTHREAD_UNPROVEN_STATE");
         }
-
-        mkw_switch_hle_os_disable_interrupts(cpu);
-        const std::uint32_t irqState = cpu->gpr[3];
 
         // Pinned OSDetachThread sets the detached bit unconditionally.
         Memory::Write16(
@@ -79,12 +90,12 @@ extern "C" void mkw_switch_hle_os_detach_thread(CpuContext* ctx) noexcept {
         // interrupt bookkeeping, which the existing OSWakeupThread HLE owns.
         cpu->gpr[3] = threadPtr + kThreadJoinQueueOffset;
         mkw_switch_hle_os_wakeup_thread(cpu);
-
-        cpu->gpr[3] = irqState;
-        mkw_switch_hle_os_restore_interrupts(cpu);
     } catch (...) {
-        AbortUnproven(cpu, "OSDETACHTHREAD_GUEST_MEMORY");
+        RestoreAndAbort(cpu, irqState, "OSDETACHTHREAD_GUEST_MEMORY");
     }
+
+    cpu->gpr[3] = irqState;
+    mkw_switch_hle_os_restore_interrupts(cpu);
 }
 
 #endif

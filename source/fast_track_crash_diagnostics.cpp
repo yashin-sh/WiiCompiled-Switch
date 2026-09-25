@@ -78,6 +78,7 @@ constexpr std::uint32_t kGxSetChanMatColorAddress = 0x80170474u;
 constexpr std::uint32_t kGxSetChanCtrlAddress = 0x80170570u;
 constexpr std::uint32_t kGxLoadTexObjAddress = 0x80170F2Cu;
 constexpr std::uint32_t kOsDetachThreadAddress = 0x801AA4ECu;
+constexpr std::uint32_t kOsCancelThreadAddress = 0x801AA1D4u;
 constexpr std::uint32_t kDefaultThreadContextAddr = 0x80347498u;
 constexpr std::uint32_t kOSCurrentContextAddr = 0x800000D4u;
 constexpr std::uint32_t kOSRunningContextAddr = 0x800000E4u;
@@ -89,11 +90,18 @@ constexpr std::uint32_t kThreadQueueOffset = 0x2DCu;
 constexpr std::uint32_t kThreadNextOffset = 0x2E0u;
 constexpr std::uint32_t kThreadPrevOffset = 0x2E4u;
 constexpr std::uint32_t kThreadJoinQueueOffset = 0x2E8u;
+constexpr std::uint32_t kThreadMutexOffset = 0x2F0u;
+constexpr std::uint32_t kThreadMutexQueueOffset = 0x2F4u;
+constexpr std::uint32_t kThreadMutexTailOffset = 0x2F8u;
 constexpr std::uint32_t kThreadListNextOffset = 0x2FCu;
 constexpr std::uint32_t kThreadListPrevOffset = 0x300u;
 constexpr std::uint32_t kThreadSize = 0x318u;
 constexpr std::uint32_t kThreadListHeadAddr = 0x800000DCu;
 constexpr std::uint32_t kThreadListTailAddr = 0x800000E0u;
+constexpr std::uint32_t kSchedulerReschedCounterAddr = 0x8038691Cu;
+constexpr std::uint32_t kSchedulerPendingFlagAddr = 0x80386920u;
+constexpr std::uint32_t kThreadQueueArrayAddr = 0x803477B0u;
+constexpr std::uint32_t kThreadQueueArrayBytes = 0x100u;
 constexpr std::uint32_t kStaticRTextStart = 0x805103B4u;
 constexpr std::uint32_t kStaticRTextEnd = 0x8088F400u;
 constexpr std::uint32_t kFstAddressLowMem = 0x80000038u;
@@ -568,7 +576,7 @@ void write_liveness_record(
     const char* title,
     std::uint32_t target,
     CpuContext* cpu) noexcept {
-    char buffer[4096];
+    char buffer[6144];
     const std::uint32_t guest_pc = cpu ? cpu->pc : 0u;
     const std::uint32_t r1 = cpu ? cpu->gpr[1] : 0u;
     const std::uint32_t r2 = cpu ? cpu->gpr[2] : 0u;
@@ -1048,6 +1056,73 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         target == kOsDetachThreadAddress && r3 != 0u &&
         mkw::switch_guest_fiber::available() && mkw::switch_guest_fiber::has(r3);
 
+    const bool osCancelThreadReadable =
+        target == kOsCancelThreadAddress && r3 != 0u &&
+        Memory::IsInitialized() && Memory::Contains(r3, kThreadSize);
+    const std::uint16_t osCancelState =
+        osCancelThreadReadable ? read16_or_zero(r3 + kThreadStateOffset) : 0u;
+    const std::uint16_t osCancelAttr =
+        osCancelThreadReadable ? read16_or_zero(r3 + kThreadAttrOffset) : 0u;
+    const std::int32_t osCancelSuspend =
+        osCancelThreadReadable
+            ? static_cast<std::int32_t>(read32_or_zero(r3 + kThreadSuspendOffset))
+            : 0;
+    const std::int32_t osCancelPriority =
+        osCancelThreadReadable
+            ? static_cast<std::int32_t>(read32_or_zero(r3 + kThreadPriorityOffset))
+            : 0;
+    const std::uint32_t osCancelQueue =
+        osCancelThreadReadable ? read32_or_zero(r3 + kThreadQueueOffset) : 0u;
+    const std::uint32_t osCancelNext =
+        osCancelThreadReadable ? read32_or_zero(r3 + kThreadNextOffset) : 0u;
+    const std::uint32_t osCancelPrev =
+        osCancelThreadReadable ? read32_or_zero(r3 + kThreadPrevOffset) : 0u;
+    const std::uint32_t osCancelJoinHead =
+        osCancelThreadReadable ? read32_or_zero(r3 + kThreadJoinQueueOffset) : 0u;
+    const std::uint32_t osCancelJoinTail =
+        osCancelThreadReadable ? read32_or_zero(r3 + kThreadJoinQueueOffset + 4u) : 0u;
+    const std::uint32_t osCancelMutex =
+        osCancelThreadReadable ? read32_or_zero(r3 + kThreadMutexOffset) : 0u;
+    const std::uint32_t osCancelOwnedMutexHead =
+        osCancelThreadReadable ? read32_or_zero(r3 + kThreadMutexQueueOffset) : 0u;
+    const std::uint32_t osCancelOwnedMutexTail =
+        osCancelThreadReadable ? read32_or_zero(r3 + kThreadMutexTailOffset) : 0u;
+    const std::uint32_t osCancelListNext =
+        osCancelThreadReadable ? read32_or_zero(r3 + kThreadListNextOffset) : 0u;
+    const std::uint32_t osCancelListPrev =
+        osCancelThreadReadable ? read32_or_zero(r3 + kThreadListPrevOffset) : 0u;
+    const std::uint32_t osCancelListHead =
+        target == kOsCancelThreadAddress ? read32_or_zero(kThreadListHeadAddr) : 0u;
+    const std::uint32_t osCancelListTail =
+        target == kOsCancelThreadAddress ? read32_or_zero(kThreadListTailAddr) : 0u;
+    const std::uint32_t osCancelQueueHead =
+        osCancelQueue != 0u ? read32_or_zero(osCancelQueue) : 0u;
+    const std::uint32_t osCancelQueueTail =
+        osCancelQueue != 0u ? read32_or_zero(osCancelQueue + 4u) : 0u;
+    const bool osCancelQueueIsRunQueue =
+        osCancelQueue >= kThreadQueueArrayAddr &&
+        osCancelQueue < (kThreadQueueArrayAddr + kThreadQueueArrayBytes) &&
+        ((osCancelQueue - kThreadQueueArrayAddr) % 8u) == 0u;
+    const std::uint32_t osCancelResched =
+        target == kOsCancelThreadAddress
+            ? read32_or_zero(kSchedulerReschedCounterAddr)
+            : 0u;
+    const std::uint32_t osCancelPending =
+        target == kOsCancelThreadAddress
+            ? read32_or_zero(kSchedulerPendingFlagAddr)
+            : 0u;
+    const bool osCancelFiberKnown =
+        target == kOsCancelThreadAddress && r3 != 0u &&
+        mkw::switch_guest_fiber::available() && mkw::switch_guest_fiber::has(r3);
+    const std::uint32_t osCancelFiberCurrent =
+        target == kOsCancelThreadAddress
+            ? mkw::switch_guest_fiber::current_thread()
+            : 0u;
+    const std::uint32_t osCancelOsCurrent =
+        target == kOsCancelThreadAddress ? read32_or_zero(kOSCurrentContextAddr) : 0u;
+    const std::uint32_t osCancelOsRunning =
+        target == kOsCancelThreadAddress ? read32_or_zero(kOSRunningContextAddr) : 0u;
+
     const int n = std::snprintf(
         buffer,
         sizeof(buffer),
@@ -1094,6 +1169,23 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         "os detach list n/p    : 0x%08x / 0x%08x\n"
         "os thread list h/t    : 0x%08x / 0x%08x\n"
         "os detach fiber known : %s\n"
+        "os cancel thread      : 0x%08x\n"
+        "os cancel readable    : %s\n"
+        "os cancel state/attr  : %u / 0x%04x\n"
+        "os cancel suspend/prio: %d / %d\n"
+        "os cancel queue       : 0x%08x\n"
+        "os cancel next/prev   : 0x%08x / 0x%08x\n"
+        "os cancel queue h/t   : 0x%08x / 0x%08x\n"
+        "os cancel run queue   : %s\n"
+        "os cancel join h/t    : 0x%08x / 0x%08x\n"
+        "os cancel mutex       : 0x%08x\n"
+        "os cancel owned m h/t : 0x%08x / 0x%08x\n"
+        "os cancel list n/p    : 0x%08x / 0x%08x\n"
+        "os thread list h/t    : 0x%08x / 0x%08x\n"
+        "os cancel resched/pend: 0x%08x / 0x%08x\n"
+        "os cancel fiber known : %s\n"
+        "os cancel fiber curr  : 0x%08x\n"
+        "os cancel OS c/r      : 0x%08x / 0x%08x\n"
         "action                : abort after durable blocker record\n",
         kind ? kind : "UNKNOWN",
         target,
@@ -1152,7 +1244,34 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         osDetachListPrev,
         osDetachListHead,
         osDetachListTail,
-        osDetachFiberKnown ? "YES" : "NO");
+        osDetachFiberKnown ? "YES" : "NO",
+        target == kOsCancelThreadAddress ? r3 : 0u,
+        osCancelThreadReadable ? "YES" : "NO",
+        static_cast<unsigned>(osCancelState),
+        static_cast<unsigned>(osCancelAttr),
+        static_cast<int>(osCancelSuspend),
+        static_cast<int>(osCancelPriority),
+        osCancelQueue,
+        osCancelNext,
+        osCancelPrev,
+        osCancelQueueHead,
+        osCancelQueueTail,
+        osCancelQueueIsRunQueue ? "YES" : "NO",
+        osCancelJoinHead,
+        osCancelJoinTail,
+        osCancelMutex,
+        osCancelOwnedMutexHead,
+        osCancelOwnedMutexTail,
+        osCancelListNext,
+        osCancelListPrev,
+        osCancelListHead,
+        osCancelListTail,
+        osCancelResched,
+        osCancelPending,
+        osCancelFiberKnown ? "YES" : "NO",
+        osCancelFiberCurrent,
+        osCancelOsCurrent,
+        osCancelOsRunning);
     if (n > 0) {
         const std::size_t size = static_cast<std::size_t>(n) < sizeof(buffer)
             ? static_cast<std::size_t>(n)

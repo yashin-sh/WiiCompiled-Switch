@@ -304,7 +304,6 @@ struct KnownNativeCpuCall<0x80194290u> {
     }
 };
 
-
 // IOS_Close / NAND_IOS_Close_HLE (PAL 0x80193AD8). Hardware reaches this
 // boundary only after the first KD command-2 Boot probe and passes r3=2000.
 // Mirror only the pinned Network_HLE_Close result for that exact live handle.

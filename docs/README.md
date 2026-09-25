@@ -100,6 +100,7 @@
 - `HARDWARE_RESULTS_2026-09-25_KD_CMD2_CROSSED_IOS_CLOSE_FRONTIER.md` — hardware-crosses that first KD command-2 probe and exposes pinned `IOS_Close (0x80193AD8)` with the same fd 2000
 - `HARDWARE_RESULTS_2026-09-25_IOS_CLOSE_CROSSED_GX_LOAD_TEX_OBJ_FRONTIER.md` — hardware-crosses fd-2000 IOS_Close, records the first `StaticR.rel` read / `RKSystem::run` progress, and moves the frontier to `GXLoadTexObj (0x80170F2C)` diagnostics
 - `HARDWARE_RESULTS_2026-09-25_GX_LOAD_TEX_OBJ_DESCRIPTOR_CAPTURED.md` — captures the exact first GXLoadTexObj descriptor and defines the strict one-descriptor Aurora bind candidate
+- `HARDWARE_RESULTS_2026-09-25_GX_LOAD_TEX_OBJ_CROSSED_TEXCOORDGEN2_FRONTIER.md` — hardware-crosses that first texture load and moves the exact frontier to GXSetTexCoordGen2
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes

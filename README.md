@@ -51,8 +51,11 @@ The same run reaches `RKSystem::run`, services a second real DVD read for
 GX state setup. The exact blocker remains `GXLoadTexObj (0x80170F2C)` with
 `oa=0x901136B4`, `tid=0`, but the merged diagnostics now capture the full
 32-byte descriptor: 832x456, format 4, clamp/clamp, no mipmaps, backing
-`0x00F103E0`. The current candidate implements only that exact observed
-descriptor and leaves every later texture-load variation unsupported.
+`0x00F103E0`. That exact texture load is now hardware-crossed: `load-pass` is followed by
+durable progression to a new direct blocker at `GXSetTexCoordGen2
+(0x8016E37C)`. The live tuple is
+`GX_TEXCOORD0 / GX_TG_MTX2x4 / GX_TG_TEX0 / GX_IDENTITY / GX_FALSE /
+GX_PTIDENTITY`; the current candidate forwards only that exact tuple.
 
 ```text
 PAL main / post-main runtime                                       ✅ hardware crossed
@@ -77,8 +80,11 @@ IOS_Close (0x80193AD8), fd 2000                                    ✅ hardware 
 /rel/StaticR.rel local DVD read                                    ✅ hardware crossed
   4,903,876 bytes; RKSystem::run reached
   ↓
-GXLoadTexObj (0x80170F2C), oa=0x901136B4 tid=0                     🟡 exact candidate; hardware validation pending
+GXLoadTexObj (0x80170F2C), oa=0x901136B4 tid=0                     ✅ hardware crossed
   832x456 RGB565, clamp/clamp, no mipmaps, data=0x00F103E0
+  ↓
+GXSetTexCoordGen2 (0x8016E37C)                                     🟡 exact candidate; hardware validation pending
+  TEXCOORD0 / MTX2x4 / TEX0 / IDENTITY / false / PTIDENTITY
   ↓
 next exact hardware-attributed graphics/resource/game frontier     ⬜ pending
   ↓

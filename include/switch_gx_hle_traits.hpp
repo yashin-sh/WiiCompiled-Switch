@@ -17,6 +17,7 @@ extern "C" void mkw_switch_hle_gx_clear_vtx_desc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_vtx_desc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_vtx_attr_fmt(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_tex_gens(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tex_coord_gen2(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_ind_stages(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_tev_stages(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_op(CpuContext* cpu) noexcept;
@@ -154,6 +155,18 @@ struct KnownNativeCpuCall<0x8016DC68u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_vtx_attr_fmt(cpu);
+    }
+};
+
+// GXSetTexCoordGen2 (PAL 0x8016E37C). Hardware currently proves only
+// GX_TEXCOORD0 / GX_TG_MTX2x4 / GX_TG_TEX0 / GX_IDENTITY / GX_FALSE /
+// GX_PTIDENTITY. Any later argument variation remains a fresh blocker.
+template <>
+struct KnownNativeCpuCall<0x8016E37Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tex_coord_gen2(cpu);
     }
 };
 

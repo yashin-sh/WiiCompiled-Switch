@@ -4,6 +4,7 @@
 static_assert(KnownNativeCpuCall<0x801BF5C4u>::kAvailable);
 static_assert(KnownNativeCpuCall<0x801C329Cu>::kAvailable);
 static_assert(KnownNativeCpuCall<0x801BF64Cu>::kAvailable);
+static_assert(KnownNativeCpuCall<0x801BF640u>::kAvailable);
 static_assert(KnownNativeCpuCall<0x801C0EC4u>::kAvailable);
 static_assert(KnownNativeCpuCall<0x801AF2F0u>::kAvailable);
 
@@ -37,6 +38,17 @@ extern "C" __attribute__((used)) void synthetic_wpad_get_status_hle_probe(CpuCon
     }
 
     InvokeDirectCpu<0x801BF64Cu>(cpu);
+}
+
+// Nintendo-data-free coverage for PAL WPADSetSyncDeviceCallback. The pinned
+// boundary only swaps host-side callback state and returns the previous value;
+// it does not invoke callbacks, touch guest memory, or start/stop synchronization.
+extern "C" __attribute__((used)) void synthetic_wpad_set_sync_device_callback_hle_probe(CpuContext* cpu) {
+    if (!cpu) {
+        return;
+    }
+
+    InvokeDirectCpu<0x801BF640u>(cpu);
 }
 
 // Nintendo-data-free coverage for PAL WPADControlMotor. Pinned WiiCompiled

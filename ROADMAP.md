@@ -199,7 +199,10 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-cross the exact first GXLoadTexObj: load-pass followed by durable progression to a distinct DIRECT blocker
 - [x] attribute 0x8016E37C to pinned GXSetTexCoordGen2(dc,type,src,mtx,normalize,postMtx)
 - [x] implement only the observed tuple: TEXCOORD0 / MTX2x4 / TEX0 / IDENTITY / false / PTIDENTITY
-- [ ] hardware-cross that exact GXSetTexCoordGen2 and let the next durable blocker define the following frontier
+- [x] hardware-cross that exact GXSetTexCoordGen2: durable progression to 19,718 dispatches / 60 successful presents and a distinct DIRECT blocker
+- [x] attribute 0x800077C8 to pinned StrapScene::CheckInput override; only ABI arg is scenePtr and pinned ignores it
+- [x] implement only the pinned guest-visible result for that blocker: r3 = 1; do not import desktop overlay, PAD, Wii Remote, or neighboring StrapScene functions
+- [ ] hardware-cross StrapScene::CheckInput and let the next durable blocker define the following frontier
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
 - [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
 - [x] hardware-cross PAL `GXSetScissor` (`0x80173430`) using pinned guest GXData bookkeeping plus Aurora scissor

@@ -76,6 +76,7 @@ constexpr std::uint32_t kGxBeginAddress = 0x8016F0F0u;
 constexpr std::uint32_t kGxSetNumChansAddress = 0x8017054Cu;
 constexpr std::uint32_t kGxSetChanMatColorAddress = 0x80170474u;
 constexpr std::uint32_t kGxSetChanCtrlAddress = 0x80170570u;
+constexpr std::uint32_t kGxLoadTexObjAddress = 0x80170F2Cu;
 constexpr std::uint32_t kDefaultThreadContextAddr = 0x80347498u;
 constexpr std::uint32_t kOSCurrentContextAddr = 0x800000D4u;
 constexpr std::uint32_t kOSRunningContextAddr = 0x800000E4u;
@@ -959,7 +960,7 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
     std::uint32_t target,
     CpuContext* cpu) noexcept {
 #if MKW_FAST_TRACK_DIAGNOSTICS
-    char buffer[1536];
+    char buffer[2304];
     const std::uint32_t guest_pc = cpu ? cpu->pc : 0u;
     const std::uint32_t r1 = cpu ? cpu->gpr[1] : 0u;
     const std::uint32_t r2 = cpu ? cpu->gpr[2] : 0u;
@@ -976,6 +977,29 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
     char iosOpenPath[256]{};
     const bool iosOpenPathValid =
         target == kIosOpenAddress && read_guest_cstring(r3, iosOpenPath, sizeof(iosOpenPath));
+
+    const bool gxLoadTexObjReadable =
+        target == kGxLoadTexObjAddress && r3 != 0u &&
+        Memory::IsInitialized() && Memory::Contains(r3, 0x20u);
+    const std::uint32_t gxTexWord0 = gxLoadTexObjReadable ? read32_or_zero(r3 + 0x00u) : 0u;
+    const std::uint32_t gxTexWord1 = gxLoadTexObjReadable ? read32_or_zero(r3 + 0x04u) : 0u;
+    const std::uint32_t gxTexWord2 = gxLoadTexObjReadable ? read32_or_zero(r3 + 0x08u) : 0u;
+    const std::uint32_t gxTexWord3 = gxLoadTexObjReadable ? read32_or_zero(r3 + 0x0Cu) : 0u;
+    const std::uint32_t gxTexWord4 = gxLoadTexObjReadable ? read32_or_zero(r3 + 0x10u) : 0u;
+    const std::uint32_t gxTexWord5 = gxLoadTexObjReadable ? read32_or_zero(r3 + 0x14u) : 0u;
+    const std::uint32_t gxTexWord6 = gxLoadTexObjReadable ? read32_or_zero(r3 + 0x18u) : 0u;
+    const std::uint32_t gxTexWord7 = gxLoadTexObjReadable ? read32_or_zero(r3 + 0x1Cu) : 0u;
+    const std::uint32_t gxTexWidth = gxLoadTexObjReadable ? (gxTexWord2 & 0x3FFu) + 1u : 0u;
+    const std::uint32_t gxTexHeight =
+        gxLoadTexObjReadable ? ((gxTexWord2 >> 10u) & 0x3FFu) + 1u : 0u;
+    const std::uint32_t gxTexFormatWord2 =
+        gxLoadTexObjReadable ? (gxTexWord2 >> 20u) & 0xFu : 0u;
+    const std::uint32_t gxTexData =
+        gxLoadTexObjReadable ? (gxTexWord3 & 0x00FFFFFFu) << 5u : 0u;
+    const std::uint32_t gxTexWrapS = gxLoadTexObjReadable ? gxTexWord0 & 0x3u : 0u;
+    const std::uint32_t gxTexWrapT =
+        gxLoadTexObjReadable ? (gxTexWord0 >> 2u) & 0x3u : 0u;
+    const std::uint32_t gxTexMipmap = gxLoadTexObjReadable ? gxTexWord7 & 0x1u : 0u;
 
     const int n = std::snprintf(
         buffer,
@@ -1001,6 +1025,18 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         "ios ioctl cmd         : 0x%08x\n"
         "ios ioctl in ptr/len  : 0x%08x / 0x%08x\n"
         "ios ioctl out ptr/len : 0x%08x / 0x%08x\n"
+        "gx load tex obj       : 0x%08x\n"
+        "gx load tex map id    : %u\n"
+        "gx tex obj readable   : %s\n"
+        "gx tex words 0/1      : 0x%08x / 0x%08x\n"
+        "gx tex words 2/3      : 0x%08x / 0x%08x\n"
+        "gx tex words 4/5      : 0x%08x / 0x%08x\n"
+        "gx tex words 6/7      : 0x%08x / 0x%08x\n"
+        "gx tex data           : 0x%08x\n"
+        "gx tex width/height   : %u / %u\n"
+        "gx tex format w5/w2   : 0x%08x / 0x%08x\n"
+        "gx tex wrap s/t       : %u / %u\n"
+        "gx tex mipmap         : %u\n"
         "action                : abort after durable blocker record\n",
         kind ? kind : "UNKNOWN",
         target,
@@ -1024,7 +1060,26 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         target == kIosIoctlAddress ? r5 : 0u,
         target == kIosIoctlAddress ? r6 : 0u,
         target == kIosIoctlAddress ? r7 : 0u,
-        target == kIosIoctlAddress ? r8 : 0u);
+        target == kIosIoctlAddress ? r8 : 0u,
+        target == kGxLoadTexObjAddress ? r3 : 0u,
+        target == kGxLoadTexObjAddress ? r4 : 0u,
+        gxLoadTexObjReadable ? "YES" : "NO",
+        gxTexWord0,
+        gxTexWord1,
+        gxTexWord2,
+        gxTexWord3,
+        gxTexWord4,
+        gxTexWord5,
+        gxTexWord6,
+        gxTexWord7,
+        gxTexData,
+        gxTexWidth,
+        gxTexHeight,
+        gxTexWord5,
+        gxTexFormatWord2,
+        gxTexWrapS,
+        gxTexWrapT,
+        gxTexMipmap);
     if (n > 0) {
         const std::size_t size = static_cast<std::size_t>(n) < sizeof(buffer)
             ? static_cast<std::size_t>(n)

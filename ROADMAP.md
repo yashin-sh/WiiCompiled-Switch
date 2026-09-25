@@ -151,7 +151,7 @@ Validation policy after the 2026-09-20 audit: the five public CI workflows remai
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered path is hardware-proven through local `English.szs` read/decode, VI-idle recovery, real FIFO/presentation, `GXInitTexObj`, the exact `/dev/net/kd/request` open returning fd 2000, and the first `IOS_Ioctl (0x80194290)` KD command-2 Boot probe. The new exact frontier is `IOS_Close (0x80193AD8)` with fd 2000; the candidate mirrors only pinned network-device removal + IOS return `0`.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered path is hardware-proven through local `English.szs` read/decode, VI-idle recovery, real FIFO/presentation, `GXInitTexObj`, the exact KD open/cmd2/close sequence, and now a real `/rel/StaticR.rel` DVD read with `RKSystem::run` reached. The new exact frontier is `GXLoadTexObj (0x80170F2C)` with oa `0x901136B4` / tid 0. Because this object differs from the earlier init-pass object, the current candidate captures its 32 guest bytes only.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input
@@ -191,7 +191,10 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-cross the merged first KD command-2 probe: status `cmd2-boot-probe-pass` followed by durable progress to `IOS_Close (0x80193AD8)`
 - [x] attribute `0x80193AD8` to pinned `NAND_IOS_Close_HLE(fd)`; hardware passes fd 2000, the proven KD request handle
 - [x] implement only the exact fd-2000 network-device close: retire the local first-KD handle and return IOS result `0`; other closes remain unsupported
-- [ ] hardware-cross the merged fd-2000 IOS_Close and let the next durable blocker define the following frontier
+- [x] hardware-cross the merged fd-2000 IOS_Close: `close-pass` followed by durable progression into RKSystem::run / StaticR resource loading
+- [x] hardware-validate local DVD read of `/rel/StaticR.rel`: 4,903,876 bytes
+- [x] attribute the next exact blocker `0x80170F2C` to pinned `GXLoadTexObj(oa, tid)`; live oa=`0x901136B4`, tid=0
+- [ ] capture the exact 32-byte guest GXTexObj at `0x901136B4` before implementing load semantics; do not pre-port CI/TLUT/LOD neighbors
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
 - [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
 - [x] hardware-cross PAL `GXSetScissor` (`0x80173430`) using pinned guest GXData bookkeeping plus Aurora scissor

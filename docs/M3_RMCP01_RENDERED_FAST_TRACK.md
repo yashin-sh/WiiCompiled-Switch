@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, successful GPU presentation, local FST/DVD/SZS path, VI-only idle recovery, `GXInitTexObj`, PAL `GXFlush`, `/dev/net/kd/request` open fd 2000, and the first KD command-2 Boot probe are hardware-proven. The current exact frontier is `IOS_Close (0x80193AD8)` with fd 2000.**
+Status: **renderer, real RMCP01 FIFO work, successful GPU presentation, local FST/DVD/SZS path, VI-only idle recovery, `GXInitTexObj`, PAL `GXFlush`, the KD open/cmd2/close sequence, `RKSystem::run`, and a real `StaticR.rel` read are hardware-proven. The current exact frontier is `GXLoadTexObj (0x80170F2C)` with oa `0x901136B4` / tid 0; metadata capture is pending before implementation.**
 
 ## Purpose
 
@@ -1436,3 +1436,51 @@ The candidate mirrors only this exact close. It tracks only the proven first KD
 handle, retires it on fd 2000, returns IOS result 0 in r3, and aborts on any
 other close as a fresh hardware-defined frontier. It does not add another KD
 command, ioctlv, NCD, IP, SSL, DNS, socket, or generic IOS-close support.
+
+
+## Hardware result — 2026-09-25 IOS_Close crossed / GXLoadTexObj frontier
+
+The real-Switch run built from merged PR #236 records:
+
+```text
+fast-track-ios-close-kd-request.txt
+status=close-pass
+fd=2000
+```
+
+That status is followed by durable translated progress, so `IOS_Close
+(0x80193AD8)` is hardware-crossed rather than merely hit.
+
+The same run advances materially deeper into game startup:
+
+```text
+RKSystem::run hits = 1
+TaskThread::run hits = 2
+DVD read: /rel/StaticR.rel
+result = 4903876
+```
+
+The established renderer path is also preserved with 29 RMCP01 FIFO writes,
+real FIFO work, one `GXCopyDisp`, one successful present, and zero failures.
+
+The new distinct blocker is:
+
+```text
+DIRECT 0x80170F2C
+r3 = 0x901136B4
+r4 = 0x00000000
+stage = RMCP01_GX_SET_CHAN_CTRL
+```
+
+Pinned WiiCompiled maps this exactly to `GXLoadTexObj(oa, tid)`.
+
+The live `oa=0x901136B4` is not the previously captured init-pass object
+`0x901136D4`; it is a separate 32-byte guest GXTexObj. Pinned
+`TryGetOrExtractTexObjMeta` may decode dimensions, backing address, format,
+wrap, mipmap and LOD state directly from those guest bytes. The correct load
+path can also diverge for CI/TLUT or unsupported formats.
+
+Therefore the current candidate is diagnostics-only. It extends the durable
+blocker record for target `0x80170F2C` with all eight 32-bit guest words plus
+the directly decoded data address, width/height, word5/word2 format values,
+wrap S/T and mipmap flag. No GXLoadTexObj/Aurora behavior is added yet.

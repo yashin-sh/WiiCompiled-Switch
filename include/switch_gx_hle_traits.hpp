@@ -35,6 +35,7 @@ extern "C" void mkw_switch_hle_gx_flush(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_init_tex_obj(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept;
 
 template <>
 struct KnownNativeCpuCall<0x8016B850u> {
@@ -298,6 +299,20 @@ struct KnownNativeCpuCall<0x801707F8u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_init_tex_obj(cpu);
+    }
+};
+
+// GXLoadTexObj (PAL 0x80170F2C). Hardware captures the first load with
+// r3=0x901136B4 / r4=0 and a complete 32-byte non-CI descriptor:
+// 832x456, format 4, clamp/clamp, no mipmaps, backing 0x00F103E0.
+// The bridge accepts only that exact observed descriptor; any later variation
+// remains a fresh hardware-defined blocker.
+template <>
+struct KnownNativeCpuCall<0x80170F2Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_load_tex_obj(cpu);
     }
 };
 

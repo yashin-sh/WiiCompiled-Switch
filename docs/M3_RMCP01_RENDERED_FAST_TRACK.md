@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, successful GPU presentation, local FST/DVD/SZS path, VI-only idle recovery, `GXInitTexObj`, PAL `GXFlush`, the KD open/cmd2/close sequence, `RKSystem::run`, `StaticR.rel`, and the first `GXLoadTexObj` are hardware-proven. The current exact frontier is `GXSetTexCoordGen2 (0x8016E37C)` with one observed identity/default tuple.**
+Status: **renderer, local FST/DVD/SZS/StaticR resource loading, KD open/cmd2/close, the first texture load, the observed GXSetTexCoordGen2 tuple, and StrapScene::CheckInput are hardware-proven. The latest run sustains 61 successful presents / 0 failures. The current exact frontier is StaticR.rel RelProlog (0x8055531C), reached as an indirect call to a pinned WiiCompiled native wrapper.**
 
 ## Purpose
 
@@ -1561,3 +1561,34 @@ The candidate forwards only this exact six-value tuple to Aurora. Any argument
 variation aborts at the same boundary as `GX_SET_TEX_COORD_GEN2_UNPROVEN_ARGS`.
 No neighboring texture-coordinate, array, matrix-load, or offset function is
 ported.
+
+
+## Hardware result — 2026-09-25 StrapScene crossed / StaticR RelProlog frontier
+
+The merged exact StrapScene input-acceptance seam is durably crossed. The next
+real-Switch run reaches 17,800 translated dispatches / 17,194 post-main
+dispatches, 765 RMCP01 FIFO writes, 61 GXCopyDisp calls and 61 successful
+presents with zero failures.
+
+The distinct blocker is:
+
+```text
+INDIRECT_CALL_MISS 0x8055531C
+r3 = 0x805102E0
+stage = RMCP01_GX_FLUSH
+```
+
+The pinned RMCP01 map names `0x8055531C` `RelProlog`. Pinned WiiCompiled
+registers `StaticRProlog_RecompModInit_8055531c` as the native winner and
+uses it to call the preserved original `func_8055531C(ctx)` between host
+RecompMod initializer phases.
+
+The current Switch product is the base RMCP01 product and links no generated
+mod data-patch registrants, so those host initializer lists are empty. The
+candidate therefore keeps the exact observed StaticR base guard
+`r3=0x805102E0` and executes the existing private translated RelProlog body.
+It does not invent REL relocation/loading state and does not pre-port
+`RelEpilog` or `RelUnresolvedSection`.
+
+The existing `StaticR dispatches` counter remains zero in this failing run
+because the indirect miss aborts before a target can be accepted and counted.

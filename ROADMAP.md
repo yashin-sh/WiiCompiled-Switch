@@ -202,7 +202,11 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-cross the exact GXSetTexCoordGen2: later run reaches 19,718 translated dispatches, 60 GXFlush/GXCopyDisp and 60 successful presents
 - [x] attribute 0x800077C8 to pinned StrapScene__CheckInput_Skip(scenePtr)
 - [x] implement only the observed scenePtr 0x90112A34 and pinned guest-visible return r3=1; omit desktop settings-overlay notification
-- [ ] hardware-cross the exact strap input acceptance and let the next durable blocker define the following frontier
+- [x] hardware-cross the exact strap input acceptance: later durable execution reaches 17,800 dispatches, 765 FIFO writes and 61 successful presents / 0 failures
+- [x] attribute `INDIRECT_CALL_MISS 0x8055531C` to pinned StaticR.rel `RelProlog`; observed module base `r3=0x805102E0`
+- [x] confirm the pinned runtime registers `StaticRProlog_RecompModInit_8055531c` as a native winner wrapping the retained translated `func_8055531C`
+- [x] implement only that exact native seam: guard the observed StaticR base and execute the already-generated original RelProlog; no speculative REL loader/relocation/RelEpilog behavior
+- [ ] hardware-cross the exact StaticR RelProlog candidate and let the next durable blocker define the following frontier
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
 - [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
 - [x] hardware-cross PAL `GXSetScissor` (`0x80173430`) using pinned guest GXData bookkeeping plus Aurora scissor

@@ -24,7 +24,7 @@ The project executes real WiiCompiled-translated Mario Kart Wii code on real Swi
 
 The post-`main` fast-track tracked in issue #117 has now hardware-crossed the observed path through guest thread/context switching, VI/GX bootstrap, WPAD/PAD initialization, timing, power-callback state, console-area lookup, and `OSWakeupThread`.
 
-The rendered fast-track has since advanced far beyond that early sustained-retrace milestone. The latest accepted 2026-09-24 hardware evidence proves the following boot/resource/render chain:
+The rendered fast-track has since advanced far beyond that early sustained-retrace milestone. The latest accepted 2026-09-25 hardware evidence proves the following boot/resource/render chain:
 
 - user-owned FST published at `0x97DC0000` (64,224 bytes / 2,096 entries);
 - real `/Boot/Strap/eu/English.szs` DVD read completed with 299,969 bytes;
@@ -51,11 +51,14 @@ The same run reaches `RKSystem::run`, services a second real DVD read for
 GX state setup. The exact blocker remains `GXLoadTexObj (0x80170F2C)` with
 `oa=0x901136B4`, `tid=0`, but the merged diagnostics now capture the full
 32-byte descriptor: 832x456, format 4, clamp/clamp, no mipmaps, backing
-`0x00F103E0`. That exact texture load is now hardware-crossed: `load-pass` is followed by
-durable progression to a new direct blocker at `GXSetTexCoordGen2
-(0x8016E37C)`. The live tuple is
-`GX_TEXCOORD0 / GX_TG_MTX2x4 / GX_TG_TEX0 / GX_IDENTITY / GX_FALSE /
-GX_PTIDENTITY`; the current candidate forwards only that exact tuple.
+`0x00F103E0`. That exact texture load and the observed `GXSetTexCoordGen2 (0x8016E37C)`
+identity/default tuple are now hardware-crossed. The following merged
+`StrapScene::CheckInput (0x800077C8)` candidate is also crossed: the next run
+continues to 17,800 translated dispatches, 765 RMCP01 FIFO writes and 61
+successful presents with zero failures before reaching the first exact
+StaticR.rel prolog boundary. The current blocker is
+`INDIRECT_CALL_MISS 0x8055531C`, identified by the pinned map as
+`RelProlog`, with the observed module base `r3=0x805102E0`.
 
 ```text
 PAL main / post-main runtime                                       ✅ hardware crossed
@@ -86,8 +89,11 @@ GXLoadTexObj (0x80170F2C), oa=0x901136B4 tid=0                     ✅ hardware 
 GXSetTexCoordGen2 (0x8016E37C)                                     ✅ hardware crossed
   TEXCOORD0 / MTX2x4 / TEX0 / IDENTITY / false / PTIDENTITY
   ↓
-StrapScene::CheckInput (0x800077C8)                                🟡 exact candidate; hardware validation pending
+StrapScene::CheckInput (0x800077C8)                                ✅ hardware crossed
   scenePtr=0x90112A34; pinned guest-visible result r3=1
+  ↓
+StaticR RelProlog (0x8055531C)                                     🟡 exact candidate; hardware validation pending
+  INDIRECT_CALL_MISS; module base r3=0x805102E0; pinned native wrapper
   ↓
 next exact hardware-attributed graphics/resource/game frontier     ⬜ pending
   ↓

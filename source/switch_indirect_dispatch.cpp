@@ -11,6 +11,7 @@
 
 extern "C" void mkw_switch_hle_task_thread_run(CpuContext* cpu);
 extern "C" void mkw_switch_hle_egg_async_display_end_render(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_staticr_rel_prolog(CpuContext* cpu) noexcept;
 
 namespace {
 std::atomic<const StaticIndirectDispatchTable*> g_staticIndirectDispatchTable{nullptr};
@@ -136,6 +137,15 @@ bool mkw_switch_try_dispatch_indirect(std::uint32_t target, CpuContext* cpu) {
     // real RMCP01 FIFO render work was produced.
     if (target == 0x8020FF9Cu) {
         mkw_switch_hle_egg_async_display_end_render(cpu);
+        return true;
+    }
+
+    // PAL StaticR.rel RelProlog is a pinned WiiCompiled native wrapper around
+    // the original translated RelProlog. Native winners are intentionally
+    // absent from the generated translated indirect table, so resolve this
+    // first hardware-observed REL native boundary explicitly.
+    if (target == 0x8055531Cu) {
+        mkw_switch_hle_staticr_rel_prolog(cpu);
         return true;
     }
 

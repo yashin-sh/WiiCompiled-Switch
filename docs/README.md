@@ -102,6 +102,7 @@
 - `HARDWARE_RESULTS_2026-09-25_GX_LOAD_TEX_OBJ_DESCRIPTOR_CAPTURED.md` — captures the exact first GXLoadTexObj descriptor and defines the strict one-descriptor Aurora bind candidate
 - `HARDWARE_RESULTS_2026-09-25_GX_LOAD_TEX_OBJ_CROSSED_TEXCOORDGEN2_FRONTIER.md` — hardware-crosses that first texture load and moves the exact frontier to GXSetTexCoordGen2
 - `HARDWARE_RESULTS_2026-09-25_TEXCOORDGEN2_CROSSED_STRAP_CHECK_INPUT_FRONTIER.md` — hardware-crosses GXSetTexCoordGen2, records sustained 60-frame rendering, and moves the exact frontier to StrapScene::CheckInput
+- `HARDWARE_RESULTS_2026-09-25_STRAP_CHECK_INPUT_CROSSED_STATICR_REL_PROLOG_FRONTIER.md` — hardware-crosses StrapScene::CheckInput, records 61 successful presents / 0 failures, and attributes the first StaticR native-wrapper frontier to RelProlog at 0x8055531C
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes
@@ -111,13 +112,19 @@
 For the current project status, use `../README.md`, `../ROADMAP.md`,
 `FAST_TRACK_VALIDATION_POLICY.md`, `M2_RUNTIME_BOOTSTRAP.md`, and issue #117.
 
-The latest 2026-09-24 hardware evidence validates the first real local
-`English.szs` read, VI-only AsyncDisplay idle recovery, complete SZS/Yaz0
-expansion, real RMCP01 FIFO/present work, and `GXInitTexObj status=init-pass`.
-The following `IOS_Open (0x801938F8)` request is now attributed exactly to
-`/dev/net/kd/request`, mode 0.
+The latest 2026-09-25 hardware evidence preserves the proven local
+`English.szs`/StaticR resource path and sustained Aurora/Dawn/NVK rendering.
+The run reaches 17,800 translated dispatches, 765 RMCP01 FIFO writes and 61
+successful presents with zero failures. It hardware-crosses the merged
+`StrapScene::CheckInput (0x800077C8)` seam and stops at
+`INDIRECT_CALL_MISS 0x8055531C`.
 
-PR #232's KD open, PR #235's first KD command-2 probe, and PR #236's fd-2000 IOS_Close are all hardware-crossed. The latest run reads `/rel/StaticR.rel`, reaches `RKSystem::run`, and captures the full first `GXLoadTexObj (0x80170F2C)` descriptor at oa `0x901136B4` / tid 0: 832x456 format 4, clamp/clamp, no mipmaps, data `0x00F103E0`. The current candidate binds only that exact descriptor; any variation remains unsupported.
+Pinned RMCP01/WiiCompiled attribution identifies `0x8055531C` as StaticR.rel
+`RelProlog`. Pinned WiiCompiled registers a native winner that brackets the
+retained original `func_8055531C` with host mod-initializer phases. The base
+Switch product has no mod data-patch registrants, so the current candidate
+routes only this exact native boundary to the already-generated original
+RelProlog and does not fabricate REL relocation/loading behavior.
 
 The earlier real FIFO / `GXCopyDisp` / repeated-present / `GXFlush` proof
 remains valid. Visual correctness remains a separate milestone. Dated hardware

@@ -54,6 +54,7 @@ bool mkw_switch_hle_vi_retrace_advancing() noexcept;
 void mkw_switch_hle_os_exception_init(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_interrupt_init(CpuContext* cpu) noexcept;
 void mkw_switch_hle_strap_check_input(CpuContext* cpu) noexcept;
+void mkw_switch_hle_staticr_rel_prolog(CpuContext* cpu) noexcept;
 }
 
 inline void ApplyRuntimeCallOptions(std::uint32_t target, CpuContext* cpu) noexcept {
@@ -113,6 +114,18 @@ struct KnownNativeCpuCall<0x800077C8u> {
     static constexpr bool kAvailable = true;
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_strap_check_input(cpu);
+    }
+};
+
+// PAL StaticR.rel RelProlog. Pinned WiiCompiled registers a native wrapper at
+// 0x8055531C so host mod-initializer phases can bracket the original translated
+// RelProlog. The base Switch product has no mod data-patch registrants; its
+// exact guest path therefore executes the preserved translated RelProlog body.
+template <>
+struct KnownNativeCpuCall<0x8055531Cu> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_staticr_rel_prolog(cpu);
     }
 };
 

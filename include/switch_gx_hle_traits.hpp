@@ -36,6 +36,7 @@ extern "C" void mkw_switch_hle_gx_flush(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_init_tex_obj(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept;
 
 template <>
@@ -312,6 +313,19 @@ struct KnownNativeCpuCall<0x801707F8u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_init_tex_obj(cpu);
+    }
+};
+
+// GXInitTexObjLOD (PAL 0x80170A4C). Hardware captures the first Home
+// Button/UI tuple on obj=0x9018E120 with min/mag=GX_LINEAR/GX_LINEAR,
+// minLod=maxLod=lodBias=+0.0f, biasClamp=false, edgeLod=false and
+// GX_ANISO_1. The bridge accepts only that exact tuple and pre-LOD descriptor.
+template <>
+struct KnownNativeCpuCall<0x80170A4Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_init_tex_obj_lod(cpu);
     }
 };
 

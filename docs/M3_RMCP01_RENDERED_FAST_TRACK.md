@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, local FST/DVD/SZS/StaticR resource loading, KD open/cmd2/close, the first texture load, the observed GXSetTexCoordGen2 tuple, StrapScene::CheckInput, StaticR.rel RelProlog, OSDetachThread and the first exact OSCancelThread path are hardware-proven. The latest run reaches 38,262 dispatches, 421 StaticR dispatches and 92 successful presents / 0 failures while loading Home Button/UI resources. The current exact frontier is pinned GXInitTexObjLOD (0x80170A4C), with f1/f2/f3 diagnostics pending.**
+Status: **renderer, local FST/DVD/SZS/StaticR resource loading, KD open/cmd2/close, the first texture load, the observed GXSetTexCoordGen2 tuple, StrapScene::CheckInput, StaticR.rel RelProlog, OSDetachThread and the first exact OSCancelThread path are hardware-proven. The latest run preserves 421 StaticR dispatches and 92 successful presents / 0 failures while loading Home Button/UI resources. The current exact frontier is pinned GXInitTexObjLOD (0x80170A4C); hardware proves the first tuple is obj 0x9018E120, min/mag=1/1, f1/f2/f3=+0.0f, bc/el/aniso=0/0/0.**
 
 ## Purpose
 
@@ -1685,3 +1685,25 @@ The integer LOD arguments are already known as minFilter=1, magFilter=1,
 biasClamp=0, edgeLod=0, maxAniso=0. The PPC f1/f2/f3 values are not present in
 the current blocker, so the patch is diagnostics-only and records their exact
 effective f32 values/bit patterns plus all eight guest GXTexObj words.
+
+
+## Hardware result — exact GXInitTexObjLOD tuple captured
+
+The diagnostic run confirms the first blocker remains `0x80170A4C` and
+captures the complete tuple: object `0x9018E120`, min/mag filters 1/1,
+minLod=maxLod=lodBias=+0.0f with exact f32 bits `0x00000000`, and
+biasClamp/edgeLod/maxAniso all zero.
+
+The pre-LOD descriptor is exactly:
+
+```text
+0/1 = 0x00000095 / 0x00000000
+2/3 = 0x0000FC3F / 0x0080A997
+4/5 = 0x00000000 / 0x00000000
+6/7 = 0x00000000 / 0x00400102
+```
+
+Pinned guest bookkeeping changes word0 to `0x00000195` and leaves word1 at
+zero. The exact candidate applies only that tuple to the same Aurora GXTexObj
+constructed by the immediately preceding GXInitTexObj call. Any variation
+remains unsupported.

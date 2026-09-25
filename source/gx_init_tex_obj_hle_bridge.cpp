@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
 #include "gx_internal.h"
@@ -24,6 +25,7 @@ extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
 namespace {
 
 constexpr std::uint32_t kGxInitTexObjAddress = 0x801707F8u;
+constexpr std::uint32_t kGxInitTexObjLodAddress = 0x80170A4Cu;
 constexpr std::uint32_t kGxLoadTexObjAddress = 0x80170F2Cu;
 constexpr std::uint32_t kGuestTexObjSize = 0x20u;
 constexpr std::uint32_t kGxDataPtrAddr = 0x803886C8u;
@@ -43,6 +45,24 @@ constexpr std::uint16_t kObservedWidth = 832u;
 constexpr std::uint16_t kObservedHeight = 456u;
 constexpr std::uint32_t kObservedFormat = 4u;
 constexpr std::uint32_t kObservedTextureSize = 0x000B9400u;
+
+constexpr std::uint32_t kObservedLodObj = 0x9018E120u;
+constexpr std::uint32_t kObservedLodMinFilter = 1u;
+constexpr std::uint32_t kObservedLodMagFilter = 1u;
+constexpr std::uint32_t kObservedLodBiasClamp = 0u;
+constexpr std::uint32_t kObservedLodEdgeLod = 0u;
+constexpr std::uint32_t kObservedLodMaxAniso = 0u;
+constexpr std::uint32_t kObservedLodWord0 = 0x00000095u;
+constexpr std::uint32_t kObservedLodWord1 = 0x00000000u;
+constexpr std::uint32_t kObservedLodWord2 = 0x0000FC3Fu;
+constexpr std::uint32_t kObservedLodWord3 = 0x0080A997u;
+constexpr std::uint32_t kObservedLodWord4 = 0x00000000u;
+constexpr std::uint32_t kObservedLodWord5 = 0x00000000u;
+constexpr std::uint32_t kObservedLodWord6 = 0x00000000u;
+constexpr std::uint32_t kObservedLodWord7 = 0x00400102u;
+constexpr std::uint32_t kObservedLodFloatBits = 0x00000000u;
+constexpr std::uint32_t kObservedLodWord0After = 0x00000195u;
+constexpr std::uint32_t kObservedLodWord1After = 0x00000000u;
 
 std::uint32_t CanonicalizeGuestMainRamAddress(std::uint32_t addr) noexcept {
     if (addr < 0x01800000u) {
@@ -71,6 +91,8 @@ constexpr const char* kStatusPath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-gx-init-tex-obj.txt";
 constexpr const char* kLoadStatusPath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-gx-load-tex-obj.txt";
+constexpr const char* kLodStatusPath =
+    "sdmc:/switch/WiiCompiled-Switch/fast-track-gx-init-tex-obj-lod.txt";
 
 std::mutex gTexObjMutex;
 std::map<std::uint32_t, std::unique_ptr<GXTexObj>> gHostTexObjs;
@@ -81,6 +103,11 @@ GXTexObj* GetOrCreateHostTexObj(std::uint32_t guestAddr) {
         entry = std::make_unique<GXTexObj>();
     }
     return entry.get();
+}
+
+GXTexObj* TryGetHostTexObj(std::uint32_t guestAddr) noexcept {
+    const auto it = gHostTexObjs.find(guestAddr);
+    return it != gHostTexObjs.end() ? it->second.get() : nullptr;
 }
 
 void WriteStatus(
@@ -186,6 +213,50 @@ void WriteLoadStatus(
         size);
     std::fclose(out);
 }
+
+void WriteLodStatus(
+    const char* status,
+    std::uint32_t obj,
+    std::uint32_t minFilter,
+    std::uint32_t magFilter,
+    std::uint32_t minLodBits,
+    std::uint32_t maxLodBits,
+    std::uint32_t lodBiasBits,
+    std::uint32_t biasClamp,
+    std::uint32_t edgeLod,
+    std::uint32_t maxAniso) noexcept {
+    FILE* out = std::fopen(kLodStatusPath, "w");
+    if (!out) {
+        return;
+    }
+    std::fprintf(
+        out,
+        "status=%s\n"
+        "obj=0x%08x\n"
+        "min_filter=%u\n"
+        "mag_filter=%u\n"
+        "min_lod_bits=0x%08x\n"
+        "max_lod_bits=0x%08x\n"
+        "lod_bias_bits=0x%08x\n"
+        "bias_clamp=%u\n"
+        "edge_lod=%u\n"
+        "max_aniso=%u\n"
+        "guest_word0=0x%08x\n"
+        "guest_word1=0x%08x\n",
+        status ? status : "<null>",
+        obj,
+        minFilter,
+        magFilter,
+        minLodBits,
+        maxLodBits,
+        lodBiasBits,
+        biasClamp,
+        edgeLod,
+        maxAniso,
+        Memory::Contains(obj, kGuestTexObjSize) ? Memory::Read32(obj + 0x00u) : 0u,
+        Memory::Contains(obj, kGuestTexObjSize) ? Memory::Read32(obj + 0x04u) : 0u);
+    std::fclose(out);
+}
 #else
 void WriteStatus(
     const char*,
@@ -201,6 +272,18 @@ void WriteStatus(
 void WriteLoadStatus(
     const char*,
     std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t) noexcept {}
+
+void WriteLodStatus(
+    const char*,
     std::uint32_t,
     std::uint32_t,
     std::uint32_t,
@@ -265,6 +348,34 @@ void WriteLoadStatus(
         size);
     mkw_switch_report_unsupported_translated_dispatch(
         status, kGxLoadTexObjAddress, cpu);
+    std::abort();
+}
+
+[[noreturn]] void AbortLodBoundary(
+    const char* status,
+    CpuContext* cpu,
+    std::uint32_t obj,
+    std::uint32_t minFilter,
+    std::uint32_t magFilter,
+    std::uint32_t minLodBits,
+    std::uint32_t maxLodBits,
+    std::uint32_t lodBiasBits,
+    std::uint32_t biasClamp,
+    std::uint32_t edgeLod,
+    std::uint32_t maxAniso) noexcept {
+    WriteLodStatus(
+        status,
+        obj,
+        minFilter,
+        magFilter,
+        minLodBits,
+        maxLodBits,
+        lodBiasBits,
+        biasClamp,
+        edgeLod,
+        maxAniso);
+    mkw_switch_report_unsupported_translated_dispatch(
+        status, kGxInitTexObjLodAddress, cpu);
     std::abort();
 }
 
@@ -413,6 +524,29 @@ void WriteGuestTexObj(
     Memory::Write8(obj + 0x1Fu, flags);
 }
 
+std::uint32_t FloatBits(float value) noexcept {
+    std::uint32_t bits = 0u;
+    static_assert(sizeof(bits) == sizeof(value));
+    std::memcpy(&bits, &value, sizeof(bits));
+    return bits;
+}
+
+void WriteGuestTexObjLodExact(std::uint32_t obj) {
+    // Pinned WriteGuestTexObjLOD for the exact observed tuple:
+    // min=GX_LINEAR -> HW encoding 4, mag=GX_LINEAR, edgeLod=false,
+    // zero bias/min/max LOD, GX_ANISO_1, biasClamp=false.
+    const std::uint32_t word0 = Memory::Read32(obj + 0x00u);
+    const std::uint32_t updatedWord0 =
+        (word0 & ~0x003BFF00u) |
+        0x00000010u |
+        0x00000080u |
+        0x00000100u;
+    Memory::Write32(obj + 0x00u, updatedWord0);
+
+    const std::uint32_t word1 = Memory::Read32(obj + 0x04u);
+    Memory::Write32(obj + 0x04u, word1 & 0xFFFF0000u);
+}
+
 } // namespace
 
 extern "C" void mkw_switch_hle_gx_init_tex_obj(CpuContext* cpu) noexcept {
@@ -500,6 +634,160 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj(CpuContext* cpu) noexcept {
         wrapS,
         wrapT,
         mipmap);
+}
+
+extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept {
+    if (!cpu) {
+        return;
+    }
+
+    const std::uint32_t obj = cpu->gpr[3];
+    const std::uint32_t minFilter = cpu->gpr[4];
+    const std::uint32_t magFilter = cpu->gpr[5];
+    const float minLod = static_cast<float>(cpu->fpr[1].d);
+    const float maxLod = static_cast<float>(cpu->fpr[2].d);
+    const float lodBias = static_cast<float>(cpu->fpr[3].d);
+    const std::uint32_t biasClamp = cpu->gpr[6];
+    const std::uint32_t edgeLod = cpu->gpr[7];
+    const std::uint32_t maxAniso = cpu->gpr[8];
+
+    const std::uint32_t minLodBits = FloatBits(minLod);
+    const std::uint32_t maxLodBits = FloatBits(maxLod);
+    const std::uint32_t lodBiasBits = FloatBits(lodBias);
+
+    mkw_switch_set_fast_track_stage("RMCP01_GX_INIT_TEX_OBJ_LOD");
+
+    if (!Memory::IsInitialized() || !Memory::Contains(obj, kGuestTexObjSize)) {
+        AbortLodBoundary(
+            "GX_INIT_TEX_OBJ_LOD_GUEST_UNMAPPED",
+            cpu,
+            obj,
+            minFilter,
+            magFilter,
+            minLodBits,
+            maxLodBits,
+            lodBiasBits,
+            biasClamp,
+            edgeLod,
+            maxAniso);
+    }
+
+    const std::uint32_t word0 = Memory::Read32(obj + 0x00u);
+    const std::uint32_t word1 = Memory::Read32(obj + 0x04u);
+    const std::uint32_t word2 = Memory::Read32(obj + 0x08u);
+    const std::uint32_t word3 = Memory::Read32(obj + 0x0Cu);
+    const std::uint32_t word4 = Memory::Read32(obj + 0x10u);
+    const std::uint32_t word5 = Memory::Read32(obj + 0x14u);
+    const std::uint32_t word6 = Memory::Read32(obj + 0x18u);
+    const std::uint32_t word7 = Memory::Read32(obj + 0x1Cu);
+
+    const bool exactObservedTuple =
+        obj == kObservedLodObj &&
+        minFilter == kObservedLodMinFilter &&
+        magFilter == kObservedLodMagFilter &&
+        minLodBits == kObservedLodFloatBits &&
+        maxLodBits == kObservedLodFloatBits &&
+        lodBiasBits == kObservedLodFloatBits &&
+        biasClamp == kObservedLodBiasClamp &&
+        edgeLod == kObservedLodEdgeLod &&
+        maxAniso == kObservedLodMaxAniso &&
+        word0 == kObservedLodWord0 &&
+        word1 == kObservedLodWord1 &&
+        word2 == kObservedLodWord2 &&
+        word3 == kObservedLodWord3 &&
+        word4 == kObservedLodWord4 &&
+        word5 == kObservedLodWord5 &&
+        word6 == kObservedLodWord6 &&
+        word7 == kObservedLodWord7;
+
+    if (!exactObservedTuple) {
+        AbortLodBoundary(
+            "GX_INIT_TEX_OBJ_LOD_UNPROVEN_TUPLE",
+            cpu,
+            obj,
+            minFilter,
+            magFilter,
+            minLodBits,
+            maxLodBits,
+            lodBiasBits,
+            biasClamp,
+            edgeLod,
+            maxAniso);
+    }
+
+#if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+    try {
+        std::scoped_lock lock(gTexObjMutex);
+        GXTexObj* hostObj = TryGetHostTexObj(obj);
+        if (!hostObj) {
+            AbortLodBoundary(
+                "GX_INIT_TEX_OBJ_LOD_HOST_OBJ_MISSING",
+                cpu,
+                obj,
+                minFilter,
+                magFilter,
+                minLodBits,
+                maxLodBits,
+                lodBiasBits,
+                biasClamp,
+                edgeLod,
+                maxAniso);
+        }
+        GXInitTexObjLOD(
+            hostObj,
+            GX_LINEAR,
+            GX_LINEAR,
+            0.0f,
+            0.0f,
+            0.0f,
+            GX_FALSE,
+            GX_FALSE,
+            GX_ANISO_1);
+    } catch (...) {
+        AbortLodBoundary(
+            "GX_INIT_TEX_OBJ_LOD_HOST_EXCEPTION",
+            cpu,
+            obj,
+            minFilter,
+            magFilter,
+            minLodBits,
+            maxLodBits,
+            lodBiasBits,
+            biasClamp,
+            edgeLod,
+            maxAniso);
+    }
+#endif
+
+    WriteGuestTexObjLodExact(obj);
+
+    if (Memory::Read32(obj + 0x00u) != kObservedLodWord0After ||
+        Memory::Read32(obj + 0x04u) != kObservedLodWord1After) {
+        AbortLodBoundary(
+            "GX_INIT_TEX_OBJ_LOD_GUEST_STATE_MISMATCH",
+            cpu,
+            obj,
+            minFilter,
+            magFilter,
+            minLodBits,
+            maxLodBits,
+            lodBiasBits,
+            biasClamp,
+            edgeLod,
+            maxAniso);
+    }
+
+    WriteLodStatus(
+        "lod-pass",
+        obj,
+        minFilter,
+        magFilter,
+        minLodBits,
+        maxLodBits,
+        lodBiasBits,
+        biasClamp,
+        edgeLod,
+        maxAniso);
 }
 
 extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {

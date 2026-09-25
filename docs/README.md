@@ -97,6 +97,7 @@
 - `HARDWARE_RESULTS_2026-09-24_GX_INIT_TEX_OBJ_CROSSED_IOS_OPEN_FRONTIER.md` — hardware-crosses `GXInitTexObj`, preserves the real FIFO/present path, and moves the frontier to pinned `NAND_IOS_Open (0x801938F8)` with path/mode diagnostics only
 - `HARDWARE_RESULTS_2026-09-24_IOS_OPEN_KD_REQUEST_FRONTIER.md` — identifies `/dev/net/kd/request`, mode 0, as the exact IOS_Open request and constrains the next candidate to pinned KD device-handle allocation only
 - `HARDWARE_RESULTS_2026-09-24_KD_OPEN_CROSSED_IOS_IOCTL_CMD2_FRONTIER.md` — hardware-crosses the KD open, captures fd/cmd/in/out for pinned `IOS_Ioctl (0x80194290)` command 2, and defines the exact one-shot Boot-phase `-42` output candidate
+- `HARDWARE_RESULTS_2026-09-25_KD_CMD2_CROSSED_IOS_CLOSE_FRONTIER.md` — hardware-crosses that first KD command-2 probe and exposes pinned `IOS_Close (0x80193AD8)` with the same fd 2000
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes
@@ -112,7 +113,7 @@ expansion, real RMCP01 FIFO/present work, and `GXInitTexObj status=init-pass`.
 The following `IOS_Open (0x801938F8)` request is now attributed exactly to
 `/dev/net/kd/request`, mode 0.
 
-PR #232 is hardware-crossed: `/dev/net/kd/request`, mode 0, returns fd 2000 and execution proceeds to pinned `IOS_Ioctl (0x80194290)`. The latest blocker captures fd 2000 / command 2 / input `0x80356F20/0x20` / output `0x80356F40/0x20`. Pinned Boot-phase semantics are output result `-42` plus IOS return `0`; the candidate implements only that first probe. Neighboring KD/IOS/network behavior remains untouched.
+PR #232 remains hardware-crossed: `/dev/net/kd/request`, mode 0, returns fd 2000. PR #235's first pinned `IOS_Ioctl (0x80194290)` KD command-2 Boot probe is now also hardware-crossed: the status is `cmd2-boot-probe-pass` and execution advances to `IOS_Close (0x80193AD8)` with r3=2000. The current candidate mirrors only pinned close/remove-device success for that exact handle. Neighboring KD/IOS/network behavior remains untouched.
 
 The earlier real FIFO / `GXCopyDisp` / repeated-present / `GXFlush` proof
 remains valid. Visual correctness remains a separate milestone. Dated hardware

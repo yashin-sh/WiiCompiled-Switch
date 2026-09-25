@@ -24,7 +24,25 @@ extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
 namespace {
 
 constexpr std::uint32_t kGxInitTexObjAddress = 0x801707F8u;
+constexpr std::uint32_t kGxLoadTexObjAddress = 0x80170F2Cu;
 constexpr std::uint32_t kGuestTexObjSize = 0x20u;
+constexpr std::uint32_t kGxDataPtrAddr = 0x803886C8u;
+
+constexpr std::uint32_t kObservedLoadObj = 0x901136B4u;
+constexpr std::uint32_t kObservedLoadTid = 0u;
+constexpr std::uint32_t kObservedWord0 = 0x00000090u;
+constexpr std::uint32_t kObservedWord1 = 0x00000000u;
+constexpr std::uint32_t kObservedWord2 = 0x00471F3Fu;
+constexpr std::uint32_t kObservedWord3 = 0x0007881Fu;
+constexpr std::uint32_t kObservedWord4 = 0x00000000u;
+constexpr std::uint32_t kObservedWord5 = 0x00000004u;
+constexpr std::uint32_t kObservedWord6 = 0x00000000u;
+constexpr std::uint32_t kObservedWord7 = 0x5CA00202u;
+constexpr std::uint32_t kObservedData = 0x00F103E0u;
+constexpr std::uint16_t kObservedWidth = 832u;
+constexpr std::uint16_t kObservedHeight = 456u;
+constexpr std::uint32_t kObservedFormat = 4u;
+constexpr std::uint32_t kObservedTextureSize = 0x00172800u;
 
 std::uint32_t CanonicalizeGuestMainRamAddress(std::uint32_t addr) noexcept {
     if (addr < 0x01800000u) {
@@ -51,6 +69,8 @@ std::uint32_t CanonicalizeGuestMainRamAddress(std::uint32_t addr) noexcept {
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
 constexpr const char* kStatusPath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-gx-init-tex-obj.txt";
+constexpr const char* kLoadStatusPath =
+    "sdmc:/switch/WiiCompiled-Switch/fast-track-gx-load-tex-obj.txt";
 
 std::mutex gTexObjMutex;
 std::map<std::uint32_t, std::unique_ptr<GXTexObj>> gHostTexObjs;
@@ -122,9 +142,66 @@ void WriteStatus(
 
     std::fclose(out);
 }
+
+void WriteLoadStatus(
+    const char* status,
+    std::uint32_t obj,
+    std::uint32_t tid,
+    std::uint32_t data,
+    std::uint32_t width,
+    std::uint32_t height,
+    std::uint32_t format,
+    std::uint32_t wrapS,
+    std::uint32_t wrapT,
+    std::uint32_t mipmap,
+    std::uint32_t size) noexcept {
+    FILE* out = std::fopen(kLoadStatusPath, "w");
+    if (!out) {
+        return;
+    }
+
+    std::fprintf(
+        out,
+        "status=%s\n"
+        "obj=0x%08x\n"
+        "tid=%u\n"
+        "data=0x%08x\n"
+        "width=%u\n"
+        "height=%u\n"
+        "format=%u\n"
+        "wrap_s=%u\n"
+        "wrap_t=%u\n"
+        "mipmap=%u\n"
+        "size=0x%08x\n",
+        status ? status : "<null>",
+        obj,
+        tid,
+        data,
+        width,
+        height,
+        format,
+        wrapS,
+        wrapT,
+        mipmap,
+        size);
+    std::fclose(out);
+}
 #else
 void WriteStatus(
     const char*,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t) noexcept {}
+
+void WriteLoadStatus(
+    const char*,
+    std::uint32_t,
+    std::uint32_t,
     std::uint32_t,
     std::uint32_t,
     std::uint32_t,
@@ -159,6 +236,55 @@ void WriteStatus(
     mkw_switch_report_unsupported_translated_dispatch(
         status, kGxInitTexObjAddress, cpu);
     std::abort();
+}
+
+[[noreturn]] void AbortLoadBoundary(
+    const char* status,
+    CpuContext* cpu,
+    std::uint32_t obj,
+    std::uint32_t tid,
+    std::uint32_t data,
+    std::uint32_t width,
+    std::uint32_t height,
+    std::uint32_t format,
+    std::uint32_t wrapS,
+    std::uint32_t wrapT,
+    std::uint32_t mipmap,
+    std::uint32_t size) noexcept {
+    WriteLoadStatus(
+        status,
+        obj,
+        tid,
+        data,
+        width,
+        height,
+        format,
+        wrapS,
+        wrapT,
+        mipmap,
+        size);
+    mkw_switch_report_unsupported_translated_dispatch(
+        status, kGxLoadTexObjAddress, cpu);
+    std::abort();
+}
+
+void PublishTextureLoadGuestState() noexcept {
+    if (!Memory::IsInitialized() || !Memory::Contains(kGxDataPtrAddr, 4u)) {
+        return;
+    }
+    try {
+        const std::uint32_t gxData = Memory::Read32(kGxDataPtrAddr);
+        if (gxData == 0u ||
+            !Memory::Contains(gxData + 0x5FCu, 4u) ||
+            !Memory::Contains(gxData + 2u, 2u)) {
+            return;
+        }
+        Memory::Write32(
+            gxData + 0x5FCu,
+            Memory::Read32(gxData + 0x5FCu) | 1u);
+        Memory::Write16(gxData + 2u, 0u);
+    } catch (...) {
+    }
 }
 
 void WriteGuestTexObj(
@@ -374,6 +500,177 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj(CpuContext* cpu) noexcept {
         wrapS,
         wrapT,
         mipmap);
+}
+
+extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
+    if (!cpu) {
+        return;
+    }
+
+    const std::uint32_t obj = cpu->gpr[3];
+    const std::uint32_t tid = cpu->gpr[4];
+    mkw_switch_set_fast_track_stage("RMCP01_GX_LOAD_TEX_OBJ");
+
+    if (!Memory::IsInitialized() || !Memory::Contains(obj, kGuestTexObjSize)) {
+        AbortLoadBoundary(
+            "GX_LOAD_TEX_OBJ_GUEST_UNMAPPED",
+            cpu,
+            obj,
+            tid,
+            0u,
+            0u,
+            0u,
+            0u,
+            0u,
+            0u,
+            0u,
+            0u);
+    }
+
+    const std::uint32_t word0 = Memory::Read32(obj + 0x00u);
+    const std::uint32_t word1 = Memory::Read32(obj + 0x04u);
+    const std::uint32_t word2 = Memory::Read32(obj + 0x08u);
+    const std::uint32_t word3 = Memory::Read32(obj + 0x0Cu);
+    const std::uint32_t word4 = Memory::Read32(obj + 0x10u);
+    const std::uint32_t word5 = Memory::Read32(obj + 0x14u);
+    const std::uint32_t word6 = Memory::Read32(obj + 0x18u);
+    const std::uint32_t word7 = Memory::Read32(obj + 0x1Cu);
+
+    const std::uint32_t data =
+        CanonicalizeGuestMainRamAddress((word3 & 0x00FFFFFFu) << 5u);
+    const std::uint32_t width = (word2 & 0x3FFu) + 1u;
+    const std::uint32_t height = ((word2 >> 10u) & 0x3FFu) + 1u;
+    const std::uint32_t formatWord2 = (word2 >> 20u) & 0xFu;
+    const std::uint32_t format = word5;
+    const std::uint32_t wrapS = word0 & 0x3u;
+    const std::uint32_t wrapT = (word0 >> 2u) & 0x3u;
+    const std::uint32_t mipmap = word7 & 0x1u;
+
+    const bool exactObservedDescriptor =
+        obj == kObservedLoadObj &&
+        tid == kObservedLoadTid &&
+        word0 == kObservedWord0 &&
+        word1 == kObservedWord1 &&
+        word2 == kObservedWord2 &&
+        word3 == kObservedWord3 &&
+        word4 == kObservedWord4 &&
+        word5 == kObservedWord5 &&
+        word6 == kObservedWord6 &&
+        word7 == kObservedWord7 &&
+        data == kObservedData &&
+        width == kObservedWidth &&
+        height == kObservedHeight &&
+        format == kObservedFormat &&
+        formatWord2 == kObservedFormat &&
+        wrapS == 0u &&
+        wrapT == 0u &&
+        mipmap == 0u;
+
+    if (!exactObservedDescriptor) {
+        AbortLoadBoundary(
+            "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR",
+            cpu,
+            obj,
+            tid,
+            data,
+            width,
+            height,
+            format,
+            wrapS,
+            wrapT,
+            mipmap,
+            kObservedTextureSize);
+    }
+
+    if (!Memory::Contains(data, kObservedTextureSize)) {
+        AbortLoadBoundary(
+            "GX_LOAD_TEX_OBJ_DATA_UNMAPPED",
+            cpu,
+            obj,
+            tid,
+            data,
+            width,
+            height,
+            format,
+            wrapS,
+            wrapT,
+            mipmap,
+            kObservedTextureSize);
+    }
+
+#if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+    try {
+        std::scoped_lock lock(gTexObjMutex);
+        GXTexObj* hostObj = GetOrCreateHostTexObj(obj);
+        const void* hostData =
+            GuestToHostPtr(data, kObservedTextureSize);
+        if (!hostData) {
+            AbortLoadBoundary(
+                "GX_LOAD_TEX_OBJ_DATA_POINTER_NULL",
+                cpu,
+                obj,
+                tid,
+                data,
+                width,
+                height,
+                format,
+                wrapS,
+                wrapT,
+                mipmap,
+                kObservedTextureSize);
+        }
+
+        GXInitTexObj(
+            hostObj,
+            hostData,
+            kObservedWidth,
+            kObservedHeight,
+            static_cast<GXTexFmt>(kObservedFormat),
+            static_cast<GXTexWrapMode>(0u),
+            static_cast<GXTexWrapMode>(0u),
+            static_cast<GXBool>(0u));
+        GXInitTexObjLOD(
+            hostObj,
+            static_cast<GXTexFilter>(1u),
+            static_cast<GXTexFilter>(1u),
+            0.0f,
+            0.0f,
+            0.0f,
+            GX_FALSE,
+            GX_TRUE,
+            static_cast<GXAnisotropy>(0u));
+        GXInitTexObjUserData(hostObj, nullptr);
+        GXLoadTexObj(hostObj, static_cast<GXTexMapID>(tid));
+    } catch (...) {
+        AbortLoadBoundary(
+            "GX_LOAD_TEX_OBJ_HOST_EXCEPTION",
+            cpu,
+            obj,
+            tid,
+            data,
+            width,
+            height,
+            format,
+            wrapS,
+            wrapT,
+            mipmap,
+            kObservedTextureSize);
+    }
+#endif
+
+    PublishTextureLoadGuestState();
+    WriteLoadStatus(
+        "load-pass",
+        obj,
+        tid,
+        data,
+        width,
+        height,
+        format,
+        wrapS,
+        wrapT,
+        mipmap,
+        kObservedTextureSize);
 }
 
 #endif

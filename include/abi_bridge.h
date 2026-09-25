@@ -55,6 +55,7 @@ void mkw_switch_hle_os_exception_init(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_interrupt_init(CpuContext* cpu) noexcept;
 void mkw_switch_hle_strap_check_input(CpuContext* cpu) noexcept;
 void mkw_switch_hle_staticr_rel_prolog(CpuContext* cpu) noexcept;
+void mkw_switch_hle_os_detach_thread(CpuContext* cpu) noexcept;
 }
 
 inline void ApplyRuntimeCallOptions(std::uint32_t target, CpuContext* cpu) noexcept {
@@ -126,6 +127,18 @@ struct KnownNativeCpuCall<0x8055531Cu> {
     static constexpr bool kAvailable = true;
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_staticr_rel_prolog(cpu);
+    }
+};
+
+// PAL OSDetachThread (0x801AA4EC). Hardware currently proves only the first
+// TaskThread path: thread 0x901187C0 is WAITING (state 4), already detached,
+// and has an empty join queue. The bridge mirrors only that non-MORIBUND path;
+// any state/thread variation remains a fresh hardware-defined blocker.
+template <>
+struct KnownNativeCpuCall<0x801AA4ECu> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_os_detach_thread(cpu);
     }
 };
 

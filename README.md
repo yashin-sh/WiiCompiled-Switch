@@ -95,8 +95,8 @@ StrapScene::CheckInput (0x800077C8)                                ✅ hardware 
 StaticR RelProlog (0x8055531C)                                     ✅ hardware crossed
   269 StaticR dispatches; durable later DOL/OS execution
   ↓
-OSDetachThread (0x801AA4EC)                                        🟡 exact diagnostics pending
-  r3=0x901187C0 TaskThread; state-dependent pinned detach semantics
+OSDetachThread (0x801AA4EC)                                        🟡 exact candidate; hardware validation pending
+  TaskThread 0x901187C0; WAITING state 4; attr=1; empty join queue
   ↓
 next exact hardware-attributed graphics/resource/game frontier     ⬜ pending
   ↓

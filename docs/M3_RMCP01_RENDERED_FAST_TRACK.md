@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, local FST/DVD/SZS/StaticR resource loading, KD open/cmd2/close, the first texture load, the observed GXSetTexCoordGen2 tuple, StrapScene::CheckInput, and StaticR.rel RelProlog are hardware-proven. The latest run reaches 269 StaticR dispatches and 84 successful presents / 0 failures. The current exact frontier is pinned OSDetachThread (0x801AA4EC), with diagnostics-only capture pending before any scheduler mutation.**
+Status: **renderer, local FST/DVD/SZS/StaticR resource loading, KD open/cmd2/close, the first texture load, the observed GXSetTexCoordGen2 tuple, StrapScene::CheckInput, and StaticR.rel RelProlog are hardware-proven. The latest run reaches 25,636 dispatches, 269 StaticR dispatches and 84 successful presents / 0 failures. The current exact frontier is pinned OSDetachThread (0x801AA4EC); hardware proves the first TaskThread path is WAITING, already detached, and has an empty join queue.**
 
 ## Purpose
 
@@ -1620,3 +1620,16 @@ blocker, and the Switch fiber seam does not yet expose the pinned desktop
 termination API. Therefore the current patch is diagnostics-only: it records
 the exact OSThread state, attributes, queue/link pointers, global list
 head/tail and whether a host fiber is known. No scheduler state is modified.
+
+
+## Hardware result — exact OSDetachThread path captured
+
+The diagnostic run confirms the first blocker remains `0x801AA4EC` and records
+the exact TaskThread state: `thread=0x901187C0`, state 4 (WAITING),
+attributes `0x0001`, suspend 0, priority 20, empty join queue, and a known
+guest fiber.
+
+Pinned OSDetachThread enters no MORIBUND cleanup for this state. The exact
+candidate therefore mirrors only the observed interrupt scope, detached-bit
+write and empty join-queue wake. Any different state, thread pointer or join
+queue remains unsupported.

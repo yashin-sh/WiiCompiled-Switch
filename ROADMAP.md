@@ -209,7 +209,9 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-cross the exact StaticR RelProlog candidate: 269 StaticR dispatches plus durable later DOL/OS execution
 - [x] attribute the next exact DIRECT blocker `0x801AA4EC` to pinned `OSDetachThread`; live r3=`0x901187C0` TaskThread
 - [x] add diagnostics-only capture for the exact OSThread state/attributes/join queue/list links required to choose the pinned detach branch
-- [ ] capture the exact OSDetachThread live state and implement only the observed pinned path
+- [x] capture the exact OSDetachThread live state: WAITING state 4, attr=1, empty join queue, known guest fiber
+- [x] implement only that observed non-MORIBUND OSDetachThread path
+- [ ] hardware-cross the exact OSDetachThread candidate and identify the next blocker
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
 - [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
 - [x] hardware-cross PAL `GXSetScissor` (`0x80173430`) using pinned guest GXData bookkeeping plus Aurora scissor

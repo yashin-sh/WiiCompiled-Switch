@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, local FST/DVD/SZS/StaticR resource loading, KD open/cmd2/close, the first texture load, the observed GXSetTexCoordGen2 tuple, StrapScene::CheckInput, and StaticR.rel RelProlog are hardware-proven. The latest run reaches 25,636 dispatches, 269 StaticR dispatches and 84 successful presents / 0 failures. The current exact frontier is pinned OSDetachThread (0x801AA4EC); hardware proves the first TaskThread path is WAITING, already detached, and has an empty join queue.**
+Status: **renderer, local FST/DVD/SZS/StaticR resource loading, KD open/cmd2/close, the first texture load, the observed GXSetTexCoordGen2 tuple, StrapScene::CheckInput, StaticR.rel RelProlog, and the first OSDetachThread path are hardware-proven. The latest run preserves 269 StaticR dispatches and 84 successful presents / 0 failures. The current exact frontier is pinned OSCancelThread (0x801AA1D4), with diagnostics-only capture pending before thread termination is implemented.**
 
 ## Purpose
 
@@ -1633,3 +1633,17 @@ Pinned OSDetachThread enters no MORIBUND cleanup for this state. The exact
 candidate therefore mirrors only the observed interrupt scope, detached-bit
 write and empty join-queue wake. Any different state, thread pointer or join
 queue remains unsupported.
+
+
+## Hardware result — 2026-09-25 OSDetachThread crossed / OSCancelThread frontier
+
+Merged PR #244 is durably crossed. The new blocker is
+`DIRECT 0x801AA1D4`, pinned `OSCancelThread`, on the same TaskThread
+`0x901187C0`.
+
+Pinned cancel semantics include removing a WAITING thread from its queue,
+clearing context, delisting detached threads, terminating the host fiber,
+unlocking owned mutexes, waking joiners and possibly rescheduling. The current
+Switch guest-fiber seam has no exact termination primitive. The current patch
+therefore captures queue/mutex/list/scheduler/fiber state only and does not
+mutate scheduler state.

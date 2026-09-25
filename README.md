@@ -42,12 +42,17 @@ PR #235's first KD command-2 Boot probe is now **hardware-crossed**:
 `fast-track-ios-ioctl-kd-cmd2.txt` reports `cmd2-boot-probe-pass`, and
 execution durably advances to a new direct boundary.
 
-The new exact blocker is `IOS_Close / NAND_IOS_Close_HLE (0x80193AD8)`
-with `r3=2000`, the same KD request handle returned by the proven open.
-Pinned WiiCompiled routes network fds through `Network_HLE_Close`, removes
-the device handle, and returns IOS result `0`. The current candidate mirrors
-only that exact fd-2000 close; all other closes and neighboring IOS/network
-behavior remain unsupported.
+PR #236's exact `IOS_Close (0x80193AD8)` bridge is now **hardware-crossed**:
+`fast-track-ios-close-kd-request.txt` reports `close-pass` for fd 2000 and
+execution durably advances far beyond the IOS boundary.
+
+The same run reaches `RKSystem::run`, services a second real DVD read for
+`/rel/StaticR.rel` (4,903,876 bytes), and continues through another round of
+GX state setup. The new exact blocker is `GXLoadTexObj (0x80170F2C)` with
+`oa=0x901136B4`, `tid=0`. Because that guest GXTexObj differs from the
+previously initialized object at `0x901136D4`, the current candidate is
+diagnostics-only: capture its 32 guest bytes and pinned-decoded texture metadata
+before implementing any load behavior.
 
 ```text
 PAL main / post-main runtime                                       ✅ hardware crossed
@@ -67,10 +72,15 @@ IOS_Open /dev/net/kd/request → fd 2000                             ✅ hardwar
 IOS_Ioctl (0x80194290), fd 2000, cmd 2                             ✅ hardware crossed
   in=0x80356F20/0x20 out=0x80356F40/0x20; reply word=-42, r3=0
   ↓
-IOS_Close (0x80193AD8), fd 2000                                    🟡 exact candidate; hardware validation pending
-  pinned network-device removal + IOS return 0
+IOS_Close (0x80193AD8), fd 2000                                    ✅ hardware crossed
   ↓
-next exact hardware-attributed IOS/network/resource/game frontier  ⬜ pending
+/rel/StaticR.rel local DVD read                                    ✅ hardware crossed
+  4,903,876 bytes; RKSystem::run reached
+  ↓
+GXLoadTexObj (0x80170F2C), oa=0x901136B4 tid=0                     🟡 diagnostic frontier
+  capture exact 32-byte guest GXTexObj before implementing load
+  ↓
+next exact hardware-attributed graphics/resource/game frontier     ⬜ pending
   ↓
 visually confirmed Mario Kart Wii image                            ⬜ pending
 ```
@@ -89,7 +99,7 @@ The project does not fabricate Nintendo game data. The user's own RMCP01 `DATA/s
 
 ### IOS / network
 
-The first observed IOS network request is `/dev/net/kd/request`, mode 0, and its fd-2000 open is hardware-crossed. The first `IOS_Ioctl` KD command-2 Boot probe is also hardware-crossed with the exact 0x20-byte input/output buffers, output result `-42`, and IOS return `0`. Hardware now reaches `IOS_Close (0x80193AD8)` with fd 2000; the current candidate removes only that proven handle and returns `0`. It does **not** claim other closes, command 1/3, repeated command 2, ioctlv, NCD, IP, SSL, DNS, sockets, or online play.
+The first observed IOS network request is `/dev/net/kd/request`, mode 0; its fd-2000 open, first KD command-2 Boot probe, and fd-2000 close are all hardware-crossed. No broader IOS/network support is claimed: other closes, command 1/3, repeated command 2, ioctlv, NCD, IP, SSL, DNS, sockets, and online play remain outside the observed path.
 
 ### Input
 

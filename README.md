@@ -83,8 +83,11 @@ IOS_Close (0x80193AD8), fd 2000                                    ✅ hardware 
 GXLoadTexObj (0x80170F2C), oa=0x901136B4 tid=0                     ✅ hardware crossed
   832x456 RGB565, clamp/clamp, no mipmaps, data=0x00F103E0
   ↓
-GXSetTexCoordGen2 (0x8016E37C)                                     🟡 exact candidate; hardware validation pending
+GXSetTexCoordGen2 (0x8016E37C)                                     ✅ hardware crossed
   TEXCOORD0 / MTX2x4 / TEX0 / IDENTITY / false / PTIDENTITY
+  ↓
+StrapScene::CheckInput (0x800077C8)                                🟡 exact candidate; hardware validation pending
+  scenePtr=0x90112A34; pinned guest-visible result r3=1
   ↓
 next exact hardware-attributed graphics/resource/game frontier     ⬜ pending
   ↓

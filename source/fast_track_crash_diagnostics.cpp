@@ -77,13 +77,23 @@ constexpr std::uint32_t kGxSetNumChansAddress = 0x8017054Cu;
 constexpr std::uint32_t kGxSetChanMatColorAddress = 0x80170474u;
 constexpr std::uint32_t kGxSetChanCtrlAddress = 0x80170570u;
 constexpr std::uint32_t kGxLoadTexObjAddress = 0x80170F2Cu;
+constexpr std::uint32_t kOsDetachThreadAddress = 0x801AA4ECu;
 constexpr std::uint32_t kDefaultThreadContextAddr = 0x80347498u;
 constexpr std::uint32_t kOSCurrentContextAddr = 0x800000D4u;
 constexpr std::uint32_t kOSRunningContextAddr = 0x800000E4u;
 constexpr std::uint32_t kThreadStateOffset = 0x2C8u;
+constexpr std::uint32_t kThreadAttrOffset = 0x2CAu;
 constexpr std::uint32_t kThreadSuspendOffset = 0x2CCu;
 constexpr std::uint32_t kThreadPriorityOffset = 0x2D0u;
 constexpr std::uint32_t kThreadQueueOffset = 0x2DCu;
+constexpr std::uint32_t kThreadNextOffset = 0x2E0u;
+constexpr std::uint32_t kThreadPrevOffset = 0x2E4u;
+constexpr std::uint32_t kThreadJoinQueueOffset = 0x2E8u;
+constexpr std::uint32_t kThreadListNextOffset = 0x2FCu;
+constexpr std::uint32_t kThreadListPrevOffset = 0x300u;
+constexpr std::uint32_t kThreadSize = 0x318u;
+constexpr std::uint32_t kThreadListHeadAddr = 0x800000DCu;
+constexpr std::uint32_t kThreadListTailAddr = 0x800000E0u;
 constexpr std::uint32_t kStaticRTextStart = 0x805103B4u;
 constexpr std::uint32_t kStaticRTextEnd = 0x8088F400u;
 constexpr std::uint32_t kFstAddressLowMem = 0x80000038u;
@@ -960,7 +970,7 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
     std::uint32_t target,
     CpuContext* cpu) noexcept {
 #if MKW_FAST_TRACK_DIAGNOSTICS
-    char buffer[2304];
+    char buffer[4096];
     const std::uint32_t guest_pc = cpu ? cpu->pc : 0u;
     const std::uint32_t r1 = cpu ? cpu->gpr[1] : 0u;
     const std::uint32_t r2 = cpu ? cpu->gpr[2] : 0u;
@@ -1001,6 +1011,43 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         gxLoadTexObjReadable ? (gxTexWord0 >> 2u) & 0x3u : 0u;
     const std::uint32_t gxTexMipmap = gxLoadTexObjReadable ? gxTexWord7 & 0x1u : 0u;
 
+    const bool osDetachThreadReadable =
+        target == kOsDetachThreadAddress && r3 != 0u &&
+        Memory::IsInitialized() && Memory::Contains(r3, kThreadSize);
+    const std::uint16_t osDetachState =
+        osDetachThreadReadable ? read16_or_zero(r3 + kThreadStateOffset) : 0u;
+    const std::uint16_t osDetachAttr =
+        osDetachThreadReadable ? read16_or_zero(r3 + kThreadAttrOffset) : 0u;
+    const std::int32_t osDetachSuspend =
+        osDetachThreadReadable
+            ? static_cast<std::int32_t>(read32_or_zero(r3 + kThreadSuspendOffset))
+            : 0;
+    const std::int32_t osDetachPriority =
+        osDetachThreadReadable
+            ? static_cast<std::int32_t>(read32_or_zero(r3 + kThreadPriorityOffset))
+            : 0;
+    const std::uint32_t osDetachQueue =
+        osDetachThreadReadable ? read32_or_zero(r3 + kThreadQueueOffset) : 0u;
+    const std::uint32_t osDetachNext =
+        osDetachThreadReadable ? read32_or_zero(r3 + kThreadNextOffset) : 0u;
+    const std::uint32_t osDetachPrev =
+        osDetachThreadReadable ? read32_or_zero(r3 + kThreadPrevOffset) : 0u;
+    const std::uint32_t osDetachJoinHead =
+        osDetachThreadReadable ? read32_or_zero(r3 + kThreadJoinQueueOffset) : 0u;
+    const std::uint32_t osDetachJoinTail =
+        osDetachThreadReadable ? read32_or_zero(r3 + kThreadJoinQueueOffset + 4u) : 0u;
+    const std::uint32_t osDetachListNext =
+        osDetachThreadReadable ? read32_or_zero(r3 + kThreadListNextOffset) : 0u;
+    const std::uint32_t osDetachListPrev =
+        osDetachThreadReadable ? read32_or_zero(r3 + kThreadListPrevOffset) : 0u;
+    const std::uint32_t osDetachListHead =
+        target == kOsDetachThreadAddress ? read32_or_zero(kThreadListHeadAddr) : 0u;
+    const std::uint32_t osDetachListTail =
+        target == kOsDetachThreadAddress ? read32_or_zero(kThreadListTailAddr) : 0u;
+    const bool osDetachFiberKnown =
+        target == kOsDetachThreadAddress && r3 != 0u &&
+        mkw::switch_guest_fiber::available() && mkw::switch_guest_fiber::has(r3);
+
     const int n = std::snprintf(
         buffer,
         sizeof(buffer),
@@ -1037,6 +1084,16 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         "gx tex format w5/w2   : 0x%08x / 0x%08x\n"
         "gx tex wrap s/t       : %u / %u\n"
         "gx tex mipmap         : %u\n"
+        "os detach thread      : 0x%08x\n"
+        "os detach readable    : %s\n"
+        "os detach state/attr  : %u / 0x%04x\n"
+        "os detach suspend/prio: %d / %d\n"
+        "os detach queue       : 0x%08x\n"
+        "os detach next/prev   : 0x%08x / 0x%08x\n"
+        "os detach join h/t    : 0x%08x / 0x%08x\n"
+        "os detach list n/p    : 0x%08x / 0x%08x\n"
+        "os thread list h/t    : 0x%08x / 0x%08x\n"
+        "os detach fiber known : %s\n"
         "action                : abort after durable blocker record\n",
         kind ? kind : "UNKNOWN",
         target,
@@ -1079,7 +1136,23 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         gxTexFormatWord2,
         gxTexWrapS,
         gxTexWrapT,
-        gxTexMipmap);
+        gxTexMipmap,
+        target == kOsDetachThreadAddress ? r3 : 0u,
+        osDetachThreadReadable ? "YES" : "NO",
+        static_cast<unsigned>(osDetachState),
+        static_cast<unsigned>(osDetachAttr),
+        static_cast<int>(osDetachSuspend),
+        static_cast<int>(osDetachPriority),
+        osDetachQueue,
+        osDetachNext,
+        osDetachPrev,
+        osDetachJoinHead,
+        osDetachJoinTail,
+        osDetachListNext,
+        osDetachListPrev,
+        osDetachListHead,
+        osDetachListTail,
+        osDetachFiberKnown ? "YES" : "NO");
     if (n > 0) {
         const std::size_t size = static_cast<std::size_t>(n) < sizeof(buffer)
             ? static_cast<std::size_t>(n)

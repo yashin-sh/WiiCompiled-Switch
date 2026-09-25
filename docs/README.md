@@ -103,6 +103,7 @@
 - `HARDWARE_RESULTS_2026-09-25_GX_LOAD_TEX_OBJ_CROSSED_TEXCOORDGEN2_FRONTIER.md` — hardware-crosses that first texture load and moves the exact frontier to GXSetTexCoordGen2
 - `HARDWARE_RESULTS_2026-09-25_TEXCOORDGEN2_CROSSED_STRAP_CHECK_INPUT_FRONTIER.md` — hardware-crosses GXSetTexCoordGen2, records sustained 60-frame rendering, and moves the exact frontier to StrapScene::CheckInput
 - `HARDWARE_RESULTS_2026-09-25_STRAP_CHECK_INPUT_CROSSED_STATICR_REL_PROLOG_FRONTIER.md` — hardware-crosses StrapScene::CheckInput, records 61 successful presents / 0 failures, and attributes the first StaticR native-wrapper frontier to RelProlog at 0x8055531C
+- `HARDWARE_RESULTS_2026-09-25_STATICR_REL_PROLOG_CROSSED_OS_DETACH_THREAD_FRONTIER.md` — hardware-crosses StaticR RelProlog, records 269 StaticR dispatches / 84 successful presents, and moves the exact frontier to OSDetachThread diagnostics
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes
@@ -130,3 +131,12 @@ The earlier real FIFO / `GXCopyDisp` / repeated-present / `GXFlush` proof
 remains valid. Visual correctness remains a separate milestone. Dated hardware
 result files are historical evidence and intentionally retain the frontier
 wording that was correct when each run was captured.
+
+
+Latest follow-up: merged PR #242 is hardware-crossed. The run reaches 24,544
+translated dispatches, 269 StaticR dispatches, 1,240 RMCP01 FIFO writes and 84
+successful presents with zero failures. The new exact blocker is pinned
+`OSDetachThread (0x801AA4EC)` with `r3=0x901187C0`, the TaskThread OSThread.
+Because the pinned function has a state-dependent MORIBUND cleanup branch, the
+current patch captures the exact live OSThread fields before implementing any
+scheduler mutation.

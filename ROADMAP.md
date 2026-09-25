@@ -206,7 +206,10 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] attribute `INDIRECT_CALL_MISS 0x8055531C` to pinned StaticR.rel `RelProlog`; observed module base `r3=0x805102E0`
 - [x] confirm the pinned runtime registers `StaticRProlog_RecompModInit_8055531c` as a native winner wrapping the retained translated `func_8055531C`
 - [x] implement only that exact native seam: guard the observed StaticR base and execute the already-generated original RelProlog; no speculative REL loader/relocation/RelEpilog behavior
-- [ ] hardware-cross the exact StaticR RelProlog candidate and let the next durable blocker define the following frontier
+- [x] hardware-cross the exact StaticR RelProlog candidate: 269 StaticR dispatches plus durable later DOL/OS execution
+- [x] attribute the next exact DIRECT blocker `0x801AA4EC` to pinned `OSDetachThread`; live r3=`0x901187C0` TaskThread
+- [x] add diagnostics-only capture for the exact OSThread state/attributes/join queue/list links required to choose the pinned detach branch
+- [ ] capture the exact OSDetachThread live state and implement only the observed pinned path
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
 - [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
 - [x] hardware-cross PAL `GXSetScissor` (`0x80173430`) using pinned guest GXData bookkeeping plus Aurora scissor

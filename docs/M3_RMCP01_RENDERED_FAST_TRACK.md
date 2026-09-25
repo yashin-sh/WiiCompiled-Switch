@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, local FST/DVD/SZS/StaticR resource loading, KD open/cmd2/close, the first texture load, the observed GXSetTexCoordGen2 tuple, and StrapScene::CheckInput are hardware-proven. The latest run sustains 61 successful presents / 0 failures. The current exact frontier is StaticR.rel RelProlog (0x8055531C), reached as an indirect call to a pinned WiiCompiled native wrapper.**
+Status: **renderer, local FST/DVD/SZS/StaticR resource loading, KD open/cmd2/close, the first texture load, the observed GXSetTexCoordGen2 tuple, StrapScene::CheckInput, and StaticR.rel RelProlog are hardware-proven. The latest run reaches 269 StaticR dispatches and 84 successful presents / 0 failures. The current exact frontier is pinned OSDetachThread (0x801AA4EC), with diagnostics-only capture pending before any scheduler mutation.**
 
 ## Purpose
 
@@ -1592,3 +1592,31 @@ It does not invent REL relocation/loading state and does not pre-port
 
 The existing `StaticR dispatches` counter remains zero in this failing run
 because the indirect miss aborts before a target can be accepted and counted.
+
+
+## Hardware result — 2026-09-25 StaticR RelProlog crossed / OSDetachThread frontier
+
+Merged PR #242 is durably crossed. The strongest snapshot reaches 24,544
+translated dispatches / 23,938 post-main dispatches, 269 StaticR dispatches,
+1,240 RMCP01 FIFO writes, 84 GXCopyDisp calls and 84 successful presents with
+zero failures.
+
+The distinct blocker is:
+
+```text
+DIRECT 0x801AA4EC
+r3 = 0x901187C0
+stage = RMCP01_GX_FLUSH
+```
+
+Pinned WiiCompiled maps this address exactly to `OSDetachThread`. The live
+thread pointer is the TaskThread OSThread previously created/resumed on
+hardware.
+
+Pinned OSDetachThread sets the detached bit, conditionally delists/terminates a
+MORIBUND thread, wakes joiners and restores interrupts. The current run does
+not preserve the exact state/attributes/join queue at the instant of the
+blocker, and the Switch fiber seam does not yet expose the pinned desktop
+termination API. Therefore the current patch is diagnostics-only: it records
+the exact OSThread state, attributes, queue/link pointers, global list
+head/tail and whether a host fiber is known. No scheduler state is modified.

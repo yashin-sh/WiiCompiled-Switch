@@ -54,13 +54,13 @@ not require a TLUT path.
 
 ## Payload size
 
-Format 4 uses 4x4 RGBA8 blocks:
+Format 4 uses 4x4 RGB565 blocks:
 
 ```text
 blocksX = 832 / 4 = 208
 blocksY = ceil(456 / 4) = 114
 blocks  = 208 * 114 = 23,712
-bytes   = 23,712 * 64 = 1,517,568 = 0x172800
+bytes   = 23,712 * 32 = 758,784 = 0xB9400
 ```
 
 The block count matches the descriptor's high halfword at +0x1C (`0x5CA0`).
@@ -91,7 +91,7 @@ The candidate accepts only the exact observed call and descriptor:
 - oa `0x901136B4`;
 - tid 0;
 - all eight descriptor words above unchanged;
-- full `0x172800` backing range mapped.
+- full `0xB9400` backing range mapped.
 
 For that one case it:
 

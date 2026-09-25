@@ -53,6 +53,7 @@ bool mkw_switch_hle_vi_retrace_advancing() noexcept;
 // exception vectors or touching the Hollywood interrupt controller.
 void mkw_switch_hle_os_exception_init(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_interrupt_init(CpuContext* cpu) noexcept;
+void mkw_switch_hle_strap_check_input(CpuContext* cpu) noexcept;
 }
 
 inline void ApplyRuntimeCallOptions(std::uint32_t target, CpuContext* cpu) noexcept {
@@ -101,6 +102,18 @@ template <>
 struct KnownNativeCpuCall<0x80006348u> {
     static constexpr bool kAvailable = true;
     static inline void Invoke(CpuContext*) noexcept {}
+};
+
+// PAL StrapScene::CheckInput. Pinned WiiCompiled replaces the game's input
+// check with a host HLE that returns true once the strap scene's own
+// loading/timing gates have already reached this call. The Switch bridge keeps
+// the observed scene pointer as a hardware guard and publishes only r3=1.
+template <>
+struct KnownNativeCpuCall<0x800077C8u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_strap_check_input(cpu);
+    }
 };
 
 // PAL __OSGetSystemTime. WiiCompiled's pinned runtime supplies a native HLE for

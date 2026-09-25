@@ -99,6 +99,7 @@
 - `HARDWARE_RESULTS_2026-09-24_KD_OPEN_CROSSED_IOS_IOCTL_CMD2_FRONTIER.md` — hardware-crosses the KD open, captures fd/cmd/in/out for pinned `IOS_Ioctl (0x80194290)` command 2, and defines the exact one-shot Boot-phase `-42` output candidate
 - `HARDWARE_RESULTS_2026-09-25_KD_CMD2_CROSSED_IOS_CLOSE_FRONTIER.md` — hardware-crosses that first KD command-2 probe and exposes pinned `IOS_Close (0x80193AD8)` with the same fd 2000
 - `HARDWARE_RESULTS_2026-09-25_IOS_CLOSE_CROSSED_GX_LOAD_TEX_OBJ_FRONTIER.md` — hardware-crosses fd-2000 IOS_Close, records the first `StaticR.rel` read / `RKSystem::run` progress, and moves the frontier to `GXLoadTexObj (0x80170F2C)` diagnostics
+- `HARDWARE_RESULTS_2026-09-25_GX_LOAD_TEX_OBJ_DESCRIPTOR_CAPTURED.md` — captures the exact first GXLoadTexObj descriptor and defines the strict one-descriptor Aurora bind candidate
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes
@@ -114,7 +115,7 @@ expansion, real RMCP01 FIFO/present work, and `GXInitTexObj status=init-pass`.
 The following `IOS_Open (0x801938F8)` request is now attributed exactly to
 `/dev/net/kd/request`, mode 0.
 
-PR #232's KD open, PR #235's first KD command-2 probe, and PR #236's fd-2000 IOS_Close are all hardware-crossed. The latest run then reads `/rel/StaticR.rel`, reaches `RKSystem::run`, and stops at pinned `GXLoadTexObj (0x80170F2C)` with oa `0x901136B4` / tid 0. The current candidate changes diagnostics only to capture that GXTexObj's exact 32 guest bytes before any load implementation.
+PR #232's KD open, PR #235's first KD command-2 probe, and PR #236's fd-2000 IOS_Close are all hardware-crossed. The latest run reads `/rel/StaticR.rel`, reaches `RKSystem::run`, and captures the full first `GXLoadTexObj (0x80170F2C)` descriptor at oa `0x901136B4` / tid 0: 832x456 format 4, clamp/clamp, no mipmaps, data `0x00F103E0`. The current candidate binds only that exact descriptor; any variation remains unsupported.
 
 The earlier real FIFO / `GXCopyDisp` / repeated-present / `GXFlush` proof
 remains valid. Visual correctness remains a separate milestone. Dated hardware

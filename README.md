@@ -98,8 +98,11 @@ StaticR RelProlog (0x8055531C)                                     ✅ hardware 
 OSDetachThread (0x801AA4EC)                                        ✅ hardware crossed
   TaskThread 0x901187C0; WAITING state 4; attr=1; empty join queue
   ↓
-OSCancelThread (0x801AA1D4)                                        🟡 exact candidate; hardware validation pending
-  TaskThread WAITING; singleton wait queue; detached; no mutex/joiners; non-current fiber
+OSCancelThread (0x801AA1D4)                                        ✅ hardware crossed
+  TaskThread termination completed; durable later UI/GX execution
+  ↓
+GXInitTexObjLOD (0x80170A4C)                                       🟡 exact diagnostics pending
+  obj=0x9018E120; min/mag=1/1; bc/el/aniso=0/0/0; f1/f2/f3 pending
   ↓
 next exact hardware-attributed graphics/resource/game frontier     ⬜ pending
   ↓

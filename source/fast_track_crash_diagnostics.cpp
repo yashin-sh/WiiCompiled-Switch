@@ -77,6 +77,7 @@ constexpr std::uint32_t kGxSetNumChansAddress = 0x8017054Cu;
 constexpr std::uint32_t kGxSetChanMatColorAddress = 0x80170474u;
 constexpr std::uint32_t kGxSetChanCtrlAddress = 0x80170570u;
 constexpr std::uint32_t kGxLoadTexObjAddress = 0x80170F2Cu;
+constexpr std::uint32_t kGxInitTexObjLodAddress = 0x80170A4Cu;
 constexpr std::uint32_t kOsDetachThreadAddress = 0x801AA4ECu;
 constexpr std::uint32_t kOsCancelThreadAddress = 0x801AA1D4u;
 constexpr std::uint32_t kDefaultThreadContextAddr = 0x80347498u;
@@ -978,7 +979,7 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
     std::uint32_t target,
     CpuContext* cpu) noexcept {
 #if MKW_FAST_TRACK_DIAGNOSTICS
-    char buffer[4096];
+    char buffer[6144];
     const std::uint32_t guest_pc = cpu ? cpu->pc : 0u;
     const std::uint32_t r1 = cpu ? cpu->gpr[1] : 0u;
     const std::uint32_t r2 = cpu ? cpu->gpr[2] : 0u;
@@ -1018,6 +1019,45 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
     const std::uint32_t gxTexWrapT =
         gxLoadTexObjReadable ? (gxTexWord0 >> 2u) & 0x3u : 0u;
     const std::uint32_t gxTexMipmap = gxLoadTexObjReadable ? gxTexWord7 & 0x1u : 0u;
+
+    const bool gxInitTexObjLodReadable =
+        target == kGxInitTexObjLodAddress && r3 != 0u &&
+        Memory::IsInitialized() && Memory::Contains(r3, 0x20u);
+    const std::uint32_t gxLodWord0 =
+        gxInitTexObjLodReadable ? read32_or_zero(r3 + 0x00u) : 0u;
+    const std::uint32_t gxLodWord1 =
+        gxInitTexObjLodReadable ? read32_or_zero(r3 + 0x04u) : 0u;
+    const std::uint32_t gxLodWord2 =
+        gxInitTexObjLodReadable ? read32_or_zero(r3 + 0x08u) : 0u;
+    const std::uint32_t gxLodWord3 =
+        gxInitTexObjLodReadable ? read32_or_zero(r3 + 0x0Cu) : 0u;
+    const std::uint32_t gxLodWord4 =
+        gxInitTexObjLodReadable ? read32_or_zero(r3 + 0x10u) : 0u;
+    const std::uint32_t gxLodWord5 =
+        gxInitTexObjLodReadable ? read32_or_zero(r3 + 0x14u) : 0u;
+    const std::uint32_t gxLodWord6 =
+        gxInitTexObjLodReadable ? read32_or_zero(r3 + 0x18u) : 0u;
+    const std::uint32_t gxLodWord7 =
+        gxInitTexObjLodReadable ? read32_or_zero(r3 + 0x1Cu) : 0u;
+
+    const float gxLodMin =
+        target == kGxInitTexObjLodAddress && cpu
+            ? static_cast<float>(cpu->fpr[1].d)
+            : 0.0f;
+    const float gxLodMax =
+        target == kGxInitTexObjLodAddress && cpu
+            ? static_cast<float>(cpu->fpr[2].d)
+            : 0.0f;
+    const float gxLodBias =
+        target == kGxInitTexObjLodAddress && cpu
+            ? static_cast<float>(cpu->fpr[3].d)
+            : 0.0f;
+    std::uint32_t gxLodMinBits = 0u;
+    std::uint32_t gxLodMaxBits = 0u;
+    std::uint32_t gxLodBiasBits = 0u;
+    std::memcpy(&gxLodMinBits, &gxLodMin, sizeof(gxLodMinBits));
+    std::memcpy(&gxLodMaxBits, &gxLodMax, sizeof(gxLodMaxBits));
+    std::memcpy(&gxLodBiasBits, &gxLodBias, sizeof(gxLodBiasBits));
 
     const bool osDetachThreadReadable =
         target == kOsDetachThreadAddress && r3 != 0u &&
@@ -1159,6 +1199,16 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         "gx tex format w5/w2   : 0x%08x / 0x%08x\n"
         "gx tex wrap s/t       : %u / %u\n"
         "gx tex mipmap         : %u\n"
+        "gx lod obj            : 0x%08x\n"
+        "gx lod readable       : %s\n"
+        "gx lod min/mag filter : %u / %u\n"
+        "gx lod min/max/bias   : %a / %a / %a\n"
+        "gx lod f32 bits       : 0x%08x / 0x%08x / 0x%08x\n"
+        "gx lod bc/el/aniso    : %u / %u / %u\n"
+        "gx lod words 0/1      : 0x%08x / 0x%08x\n"
+        "gx lod words 2/3      : 0x%08x / 0x%08x\n"
+        "gx lod words 4/5      : 0x%08x / 0x%08x\n"
+        "gx lod words 6/7      : 0x%08x / 0x%08x\n"
         "os detach thread      : 0x%08x\n"
         "os detach readable    : %s\n"
         "os detach state/attr  : %u / 0x%04x\n"
@@ -1229,6 +1279,27 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         gxTexWrapS,
         gxTexWrapT,
         gxTexMipmap,
+        target == kGxInitTexObjLodAddress ? r3 : 0u,
+        gxInitTexObjLodReadable ? "YES" : "NO",
+        target == kGxInitTexObjLodAddress ? r4 : 0u,
+        target == kGxInitTexObjLodAddress ? r5 : 0u,
+        static_cast<double>(gxLodMin),
+        static_cast<double>(gxLodMax),
+        static_cast<double>(gxLodBias),
+        gxLodMinBits,
+        gxLodMaxBits,
+        gxLodBiasBits,
+        target == kGxInitTexObjLodAddress ? r6 : 0u,
+        target == kGxInitTexObjLodAddress ? r7 : 0u,
+        target == kGxInitTexObjLodAddress ? r8 : 0u,
+        gxLodWord0,
+        gxLodWord1,
+        gxLodWord2,
+        gxLodWord3,
+        gxLodWord4,
+        gxLodWord5,
+        gxLodWord6,
+        gxLodWord7,
         target == kOsDetachThreadAddress ? r3 : 0u,
         osDetachThreadReadable ? "YES" : "NO",
         static_cast<unsigned>(osDetachState),

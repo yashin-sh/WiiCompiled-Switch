@@ -20,13 +20,45 @@ fi
 readonly WII_DIR="$ROOT_DIR/third_party/WiiCompiled"
 readonly RUNTIME_DIR="$WII_DIR/runtime"
 readonly AURORA_DIR="$WII_DIR/aurora-main"
+readonly WII_PIN="a135beb201042b20f390c6695ca6b26768820fb4"
+readonly WII_RENDERED_PATCH="$ROOT_DIR/patches/wiicompiled/m3-wiicompiled-switch-build.patch"
+
+if [[ "$(git -C "$WII_DIR" rev-parse HEAD)" != "$WII_PIN" ]]; then
+    echo "error: WiiCompiled pin mismatch for rendered syntax gate" >&2
+    exit 2
+fi
+
+patched_paths=(
+    aurora-main/include/dolphin/gx/GXGeometry.h
+    runtime/include/abi_bridge.h
+    runtime/include/gx_guest_write.h
+    runtime/include/runtime_config.h
+    runtime/include/runtime_log.h
+    runtime/include/system_bridge.h
+    runtime/src/hle/gx/gx_internal.h
+    runtime/src/hle/gx/gx_stream_common.h
+    runtime/src/hle/gx/gx_dl.cpp
+)
+
+restore_wiicompiled() {
+    git -C "$WII_DIR" restore --source="$WII_PIN" -- "${patched_paths[@]}" >/dev/null 2>&1 || true
+}
+trap restore_wiicompiled EXIT
+
+git -C "$WII_DIR" restore --source="$WII_PIN" -- "${patched_paths[@]}"
+if ! git -C "$WII_DIR" apply --check "$WII_RENDERED_PATCH"; then
+    echo "error: rendered WiiCompiled patch no longer applies to $WII_PIN" >&2
+    exit 2
+fi
+git -C "$WII_DIR" apply "$WII_RENDERED_PATCH"
 
 for required in \
     "$RUNTIME_DIR/include/host_context.h" \
     "$RUNTIME_DIR/src/hle/gx/gx_internal.h" \
     "$AURORA_DIR/include/dolphin/gx.h" \
     "$ROOT_DIR/local-rendered-fast-track/seams/hle_stubs.h" \
-    "$ROOT_DIR/ci-rendered-compile-seams/aurora_events.h"; do
+    "$ROOT_DIR/ci-rendered-compile-seams/aurora_events.h" \
+    "$WII_RENDERED_PATCH"; do
     if [[ ! -f "$required" ]]; then
         echo "error: missing rendered compile dependency: $required" >&2
         exit 2

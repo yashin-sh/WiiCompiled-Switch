@@ -92,8 +92,11 @@ GXSetTexCoordGen2 (0x8016E37C)                                     ✅ hardware 
 StrapScene::CheckInput (0x800077C8)                                ✅ hardware crossed
   scenePtr=0x90112A34; pinned guest-visible result r3=1
   ↓
-StaticR RelProlog (0x8055531C)                                     🟡 exact candidate; hardware validation pending
-  INDIRECT_CALL_MISS; module base r3=0x805102E0; pinned native wrapper
+StaticR RelProlog (0x8055531C)                                     ✅ hardware crossed
+  269 StaticR dispatches; durable later DOL/OS execution
+  ↓
+OSDetachThread (0x801AA4EC)                                        🟡 exact diagnostics pending
+  r3=0x901187C0 TaskThread; state-dependent pinned detach semantics
   ↓
 next exact hardware-attributed graphics/resource/game frontier     ⬜ pending
   ↓

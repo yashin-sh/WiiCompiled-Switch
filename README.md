@@ -101,8 +101,8 @@ OSDetachThread (0x801AA4EC)                                        ✅ hardware 
 OSCancelThread (0x801AA1D4)                                        ✅ hardware crossed
   TaskThread termination completed; durable later UI/GX execution
   ↓
-GXInitTexObjLOD (0x80170A4C)                                       🟡 exact diagnostics pending
-  obj=0x9018E120; min/mag=1/1; bc/el/aniso=0/0/0; f1/f2/f3 pending
+GXInitTexObjLOD (0x80170A4C)                                       🟡 exact candidate; hardware validation pending
+  obj=0x9018E120; min/mag=1/1; min/max/bias=0/0/0; bc/el/aniso=0/0/0
   ↓
 next exact hardware-attributed graphics/resource/game frontier     ⬜ pending
   ↓

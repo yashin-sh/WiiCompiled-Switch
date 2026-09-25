@@ -88,6 +88,18 @@ variation remains a fresh hardware-defined blocker.
 
 No neighboring texture LOD/filter/wrap/TLUT API is pre-ported.
 
+## Private rendered build follow-up
+
+The first private build from merged #248 exposed a C++ name collision:
+`gx_internal.h` already declares a global `TryGetHostTexObj(uint32_t)`, while
+the Switch bridge introduced an unrelated anonymous-namespace helper with the
+same unqualified name. Public CI did not compile the
+`MKW_LOCAL_RENDERED_FAST_TRACK` branch that calls this helper.
+
+The fix is name-only: the Switch-local map lookup is renamed to
+`FindLocalHostTexObj`. No GXInitTexObjLOD semantics, hardware tuple, guest
+bookkeeping, or host object ownership changes.
+
 ## Next hardware acceptance
 
 The candidate is crossed only when a future private rendered run durably

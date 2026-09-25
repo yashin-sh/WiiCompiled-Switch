@@ -105,7 +105,7 @@ GXTexObj* GetOrCreateHostTexObj(std::uint32_t guestAddr) {
     return entry.get();
 }
 
-GXTexObj* TryGetHostTexObj(std::uint32_t guestAddr) noexcept {
+GXTexObj* FindLocalHostTexObj(std::uint32_t guestAddr) noexcept {
     const auto it = gHostTexObjs.find(guestAddr);
     return it != gHostTexObjs.end() ? it->second.get() : nullptr;
 }
@@ -718,7 +718,7 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept {
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
     try {
         std::scoped_lock lock(gTexObjMutex);
-        GXTexObj* hostObj = TryGetHostTexObj(obj);
+        GXTexObj* hostObj = FindLocalHostTexObj(obj);
         if (!hostObj) {
             AbortLodBoundary(
                 "GX_INIT_TEX_OBJ_LOD_HOST_OBJ_MISSING",

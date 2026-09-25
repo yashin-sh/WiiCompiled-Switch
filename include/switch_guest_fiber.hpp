@@ -17,6 +17,8 @@ bool create(std::uint32_t guest_thread,
             std::uint32_t guest_stack_top,
             CpuContext* seed_cpu) noexcept;
 bool has(std::uint32_t guest_thread) noexcept;
+bool can_terminate_non_current(std::uint32_t guest_thread) noexcept;
+bool terminate_non_current(std::uint32_t guest_thread) noexcept;
 std::uint32_t current_thread() noexcept;
 bool register_current(std::uint32_t guest_thread, CpuContext* cpu) noexcept;
 void suspend(std::uint32_t guest_thread) noexcept;

@@ -55,7 +55,12 @@ GX state setup. The exact blocker remains `GXLoadTexObj (0x80170F2C)` with
 durable progression to a new direct blocker at `GXSetTexCoordGen2
 (0x8016E37C)`. The live tuple is
 `GX_TEXCOORD0 / GX_TG_MTX2x4 / GX_TG_TEX0 / GX_IDENTITY / GX_FALSE /
-GX_PTIDENTITY`; the current candidate forwards only that exact tuple.
+GX_PTIDENTITY`; that tuple is now hardware-crossed. The same run reaches
+19,718 translated dispatches, 758 RMCP01 FIFO writes, and 60 successful
+GXCopyDisp/presents with zero failures before stopping at
+`StrapScene::CheckInput (0x800077C8)`. Pinned WiiCompiled ignores its
+`scenePtr` argument and returns `1`; the Switch candidate mirrors only that
+guest-visible return and does not import the desktop settings overlay.
 
 ```text
 PAL main / post-main runtime                                       ✅ hardware crossed
@@ -83,8 +88,11 @@ IOS_Close (0x80193AD8), fd 2000                                    ✅ hardware 
 GXLoadTexObj (0x80170F2C), oa=0x901136B4 tid=0                     ✅ hardware crossed
   832x456 RGB565, clamp/clamp, no mipmaps, data=0x00F103E0
   ↓
-GXSetTexCoordGen2 (0x8016E37C)                                     🟡 exact candidate; hardware validation pending
+GXSetTexCoordGen2 (0x8016E37C)                                     ✅ hardware crossed
   TEXCOORD0 / MTX2x4 / TEX0 / IDENTITY / false / PTIDENTITY
+  ↓
+StrapScene::CheckInput (0x800077C8)                                🟡 exact candidate; hardware validation pending
+  pinned override ignores scenePtr and returns 1
   ↓
 next exact hardware-attributed graphics/resource/game frontier     ⬜ pending
   ↓

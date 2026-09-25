@@ -181,6 +181,26 @@ bool has(std::uint32_t guest_thread) noexcept {
     return record && record->host;
 }
 
+bool can_terminate_non_current(std::uint32_t guest_thread) noexcept {
+    const auto* record = Find(guest_thread);
+    return record && record->host && !record->scheduler_host &&
+           guest_thread != g_current_guest_thread &&
+           !HostContext::IsCurrent(record->host);
+}
+
+bool terminate_non_current(std::uint32_t guest_thread) noexcept {
+    GuestFiberRecord* record = Find(guest_thread);
+    if (!record || !record->host || record->scheduler_host ||
+        guest_thread == g_current_guest_thread ||
+        HostContext::IsCurrent(record->host)) {
+        return false;
+    }
+
+    HostContext::Destroy(record->host);
+    *record = {};
+    return true;
+}
+
 std::uint32_t current_thread() noexcept {
     return g_current_guest_thread;
 }

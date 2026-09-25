@@ -214,7 +214,9 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 - [x] hardware-cross the exact OSDetachThread candidate and identify the next blocker
 - [x] attribute the next exact DIRECT blocker `0x801AA1D4` to pinned `OSCancelThread`
 - [x] add diagnostics-only capture for wait queue, mutex ownership, global list, scheduler flags and fiber/current-context state
-- [ ] capture the exact OSCancelThread live state and implement only the observed pinned path
+- [x] capture the exact OSCancelThread live state: WAITING, detached, singleton wait queue, no joiners/mutexes, non-current known fiber
+- [x] implement only that observed OSCancelThread termination path
+- [ ] hardware-cross the exact OSCancelThread candidate and identify the next blocker
 - [x] hardware-cross PAL `GXSetProjection` (`0x8017301C`) using the pinned guest-matrix -> Aurora contract
 - [x] hardware-cross PAL `GXSetViewport` (`0x801733B4`) using PPC f1..f6 and the pinned Aurora viewport contract
 - [x] hardware-cross PAL `GXSetScissor` (`0x80173430`) using pinned guest GXData bookkeeping plus Aurora scissor

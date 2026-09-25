@@ -56,6 +56,7 @@ void mkw_switch_hle_os_interrupt_init(CpuContext* cpu) noexcept;
 void mkw_switch_hle_strap_check_input(CpuContext* cpu) noexcept;
 void mkw_switch_hle_staticr_rel_prolog(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_detach_thread(CpuContext* cpu) noexcept;
+void mkw_switch_hle_os_cancel_thread(CpuContext* cpu) noexcept;
 }
 
 inline void ApplyRuntimeCallOptions(std::uint32_t target, CpuContext* cpu) noexcept {
@@ -139,6 +140,18 @@ struct KnownNativeCpuCall<0x801AA4ECu> {
     static constexpr bool kAvailable = true;
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_os_detach_thread(cpu);
+    }
+};
+
+// PAL OSCancelThread (0x801AA1D4). Hardware currently proves only the first
+// TaskThread cancel path: WAITING, detached, singleton wait queue, no joiners
+// or owned mutexes, non-current known guest fiber, and the default thread
+// remains OS current/running. Any variation stays hardware-defined.
+template <>
+struct KnownNativeCpuCall<0x801AA1D4u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_os_cancel_thread(cpu);
     }
 };
 

@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **renderer, real RMCP01 FIFO work, successful GPU presentation, local FST/DVD/SZS path, VI-only idle recovery, `GXInitTexObj`, PAL `GXFlush`, the KD open/cmd2/close sequence, `RKSystem::run`, and a real `StaticR.rel` read are hardware-proven. The current exact frontier is `GXLoadTexObj (0x80170F2C)` with oa `0x901136B4` / tid 0; metadata capture is pending before implementation.**
+Status: **renderer, real RMCP01 FIFO work, successful GPU presentation, local FST/DVD/SZS path, VI-only idle recovery, `GXInitTexObj`, PAL `GXFlush`, the KD open/cmd2/close sequence, `RKSystem::run`, and a real `StaticR.rel` read are hardware-proven. The current exact frontier is the first `GXLoadTexObj (0x80170F2C)`; its full descriptor is hardware-captured and an exact one-descriptor bind candidate awaits validation.**
 
 ## Purpose
 
@@ -1484,3 +1484,47 @@ Therefore the current candidate is diagnostics-only. It extends the durable
 blocker record for target `0x80170F2C` with all eight 32-bit guest words plus
 the directly decoded data address, width/height, word5/word2 format values,
 wrap S/T and mipmap flag. No GXLoadTexObj/Aurora behavior is added yet.
+
+
+## Hardware result — 2026-09-25 GXLoadTexObj descriptor captured
+
+The diagnostics-only run reproduces the same blocker and captures the complete
+guest GXTexObj at `0x901136B4`:
+
+```text
+oa  = 0x901136B4
+tid = 0
+word0 = 0x00000090
+word1 = 0x00000000
+word2 = 0x00471F3F
+word3 = 0x0007881F
+word4 = 0x00000000
+word5 = 0x00000004
+word6 = 0x00000000
+word7 = 0x5CA00202
+```
+
+Pinned guest decoding yields:
+
+```text
+data   = 0x00F103E0
+width  = 832
+height = 456
+format = 4 (word5 and word2 agree)
+wrap   = clamp / clamp
+mipmap = false
+```
+
+Format 4 uses 4x4 RGBA8 blocks. At 832x456 this is 208x114 = 23,712
+blocks, matching the descriptor's block count. At 64 bytes per block the exact
+payload is `0x172800` bytes.
+
+This is a non-CI descriptor; no TLUT behavior is required by the observed call.
+The candidate therefore accepts only the exact eight hardware-captured words,
+requires the full payload to be mapped, reconstructs an Aurora GXTexObj from
+the live guest backing, applies the decoded linear/linear zero-LOD state, binds
+only map 0, then mirrors the pinned GXData dirty/writeback side effects.
+
+Any different object address, map id, descriptor word, format, dimensions,
+wrap, mipmap state or backing becomes a fresh `GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR`
+frontier. No neighboring CI/TLUT/LOD/invalidation API is pre-ported.

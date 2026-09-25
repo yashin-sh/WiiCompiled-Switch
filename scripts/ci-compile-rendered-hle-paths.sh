@@ -84,6 +84,10 @@ common_flags=(
     -ffp-contract=off
     -fno-tree-slp-vectorize
     -include "$ROOT_DIR/include/devkita64_gcc_compat.hpp"
+    -DAURORA
+    -DAURORA_ENABLE_GX
+    -DTARGET_PC
+    -DWEBGPU_DAWN
     -D__SWITCH__
     -DNX
     -DVK_USE_PLATFORM_VI_NN
@@ -95,12 +99,15 @@ common_flags=(
     -DMKW_ENABLE_TRANSLATED_EXECUTION_HANDOFF=1
     -I"$ROOT_DIR/ci-rendered-compile-seams"
     -I"$ROOT_DIR/local-rendered-fast-track/seams"
+    -I"$ROOT_DIR/m3-aurora-gx-probe/compat"
+    -I"$ROOT_DIR/m3-aurora-gx-probe/source"
     -I"$ROOT_DIR/include"
     -I"$RUNTIME_DIR/include"
     -I"$RUNTIME_DIR/src"
     -I"$RUNTIME_DIR/src/hle/gx"
     -I"$RUNTIME_DIR/third_party/toml11"
     -I"$AURORA_DIR/include"
+    -I"$AURORA_DIR/lib"
 )
 
 if [[ -n "${DEVKITPRO:-}" && -d "$DEVKITPRO/libnx/include" ]]; then

@@ -103,6 +103,21 @@ struct KnownNativeCpuCall<0x80006348u> {
     static inline void Invoke(CpuContext*) noexcept {}
 };
 
+// PAL StrapScene::CheckInput. The pinned WiiCompiled runtime intentionally
+// replaces this base-game entry point after the scene's loading/timing gates:
+// it ignores scenePtr, notifies the desktop settings overlay, and returns 1.
+// The Switch rendered fast-track has no desktop/ImGui startup overlay, so the
+// complete guest-visible contract here is the PPC return value r3 = 1.
+template <>
+struct KnownNativeCpuCall<0x800077C8u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (cpu) {
+            cpu->gpr[3] = 1u;
+        }
+    }
+};
+
 // PAL __OSGetSystemTime. WiiCompiled's pinned runtime supplies a native HLE for
 // this address rather than translating the SDK routine. Keep that same boundary
 // on Horizon so startup does not fall into the unsupported translated dispatcher.

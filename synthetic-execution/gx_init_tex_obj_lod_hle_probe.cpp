@@ -4,7 +4,7 @@
 
 // Mapping/link-only coverage. Public CI must not fabricate the private
 // Home Button texture objects or execute any hardware-owned LOD tuple or the
-// hardware-owned wrap tuples.
+// all hardware-owned wrap tuples.
 static_assert(KnownNativeCpuCall<0x80170A4Cu>::kAvailable);
 static_assert(KnownNativeCpuCall<0x80170B50u>::kAvailable);
 

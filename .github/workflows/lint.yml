@@ -76,6 +76,11 @@ jobs:
           ruff check "${python_files[@]}"
           ruff format --check "${python_files[@]}"
 
+      - name: RMCP01 address attribution self-test
+        run: |
+          set -euo pipefail
+          python3 scripts/attribute-rmcp01-address.py --self-test
+
       - name: C and C++ format for changed first-party lines
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}

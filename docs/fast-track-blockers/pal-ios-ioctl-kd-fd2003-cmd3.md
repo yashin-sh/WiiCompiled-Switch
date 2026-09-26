@@ -25,4 +25,7 @@ Implement only this exact first fd-2003/cmd-3 tuple. Do not pre-port the
 fd-2003 close, later cmd-2 probe, cmd 4, socket startup, ioctlv, or neighboring
 KD behavior.
 
+The merged GXInitTexObjWrapMode candidate remains separately pending a durable
+hardware crossing; this scheduler interleaving reached KD cmd 3 first.
+
 Crossing proof requires a later durable hardware frontier beyond this call.

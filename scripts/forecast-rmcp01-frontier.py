@@ -197,7 +197,7 @@ def find_following_calls(
                     break
                 candidate_line = lines[next_index]
                 stripped = candidate_line.strip()
-                if stripped.startswith("//") or stripped.startswith("/*"):
+                if stripped.startswith(("//", "/*")):
                     continue
 
                 for match in CALL_RE.finditer(candidate_line):
@@ -222,7 +222,7 @@ def best_symbol_def(
     matches = index.get(symbol)
     if not matches:
         return None
-    return sorted(matches, key=lambda item: (item.end - item.address, item.source_path))[0]
+    return min(matches, key=lambda item: (item.end - item.address, item.source_path))
 
 
 def coverage_for(
@@ -248,7 +248,7 @@ def coverage_for(
         rationale.append("game-side source is normally handled by translated product")
         return "translated-source", rationale
 
-    if source_path.startswith("lib/rvl/") or source_path.startswith("lib/nw4r/"):
+    if source_path.startswith(("lib/rvl/", "lib/nw4r/")):
         rationale.append("SDK/library symbol has no KnownNativeCpuCall mapping")
         return "native-unmapped-candidate", rationale
 
@@ -496,7 +496,7 @@ def main() -> int:
         target = requested or helper.DEFAULT_DOLDECOMP_DIR
         try:
             helper.prepare_doldecomp(target)
-        except Exception as exc:
+        except (RuntimeError, subprocess.CalledProcessError) as exc:
             print(f"error: failed to prepare doldecomp/mkw: {exc}", file=sys.stderr)
             return 2
 

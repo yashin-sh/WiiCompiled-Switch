@@ -80,7 +80,9 @@ def parse_blocker_target(path: Path) -> int:
     return int(match.group(1), 16)
 
 
-def build_symbol_index(helper: ModuleType, checkout: Path) -> dict[str, list[SymbolDef]]:
+def build_symbol_index(
+    helper: ModuleType, checkout: Path
+) -> dict[str, list[SymbolDef]]:
     index: dict[str, list[SymbolDef]] = defaultdict(list)
     for path in helper.source_files(checkout):
         try:
@@ -146,7 +148,9 @@ def constrained_symbols(repo_root: Path) -> set[str]:
             text = path.read_text(encoding="utf-8", errors="replace")
             if "UNPROVEN_TUPLE" not in text and "exact observed" not in text.lower():
                 continue
-            for symbol in re.findall(r"\b(?:GX|IOS|OS|VI|WPAD|PAD)[A-Za-z0-9_]+\b", text):
+            for symbol in re.findall(
+                r"\b(?:GX|IOS|OS|VI|WPAD|PAD)[A-Za-z0-9_]+\b", text
+            ):
                 constrained.add(symbol)
     return constrained
 
@@ -240,7 +244,9 @@ def coverage_for(
 
     if address in native_addresses:
         if symbol_def.symbol in constrained:
-            rationale.append("native mapping exists but local bridge is hardware-constrained")
+            rationale.append(
+                "native mapping exists but local bridge is hardware-constrained"
+            )
             return "mapped-native-constrained", rationale
         rationale.append("KnownNativeCpuCall mapping exists")
         return "mapped-native", rationale
@@ -304,7 +310,9 @@ def forecast(
         coverage, rationale = coverage_for(symbol_def, native_addresses, constrained)
         distance = nearest[symbol]
         if distance == 1:
-            rationale.append("appears immediately after the current call at a public callsite")
+            rationale.append(
+                "appears immediately after the current call at a public callsite"
+            )
         else:
             rationale.append(f"nearest public callsite occurrence is +{distance} lines")
         if count > 1:

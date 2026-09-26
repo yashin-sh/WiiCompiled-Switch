@@ -24,6 +24,7 @@ constexpr std::uint32_t kKdBootProbeOutputLength = 0x20u;
 
 inline bool gFirstKdRequestOpen = false;
 inline bool gSecondKdRequestOpen = false;
+inline bool gSecondKdSuspendSeen = false;
 
 inline bool ReadGuestCString(std::uint32_t address, char* out, std::size_t capacity) noexcept {
     if (!out || capacity == 0u || address == 0u || !Memory::IsInitialized()) {
@@ -278,15 +279,14 @@ inline void HandleSecondKdSuspendScheduler(CpuContext* cpu) noexcept {
         AbortIoctlBoundary("IOS_IOCTL_KD_CMD1_INVALID_BUFFER", cpu);
     }
 
-    static bool secondSuspendSeen = false;
-    if (secondSuspendSeen) {
+    if (gSecondKdSuspendSeen) {
         AbortIoctlBoundary("IOS_IOCTL_KD_CMD1_REPEAT_UNPROVEN", cpu);
     }
 
     // Pinned WiiCompiled HandleKdIoctl(cmd=1) writes WC24 result 0 at out+0
     // and returns IOS result 0. No socket or scheduler host side effect occurs.
     Memory::Write32(outBuf, 0u);
-    secondSuspendSeen = true;
+    gSecondKdSuspendSeen = true;
     WriteIoctlStatus("cmd1-second-request-suspend-pass", fd, cmd, inBuf, inLen, outBuf, outLen);
     cpu->gpr[3] = 0u;
 }
@@ -319,22 +319,34 @@ inline void HandleObservedKdIoctl(CpuContext* cpu) noexcept {
     std::abort();
 }
 
-inline void CloseFirstKdRequest(CpuContext* cpu) noexcept {
+inline void CloseObservedKdRequest(CpuContext* cpu) noexcept {
     if (!cpu) {
         return;
     }
 
     const std::uint32_t fd = cpu->gpr[3];
 
-    // Hardware proves only the first KD request handle returned by IOS_Open.
-    // Pinned Network_HLE_Close removes that handle and returns IOS result 0.
-    if (fd != kFirstNetworkDeviceFd || !gFirstKdRequestOpen) {
-        AbortCloseBoundary("IOS_CLOSE_KD_UNPROVEN_FD", cpu);
+    if (fd == kFirstNetworkDeviceFd && gFirstKdRequestOpen) {
+        // Hardware-proven first KD request close.
+        gFirstKdRequestOpen = false;
+        WriteCloseStatus("close-first-pass", fd);
+        cpu->gpr[3] = 0u;
+        return;
     }
 
-    gFirstKdRequestOpen = false;
-    WriteCloseStatus("close-pass", fd);
-    cpu->gpr[3] = 0u;
+    if (fd == kSecondNetworkDeviceFd &&
+        gSecondKdRequestOpen &&
+        gSecondKdSuspendSeen) {
+        // Hardware-proven second KD request close immediately after cmd=1.
+        // Pinned Network_HLE_Close removes the valid network device handle and
+        // returns IOS result 0 without any additional guest-memory mutation.
+        gSecondKdRequestOpen = false;
+        WriteCloseStatus("close-second-pass", fd);
+        cpu->gpr[3] = 0u;
+        return;
+    }
+
+    AbortCloseBoundary("IOS_CLOSE_KD_UNPROVEN_FD", cpu);
 }
 
 } // namespace mkw::switch_ios_kd_hle
@@ -370,14 +382,15 @@ struct KnownNativeCpuCall<0x80194290u> {
     }
 };
 
-// IOS_Close / NAND_IOS_Close_HLE (PAL 0x80193AD8). Hardware reaches this
-// boundary only after the first KD command-2 Boot probe and passes r3=2000.
-// Mirror only the pinned Network_HLE_Close result for that exact live handle.
+// IOS_Close / NAND_IOS_Close_HLE (PAL 0x80193AD8). Hardware has proven the
+// fd-2000 close after the first command-2 Boot probe and the fd-2001 close
+// immediately after the second request's command-1 suspend call. Mirror only
+// those exact live handles/sequences.
 template <>
 struct KnownNativeCpuCall<0x80193AD8u> {
     static constexpr bool kAvailable = true;
 
     static inline void Invoke(CpuContext* cpu) noexcept {
-        mkw::switch_ios_kd_hle::CloseFirstKdRequest(cpu);
+        mkw::switch_ios_kd_hle::CloseObservedKdRequest(cpu);
     }
 };

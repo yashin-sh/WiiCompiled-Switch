@@ -75,6 +75,16 @@ constexpr std::uint32_t kObservedSecondLodWord5 = 0x00000000u;
 constexpr std::uint32_t kObservedSecondLodWord6 = 0x00000000u;
 constexpr std::uint32_t kObservedSecondLodWord7 = 0x00400102u;
 
+constexpr std::uint32_t kObservedThirdLodObj = 0x9018E140u;
+constexpr std::uint32_t kObservedThirdLodWord0 = 0x00000095u;
+constexpr std::uint32_t kObservedThirdLodWord1 = 0x00000000u;
+constexpr std::uint32_t kObservedThirdLodWord2 = 0x0000FC3Fu;
+constexpr std::uint32_t kObservedThirdLodWord3 = 0x0080A998u;
+constexpr std::uint32_t kObservedThirdLodWord4 = 0x00000000u;
+constexpr std::uint32_t kObservedThirdLodWord5 = 0x00000000u;
+constexpr std::uint32_t kObservedThirdLodWord6 = 0x00000000u;
+constexpr std::uint32_t kObservedThirdLodWord7 = 0x00400102u;
+
 constexpr std::uint32_t kObservedWrapObj = 0x9018E120u;
 constexpr std::uint32_t kObservedWrapS = 0u;
 constexpr std::uint32_t kObservedWrapT = 0u;
@@ -781,8 +791,21 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept {
         word6 == kObservedSecondLodWord6 &&
         word7 == kObservedSecondLodWord7;
 
+    const bool exactThirdObservedDescriptor =
+        obj == kObservedThirdLodObj &&
+        word0 == kObservedThirdLodWord0 &&
+        word1 == kObservedThirdLodWord1 &&
+        word2 == kObservedThirdLodWord2 &&
+        word3 == kObservedThirdLodWord3 &&
+        word4 == kObservedThirdLodWord4 &&
+        word5 == kObservedThirdLodWord5 &&
+        word6 == kObservedThirdLodWord6 &&
+        word7 == kObservedThirdLodWord7;
+
     if (!exactObservedArgs ||
-        (!exactFirstObservedDescriptor && !exactSecondObservedDescriptor)) {
+        (!exactFirstObservedDescriptor &&
+         !exactSecondObservedDescriptor &&
+         !exactThirdObservedDescriptor)) {
         AbortLodBoundary(
             "GX_INIT_TEX_OBJ_LOD_UNPROVEN_TUPLE",
             cpu,

@@ -17,14 +17,19 @@ constexpr std::uint32_t kIosIoctlAddress = 0x80194290u;
 constexpr const char* kKdRequestPath = "/dev/net/kd/request";
 constexpr std::uint32_t kFirstNetworkDeviceFd = 2000u;
 constexpr std::uint32_t kSecondNetworkDeviceFd = 2001u;
+constexpr std::uint32_t kThirdNetworkDeviceFd = 2002u;
 constexpr std::uint32_t kKdSuspendSchedulerCommand = 1u;
 constexpr std::uint32_t kKdTrySuspendSchedulerCommand = 2u;
+constexpr std::uint32_t kKdRequestGeneratedUserIdCommand = 0x0Fu;
+constexpr std::uint64_t kRuntimeGeneratedUserId = 0x000000014D4B5752ull;
 constexpr std::uint32_t kKdBootProbeInputLength = 0x20u;
 constexpr std::uint32_t kKdBootProbeOutputLength = 0x20u;
 
 inline bool gFirstKdRequestOpen = false;
 inline bool gSecondKdRequestOpen = false;
 inline bool gSecondKdSuspendSeen = false;
+inline bool gThirdKdRequestOpen = false;
+inline bool gThirdKdGeneratedUserIdSeen = false;
 
 inline bool ReadGuestCString(std::uint32_t address, char* out, std::size_t capacity) noexcept {
     if (!out || capacity == 0u || address == 0u || !Memory::IsInitialized()) {
@@ -185,6 +190,8 @@ inline std::uint32_t OpenKdRequest(CpuContext* cpu) noexcept {
         gFirstKdRequestOpen = true;
     } else if (fd == kSecondNetworkDeviceFd) {
         gSecondKdRequestOpen = true;
+    } else if (fd == kThirdNetworkDeviceFd) {
+        gThirdKdRequestOpen = true;
     }
 
     WriteStatus("open-pass", path, mode, fd);
@@ -291,6 +298,51 @@ inline void HandleSecondKdSuspendScheduler(CpuContext* cpu) noexcept {
     cpu->gpr[3] = 0u;
 }
 
+inline void HandleThirdKdGeneratedUserId(CpuContext* cpu) noexcept {
+    if (!cpu) {
+        return;
+    }
+
+    const std::uint32_t fd = cpu->gpr[3];
+    const std::uint32_t cmd = cpu->gpr[4];
+    const std::uint32_t inBuf = cpu->gpr[5];
+    const std::uint32_t inLen = cpu->gpr[6];
+    const std::uint32_t outBuf = cpu->gpr[7];
+    const std::uint32_t outLen = cpu->gpr[8];
+
+    // Hardware proves exactly the third /dev/net/kd/request command-0x0F call:
+    // fd 2002, no input buffer, and a 0x20-byte output buffer.
+    if (fd != kThirdNetworkDeviceFd ||
+        !gThirdKdRequestOpen ||
+        cmd != kKdRequestGeneratedUserIdCommand ||
+        inBuf != 0u ||
+        inLen != 0u ||
+        outBuf == 0u ||
+        outLen != kKdBootProbeOutputLength) {
+        AbortIoctlBoundary("IOS_IOCTL_KD_CMD15_UNPROVEN_ARGUMENTS", cpu);
+    }
+
+    if (!Memory::IsInitialized() || !Memory::Contains(outBuf, outLen)) {
+        AbortIoctlBoundary("IOS_IOCTL_KD_CMD15_INVALID_BUFFER", cpu);
+    }
+
+    if (gThirdKdGeneratedUserIdSeen) {
+        AbortIoctlBoundary("IOS_IOCTL_KD_CMD15_REPEAT_UNPROVEN", cpu);
+    }
+
+    // Pinned WiiCompiled HandleKdIoctl(cmd=0x0F) zeroes the output buffer,
+    // writes result 0, the stable generated user id, and creation stage 1.
+    for (std::uint32_t offset = 0u; offset < outLen; ++offset) {
+        Memory::Write8(outBuf + offset, 0u);
+    }
+    Memory::Write32(outBuf, 0u);
+    Memory::Write64(outBuf + 4u, kRuntimeGeneratedUserId);
+    Memory::Write32(outBuf + 0x0Cu, 1u);
+    gThirdKdGeneratedUserIdSeen = true;
+    WriteIoctlStatus("cmd15-third-request-user-id-pass", fd, cmd, inBuf, inLen, outBuf, outLen);
+    cpu->gpr[3] = 0u;
+}
+
 inline void HandleObservedKdIoctl(CpuContext* cpu) noexcept {
     if (!cpu) {
         return;
@@ -305,6 +357,12 @@ inline void HandleObservedKdIoctl(CpuContext* cpu) noexcept {
     if (cpu->gpr[3] == kSecondNetworkDeviceFd &&
         cpu->gpr[4] == kKdSuspendSchedulerCommand) {
         HandleSecondKdSuspendScheduler(cpu);
+        return;
+    }
+
+    if (cpu->gpr[3] == kThirdNetworkDeviceFd &&
+        cpu->gpr[4] == kKdRequestGeneratedUserIdCommand) {
+        HandleThirdKdGeneratedUserId(cpu);
         return;
     }
 
@@ -369,10 +427,10 @@ struct KnownNativeCpuCall<0x801938F8u> {
 };
 
 // IOS_Ioctl / NAND_IOS_Ioctl_Entry_HLE (PAL 0x80194290). Hardware has
-// captured the first fd-2000 command-2 Boot probe and the later fd-2001
-// command-1 suspend-scheduler call. Mirror only those exact live tuples.
-// Repeated/variant calls, command 3, ioctlv and other network services remain
-// unsupported until hardware reaches them.
+// captured the fd-2000 command-2 Boot probe, fd-2001 command-1 suspend call,
+// and fd-2002 command-0x0F generated-user-id request. Mirror only those exact
+// live tuples. Repeated/variant calls, command 3, ioctlv and other network
+// services remain unsupported until hardware reaches them.
 template <>
 struct KnownNativeCpuCall<0x80194290u> {
     static constexpr bool kAvailable = true;

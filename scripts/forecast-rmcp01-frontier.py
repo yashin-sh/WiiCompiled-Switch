@@ -10,6 +10,7 @@ import argparse
 import importlib.util
 import json
 import re
+import subprocess
 import sys
 import tempfile
 from collections import Counter, defaultdict

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Attribute a PAL RMCP01 guest address using public decompilation metadata."""
 
 from __future__ import annotations
@@ -11,9 +10,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Iterable
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DOLDECOMP_DIR = REPO_ROOT / ".deps" / "analysis" / "mkw"
@@ -108,8 +107,7 @@ def run_git(args: list[str], cwd: Path | None = None) -> subprocess.CompletedPro
         cwd=cwd,
         check=True,
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
 
 
@@ -311,8 +309,10 @@ def dtk_follow_up(
         if module == "StaticR.rel":
             return [
                 f"{quoted_dtk} rel info /path/to/StaticR.rel",
-                f"{quoted_dtk} rel merge /path/to/main.dol "
-                "/path/to/StaticR.rel -o /tmp/rmcp01-merged.elf",
+                (
+                    f"{quoted_dtk} rel merge /path/to/main.dol "
+                    "/path/to/StaticR.rel -o /tmp/rmcp01-merged.elf"
+                ),
             ]
         return [f"{quoted_dtk} dol info /path/to/main.dol"]
 

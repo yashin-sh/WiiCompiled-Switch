@@ -26,6 +26,7 @@ namespace {
 
 constexpr std::uint32_t kGxInitTexObjAddress = 0x801707F8u;
 constexpr std::uint32_t kGxInitTexObjLodAddress = 0x80170A4Cu;
+constexpr std::uint32_t kGxInitTexObjWrapModeAddress = 0x80170B50u;
 constexpr std::uint32_t kGxLoadTexObjAddress = 0x80170F2Cu;
 constexpr std::uint32_t kGuestTexObjSize = 0x20u;
 constexpr std::uint32_t kGxDataPtrAddr = 0x803886C8u;
@@ -64,6 +65,12 @@ constexpr std::uint32_t kObservedLodFloatBits = 0x00000000u;
 constexpr std::uint32_t kObservedLodWord0After = 0x00000195u;
 constexpr std::uint32_t kObservedLodWord1After = 0x00000000u;
 
+constexpr std::uint32_t kObservedWrapObj = 0x9018E120u;
+constexpr std::uint32_t kObservedWrapS = 0u;
+constexpr std::uint32_t kObservedWrapT = 0u;
+constexpr std::uint32_t kObservedWrapWord0Before = 0x00000195u;
+constexpr std::uint32_t kObservedWrapWord0After = 0x00000190u;
+
 std::uint32_t CanonicalizeGuestMainRamAddress(std::uint32_t addr) noexcept {
     if (addr < 0x01800000u) {
         return addr;
@@ -93,6 +100,8 @@ constexpr const char* kLoadStatusPath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-gx-load-tex-obj.txt";
 constexpr const char* kLodStatusPath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-gx-init-tex-obj-lod.txt";
+constexpr const char* kWrapStatusPath =
+    "sdmc:/switch/WiiCompiled-Switch/fast-track-gx-init-tex-obj-wrap-mode.txt";
 
 std::mutex gTexObjMutex;
 std::map<std::uint32_t, std::unique_ptr<GXTexObj>> gHostTexObjs;
@@ -257,6 +266,35 @@ void WriteLodStatus(
         Memory::Contains(obj, kGuestTexObjSize) ? Memory::Read32(obj + 0x04u) : 0u);
     std::fclose(out);
 }
+
+void WriteWrapStatus(
+    const char* status,
+    std::uint32_t obj,
+    std::uint32_t wrapS,
+    std::uint32_t wrapT,
+    std::uint32_t word0Before) noexcept {
+    FILE* out = std::fopen(kWrapStatusPath, "w");
+    if (!out) {
+        return;
+    }
+    std::fprintf(
+        out,
+        "status=%s\n"
+        "obj=0x%08x\n"
+        "wrap_s=%u\n"
+        "wrap_t=%u\n"
+        "word0_before=0x%08x\n"
+        "guest_word0=0x%08x\n"
+        "guest_word1=0x%08x\n",
+        status ? status : "<null>",
+        obj,
+        wrapS,
+        wrapT,
+        word0Before,
+        Memory::Contains(obj, kGuestTexObjSize) ? Memory::Read32(obj + 0x00u) : 0u,
+        Memory::Contains(obj, kGuestTexObjSize) ? Memory::Read32(obj + 0x04u) : 0u);
+    std::fclose(out);
+}
 #else
 void WriteStatus(
     const char*,
@@ -289,6 +327,13 @@ void WriteLodStatus(
     std::uint32_t,
     std::uint32_t,
     std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t,
+    std::uint32_t) noexcept {}
+
+void WriteWrapStatus(
+    const char*,
     std::uint32_t,
     std::uint32_t,
     std::uint32_t,
@@ -376,6 +421,19 @@ void WriteLodStatus(
         maxAniso);
     mkw_switch_report_unsupported_translated_dispatch(
         status, kGxInitTexObjLodAddress, cpu);
+    std::abort();
+}
+
+[[noreturn]] void AbortWrapBoundary(
+    const char* status,
+    CpuContext* cpu,
+    std::uint32_t obj,
+    std::uint32_t wrapS,
+    std::uint32_t wrapT,
+    std::uint32_t word0Before) noexcept {
+    WriteWrapStatus(status, obj, wrapS, wrapT, word0Before);
+    mkw_switch_report_unsupported_translated_dispatch(
+        status, kGxInitTexObjWrapModeAddress, cpu);
     std::abort();
 }
 
@@ -788,6 +846,104 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept {
         biasClamp,
         edgeLod,
         maxAniso);
+}
+
+extern "C" void mkw_switch_hle_gx_init_tex_obj_wrap_mode(CpuContext* cpu) noexcept {
+    if (!cpu) {
+        return;
+    }
+
+    const std::uint32_t obj = cpu->gpr[3];
+    const std::uint32_t wrapS = cpu->gpr[4];
+    const std::uint32_t wrapT = cpu->gpr[5];
+
+    mkw_switch_set_fast_track_stage("RMCP01_GX_INIT_TEX_OBJ_WRAP_MODE");
+
+    if (!Memory::IsInitialized() || !Memory::Contains(obj, kGuestTexObjSize)) {
+        AbortWrapBoundary(
+            "GX_INIT_TEX_OBJ_WRAP_MODE_GUEST_UNMAPPED",
+            cpu,
+            obj,
+            wrapS,
+            wrapT,
+            0u);
+    }
+
+    const std::uint32_t word0 = Memory::Read32(obj + 0x00u);
+    const std::uint32_t word1 = Memory::Read32(obj + 0x04u);
+    const std::uint32_t word2 = Memory::Read32(obj + 0x08u);
+    const std::uint32_t word3 = Memory::Read32(obj + 0x0Cu);
+    const std::uint32_t word4 = Memory::Read32(obj + 0x10u);
+    const std::uint32_t word5 = Memory::Read32(obj + 0x14u);
+    const std::uint32_t word6 = Memory::Read32(obj + 0x18u);
+    const std::uint32_t word7 = Memory::Read32(obj + 0x1Cu);
+
+    const bool exactObservedTuple =
+        obj == kObservedWrapObj &&
+        wrapS == kObservedWrapS &&
+        wrapT == kObservedWrapT &&
+        word0 == kObservedWrapWord0Before &&
+        word1 == kObservedLodWord1After &&
+        word2 == kObservedLodWord2 &&
+        word3 == kObservedLodWord3 &&
+        word4 == kObservedLodWord4 &&
+        word5 == kObservedLodWord5 &&
+        word6 == kObservedLodWord6 &&
+        word7 == kObservedLodWord7;
+
+    if (!exactObservedTuple) {
+        AbortWrapBoundary(
+            "GX_INIT_TEX_OBJ_WRAP_MODE_UNPROVEN_TUPLE",
+            cpu,
+            obj,
+            wrapS,
+            wrapT,
+            word0);
+    }
+
+#if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+    try {
+        std::scoped_lock lock(gTexObjMutex);
+        GXTexObj* hostObj = FindLocalHostTexObj(obj);
+        if (!hostObj) {
+            AbortWrapBoundary(
+                "GX_INIT_TEX_OBJ_WRAP_MODE_HOST_OBJ_MISSING",
+                cpu,
+                obj,
+                wrapS,
+                wrapT,
+                word0);
+        }
+        GXInitTexObjWrapMode(hostObj, GX_CLAMP, GX_CLAMP);
+    } catch (...) {
+        AbortWrapBoundary(
+            "GX_INIT_TEX_OBJ_WRAP_MODE_HOST_EXCEPTION",
+            cpu,
+            obj,
+            wrapS,
+            wrapT,
+            word0);
+    }
+#endif
+
+    const std::uint32_t updatedWord0 =
+        (word0 & ~0xFu) |
+        (wrapS & 0x3u) |
+        ((wrapT & 0x3u) << 2u);
+    Memory::Write32(obj + 0x00u, updatedWord0);
+
+    if (Memory::Read32(obj + 0x00u) != kObservedWrapWord0After ||
+        Memory::Read32(obj + 0x04u) != kObservedLodWord1After) {
+        AbortWrapBoundary(
+            "GX_INIT_TEX_OBJ_WRAP_MODE_GUEST_STATE_MISMATCH",
+            cpu,
+            obj,
+            wrapS,
+            wrapT,
+            word0);
+    }
+
+    WriteWrapStatus("wrap-pass", obj, wrapS, wrapT, word0);
 }
 
 extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {

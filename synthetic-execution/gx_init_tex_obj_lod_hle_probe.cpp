@@ -3,7 +3,8 @@
 #if defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK
 
 // Mapping/link-only coverage. Public CI must not fabricate the private
-// Home Button texture object or execute the hardware-owned LOD/wrap tuples.
+// Home Button texture objects or execute either hardware-owned LOD tuple or
+// the hardware-owned wrap tuple.
 static_assert(KnownNativeCpuCall<0x80170A4Cu>::kAvailable);
 static_assert(KnownNativeCpuCall<0x80170B50u>::kAvailable);
 

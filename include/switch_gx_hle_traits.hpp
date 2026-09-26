@@ -317,10 +317,11 @@ struct KnownNativeCpuCall<0x801707F8u> {
     }
 };
 
-// GXInitTexObjLOD (PAL 0x80170A4C). Hardware captures the first Home
-// Button/UI tuple on obj=0x9018E120 with min/mag=GX_LINEAR/GX_LINEAR,
-// minLod=maxLod=lodBias=+0.0f, biasClamp=false, edgeLod=false and
-// GX_ANISO_1. The bridge accepts only that exact tuple and pre-LOD descriptor.
+// GXInitTexObjLOD (PAL 0x80170A4C). Hardware has now captured two exact
+// Home Button/UI tuples, both with min/mag=GX_LINEAR/GX_LINEAR,
+// minLod=maxLod=lodBias=+0.0f, biasClamp=false, edgeLod=false and GX_ANISO_1:
+// obj=0x9018E120 and obj=0x9018E460. The bridge accepts only those exact
+// tuples and their separately proven pre-LOD descriptors.
 template <>
 struct KnownNativeCpuCall<0x80170A4Cu> {
     static constexpr bool kAvailable = true;

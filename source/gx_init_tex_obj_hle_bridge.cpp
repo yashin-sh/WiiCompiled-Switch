@@ -65,6 +65,16 @@ constexpr std::uint32_t kObservedLodFloatBits = 0x00000000u;
 constexpr std::uint32_t kObservedLodWord0After = 0x00000195u;
 constexpr std::uint32_t kObservedLodWord1After = 0x00000000u;
 
+constexpr std::uint32_t kObservedSecondLodObj = 0x9018E460u;
+constexpr std::uint32_t kObservedSecondLodWord0 = 0x00000095u;
+constexpr std::uint32_t kObservedSecondLodWord1 = 0x00000000u;
+constexpr std::uint32_t kObservedSecondLodWord2 = 0x0000FC3Fu;
+constexpr std::uint32_t kObservedSecondLodWord3 = 0x0080A88Fu;
+constexpr std::uint32_t kObservedSecondLodWord4 = 0x00000000u;
+constexpr std::uint32_t kObservedSecondLodWord5 = 0x00000000u;
+constexpr std::uint32_t kObservedSecondLodWord6 = 0x00000000u;
+constexpr std::uint32_t kObservedSecondLodWord7 = 0x00400102u;
+
 constexpr std::uint32_t kObservedWrapObj = 0x9018E120u;
 constexpr std::uint32_t kObservedWrapS = 0u;
 constexpr std::uint32_t kObservedWrapT = 0u;
@@ -739,8 +749,7 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept {
     const std::uint32_t word6 = Memory::Read32(obj + 0x18u);
     const std::uint32_t word7 = Memory::Read32(obj + 0x1Cu);
 
-    const bool exactObservedTuple =
-        obj == kObservedLodObj &&
+    const bool exactObservedArgs =
         minFilter == kObservedLodMinFilter &&
         magFilter == kObservedLodMagFilter &&
         minLodBits == kObservedLodFloatBits &&
@@ -748,7 +757,10 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept {
         lodBiasBits == kObservedLodFloatBits &&
         biasClamp == kObservedLodBiasClamp &&
         edgeLod == kObservedLodEdgeLod &&
-        maxAniso == kObservedLodMaxAniso &&
+        maxAniso == kObservedLodMaxAniso;
+
+    const bool exactFirstObservedDescriptor =
+        obj == kObservedLodObj &&
         word0 == kObservedLodWord0 &&
         word1 == kObservedLodWord1 &&
         word2 == kObservedLodWord2 &&
@@ -758,7 +770,19 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept {
         word6 == kObservedLodWord6 &&
         word7 == kObservedLodWord7;
 
-    if (!exactObservedTuple) {
+    const bool exactSecondObservedDescriptor =
+        obj == kObservedSecondLodObj &&
+        word0 == kObservedSecondLodWord0 &&
+        word1 == kObservedSecondLodWord1 &&
+        word2 == kObservedSecondLodWord2 &&
+        word3 == kObservedSecondLodWord3 &&
+        word4 == kObservedSecondLodWord4 &&
+        word5 == kObservedSecondLodWord5 &&
+        word6 == kObservedSecondLodWord6 &&
+        word7 == kObservedSecondLodWord7;
+
+    if (!exactObservedArgs ||
+        (!exactFirstObservedDescriptor && !exactSecondObservedDescriptor)) {
         AbortLodBoundary(
             "GX_INIT_TEX_OBJ_LOD_UNPROVEN_TUPLE",
             cpu,

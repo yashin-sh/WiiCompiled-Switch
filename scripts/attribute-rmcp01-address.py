@@ -101,7 +101,9 @@ def parse_address(value: str) -> int:
     return address
 
 
-def run_git(args: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+def run_git(
+    args: list[str], cwd: Path | None = None
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         ["git", *args],
         cwd=cwd,
@@ -375,9 +377,7 @@ def attribute(
         object_offset=f"+0x{address - split.start:X}" if split is not None else None,
         symbol=symbol.symbol if symbol is not None else None,
         symbol_range=(
-            f"0x{symbol.start:08X}..0x{symbol.end:08X}"
-            if symbol is not None
-            else None
+            f"0x{symbol.start:08X}..0x{symbol.end:08X}" if symbol is not None else None
         ),
         symbol_offset=f"+0x{address - symbol.start:X}" if symbol is not None else None,
         source_path=symbol.source_path if symbol is not None else None,

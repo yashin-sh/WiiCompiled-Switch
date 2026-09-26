@@ -404,6 +404,18 @@ inline void CloseObservedKdRequest(CpuContext* cpu) noexcept {
         return;
     }
 
+    if (fd == kThirdNetworkDeviceFd &&
+        gThirdKdRequestOpen &&
+        gThirdKdGeneratedUserIdSeen) {
+        // Hardware-proven third KD request close immediately after cmd=0x0F.
+        // Pinned Network_HLE_Close removes the valid network device handle and
+        // returns IOS result 0 without any additional guest-memory mutation.
+        gThirdKdRequestOpen = false;
+        WriteCloseStatus("close-third-pass", fd);
+        cpu->gpr[3] = 0u;
+        return;
+    }
+
     AbortCloseBoundary("IOS_CLOSE_KD_UNPROVEN_FD", cpu);
 }
 
@@ -412,7 +424,7 @@ inline void CloseObservedKdRequest(CpuContext* cpu) noexcept {
 // IOS_Open / NAND_IOS_Open_HLE (PAL 0x801938F8). Hardware identifies the
 // first live request exactly as "/dev/net/kd/request", mode 0. Mirror only the
 // pinned device-allocation result here. The specializations below cover only
-// the first proven KD command-2 ioctl and the exact fd-2000 close; ioctlv and
+// the hardware-proven KD ioctl/close sequences for fds 2000..2002; ioctlv and
 // neighboring IOS/network devices remain unsupported until hardware reaches
 // them.
 template <>
@@ -441,9 +453,9 @@ struct KnownNativeCpuCall<0x80194290u> {
 };
 
 // IOS_Close / NAND_IOS_Close_HLE (PAL 0x80193AD8). Hardware has proven the
-// fd-2000 close after the first command-2 Boot probe and the fd-2001 close
-// immediately after the second request's command-1 suspend call. Mirror only
-// those exact live handles/sequences.
+// fd-2000 close after the first command-2 Boot probe, the fd-2001 close after
+// command-1 suspend, and the fd-2002 close after command-0x0F generated-user-id.
+// Mirror only those exact live handles/sequences.
 template <>
 struct KnownNativeCpuCall<0x80193AD8u> {
     static constexpr bool kAvailable = true;

@@ -51,6 +51,27 @@ Potential WiiCompiled-Switch uses:
 
 DTK is an analysis/build-support tool, not a replacement runtime.
 
+
+#### Local attribution helper
+
+The repository now provides:
+
+```bash
+python3 scripts/attribute-rmcp01-address.py --fetch 0x80170A4C
+```
+
+The helper consumes public `doldecomp/mkw` split/source metadata to classify
+an observed RMCP01 address as `main.dol` vs `StaticR.rel`, identify the
+owning translation-unit range, and recover a PAL symbol/source range when one
+is publicly annotated. If DTK is installed, it also emits the appropriate
+local `dol info` / `rel info` follow-up command.
+
+This is an attribution accelerator only. It does not change the rule that
+hardware decides which boundary is implemented and pinned WiiCompiled defines
+the runtime behavior to mirror.
+
+Full usage: `docs/RMCP01_ADDRESS_ATTRIBUTION.md`.
+
 ### 4. NWiiRecomp — secondary architecture reference only
 
 Repository: `BlackLineInteractive/NWiiRecomp`

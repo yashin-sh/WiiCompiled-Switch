@@ -71,9 +71,7 @@ def build_manifest(
         "[included]",
     ]
     for path in included:
-        lines.append(
-            f"{path.name}\t{path.stat().st_size}\tsha256={sha256(path)}"
-        )
+        lines.append(f"{path.name}\t{path.stat().st_size}\tsha256={sha256(path)}")
 
     if excluded:
         lines.extend(["", "[excluded-verbose]"])
@@ -183,7 +181,9 @@ def main() -> int:
     if not source.is_dir():
         parser.error(f"source directory does not exist: {source}")
 
-    default_name = "fast-track-run-full.zip" if args.full else "fast-track-run-compact.zip"
+    default_name = (
+        "fast-track-run-full.zip" if args.full else "fast-track-run-compact.zip"
+    )
     output = (
         args.output.expanduser().resolve()
         if args.output is not None
@@ -205,7 +205,9 @@ def main() -> int:
     ratio = (included_bytes / total_bytes * 100.0) if total_bytes else 0.0
     print(f"created: {output}")
     print(f"source diagnostics : {total} files / {total_bytes} bytes")
-    print(f"report selection   : {included} files / {included_bytes} bytes ({ratio:.1f}%)")
+    print(
+        f"report selection   : {included} files / {included_bytes} bytes ({ratio:.1f}%)"
+    )
     print("archive contents   : fast-track-report.txt + manifest.txt")
     if args.raw:
         print("raw originals      : included under raw/")

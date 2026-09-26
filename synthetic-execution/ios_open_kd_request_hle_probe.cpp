@@ -3,9 +3,10 @@
 #if defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK
 
 // Mapping/link-only coverage. Hardware proves the exact PAL IOS_Open request,
-// first IOS_Ioctl KD command-2 boundary, later fd-2001 command-1 suspend
-// boundary, and the hardware-proven fd-2000/fd-2001 IOS_Close mappings; public
-// CI deliberately does not fabricate guest buffers or a game call.
+// first IOS_Ioctl KD command-2 boundary, fd-2001 command-1 suspend, fd-2002
+// command-0x0F generated-user-id boundary, and the hardware-proven
+// fd-2000/fd-2001 IOS_Close mappings; public CI deliberately does not
+// fabricate guest buffers or a game call.
 static_assert(KnownNativeCpuCall<0x801938F8u>::kAvailable);
 static_assert(KnownNativeCpuCall<0x80194290u>::kAvailable);
 static_assert(KnownNativeCpuCall<0x80193AD8u>::kAvailable);

@@ -172,6 +172,10 @@ Use the helper in this order for every ambiguous blocker:
 The helper improves attribution speed. It does not authorize pre-porting
 neighboring functions.
 
+For a static look-ahead from the attributed symbol, use
+`scripts/forecast-rmcp01-frontier.py`. See
+`docs/RMCP01_FRONTIER_FORECAST.md`.
+
 ## Self-test
 
 The parser includes a Nintendo-data-free self-test:

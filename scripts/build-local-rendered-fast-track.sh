@@ -112,3 +112,8 @@ echo "  /switch/WiiCompiled-Switch/fast-track-thread-events.txt"
 echo "  /switch/WiiCompiled-Switch/fast-track-post-video-trace.txt"
 echo "  /switch/WiiCompiled-Switch/fast-track-dispatch-blocker.txt"
 echo "  /switch/WiiCompiled-Switch/fast-track-exception.txt"
+echo
+echo "Optional: after copying the SD diagnostics to your PC, bundle them into one"
+echo "compact upload artifact with:"
+echo "  python3 scripts/package-fast-track-run.py /path/to/copied/WiiCompiled-Switch"
+echo "Use --full when scheduler/thread/liveness traces are needed."

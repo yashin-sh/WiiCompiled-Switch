@@ -37,6 +37,7 @@ extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_init_tex_obj(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_init_tex_obj_wrap_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept;
 
 template <>
@@ -326,6 +327,19 @@ struct KnownNativeCpuCall<0x80170A4Cu> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_init_tex_obj_lod(cpu);
+    }
+};
+
+// GXInitTexObjWrapMode (PAL 0x80170B50). Hardware captures the first
+// Home Button/UI tuple immediately after the proven GXInitTexObjLOD call:
+// obj=0x9018E120, wrapS=GX_CLAMP, wrapT=GX_CLAMP. The bridge requires the
+// exact post-LOD descriptor before applying the pinned guest/Aurora mutation.
+template <>
+struct KnownNativeCpuCall<0x80170B50u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_init_tex_obj_wrap_mode(cpu);
     }
 };
 

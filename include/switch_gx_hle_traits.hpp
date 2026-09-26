@@ -331,10 +331,11 @@ struct KnownNativeCpuCall<0x80170A4Cu> {
     }
 };
 
-// GXInitTexObjWrapMode (PAL 0x80170B50). Hardware captures the first
-// Home Button/UI tuple immediately after the proven GXInitTexObjLOD call:
-// obj=0x9018E120, wrapS=GX_CLAMP, wrapT=GX_CLAMP. The bridge requires the
-// exact post-LOD descriptor before applying the pinned guest/Aurora mutation.
+// GXInitTexObjWrapMode (PAL 0x80170B50). Hardware has now captured two exact
+// Home Button/UI tuples immediately after proven GXInitTexObjLOD calls:
+// obj=0x9018E120 and obj=0x9018E460, both with wrapS=GX_CLAMP /
+// wrapT=GX_CLAMP. The bridge requires each exact post-LOD descriptor before
+// applying the pinned guest/Aurora mutation.
 template <>
 struct KnownNativeCpuCall<0x80170B50u> {
     static constexpr bool kAvailable = true;

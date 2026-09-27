@@ -475,6 +475,18 @@ inline void CloseObservedKdRequest(CpuContext* cpu) noexcept {
         return;
     }
 
+    if (fd == kFourthNetworkDeviceFd &&
+        gFourthKdRequestOpen &&
+        gFourthKdResumeSeen) {
+        // Hardware-proven fourth KD request close immediately after cmd=3.
+        // Pinned Network_HLE_Close removes the valid network device handle and
+        // returns IOS result 0 without any additional guest-memory mutation.
+        gFourthKdRequestOpen = false;
+        WriteCloseStatus("close-fourth-pass", fd);
+        cpu->gpr[3] = 0u;
+        return;
+    }
+
     AbortCloseBoundary("IOS_CLOSE_KD_UNPROVEN_FD", cpu);
 }
 
@@ -514,8 +526,9 @@ struct KnownNativeCpuCall<0x80194290u> {
 
 // IOS_Close / NAND_IOS_Close_HLE (PAL 0x80193AD8). Hardware has proven the
 // fd-2000 close after the first command-2 Boot probe, the fd-2001 close after
-// command-1 suspend, and the fd-2002 close after command-0x0F generated-user-id.
-// Mirror only those exact live handles/sequences.
+// command-1 suspend, the fd-2002 close after command-0x0F generated-user-id,
+// and the fd-2003 close after command-3 resume. Mirror only those exact live
+// handles/sequences.
 template <>
 struct KnownNativeCpuCall<0x80193AD8u> {
     static constexpr bool kAvailable = true;

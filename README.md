@@ -8,108 +8,81 @@ Run a legally-owned Mario Kart Wii dump through the WiiCompiled static-recompila
 
 ## Project progress
 
+**First real RMCP01 FIFO/Aurora render work: ✅ hardware validated**
+
 **First game-facing RMCP01 GPU present: ✅ hardware validated**
 
-**Estimated progress toward first visually confirmed Mario Kart Wii image: ~90%**
+**Visually confirmed Mario Kart Wii image: ❌ not yet proven**
 
-```text
-██████████████████░░ 90%
-```
-
-> The previous “toward first rendered frame” estimate is retired because a real RMCP01 frame with `hadWork=1` has now successfully crossed `GXCopyDisp` and `g_surface.Present()` on hardware. The remaining percentage tracks visual/game-content confirmation rather than GPU viability: the present is proven, but the logs alone do not prove that the displayed pixels already form a visually correct Mario Kart Wii image.
+The project now executes real WiiCompiled-translated RMCP01 code on Switch,
+loads real user-owned boot/StaticR/Home Button resources, produces real GX FIFO
+work, and presents frames successfully through Aurora → Dawn/WebGPU →
+Vulkan/NVK. The remaining first-image work is no longer about proving that the
+GPU backend can present; it is about advancing the real game/UI initialization
+path far enough that the presented pixels are visually correct Mario Kart Wii
+content.
 
 ## Current status
 
-The project executes real WiiCompiled-translated Mario Kart Wii code on real Switch hardware and has **reached PAL `main()` (`0x8000B6B0`) after 605 translated dispatches**.
+The post-`main` fast-track tracked in issue #117 has hardware-crossed the
+scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
+TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
+presents, and multiple Home Button/UI texture-object setup calls.
 
-The post-`main` fast-track tracked in issue #117 has now hardware-crossed the observed path through guest thread/context switching, VI/GX bootstrap, WPAD/PAD initialization, timing, power-callback state, console-area lookup, and `OSWakeupThread`.
-
-The rendered fast-track has since advanced far beyond that early sustained-retrace milestone. The latest accepted 2026-09-25 hardware evidence proves the following boot/resource/render chain:
-
-- user-owned FST published at `0x97DC0000` (64,224 bytes / 2,096 entries);
-- real `/Boot/Strap/eu/English.szs` DVD read completed with 299,969 bytes;
-- pinned `EGG::Decomp::decodeSZS (0x80218C2C)` expanded it to 2,627,200 bytes;
-- VI/post-retrace wakes the sleeping AsyncDisplay/default thread and execution resumes;
-- real RMCP01 FIFO work reaches Aurora/Dawn/NVK and a game-facing present succeeds;
-- pinned `GXInitTexObj (0x801707F8)` is hardware-crossed with `status=init-pass` for the observed 832x456 boot texture;
-- the following exact IOS request is `/dev/net/kd/request`, mode 0.
-
-PR #232's exact `IOS_Open (0x801938F8)` bridge is now **hardware-crossed**:
-`/dev/net/kd/request`, mode 0, returns `fd=2000` and execution durably
-continues into the next IOS boundary.
-
-PR #235's first KD command-2 Boot probe is now **hardware-crossed**:
-`fast-track-ios-ioctl-kd-cmd2.txt` reports `cmd2-boot-probe-pass`, and
-execution durably advances to a new direct boundary.
-
-PR #236's exact `IOS_Close (0x80193AD8)` bridge is now **hardware-crossed**:
-`fast-track-ios-close-kd-request.txt` reports `close-pass` for fd 2000 and
-execution durably advances far beyond the IOS boundary.
-
-The same run reaches `RKSystem::run`, services a second real DVD read for
-`/rel/StaticR.rel` (4,903,876 bytes), and continues through another round of
-GX state setup. The exact blocker remains `GXLoadTexObj (0x80170F2C)` with
-`oa=0x901136B4`, `tid=0`, but the merged diagnostics now capture the full
-32-byte descriptor: 832x456, format 4, clamp/clamp, no mipmaps, backing
-`0x00F103E0`. That exact texture load and the observed `GXSetTexCoordGen2 (0x8016E37C)`
-identity/default tuple are now hardware-crossed. The following merged
-`StrapScene::CheckInput (0x800077C8)` candidate is also crossed: the next run
-continues to 17,800 translated dispatches, 765 RMCP01 FIFO writes and 61
-successful presents with zero failures before reaching the first exact
-StaticR.rel prolog boundary. The current blocker is
-`INDIRECT_CALL_MISS 0x8055531C`, identified by the pinned map as
-`RelProlog`, with the observed module base `r3=0x805102E0`.
+Latest accepted graphics-path evidence reaches:
 
 ```text
-PAL main / post-main runtime                                       ✅ hardware crossed
-  ↓
-TaskThread → local DVD read of English.szs                         ✅ hardware crossed
-  ↓
-AsyncDisplay VI idle wake                                          ✅ hardware crossed
-  ↓
-EGG::Decomp::decodeSZS                                             ✅ hardware crossed
-  ↓
-real RMCP01 FIFO → GXCopyDisp → successful GPU present             ✅ hardware crossed
-  ↓
-GXInitTexObj (0x801707F8)                                          ✅ hardware crossed
-  ↓
-IOS_Open /dev/net/kd/request → fd 2000                             ✅ hardware crossed
-  ↓
-IOS_Ioctl (0x80194290), fd 2000, cmd 2                             ✅ hardware crossed
-  in=0x80356F20/0x20 out=0x80356F40/0x20; reply word=-42, r3=0
-  ↓
-IOS_Close (0x80193AD8), fd 2000                                    ✅ hardware crossed
-  ↓
-/rel/StaticR.rel local DVD read                                    ✅ hardware crossed
-  4,903,876 bytes; RKSystem::run reached
-  ↓
-GXLoadTexObj (0x80170F2C), oa=0x901136B4 tid=0                     ✅ hardware crossed
-  832x456 RGB565, clamp/clamp, no mipmaps, data=0x00F103E0
-  ↓
-GXSetTexCoordGen2 (0x8016E37C)                                     ✅ hardware crossed
-  TEXCOORD0 / MTX2x4 / TEX0 / IDENTITY / false / PTIDENTITY
-  ↓
-StrapScene::CheckInput (0x800077C8)                                ✅ hardware crossed
-  scenePtr=0x90112A34; pinned guest-visible result r3=1
-  ↓
-StaticR RelProlog (0x8055531C)                                     ✅ hardware crossed
-  269 StaticR dispatches; durable later DOL/OS execution
-  ↓
-OSDetachThread (0x801AA4EC)                                        ✅ hardware crossed
-  TaskThread 0x901187C0; WAITING state 4; attr=1; empty join queue
-  ↓
-OSCancelThread (0x801AA1D4)                                        ✅ hardware crossed
-  TaskThread termination completed; durable later UI/GX execution
-  ↓
-GXInitTexObjLOD (0x80170A4C)                                       🟡 exact candidate; hardware validation pending
-  obj=0x9018E120; min/mag=1/1; min/max/bias=0/0/0; bc/el/aniso=0/0/0
-  ↓
-next exact hardware-attributed graphics/resource/game frontier     ⬜ pending
-  ↓
-visually confirmed Mario Kart Wii image                            ⬜ pending
+RMCP01 FIFO writes    : 1408
+GXCopyDisp calls      : 92
+present successes     : 92
+present failures      : 0
+StaticR dispatches    : 422
+FST structurally valid: YES
+renderer active       : YES
 ```
 
-The complete blocker-by-blocker history and current checklist live in [`ROADMAP.md`](ROADMAP.md). Hardware evidence is recorded in dated files under [`docs/`](docs/).
+Hardware has now crossed three exact `GXInitTexObjLOD (0x80170A4C)`
+descriptors:
+
+- `obj=0x9018E120`;
+- `obj=0x9018E460`;
+- `obj=0x9018E140`.
+
+The first two exact `GXInitTexObjWrapMode (0x80170B50)` tuples are
+hardware-crossed. The third wrap tuple on `obj=0x9018E140` is merged and
+still requires durable hardware progression beyond that call.
+
+In parallel, the scheduler can reach the NWC24/KD path first. Hardware has
+crossed the exact sequence through:
+
+```text
+fd 2000 / cmd 2 / close
+fd 2001 / cmd 1 / close
+fd 2002 / cmd 0x0F / close
+fd 2003 / cmd 3
+```
+
+The latest accepted 2026-09-27 run stops at `IOS_Close (0x80193AD8)` for
+`fd=2003`. The exact close candidate is merged on `main` and now requires
+hardware validation.
+
+So the current hardware gates are scheduler-order dependent:
+
+```text
+GX path: third GXInitTexObjWrapMode tuple on obj 0x9018E140
+KD path: IOS_Close(2003) after the proven cmd-3 resume
+```
+
+Whichever path hardware reaches first defines the next exact blocker. No
+neighboring GX or KD behavior is pre-ported.
+
+The logs still do **not** prove a visually correct Mario Kart Wii image.
+
+The complete blocker-by-blocker history and current checklist live in
+[`ROADMAP.md`](ROADMAP.md). Hardware evidence is recorded in dated files under
+[`docs/`](docs/). Static look-ahead is available through
+`scripts/forecast-rmcp01-frontier.py`, but hardware evidence remains the
+authority for runtime patches.
 
 ## Important limitations
 
@@ -123,7 +96,13 @@ The project does not fabricate Nintendo game data. The user's own RMCP01 `DATA/s
 
 ### IOS / network
 
-The first observed IOS network request is `/dev/net/kd/request`, mode 0; its fd-2000 open, first KD command-2 Boot probe, and fd-2000 close are all hardware-crossed. No broader IOS/network support is claimed: other closes, command 1/3, repeated command 2, ioctlv, NCD, IP, SSL, DNS, sockets, and online play remain outside the observed path.
+The observed boot-time IOS network path is `/dev/net/kd/request`, mode 0.
+Hardware has crossed exact KD request sequences for fd 2000 through fd 2003,
+including command 2 (Boot probe), command 1 (suspend), command 0x0F
+(generated-user-id), and command 3 (resume). Closes for fd 2000 through fd 2002
+are hardware-crossed; the exact fd-2003 close candidate is merged and awaiting
+hardware validation. No generic IOS/network, ioctlv, NCD, IP, SSL, DNS,
+socket, or online-play support is claimed.
 
 ### Input
 
@@ -169,7 +148,17 @@ The fast-track is intentionally headless. Use the SD diagnostic files instead of
 /switch/WiiCompiled-Switch/fast-track-exception.txt
 ```
 
-For future prolonged runs, `fast-track-heartbeat-history.txt` remains the strongest stall diagnostic. The 2026-09-18 hardware result additionally proves active VI progression from the callback's guest retrace value itself: `r3 = 0x365E` at `PostRetraceCallback`.
+For routine sharing, consolidate the generated diagnostics into one compact
+archive:
+
+```sh
+python3 scripts/package-fast-track-run.py /path/to/copied/WiiCompiled-Switch
+```
+
+Use `--full` when scheduler/thread/liveness history is needed. Runtime still
+writes the full durable diagnostics on SD while first-frame bring-up remains
+active. `fast-track-heartbeat-history.txt` remains the strongest prolonged
+stall diagnostic.
 
 ## Public CI boundary
 

@@ -241,6 +241,14 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         // public probe can exercise the exact native dispatch without Nintendo
         // data or a Horizon audio backend.
         InvokeDirectCpu<0x80124048u>(ctx);
+
+        // After the fourth GX texture LOD descriptor, hardware reaches
+        // OSSetPeriodicAlarm. A null synthetic alarm proves the exact native
+        // dispatch compiles and links without requiring Nintendo guest memory.
+        const std::uint32_t savedAlarmR3 = ctx->gpr[3];
+        ctx->gpr[3] = 0u;
+        InvokeDirectCpu<0x801A08E0u>(ctx);
+        ctx->gpr[3] = savedAlarmR3;
     }
 
     // Keep the existing synthetic startup graph auditable in the same ELF.

@@ -84,17 +84,19 @@ real RMCP01 FIFO work                      ✅ hardware validated
   ↓
 GXCopyDisp / GPU present                   ✅ hardware validated
   ↓
-Home Button texture-object initialization  🟡 active blocker family
-  ↘
-KD/NWC24 scheduler path                    🟡 alternate scheduler-order path
+Home Button texture-object initialization  ✅ four LOD / three wrap tuples crossed
+  ↓
+RVL OS alarm initialization                 🟡 current blocker family
 ```
 
-As of 2026-09-27, the KD path is hardware-crossed through fd 2003 close,
-and PAL `AIInit (0x801240B0)` plus `__AXOutInitDSP (0x801269BC)` are
-hardware-crossed. The merged pending gates are the third exact
-`GXInitTexObjWrapMode` tuple on `obj=0x9018E140` and
-`AIRegisterDMACallback (0x80123F88)`. Which gate appears first depends on
-guest scheduling. The visually correct Mario Kart Wii image is still unproven.
+As of 2026-09-27, the KD path is hardware-crossed through fd 2003 close;
+PAL `AIInit (0x801240B0)`, `__AXOutInitDSP (0x801269BC)`,
+`AIRegisterDMACallback (0x80123F88)`, `AIInitDMA (0x80123FCC)` and
+`AIStartDMA (0x80124048)` are hardware-crossed. Four exact
+`GXInitTexObjLOD` descriptors and three exact `GXInitTexObjWrapMode`
+tuples are hardware-crossed. The current exact gate is
+`OSSetPeriodicAlarm (0x801A08E0)`. The visually correct Mario Kart Wii
+image is still unproven.
 
 ## Important boundary lessons from hardware
 

@@ -149,6 +149,207 @@ struct KnownNativeCpuCall<0x801AAD5Cu> {
     }
 };
 
+namespace mkw::switch_os_alarm_hle {
+
+constexpr std::uint32_t kSystemTimeBaseHi = 0x800030D8u;
+constexpr std::uint32_t kSystemTimeBaseLo = 0x800030DCu;
+constexpr std::uint32_t kAlarmQueueOffsetFromR13 = 0x6360u;
+
+constexpr std::uint32_t kAlarmHandlerOffset = 0x00u;
+constexpr std::uint32_t kAlarmFireHiOffset = 0x08u;
+constexpr std::uint32_t kAlarmFireLoOffset = 0x0Cu;
+constexpr std::uint32_t kAlarmPrevOffset = 0x10u;
+constexpr std::uint32_t kAlarmNextOffset = 0x14u;
+constexpr std::uint32_t kAlarmPeriodHiOffset = 0x18u;
+constexpr std::uint32_t kAlarmPeriodLoOffset = 0x1Cu;
+constexpr std::uint32_t kAlarmBeginHiOffset = 0x20u;
+constexpr std::uint32_t kAlarmBeginLoOffset = 0x24u;
+constexpr std::uint32_t kAlarmSize = 0x2Cu;
+
+inline std::uint64_t JoinU64(std::uint32_t hi, std::uint32_t lo) noexcept {
+    return (static_cast<std::uint64_t>(hi) << 32) | lo;
+}
+
+inline void WriteU64(std::uint32_t addr, std::uint64_t value) {
+    Memory::Write32(addr, static_cast<std::uint32_t>(value >> 32));
+    Memory::Write32(addr + 4u, static_cast<std::uint32_t>(value));
+}
+
+inline std::uint64_t ReadU64(std::uint32_t addr) {
+    return JoinU64(Memory::Read32(addr), Memory::Read32(addr + 4u));
+}
+
+inline std::uint64_t ReadStableTimeBase() noexcept {
+    while (true) {
+        const std::uint32_t hi1 = PPC_Mftbu();
+        const std::uint32_t lo = PPC_Mftb();
+        const std::uint32_t hi2 = PPC_Mftbu();
+        if (hi1 == hi2) {
+            return JoinU64(hi1, lo);
+        }
+    }
+}
+
+inline std::uint64_t ReadSystemTimeBase() {
+    if (!Memory::IsInitialized() || !Memory::Contains(kSystemTimeBaseHi, 8u)) {
+        return 0u;
+    }
+    return JoinU64(
+        Memory::Read32(kSystemTimeBaseHi),
+        Memory::Read32(kSystemTimeBaseLo));
+}
+
+inline std::uint64_t GetSystemTime() {
+    return ReadSystemTimeBase() + ReadStableTimeBase();
+}
+
+inline void SanitizeQueue(std::uint32_t queueBase) {
+    const std::uint32_t head = Memory::Read32(queueBase);
+    const std::uint32_t tail = Memory::Read32(queueBase + 4u);
+    if (head == 0u || !Memory::Contains(head, kAlarmSize)) {
+        return;
+    }
+
+    const std::uint32_t prev = Memory::Read32(head + kAlarmPrevOffset);
+    const std::uint32_t next = Memory::Read32(head + kAlarmNextOffset);
+    if (head == tail && prev == head && next == head) {
+        Memory::Write32(queueBase, 0u);
+        Memory::Write32(queueBase + 4u, 0u);
+        Memory::Write32(head + kAlarmPrevOffset, 0u);
+        Memory::Write32(head + kAlarmNextOffset, 0u);
+    }
+}
+
+inline void InsertAlarm(
+    std::uint32_t queueBase,
+    std::uint32_t alarm,
+    std::uint64_t requestedFire,
+    std::uint32_t handler) {
+    const std::uint64_t repeat = ReadU64(alarm + kAlarmPeriodHiOffset);
+    std::uint64_t fire = requestedFire;
+
+    if (static_cast<std::int64_t>(repeat) > 0) {
+        const std::uint64_t now = GetSystemTime();
+        const std::uint64_t begin = ReadU64(alarm + kAlarmBeginHiOffset);
+        fire = begin;
+        if (static_cast<std::int64_t>(begin) < static_cast<std::int64_t>(now)) {
+            fire += repeat * (((now - begin) / repeat) + 1u);
+        }
+    }
+
+    Memory::Write32(alarm + kAlarmHandlerOffset, handler);
+    WriteU64(alarm + kAlarmFireHiOffset, fire);
+
+    std::uint32_t prev = 0u;
+    std::uint32_t cur = Memory::Read32(queueBase);
+
+    while (cur != 0u) {
+        if (!Memory::Contains(cur, kAlarmSize)) {
+            return;
+        }
+
+        const std::uint64_t curFire = ReadU64(cur + kAlarmFireHiOffset);
+        if (static_cast<std::int64_t>(curFire) > static_cast<std::int64_t>(fire)) {
+            break;
+        }
+
+        prev = cur;
+        cur = Memory::Read32(cur + kAlarmNextOffset);
+    }
+
+    if (prev == 0u) {
+        Memory::Write32(alarm + kAlarmPrevOffset, 0u);
+        Memory::Write32(alarm + kAlarmNextOffset, cur);
+        if (cur != 0u) {
+            Memory::Write32(cur + kAlarmPrevOffset, alarm);
+        } else {
+            Memory::Write32(queueBase + 4u, alarm);
+        }
+        Memory::Write32(queueBase, alarm);
+        return;
+    }
+
+    Memory::Write32(alarm + kAlarmPrevOffset, prev);
+    Memory::Write32(alarm + kAlarmNextOffset, cur);
+    Memory::Write32(prev + kAlarmNextOffset, alarm);
+    if (cur != 0u) {
+        Memory::Write32(cur + kAlarmPrevOffset, alarm);
+    } else {
+        Memory::Write32(queueBase + 4u, alarm);
+    }
+}
+
+} // namespace mkw::switch_os_alarm_hle
+
+// OSSetPeriodicAlarm (PAL 0x801A08E0). Real Switch hardware reaches this after
+// crossing the fourth exact GXInitTexObjLOD descriptor. Pinned WiiCompiled
+// preserves the RVL guest alarm fields and sorted queue insertion while its
+// PPCMtdec host boundary is stubbed. Mirror exactly that guest-visible state;
+// do not invent a host timer, alarm pump, or neighboring alarm API.
+template <>
+struct KnownNativeCpuCall<0x801A08E0u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        const std::uint32_t alarm = cpu->gpr[3];
+        const std::uint32_t startHi = cpu->gpr[5];
+        const std::uint32_t startLo = cpu->gpr[6];
+        const std::uint32_t periodHi = cpu->gpr[7];
+        const std::uint32_t periodLo = cpu->gpr[8];
+        const std::uint32_t handler = cpu->gpr[9];
+
+        const std::uint32_t r13 = cpu->gpr[13];
+        if (alarm == 0u || r13 < mkw::switch_os_alarm_hle::kAlarmQueueOffsetFromR13) {
+            return;
+        }
+
+        const std::uint32_t queueBase =
+            r13 - mkw::switch_os_alarm_hle::kAlarmQueueOffsetFromR13;
+
+        mkw_switch_hle_os_disable_interrupts(cpu);
+        const std::uint32_t irqState = cpu->gpr[3];
+
+        try {
+            if (!Memory::IsInitialized() ||
+                !Memory::Contains(alarm, mkw::switch_os_alarm_hle::kAlarmSize) ||
+                !Memory::Contains(queueBase, 8u)) {
+                cpu->gpr[3] = irqState;
+                mkw_switch_hle_os_restore_interrupts(cpu);
+                return;
+            }
+
+            mkw::switch_os_alarm_hle::SanitizeQueue(queueBase);
+
+            mkw::switch_os_alarm_hle::WriteU64(
+                alarm + mkw::switch_os_alarm_hle::kAlarmPeriodHiOffset,
+                mkw::switch_os_alarm_hle::JoinU64(periodHi, periodLo));
+
+            const std::uint64_t begin =
+                mkw::switch_os_alarm_hle::ReadSystemTimeBase() +
+                mkw::switch_os_alarm_hle::JoinU64(startHi, startLo);
+            mkw::switch_os_alarm_hle::WriteU64(
+                alarm + mkw::switch_os_alarm_hle::kAlarmBeginHiOffset,
+                begin);
+
+            mkw::switch_os_alarm_hle::InsertAlarm(
+                queueBase,
+                alarm,
+                0u,
+                handler);
+        } catch (...) {
+            // Keep guest-memory faults contained at the native HLE boundary,
+            // matching the rest of the Switch OS bridge.
+        }
+
+        cpu->gpr[3] = irqState;
+        mkw_switch_hle_os_restore_interrupts(cpu);
+    }
+};
+
 // SCCheckStatus (PAL 0x801B0220). OSInit polls this while SYSCONF is being
 // loaded asynchronously through NAND IPC. Pinned WiiCompiled has no matching
 // asynchronous IOS callback pump for this path, so its native override returns

@@ -209,6 +209,14 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         ctx->gpr[3] = 0u;
         InvokeDirectCpu<0x801240B0u>(ctx);
         ctx->gpr[3] = savedAiR3;
+
+        // The next hardware-observed audio boundary is __AXOutInitDSP. Keep the
+        // public probe Nintendo-data-free by using an unmapped synthetic r13;
+        // this still proves the exact native dispatch compiles and links.
+        const std::uint32_t savedAxR13 = ctx->gpr[13];
+        ctx->gpr[13] = 0u;
+        InvokeDirectCpu<0x801269BCu>(ctx);
+        ctx->gpr[13] = savedAxR13;
     }
 
     // Keep the existing synthetic startup graph auditable in the same ELF.

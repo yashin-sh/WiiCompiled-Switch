@@ -15,7 +15,6 @@
 //   0x801A1358 __OSInitAudioSystem
 //   0x801A1520 __OSStopAudioSystem
 
-
 // Real-Switch hardware reached PAL AIInit (0x801240B0) with r3=0 after the
 // fourth KD request close was crossed. Pinned WiiCompiled initializes the
 // guest-visible AI globals on the first call and separately starts a desktop

@@ -201,6 +201,14 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         InvokeDirectCpu<0x8012E64Cu>(ctx); // PPCMtwpar
         InvokeDirectCpu<0x8012E654u>(ctx); // PPCDisableSpeculation
         InvokeDirectCpu<0x8012E684u>(ctx); // PPCMthid4
+
+        // Real hardware now reaches PAL AIInit after the fourth KD close. The
+        // public synthetic fixture proves the exact native dispatch without
+        // requiring Nintendo data or a Horizon audio backend.
+        const std::uint32_t savedAiR3 = ctx->gpr[3];
+        ctx->gpr[3] = 0u;
+        InvokeDirectCpu<0x801240B0u>(ctx);
+        ctx->gpr[3] = savedAiR3;
     }
 
     // Keep the existing synthetic startup graph auditable in the same ELF.

@@ -109,6 +109,16 @@
 - `HARDWARE_RESULTS_2026-09-25_OS_CANCEL_THREAD_LIVE_PATH.md` — captures the complete WAITING/detached/singleton-queue OSCancelThread state and defines the strict first cancellation candidate
 - `HARDWARE_RESULTS_2026-09-25_OS_CANCEL_THREAD_CROSSED_GX_INIT_TEX_OBJ_LOD_FRONTIER.md` — hardware-crosses OSCancelThread, records Home Button/UI resource progress and moves the exact frontier to GXInitTexObjLOD diagnostics
 - `HARDWARE_RESULTS_2026-09-25_GX_INIT_TEX_OBJ_LOD_TUPLE_CAPTURED.md` — captures the complete first Home Button/UI LOD tuple and defines the strict one-tuple GXInitTexObjLOD candidate
+- `HARDWARE_RESULTS_2026-09-26_GX_INIT_TEX_OBJ_WRAP_MODE_FRONTIER.md` — crosses the first LOD tuple and exposes the first exact wrap tuple
+- `HARDWARE_RESULTS_2026-09-26_SECOND_GX_INIT_TEX_OBJ_LOD_FRONTIER.md` — crosses the first wrap and captures the second exact LOD descriptor
+- `HARDWARE_RESULTS_2026-09-26_SECOND_GX_INIT_TEX_OBJ_WRAP_FRONTIER.md` — crosses the second LOD descriptor and captures its exact wrap tuple
+- `HARDWARE_RESULTS_2026-09-26_THIRD_GX_INIT_TEX_OBJ_LOD_FRONTIER.md` — crosses the second LOD descriptor on the alternate ordering and captures the third LOD descriptor
+- `HARDWARE_RESULTS_2026-09-26_THIRD_GX_INIT_TEX_OBJ_WRAP_FRONTIER.md` — crosses the third LOD descriptor and captures the third exact wrap tuple
+- `HARDWARE_RESULTS_2026-09-26_SECOND_KD_CLOSE_FRONTIER.md` — records the second KD request close frontier
+- `HARDWARE_RESULTS_2026-09-26_THIRD_KD_USER_ID_FRONTIER.md` — records fd-2002 command-0x0F generated-user-id semantics
+- `HARDWARE_RESULTS_2026-09-26_THIRD_KD_CLOSE_FRONTIER.md` — crosses the third KD request command and captures fd-2002 close
+- `HARDWARE_RESULTS_2026-09-26_FOURTH_KD_RESUME_FRONTIER.md` — crosses fd-2002 close and captures fd-2003 command-3 resume
+- `HARDWARE_RESULTS_2026-09-27_FOURTH_KD_CLOSE_FRONTIER.md` — crosses fd-2003 command-3 and captures the exact fd-2003 IOS_Close frontier
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes
@@ -116,32 +126,20 @@
 - `fast-track-blockers/` — blocker-specific mapping, pinned semantics and fix notes
 
 For the current project status, use `../README.md`, `../ROADMAP.md`,
-`FAST_TRACK_VALIDATION_POLICY.md`, `M2_RUNTIME_BOOTSTRAP.md`, and issue #117.
+`FAST_TRACK_VALIDATION_POLICY.md`, `M3_RMCP01_RENDERED_FAST_TRACK.md`, and
+issue #117.
 
-The latest 2026-09-25 hardware evidence preserves the proven local
-`English.szs`/StaticR resource path and sustained Aurora/Dawn/NVK rendering.
-The run reaches 17,800 translated dispatches, 765 RMCP01 FIFO writes and 61
-successful presents with zero failures. It hardware-crosses the merged
-`StrapScene::CheckInput (0x800077C8)` seam and stops at
-`INDIRECT_CALL_MISS 0x8055531C`.
+Current accepted state as of 2026-09-27:
 
-Pinned RMCP01/WiiCompiled attribution identifies `0x8055531C` as StaticR.rel
-`RelProlog`. Pinned WiiCompiled registers a native winner that brackets the
-retained original `func_8055531C` with host mod-initializer phases. The base
-Switch product has no mod data-patch registrants, so the current candidate
-routes only this exact native boundary to the already-generated original
-RelProlog and does not fabricate REL relocation/loading behavior.
+- real RMCP01 FIFO work and repeated GPU presents are hardware-proven;
+- strongest graphics-path run reaches 1,408 FIFO writes and 92 successful
+  presents / 0 failures;
+- three exact GXInitTexObjLOD descriptors are hardware-crossed;
+- two exact GXInitTexObjWrapMode tuples are hardware-crossed;
+- the third wrap tuple on obj `0x9018E140` is merged and awaiting crossing;
+- KD/NWC24 exact handling is hardware-crossed through fd 2003 / command 3;
+- the exact fd-2003 IOS_Close candidate is merged and awaiting crossing;
+- the visually correct Mario Kart Wii image remains unproven.
 
-The earlier real FIFO / `GXCopyDisp` / repeated-present / `GXFlush` proof
-remains valid. Visual correctness remains a separate milestone. Dated hardware
-result files are historical evidence and intentionally retain the frontier
-wording that was correct when each run was captured.
-
-
-Latest follow-up: merged PR #242 is hardware-crossed. The run reaches 24,544
-translated dispatches, 269 StaticR dispatches, 1,240 RMCP01 FIFO writes and 84
-successful presents with zero failures. The new exact blocker is pinned
-`OSDetachThread (0x801AA4EC)` with `r3=0x901187C0`, the TaskThread OSThread.
-Because the pinned function has a state-dependent MORIBUND cleanup branch, the
-current patch captures the exact live OSThread fields before implementing any
-scheduler mutation.
+Dated hardware-result files are historical evidence and intentionally retain
+the frontier wording that was correct when each run was captured.

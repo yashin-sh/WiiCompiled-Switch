@@ -10,11 +10,44 @@
 // Switch audio backend will replace this boundary after first-frame bring-up.
 //
 // PAL addresses from pinned WiiCompiled a135beb...:
+//   0x80123F88 AIRegisterDMACallback
 //   0x801240B0 AIInit
 //   0x801269BC __AXOutInitDSP
 //   0x801A1138 __AIClockInit
 //   0x801A1358 __OSInitAudioSystem
 //   0x801A1520 __OSStopAudioSystem
+
+// Real-Switch hardware crossed __AXOutInitDSP and then reached PAL
+// AIRegisterDMACallback (0x80123F88) with callback=0x80126898. Pinned
+// WiiCompiled stores the callback in the guest global at 0x80386480 and returns
+// the previous callback pointer. Mirror only that guest-visible contract; host
+// callback dispatch remains unsupported until hardware proves it is required.
+template <>
+struct KnownNativeCpuCall<0x80123F88u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        constexpr std::uint32_t kAIDmaCallbackAddr = 0x80386480u;
+        const std::uint32_t callback = cpu->gpr[3];
+        std::uint32_t oldCallback = 0u;
+
+        try {
+            if (Memory::Contains(kAIDmaCallbackAddr, 4u)) {
+                oldCallback = Memory::Read32(kAIDmaCallbackAddr);
+                Memory::Write32(kAIDmaCallbackAddr, callback);
+            }
+        } catch (...) {
+            // Pinned WiiCompiled uses TryRead32/TryWrite32 here. Failed guest
+            // access therefore preserves the default old-callback value of 0.
+        }
+
+        cpu->gpr[3] = oldCallback;
+    }
+};
 
 // Real-Switch hardware reached PAL AIInit (0x801240B0) with r3=0 after the
 // fourth KD request close was crossed. Pinned WiiCompiled initializes the

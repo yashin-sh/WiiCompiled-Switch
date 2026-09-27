@@ -3,6 +3,25 @@
 #include "abi_bridge.h"
 #include "memory.h"
 
+#include <cstdint>
+
+namespace mkw::switch_audio_hle {
+
+inline std::uint32_t g_ai_dma_start_addr = 0u;
+inline std::uint32_t g_ai_dma_register_start_addr = 0u;
+inline std::uint32_t g_ai_dma_length = 0u;
+inline std::uint32_t g_ai_dma_bytes_left = 0u;
+
+inline constexpr std::uint32_t EncodeAIDmaStartRegister(std::uint32_t startAddr) noexcept {
+    return startAddr & 0x1FFFFFE0u;
+}
+
+inline constexpr std::uint32_t EncodeAIDmaLengthRegister(std::uint32_t length) noexcept {
+    return length & 0x000FFFE0u;
+}
+
+} // namespace mkw::switch_audio_hle
+
 // Early Wii audio bootstrap is a native/HLE boundary in the pinned runtime.
 // The desktop implementation starts the host audio backend and AX/DSP emulation,
 // neither of which is required to prove boot-to-main on Horizon. Keep these
@@ -11,6 +30,7 @@
 //
 // PAL addresses from pinned WiiCompiled a135beb...:
 //   0x80123F88 AIRegisterDMACallback
+//   0x80123FCC AIInitDMA
 //   0x801240B0 AIInit
 //   0x801269BC __AXOutInitDSP
 //   0x801A1138 __AIClockInit
@@ -46,6 +66,33 @@ struct KnownNativeCpuCall<0x80123F88u> {
         }
 
         cpu->gpr[3] = oldCallback;
+    }
+};
+
+// Real-Switch hardware crossed AIRegisterDMACallback and then reached PAL
+// AIInitDMA (0x80123FCC) with start=0x802F7D20 and length=0x180. Pinned
+// WiiCompiled updates only shared host-side AI DMA state at this boundary. Keep
+// that exact state so later hardware-proven AI calls can observe it, without
+// starting DMA, touching guest memory, or constructing a Horizon audio backend.
+template <>
+struct KnownNativeCpuCall<0x80123FCCu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        const std::uint32_t startAddr = cpu->gpr[3];
+        const std::uint32_t length = cpu->gpr[4];
+
+        mkw::switch_audio_hle::g_ai_dma_start_addr = startAddr;
+        mkw::switch_audio_hle::g_ai_dma_register_start_addr =
+            mkw::switch_audio_hle::EncodeAIDmaStartRegister(startAddr);
+        mkw::switch_audio_hle::g_ai_dma_length =
+            mkw::switch_audio_hle::EncodeAIDmaLengthRegister(length);
+        mkw::switch_audio_hle::g_ai_dma_bytes_left =
+            mkw::switch_audio_hle::g_ai_dma_length;
     }
 };
 

@@ -37,6 +37,7 @@ jobs:
           grep -Fq 'KnownNativeCpuCall<0x801A65D4u>' include/abi_bridge.h
           grep -Fq 'KnownNativeCpuCall<0x801A00E0u>' include/abi_bridge.h
           grep -Fq 'KnownNativeCpuCall<0x801A661Cu>' include/abi_bridge.h
+          grep -Fq 'KnownNativeCpuCall<0x801240B0u>' include/switch_audio_hle_traits.hpp
           grep -Fq 'MKW_NATIVE_NOOP_TRAIT(8012E5B8)' include/abi_bridge.h
           grep -Fq 'MKW_NATIVE_NOOP_TRAIT(8012E5C0)' include/abi_bridge.h
           grep -Fq 'MKW_NATIVE_NOOP_TRAIT(8012E5C8)' include/abi_bridge.h
@@ -86,6 +87,7 @@ jobs:
           grep -Fq 'InvokeDirectCpu<0x8012E64Cu>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
           grep -Fq 'InvokeDirectCpu<0x8012E654u>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
           grep -Fq 'InvokeDirectCpu<0x8012E684u>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
+          grep -Fq 'InvokeDirectCpu<0x801240B0u>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
 
       - name: Locate AArch64 nm
         run: |

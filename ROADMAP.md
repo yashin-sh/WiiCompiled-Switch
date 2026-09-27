@@ -155,10 +155,10 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 > baseline. The rendered path is now hardware-proven through real
 > English.szs/StaticR/Home Button resource loading, real FIFO work, repeated
 > GXCopyDisp/present, three exact GXInitTexObjLOD descriptors, two crossed
-> GXInitTexObjWrapMode tuples, and the exact KD sequence through fd 2003/cmd 3.
-> Current merged hardware gates are scheduler-order dependent: the third wrap
-> tuple on obj 0x9018E140 and IOS_Close(2003). Visual Mario Kart Wii pixels
-> remain unproven.
+> GXInitTexObjWrapMode tuples, and the exact KD sequence through fd 2003 close.
+> AIInit (0x801240B0) is hardware-crossed. Current merged hardware gates are
+> scheduler-order dependent: the third wrap tuple on obj 0x9018E140 and
+> __AXOutInitDSP (0x801269BC). Visual Mario Kart Wii pixels remain unproven.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input

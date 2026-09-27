@@ -59,22 +59,23 @@ crossed the exact sequence through:
 fd 2000 / cmd 2 / close
 fd 2001 / cmd 1 / close
 fd 2002 / cmd 0x0F / close
-fd 2003 / cmd 3
+fd 2003 / cmd 3 / close
 ```
 
-The latest accepted 2026-09-27 run stops at `IOS_Close (0x80193AD8)` for
-`fd=2003`. The exact close candidate is merged on `main` and now requires
-hardware validation.
+The latest accepted 2026-09-27 run durably crosses the merged
+`AIInit (0x801240B0)` bridge and reaches
+`__AXOutInitDSP (0x801269BC)` at `HOST_CONTEXT_SWITCH_RETURNED`.
+The exact guest AX/DSP task-state bridge is now the audio-path candidate.
 
 So the current hardware gates are scheduler-order dependent:
 
 ```text
-GX path: third GXInitTexObjWrapMode tuple on obj 0x9018E140
-KD path: IOS_Close(2003) after the proven cmd-3 resume
+GX path:    third GXInitTexObjWrapMode tuple on obj 0x9018E140
+Audio path: __AXOutInitDSP (0x801269BC) after crossed AIInit
 ```
 
 Whichever path hardware reaches first defines the next exact blocker. No
-neighboring GX or KD behavior is pre-ported.
+neighboring GX, KD or audio behavior is pre-ported.
 
 The logs still do **not** prove a visually correct Mario Kart Wii image.
 
@@ -99,9 +100,8 @@ The project does not fabricate Nintendo game data. The user's own RMCP01 `DATA/s
 The observed boot-time IOS network path is `/dev/net/kd/request`, mode 0.
 Hardware has crossed exact KD request sequences for fd 2000 through fd 2003,
 including command 2 (Boot probe), command 1 (suspend), command 0x0F
-(generated-user-id), and command 3 (resume). Closes for fd 2000 through fd 2002
-are hardware-crossed; the exact fd-2003 close candidate is merged and awaiting
-hardware validation. No generic IOS/network, ioctlv, NCD, IP, SSL, DNS,
+(generated-user-id), and command 3 (resume). Closes for fd 2000 through fd 2003
+are hardware-crossed. No generic IOS/network, ioctlv, NCD, IP, SSL, DNS,
 socket, or online-play support is claimed.
 
 ### Input

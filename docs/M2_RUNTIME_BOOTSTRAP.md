@@ -1,6 +1,12 @@
 # M2 — Horizon runtime bootstrap / translated fast-track
 
-Status: **core bootstrap, PAL `main()`, guest thread continuation, sustained post-main execution, local RMCP01 FST publication, first local RMCP01 boot-resource read, VI-only AsyncDisplay idle recovery, complete `English.szs` SZS expansion, and the rendered fast-track runtime are hardware-validated on Nintendo Switch through 2026-09-24; the current gate is `GXInitTexObj (0x801707F8)` on image data inside the decompressed boot resource.**
+Status: **runtime/bootstrap foundation is hardware-validated. Since this M2 bring-up,
+the rendered RMCP01 path has advanced through real FST/DVD/SZS/StaticR/Home
+Button resource loading, real FIFO work and repeated GPU presents. Current
+frontier tracking lives in README.md, ROADMAP.md, M3_RMCP01_RENDERED_FAST_TRACK.md
+and issue #117. As of 2026-09-27 the merged pending gates are the third exact
+GXInitTexObjWrapMode tuple on obj 0x9018E140 and IOS_Close(2003), depending on
+scheduler ordering.**
 
 Upstream WiiCompiled pin: `a135beb201042b20f390c6695ca6b26768820fb4`.
 
@@ -10,7 +16,10 @@ Maintain a stable WiiCompiled runtime on Horizon, link a locally generated trans
 
 The original M2 goal of reaching PAL `main()` (`0x8000B6B0`) is complete. The active work is the post-main fast-track tracked in issue #117.
 
-Graphics and audio completeness are not prerequisites for this phase. The current GX FIFO bridge is intentionally a sink, so a black screen is expected while CPU/runtime bring-up progresses.
+Graphics and audio completeness were not prerequisites for the original M2
+bring-up. The headless GX FIFO sink remains as a control baseline, while a
+separate rendered fast-track now has hardware-proven real RMCP01 FIFO work and
+successful GPU presents.
 
 ## Validated runtime foundation
 
@@ -45,7 +54,7 @@ The following pieces are validated through CI and/or real Switch hardware:
 27. classification of the prolonged black-screen path as active translated/VI execution rather than a durable translated-thread stall;
 28. an independent Horizon liveness watchdog that remains available for future stall attribution without mutating guest state.
 
-## Current translated path
+## Historical translated path through the M2 foundation
 
 ```text
 Horizon/libnx entry
@@ -88,10 +97,12 @@ guest VI retrace value                  ✅ 13,918 (0x365E)
   ↓
 active VI/display loop                  ✅ hardware classified
   ↓
-isolated M3 first-frame spike #162      ← next graphics frontier
+rendered RMCP01 FIFO / GPU present      ✅ later hardware validated
 ```
 
-There is currently **no new exact unsupported HLE boundary to implement**. The prolonged black-screen state has now been hardware-classified as an active translated/VI loop. The next graphics task is the isolated #162 first-frame probe; the normal fast-track keeps its FIFO sink until that backend path is proven.
+This diagram records the M2 foundation milestone. It is not the current
+blocker list. The current exact hardware gates are tracked in README.md,
+ROADMAP.md, M3_RMCP01_RENDERED_FAST_TRACK.md and issue #117.
 
 ## Current hardware-driven method
 
@@ -110,7 +121,7 @@ For a concrete unsupported boundary:
 
 When no new blocker appears, use the independent liveness watchdog rather than guessing. It samples the translated heartbeat from a separate Horizon thread and records whether dispatch state is still changing.
 
-## Current post-main frontier
+## Historical 2026-09-17 post-main frontier
 
 The recent hardware sequence is:
 
@@ -138,16 +149,16 @@ The Switch runtime now gives guest `OSThread` instances host `HostContext` conti
 
 See `HARDWARE_RESULTS_2026-09-16_GUEST_FIBER_CONTINUATION.md` for the evidence.
 
-## Headless graphics status
+## Headless control baseline and rendered variant
 
-The current `GX_HLE_FIFO_Write8/16/32/Float/Burst` bridge remains a temporary sink. It consumes translated GX FIFO writes without presenting them to a real Switch graphics backend.
+The normal fast-track still retains the GX FIFO sink as a stable CPU/scheduler
+control baseline. Separately, the rendered fast-track replaces that sink with
+pinned WiiCompiled FIFO decoding into Aurora → Dawn/WebGPU → Vulkan/NVK.
 
-Consequences:
-
-- a black screen does **not** imply translated CPU execution is stalled;
-- the runtime can continue advancing post-main while the screen remains black;
-- reaching `EGG::AsyncDisplay` does **not** mean a frame has been rendered;
-- first-frame work belongs to M3, where the FIFO sink must be replaced by a real GX → Switch renderer/backend.
+Hardware now proves real RMCP01 FIFO work and successful game-facing presents
+on that rendered variant. A black frame can therefore no longer be interpreted
+as "the renderer is missing"; visual correctness and later game/UI state are
+the remaining questions.
 
 ## DVD / resource boundary
 

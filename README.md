@@ -41,17 +41,16 @@ FST structurally valid: YES
 renderer active       : YES
 ```
 
-Hardware has now crossed three exact `GXInitTexObjLOD (0x80170A4C)`
-descriptors and captured a fourth exact descriptor:
+Hardware has now crossed four exact `GXInitTexObjLOD (0x80170A4C)` descriptors:
 
 - `obj=0x9018E120`;
 - `obj=0x9018E460`;
 - `obj=0x9018E140`;
-- `obj=0x9018E480` (captured; exact bridge candidate).
+- `obj=0x9018E480`.
 
 The first three exact `GXInitTexObjWrapMode (0x80170B50)` tuples are
-hardware-crossed. The fourth LOD tuple on `obj=0x9018E480` is merged and
-still requires durable hardware progression beyond that call.
+hardware-crossed. The fourth LOD tuple on `obj=0x9018E480` is also
+hardware-crossed.
 
 In parallel, the scheduler can reach the NWC24/KD path first. Hardware has
 crossed the exact sequence through:
@@ -65,14 +64,14 @@ fd 2003 / cmd 3 / close
 
 The latest accepted 2026-09-27 run durably crosses the merged
 `__AXOutInitDSP (0x801269BC)` bridge and reaches
-`AIStartDMA (0x80124048)` and later returns to the GX texture path.
-The current exact candidate is the fourth GXInitTexObjLOD descriptor on `0x9018E480`.
+`AIStartDMA (0x80124048)`, the fourth GXInitTexObjLOD descriptor on
+`0x9018E480`, and then reaches `OSSetPeriodicAlarm (0x801A08E0)`.
 
 So the current hardware gates are scheduler-order dependent:
 
 ```text
-GX path: fourth GXInitTexObjLOD tuple on obj 0x9018E480
-Audio path: AIStartDMA (0x80124048) crossed
+OS path: OSSetPeriodicAlarm (0x801A08E0)
+GX path: fourth GXInitTexObjLOD obj 0x9018E480 crossed
 ```
 
 Whichever path hardware reaches first defines the next exact blocker. No

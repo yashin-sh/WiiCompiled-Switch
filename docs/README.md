@@ -119,6 +119,7 @@
 - `HARDWARE_RESULTS_2026-09-26_THIRD_KD_CLOSE_FRONTIER.md` — crosses the third KD request command and captures fd-2002 close
 - `HARDWARE_RESULTS_2026-09-26_FOURTH_KD_RESUME_FRONTIER.md` — crosses fd-2002 close and captures fd-2003 command-3 resume
 - `HARDWARE_RESULTS_2026-09-27_FOURTH_KD_CLOSE_FRONTIER.md` — crosses fd-2003 command-3 and captures the exact fd-2003 IOS_Close frontier
+- `HARDWARE_RESULTS_2026-09-27_AI_INIT_FRONTIER.md` — hardware-crosses fd-2003 IOS_Close and captures PAL AIInit (0x801240B0) as the next exact frontier
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes

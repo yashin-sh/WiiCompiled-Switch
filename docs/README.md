@@ -125,6 +125,7 @@
 - `HARDWARE_RESULTS_2026-09-27_AI_INIT_DMA_FRONTIER.md` — hardware-crosses AIRegisterDMACallback and captures AIInitDMA (0x80123FCC) as the next exact audio frontier
 - `HARDWARE_RESULTS_2026-09-27_AI_START_DMA_FRONTIER.md` — hardware-crosses AIInitDMA and captures AIStartDMA (0x80124048) as the next exact audio frontier
 - `HARDWARE_RESULTS_2026-09-27_FOURTH_GX_INIT_TEX_OBJ_LOD_FRONTIER.md` — hardware-crosses AIStartDMA and the third wrap tuple, then captures the fourth exact GXInitTexObjLOD descriptor on 0x9018E480
+- `HARDWARE_RESULTS_2026-09-27_OS_SET_PERIODIC_ALARM_FRONTIER.md` — hardware-crosses the fourth GXInitTexObjLOD descriptor and captures OSSetPeriodicAlarm (0x801A08E0)
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes
@@ -140,7 +141,7 @@ Current accepted state as of 2026-09-27:
 - real RMCP01 FIFO work and repeated GPU presents are hardware-proven;
 - strongest graphics-path run reaches 1,408 FIFO writes and 92 successful
   presents / 0 failures;
-- three exact GXInitTexObjLOD descriptors are hardware-crossed and the fourth on `0x9018E480` is the current merged gate;
+- four exact GXInitTexObjLOD descriptors are hardware-crossed;
 - three exact GXInitTexObjWrapMode tuples are hardware-crossed;
 - KD/NWC24 exact handling is hardware-crossed through fd 2003 close;
 - PAL AIInit (0x801240B0) is hardware-crossed;
@@ -148,6 +149,7 @@ Current accepted state as of 2026-09-27:
 - AIRegisterDMACallback (0x80123F88) is hardware-crossed;
 - AIInitDMA (0x80123FCC) is hardware-crossed;
 - AIStartDMA (0x80124048) is hardware-crossed;
+- OSSetPeriodicAlarm (0x801A08E0) is the current merged gate awaiting crossing;
 - the visually correct Mario Kart Wii image remains unproven.
 
 Dated hardware-result files are historical evidence and intentionally retain

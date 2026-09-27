@@ -151,7 +151,14 @@ Validation policy after the 2026-09-20 audit: the five public CI workflows remai
 
 The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX_AUDIT_2026-09-13.md`. These are shared decoder/runtime concerns and must be separated from Switch-backend-specific failures during M3.
 
-> The stable #117 fast-track intentionally keeps its FIFO sink as a control baseline. The rendered path is hardware-proven through local `English.szs` read/decode, VI-idle recovery, real FIFO/presentation, `GXInitTexObj`, the exact KD open/cmd2/close sequence, and a real `/rel/StaticR.rel` DVD read with `RKSystem::run` reached. The exact `GXLoadTexObj (0x80170F2C)` descriptor is now hardware-captured at oa `0x901136B4` / tid 0: 832x456, format 4, clamp/clamp, no mipmaps, backing `0x00F103E0`. The current candidate accepts only that descriptor.
+> The stable #117 fast-track intentionally keeps its FIFO sink as a control
+> baseline. The rendered path is now hardware-proven through real
+> English.szs/StaticR/Home Button resource loading, real FIFO work, repeated
+> GXCopyDisp/present, three exact GXInitTexObjLOD descriptors, two crossed
+> GXInitTexObjWrapMode tuples, and the exact KD sequence through fd 2003/cmd 3.
+> Current merged hardware gates are scheduler-order dependent: the third wrap
+> tuple on obj 0x9018E140 and IOS_Close(2003). Visual Mario Kart Wii pixels
+> remain unproven.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input

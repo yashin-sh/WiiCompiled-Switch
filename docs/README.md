@@ -122,6 +122,7 @@
 - `HARDWARE_RESULTS_2026-09-27_AI_INIT_FRONTIER.md` — hardware-crosses fd-2003 IOS_Close and captures PAL AIInit (0x801240B0) as the next exact frontier
 - `HARDWARE_RESULTS_2026-09-27_AX_OUT_INIT_DSP_FRONTIER.md` — hardware-crosses PAL AIInit and captures __AXOutInitDSP (0x801269BC) as the next exact audio frontier
 - `HARDWARE_RESULTS_2026-09-27_AI_REGISTER_DMA_CALLBACK_FRONTIER.md` — hardware-crosses __AXOutInitDSP and captures AIRegisterDMACallback (0x80123F88) as the next exact audio frontier
+- `HARDWARE_RESULTS_2026-09-27_AI_INIT_DMA_FRONTIER.md` — hardware-crosses AIRegisterDMACallback and captures AIInitDMA (0x80123FCC) as the next exact audio frontier
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes
@@ -143,7 +144,8 @@ Current accepted state as of 2026-09-27:
 - KD/NWC24 exact handling is hardware-crossed through fd 2003 close;
 - PAL AIInit (0x801240B0) is hardware-crossed;
 - __AXOutInitDSP (0x801269BC) is hardware-crossed;
-- AIRegisterDMACallback (0x80123F88) is the merged audio-path gate awaiting crossing;
+- AIRegisterDMACallback (0x80123F88) is hardware-crossed;
+- AIInitDMA (0x80123FCC) is the merged audio-path gate awaiting crossing;
 - the visually correct Mario Kart Wii image remains unproven.
 
 Dated hardware-result files are historical evidence and intentionally retain

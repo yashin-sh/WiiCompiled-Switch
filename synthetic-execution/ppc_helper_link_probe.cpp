@@ -225,6 +225,17 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         ctx->gpr[3] = 0x12345678u;
         InvokeDirectCpu<0x80123F88u>(ctx);
         ctx->gpr[3] = savedAiCallbackR3;
+
+        // The next hardware-observed audio boundary is AIInitDMA. Preserve the
+        // synthetic register file after proving the exact native dispatch and
+        // its internal DMA-state bookkeeping compile and link.
+        const std::uint32_t savedAiDmaR3 = ctx->gpr[3];
+        const std::uint32_t savedAiDmaR4 = ctx->gpr[4];
+        ctx->gpr[3] = 0x81234000u;
+        ctx->gpr[4] = 0x00000180u;
+        InvokeDirectCpu<0x80123FCCu>(ctx);
+        ctx->gpr[3] = savedAiDmaR3;
+        ctx->gpr[4] = savedAiDmaR4;
     }
 
     // Keep the existing synthetic startup graph auditable in the same ELF.

@@ -217,6 +217,14 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         ctx->gpr[13] = 0u;
         InvokeDirectCpu<0x801269BCu>(ctx);
         ctx->gpr[13] = savedAxR13;
+
+        // Hardware next reaches AIRegisterDMACallback. Use a synthetic callback
+        // while leaving the guest callback global unmapped; pinned TryRead/Write
+        // semantics then return 0 and still prove the exact dispatch path.
+        const std::uint32_t savedAiCallbackR3 = ctx->gpr[3];
+        ctx->gpr[3] = 0x12345678u;
+        InvokeDirectCpu<0x80123F88u>(ctx);
+        ctx->gpr[3] = savedAiCallbackR3;
     }
 
     // Keep the existing synthetic startup graph auditable in the same ELF.

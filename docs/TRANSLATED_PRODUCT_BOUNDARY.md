@@ -1,6 +1,10 @@
 # M2 — Translated-product boundary
 
-Status: **hardware-validated and crossed on real Nintendo Switch**. The project links and executes a locally generated WiiCompiled Mario Kart Wii product, has reached PAL `main()`, and now sustains tens of thousands of post-main translated dispatches.
+Status: **hardware-validated and crossed on real Nintendo Switch**. The project
+links and executes a locally generated WiiCompiled Mario Kart Wii product,
+reaches PAL `main()`, loads real user-owned resources, produces real RMCP01
+FIFO work and successfully presents frames through the rendered Switch path.
+The translated-product seam itself is no longer an active blocker.
 
 Upstream WiiCompiled pin: `a135beb201042b20f390c6695ca6b26768820fb4`.
 
@@ -52,8 +56,14 @@ That path is now hardware-validated far beyond metadata inspection:
 - post-main execution progresses through `System::RKSystem::main` and `System::RKSystem::initialize`;
 - HostContext-backed guest `OSThread` continuations resume interior translated continuations correctly;
 - the observed VI/GX, WPAD/PAD, time, power, SC and scheduler boundaries have been hardware-crossed through `OSWakeupThread`;
-- the latest sustained run reached 37,148 translated dispatches total / 36,543 post-main without a new unsupported-dispatch abort;
-- the last durable target `0x8020FCD4` maps to the RMCP01 `egg/core/eggAsyncDisplay.cpp` text range.
+- sustained translated execution has progressed far beyond the first
+  37,148-dispatch run;
+- user-owned FST/DVD/SZS/StaticR/Home Button resource loading is
+  hardware-proven;
+- real RMCP01 FIFO work reaches Aurora/Dawn/NVK;
+- repeated `GXCopyDisp` / successful presents are hardware-proven;
+- current blocker tracking has moved into exact Home Button texture-object and
+  KD/NWC24 sequences.
 
 The translated-product seam itself is therefore no longer an active blocker. Current work is post-main runtime/game initialization and first-frame preparation.
 
@@ -62,30 +72,27 @@ The translated-product seam itself is therefore no longer an active blocker. Cur
 ```text
 local user-owned game inputs
   ↓
-WiiCompiled generation
+WiiCompiled generation + AArch64 NRO link
   ↓
-AArch64 compile/link into NRO
+PAL __start / main                         ✅ hardware validated
   ↓
-generated data initialization
+post-main scheduler/resource execution     ✅ hardware validated
   ↓
-translated execution handoff
+FST / English.szs / StaticR / Home Button ✅ hardware validated
   ↓
-PAL __start (0x800060A4)
+real RMCP01 FIFO work                      ✅ hardware validated
   ↓
-Wii SDK / OS / NAND / DVD / VI bootstrap
+GXCopyDisp / GPU present                   ✅ hardware validated
   ↓
-PAL main (0x8000B6B0)                    ✅ hardware validated
-  ↓
-post-main thread/context/VI/input/time
-  ↓
-OSWakeupThread (0x801AAAA4)              ✅ hardware validated
-  ↓
-sustained translated execution           ✅ 37,148 total dispatches
-  ↓
-EGG AsyncDisplay range (0x8020FCD4...)   ✅ reached
-  ↓
-active-loop vs durable-stall diagnosis   ← current frontier
+Home Button texture-object initialization  🟡 active blocker family
+  ↘
+KD/NWC24 scheduler path                    🟡 alternate scheduler-order path
 ```
+
+As of 2026-09-27, the merged pending gates are the third exact
+`GXInitTexObjWrapMode` tuple on `obj=0x9018E140` and
+`IOS_Close(2003)`. Which gate appears first depends on guest scheduling.
+The visually correct Mario Kart Wii image is still unproven.
 
 ## Important boundary lessons from hardware
 
@@ -101,11 +108,12 @@ Examples already crossed include `__OSInitSTM`, NAND state, VI state, power call
 
 Hardware exposed saved SRR0 `0x80238A78`, an interior continuation inside translated code. The Switch runtime now preserves guest `OSThread` continuations through host `HostContext` fibers so the original translated host stack resumes correctly.
 
-### Black output does not currently prove a translated stall
+### Black output does not prove a translated stall or renderer absence
 
-The current GX FIFO bridge remains a sink. The latest run continued for tens of thousands of post-main dispatches and reached the EGG display subsystem while the screen remained black.
-
-For that reason the local fast-track now has an independent Horizon watchdog so translated progress can be distinguished from a true translated-thread stall.
+The headless control target still uses a FIFO sink, but the separate rendered
+target is now hardware-proven to decode real RMCP01 FIFO work and present
+frames successfully. The independent Horizon watchdog remains useful for
+separating guest liveness/scheduler stalls from graphics-path behavior.
 
 ## Diagnostics at this boundary
 
@@ -176,8 +184,9 @@ Only Nintendo-data-free runtime/platform code, documentation and synthetic probe
 - observed post-main scheduler/input/time/SC sequence through `OSWakeupThread`: **PASS on hardware**;
 - sustained post-main translated execution: **PASS on hardware**;
 - EGG AsyncDisplay range reached: **PASS on hardware**;
-- active-loop vs durable-stall classification: **PENDING next watchdog run**;
-- real GX → Switch renderer: **NOT YET IMPLEMENTED**;
+- active-loop vs durable-stall classification: **PASS on hardware**;
+- real GX → Switch rendered path: **PASS on hardware for FIFO work and GPU present**;
+- visually correct Mario Kart Wii image: **NOT YET PROVEN**;
 - first rendered frame: **NOT YET PROVEN**.
 
 ## Next boundary

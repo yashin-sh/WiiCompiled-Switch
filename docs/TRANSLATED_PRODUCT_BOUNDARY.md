@@ -89,10 +89,12 @@ Home Button texture-object initialization  🟡 active blocker family
 KD/NWC24 scheduler path                    🟡 alternate scheduler-order path
 ```
 
-As of 2026-09-27, the merged pending gates are the third exact
-`GXInitTexObjWrapMode` tuple on `obj=0x9018E140` and
-`IOS_Close(2003)`. Which gate appears first depends on guest scheduling.
-The visually correct Mario Kart Wii image is still unproven.
+As of 2026-09-27, the KD path is hardware-crossed through fd 2003 close
+and PAL `AIInit (0x801240B0)` is also hardware-crossed. The merged pending
+gates are the third exact `GXInitTexObjWrapMode` tuple on
+`obj=0x9018E140` and `__AXOutInitDSP (0x801269BC)`. Which gate appears
+first depends on guest scheduling. The visually correct Mario Kart Wii image
+is still unproven.
 
 ## Important boundary lessons from hardware
 

@@ -11,6 +11,8 @@ inline std::uint32_t g_ai_dma_start_addr = 0u;
 inline std::uint32_t g_ai_dma_register_start_addr = 0u;
 inline std::uint32_t g_ai_dma_length = 0u;
 inline std::uint32_t g_ai_dma_bytes_left = 0u;
+inline bool g_ai_dma_enabled = false;
+inline std::uint32_t g_ai_dma_sample_rate = 32000u;
 
 inline constexpr std::uint32_t EncodeAIDmaStartRegister(std::uint32_t startAddr) noexcept {
     return startAddr & 0x1FFFFFE0u;
@@ -31,6 +33,7 @@ inline constexpr std::uint32_t EncodeAIDmaLengthRegister(std::uint32_t length) n
 // PAL addresses from pinned WiiCompiled a135beb...:
 //   0x80123F88 AIRegisterDMACallback
 //   0x80123FCC AIInitDMA
+//   0x80124048 AIStartDMA
 //   0x801240B0 AIInit
 //   0x801269BC __AXOutInitDSP
 //   0x801A1138 __AIClockInit
@@ -91,6 +94,23 @@ struct KnownNativeCpuCall<0x80123FCCu> {
             mkw::switch_audio_hle::EncodeAIDmaStartRegister(startAddr);
         mkw::switch_audio_hle::g_ai_dma_length =
             mkw::switch_audio_hle::EncodeAIDmaLengthRegister(length);
+        mkw::switch_audio_hle::g_ai_dma_bytes_left =
+            mkw::switch_audio_hle::g_ai_dma_length;
+    }
+};
+
+// Real-Switch hardware crossed AIInitDMA and then reached PAL AIStartDMA
+// (0x80124048). Pinned WiiCompiled sets the default 32 kHz sample rate, marks
+// DMA enabled, and reloads bytesLeft from the already-initialized DMA length.
+// The desktop runtime also starts its host audio backend here; do not invent a
+// Horizon backend at this hardware boundary.
+template <>
+struct KnownNativeCpuCall<0x80124048u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext*) noexcept {
+        mkw::switch_audio_hle::g_ai_dma_sample_rate = 32000u;
+        mkw::switch_audio_hle::g_ai_dma_enabled = true;
         mkw::switch_audio_hle::g_ai_dma_bytes_left =
             mkw::switch_audio_hle::g_ai_dma_length;
     }

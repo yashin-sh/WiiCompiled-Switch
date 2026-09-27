@@ -236,6 +236,11 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         InvokeDirectCpu<0x80123FCCu>(ctx);
         ctx->gpr[3] = savedAiDmaR3;
         ctx->gpr[4] = savedAiDmaR4;
+
+        // Hardware next reaches AIStartDMA. It takes no guest arguments, so the
+        // public probe can exercise the exact native dispatch without Nintendo
+        // data or a Horizon audio backend.
+        InvokeDirectCpu<0x80124048u>(ctx);
     }
 
     // Keep the existing synthetic startup graph auditable in the same ELF.

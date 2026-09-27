@@ -154,11 +154,12 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 > The stable #117 fast-track intentionally keeps its FIFO sink as a control
 > baseline. The rendered path is now hardware-proven through real
 > English.szs/StaticR/Home Button resource loading, real FIFO work, repeated
-> GXCopyDisp/present, three exact GXInitTexObjLOD descriptors, two crossed
-> GXInitTexObjWrapMode tuples, and the exact KD sequence through fd 2003 close.
-> AIInit (0x801240B0), __AXOutInitDSP (0x801269BC), AIRegisterDMACallback (0x80123F88), and AIInitDMA (0x80123FCC) are hardware-crossed.
-> Current merged hardware gates are scheduler-order dependent: the third wrap
-> tuple on obj 0x9018E140 and AIStartDMA (0x80124048). Visual Mario
+> GXCopyDisp/present, three hardware-crossed GXInitTexObjLOD descriptors plus
+> a fourth captured exact descriptor, three crossed GXInitTexObjWrapMode tuples,
+> and the exact KD sequence through fd 2003 close.
+> AIInit (0x801240B0), __AXOutInitDSP (0x801269BC), AIRegisterDMACallback (0x80123F88), AIInitDMA (0x80123FCC), and AIStartDMA (0x80124048) are hardware-crossed.
+> The third wrap tuple on obj 0x9018E140 is also hardware-crossed. The current
+> exact gate is the fourth GXInitTexObjLOD tuple on obj 0x9018E480. Visual Mario
 > Kart Wii pixels remain unproven.
 
 ## M4 — input + audio

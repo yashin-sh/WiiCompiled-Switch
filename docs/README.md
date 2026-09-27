@@ -9,12 +9,12 @@
 - `M2_VM_PROBE.md` — Horizon guest virtual-memory probe
 - `M2_CONTEXT_PROBE.md` — AArch64 cooperative-context probe
 - `M2_HORIZON_GUESTFLAT.md` — heap-backed checked GuestFlat integration
-- `M2_RUNTIME_BOOTSTRAP.md` — authoritative current runtime/bootstrap and post-main fast-track status
+- `M2_RUNTIME_BOOTSTRAP.md` — runtime/bootstrap foundation and historical bring-up context; current frontier links are kept at the top
 - `M2_SYNTHETIC_PRODUCT_PROBE.md` — hardware-validated weak/strong translated-product link seam
 - `M2_DATA_INIT_HANDOFF.md` — guarded data-section initialization and local-only generation path
 - `M2_LOCAL_DATA_INIT_HARDWARE_PASS.md` — real-Switch PASS for user-owned RMCP01 generated data sections
 - `M2_FUNCTION_SHARD_LINK.md` — local translated-function compile/link-only boundary
-- `TRANSLATED_PRODUCT_BOUNDARY.md` — build-time translated-product seam, local-only product policy and current execution milestone
+- `TRANSLATED_PRODUCT_BOUNDARY.md` — build-time translated-product seam, local-only product policy and current rendered execution milestone
 - `GRAPHICS_NOTES.md` — graphics backend notes and M3 direction
 - `M3_VULKAN_CLEAR_PROBE.md` — isolated loaderless NVK / `VK_NN_vi_surface` clear-frame hardware probe for #162
 - `M3_VULKAN_TRIANGLE_PROBE.md` — isolated shader/pipeline/rasterisation probe on the hardware-proven NVK/VI swapchain

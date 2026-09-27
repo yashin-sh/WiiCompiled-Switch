@@ -64,15 +64,15 @@ fd 2003 / cmd 3 / close
 
 The latest accepted 2026-09-27 run durably crosses the merged
 `__AXOutInitDSP (0x801269BC)` bridge and reaches
-`AIRegisterDMACallback (0x80123F88)` at `HOST_CONTEXT_SWITCH_RETURNED`,
-with callback `0x80126898`.
-The exact guest callback-global update is now the audio-path candidate.
+`AIInitDMA (0x80123FCC)` at `HOST_CONTEXT_SWITCH_RETURNED`, with
+start `0x802F7D20` and length `0x180`.
+The exact shared DMA-state update is now the audio-path candidate.
 
 So the current hardware gates are scheduler-order dependent:
 
 ```text
 GX path:    third GXInitTexObjWrapMode tuple on obj 0x9018E140
-Audio path: AIRegisterDMACallback (0x80123F88)
+Audio path: AIInitDMA (0x80123FCC) after crossed callback registration
 ```
 
 Whichever path hardware reaches first defines the next exact blocker. No

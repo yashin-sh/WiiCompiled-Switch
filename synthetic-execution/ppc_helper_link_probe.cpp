@@ -249,6 +249,17 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         ctx->gpr[3] = 0u;
         InvokeDirectCpu<0x801A08E0u>(ctx);
         ctx->gpr[3] = savedAlarmR3;
+
+        // Hardware next reaches nw4r::snd::SoundPlayer::SetVolume. Use a null
+        // synthetic SoundPlayer so public CI stays Nintendo-data-free while
+        // still proving the exact floating-point native dispatch compiles.
+        const std::uint32_t savedSoundPlayerR3 = ctx->gpr[3];
+        const double savedSoundPlayerF1 = ctx->fpr[1].d;
+        ctx->gpr[3] = 0u;
+        ctx->fpr[1].d = 0.5;
+        InvokeDirectCpu<0x800A35E0u>(ctx);
+        ctx->gpr[3] = savedSoundPlayerR3;
+        ctx->fpr[1].d = savedSoundPlayerF1;
     }
 
     // Keep the existing synthetic startup graph auditable in the same ELF.

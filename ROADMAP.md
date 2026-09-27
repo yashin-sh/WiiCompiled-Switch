@@ -159,7 +159,8 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 > and the exact KD sequence through fd 2003 close.
 > AIInit (0x801240B0), __AXOutInitDSP (0x801269BC), AIRegisterDMACallback (0x80123F88), AIInitDMA (0x80123FCC), and AIStartDMA (0x80124048) are hardware-crossed.
 > The third wrap tuple on obj 0x9018E140 and fourth LOD tuple on obj 0x9018E480
-> are hardware-crossed. The current exact gate is OSSetPeriodicAlarm (0x801A08E0). Visual Mario
+> are hardware-crossed. OSSetPeriodicAlarm (0x801A08E0) is also hardware-crossed.
+> The current exact gate is nw4r::snd::SoundPlayer::SetVolume (0x800A35E0). Visual Mario
 > Kart Wii pixels remain unproven.
 
 ## M4 — input + audio

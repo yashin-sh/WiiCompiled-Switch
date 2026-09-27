@@ -4,6 +4,7 @@
 #include "memory.h"
 
 #include <cstdint>
+#include <cstring>
 
 namespace mkw::switch_audio_hle {
 
@@ -20,6 +21,20 @@ inline constexpr std::uint32_t EncodeAIDmaStartRegister(std::uint32_t startAddr)
 
 inline constexpr std::uint32_t EncodeAIDmaLengthRegister(std::uint32_t length) noexcept {
     return length & 0x000FFFE0u;
+}
+
+inline constexpr float ClampSoundPlayerVolume(float volume) noexcept {
+    if (volume <= 1.0f) {
+        return volume < 0.0f ? 0.0f : volume;
+    }
+    return 1.0f;
+}
+
+inline std::uint32_t FloatBits(float value) noexcept {
+    static_assert(sizeof(float) == sizeof(std::uint32_t));
+    std::uint32_t bits = 0u;
+    std::memcpy(&bits, &value, sizeof(bits));
+    return bits;
 }
 
 } // namespace mkw::switch_audio_hle
@@ -39,6 +54,41 @@ inline constexpr std::uint32_t EncodeAIDmaLengthRegister(std::uint32_t length) n
 //   0x801A1138 __AIClockInit
 //   0x801A1358 __OSInitAudioSystem
 //   0x801A1520 __OSStopAudioSystem
+
+// Real-Switch hardware crossed OSSetPeriodicAlarm and then reached
+// nw4r::snd::SoundPlayer::SetVolume (PAL 0x800A35E0) while loading the real
+// revo_kart.brsar sound archive. PPC EABI carries the scalar float in f1.
+// Pinned WiiCompiled clamps that value to [0, 1] with its original NaN
+// behavior, then writes the resulting float to SoundPlayer + 0x2C. Its media
+// attenuation layer is host-only policy; do not reproduce it on Horizon at
+// this blocker, and do not pre-port neighboring NW4R sound APIs.
+template <>
+struct KnownNativeCpuCall<0x800A35E0u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        constexpr std::uint32_t kVolumeOffset = 0x2Cu;
+        const std::uint32_t soundPlayer = cpu->gpr[3];
+        const float requested = static_cast<float>(cpu->fpr[1].d);
+        const float clamped = mkw::switch_audio_hle::ClampSoundPlayerVolume(requested);
+
+        try {
+            if (soundPlayer == 0u ||
+                !Memory::Contains(soundPlayer + kVolumeOffset, sizeof(std::uint32_t))) {
+                return;
+            }
+            Memory::Write32(
+                soundPlayer + kVolumeOffset,
+                mkw::switch_audio_hle::FloatBits(clamped));
+        } catch (...) {
+            // Keep guest-memory faults contained at the native HLE boundary.
+        }
+    }
+};
 
 // Real-Switch hardware crossed __AXOutInitDSP and then reached PAL
 // AIRegisterDMACallback (0x80123F88) with callback=0x80126898. Pinned

@@ -65,13 +65,15 @@ fd 2003 / cmd 3 / close
 The latest accepted 2026-09-27 run durably crosses the merged
 `__AXOutInitDSP (0x801269BC)` bridge and reaches
 `AIStartDMA (0x80124048)`, the fourth GXInitTexObjLOD descriptor on
-`0x9018E480`, and then reaches `OSSetPeriodicAlarm (0x801A08E0)`.
+`0x9018E480`, `OSSetPeriodicAlarm (0x801A08E0)`, and then reaches
+`nw4r::snd::SoundPlayer::SetVolume (0x800A35E0)` while loading
+`/sound/revo_kart.brsar`.
 
 So the current hardware gates are scheduler-order dependent:
 
 ```text
-OS path: OSSetPeriodicAlarm (0x801A08E0)
-GX path: fourth GXInitTexObjLOD obj 0x9018E480 crossed
+Audio path: SoundPlayer::SetVolume (0x800A35E0)
+OS path: OSSetPeriodicAlarm (0x801A08E0) crossed
 ```
 
 Whichever path hardware reaches first defines the next exact blocker. No

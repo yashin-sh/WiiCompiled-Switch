@@ -120,6 +120,7 @@
 - `HARDWARE_RESULTS_2026-09-26_FOURTH_KD_RESUME_FRONTIER.md` — crosses fd-2002 close and captures fd-2003 command-3 resume
 - `HARDWARE_RESULTS_2026-09-27_FOURTH_KD_CLOSE_FRONTIER.md` — crosses fd-2003 command-3 and captures the exact fd-2003 IOS_Close frontier
 - `HARDWARE_RESULTS_2026-09-27_AI_INIT_FRONTIER.md` — hardware-crosses fd-2003 IOS_Close and captures PAL AIInit (0x801240B0) as the next exact frontier
+- `HARDWARE_RESULTS_2026-09-27_AX_OUT_INIT_DSP_FRONTIER.md` — hardware-crosses PAL AIInit and captures __AXOutInitDSP (0x801269BC) as the next exact audio frontier
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes
@@ -138,8 +139,9 @@ Current accepted state as of 2026-09-27:
 - three exact GXInitTexObjLOD descriptors are hardware-crossed;
 - two exact GXInitTexObjWrapMode tuples are hardware-crossed;
 - the third wrap tuple on obj `0x9018E140` is merged and awaiting crossing;
-- KD/NWC24 exact handling is hardware-crossed through fd 2003 / command 3;
-- the exact fd-2003 IOS_Close candidate is merged and awaiting crossing;
+- KD/NWC24 exact handling is hardware-crossed through fd 2003 close;
+- PAL AIInit (0x801240B0) is hardware-crossed;
+- __AXOutInitDSP (0x801269BC) is the merged audio-path gate awaiting crossing;
 - the visually correct Mario Kart Wii image remains unproven.
 
 Dated hardware-result files are historical evidence and intentionally retain

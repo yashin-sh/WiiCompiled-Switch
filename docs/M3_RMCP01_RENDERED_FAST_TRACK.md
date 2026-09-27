@@ -2,21 +2,22 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **real RMCP01 FIFO/Aurora work and repeated GPU presents are hardware-proven. Real English.szs, StaticR.rel and Home Button/UI resources load successfully. Three exact GXInitTexObjLOD descriptors are hardware-crossed, as are the first two exact GXInitTexObjWrapMode tuples. The third wrap tuple on obj 0x9018E140 is merged and awaiting hardware crossing. In scheduler interleavings that reach KD/NWC24 first, fd 2003 / cmd 3 resume is hardware-crossed and the merged fd-2003 IOS_Close candidate is the pending gate. Strongest graphics-path evidence is 1,408 RMCP01 FIFO writes and 92 successful presents / 0 failures. No visually correct Mario Kart Wii image is proven yet.**
+Status: **real RMCP01 FIFO/Aurora work and repeated GPU presents are hardware-proven. Real English.szs, StaticR.rel and Home Button/UI resources load successfully. Three exact GXInitTexObjLOD descriptors are hardware-crossed, as are the first two exact GXInitTexObjWrapMode tuples. The third wrap tuple on obj 0x9018E140 is merged and awaiting hardware crossing. The KD/NWC24 path is hardware-crossed through fd 2003 close; PAL AIInit (0x801240B0) is also hardware-crossed, and the current audio-path gate is __AXOutInitDSP (0x801269BC). Strongest graphics-path evidence is 1,408 RMCP01 FIFO writes and 92 successful presents / 0 failures. No visually correct Mario Kart Wii image is proven yet.**
 
 ## Current accepted frontier — 2026-09-27
 
 There is no single deterministic next boundary because guest scheduling can
-reach the GX texture path or the KD/NWC24 path first.
+reach the GX texture path or the audio path first.
 
 ```text
 GX path
   third GXInitTexObjLOD obj 0x9018E140        ✅ crossed
   third GXInitTexObjWrapMode obj 0x9018E140   🟡 merged, crossing pending
 
-KD path
-  fd 2003 / cmd 3 resume                      ✅ crossed
-  IOS_Close(2003)                             🟡 merged, crossing pending
+KD / audio path
+  fd 2003 / cmd 3 / close                     ✅ crossed
+  AIInit 0x801240B0                            ✅ crossed
+  __AXOutInitDSP 0x801269BC                    🟡 merged, crossing pending
 ```
 
 Whichever merged gate is crossed first defines the next durable blocker.

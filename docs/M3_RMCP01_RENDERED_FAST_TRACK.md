@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **real RMCP01 FIFO/Aurora work and repeated GPU presents are hardware-proven. Real English.szs, StaticR.rel and Home Button/UI resources load successfully. Three exact GXInitTexObjLOD descriptors are hardware-crossed, as are the first two exact GXInitTexObjWrapMode tuples. The third wrap tuple on obj 0x9018E140 is merged and awaiting hardware crossing. The KD/NWC24 path is hardware-crossed through fd 2003 close; PAL AIInit (0x801240B0) and __AXOutInitDSP (0x801269BC) are hardware-crossed, and AIInitDMA (0x80123FCC) is hardware-crossed; the current audio-path gate is AIStartDMA (0x80124048). Strongest graphics-path evidence is 1,408 RMCP01 FIFO writes and 92 successful presents / 0 failures. No visually correct Mario Kart Wii image is proven yet.**
+Status: **real RMCP01 FIFO/Aurora work and repeated GPU presents are hardware-proven. Real English.szs, StaticR.rel and Home Button/UI resources load successfully. Three exact GXInitTexObjLOD descriptors are hardware-crossed and a fourth exact descriptor on obj 0x9018E480 is captured. The first three exact GXInitTexObjWrapMode tuples are hardware-crossed. The KD/NWC24 path is hardware-crossed through fd 2003 close; PAL AIInit (0x801240B0) and __AXOutInitDSP (0x801269BC) are hardware-crossed, AIInitDMA (0x80123FCC) and AIStartDMA (0x80124048) are hardware-crossed. The current exact gate is the fourth GXInitTexObjLOD tuple on obj 0x9018E480. Strongest graphics-path evidence is 1,408 RMCP01 FIFO writes and 92 successful presents / 0 failures. No visually correct Mario Kart Wii image is proven yet.**
 
 ## Current accepted frontier — 2026-09-27
 
@@ -12,7 +12,8 @@ reach the GX texture path or the audio path first.
 ```text
 GX path
   third GXInitTexObjLOD obj 0x9018E140        ✅ crossed
-  third GXInitTexObjWrapMode obj 0x9018E140   🟡 merged, crossing pending
+  third GXInitTexObjWrapMode obj 0x9018E140   ✅ crossed
+  fourth GXInitTexObjLOD obj 0x9018E480       🟡 merged, crossing pending
 
 KD / audio path
   fd 2003 / cmd 3 / close                     ✅ crossed
@@ -20,7 +21,7 @@ KD / audio path
   __AXOutInitDSP 0x801269BC                    ✅ crossed
   AIRegisterDMACallback 0x80123F88             ✅ crossed
   AIInitDMA 0x80123FCC                         ✅ crossed
-  AIStartDMA 0x80124048                        🟡 merged, crossing pending
+  AIStartDMA 0x80124048                        ✅ crossed
 ```
 
 Whichever merged gate is crossed first defines the next durable blocker.

@@ -11,6 +11,7 @@
 //
 // PAL addresses from pinned WiiCompiled a135beb...:
 //   0x801240B0 AIInit
+//   0x801269BC __AXOutInitDSP
 //   0x801A1138 __AIClockInit
 //   0x801A1358 __OSInitAudioSystem
 //   0x801A1520 __OSStopAudioSystem
@@ -54,6 +55,89 @@ struct KnownNativeCpuCall<0x801240B0u> {
         } catch (...) {
             // Pinned WiiCompiled uses TryRead/TryWrite for this bookkeeping;
             // an unavailable guest range therefore leaves AIInit best-effort.
+        }
+    }
+};
+
+// Real-Switch hardware crossed AIInit and then reached PAL __AXOutInitDSP
+// (0x801269BC). Pinned WiiCompiled initializes host AX/DSP state and publishes
+// the guest DSP task contract. Mirror only those guest-visible writes here;
+// the host mix worker, mail queue, and audio backend remain unimplemented until
+// hardware reaches a boundary that proves they are required.
+template <>
+struct KnownNativeCpuCall<0x801269BCu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        constexpr std::uint32_t kAxDspTaskAddr = 0x802F81A0u;
+        constexpr std::uint32_t kDspInitializedAddr = 0x80386608u;
+        constexpr std::uint32_t kDspAssertPendingAddr = 0x80386610u;
+        constexpr std::uint32_t kDspAssertTaskAddr = 0x80386614u;
+        constexpr std::uint32_t kDspUnknownStateAddr = 0x80386618u;
+        constexpr std::uint32_t kDspCurrentTaskAddr = 0x8038661Cu;
+        constexpr std::uint32_t kDspFirstTaskAddr = 0x80386620u;
+        constexpr std::uint32_t kDspRunningTaskAddr = 0x80386624u;
+        constexpr std::uint32_t kAxIramMmemAddr = 0x8027F820u;
+        constexpr std::uint32_t kAxDramMmemAddr = 0x802F8200u;
+        constexpr std::uint32_t kAxDramLength = 64u;
+        constexpr std::uint32_t kAxDramDspAddr = 3282u;
+        constexpr std::uint32_t kAxInitCallback = 0x80126948u;
+        constexpr std::uint32_t kAxResumeCallback = 0x80126954u;
+        constexpr std::uint32_t kAxDoneCallback = 0x801269A8u;
+        constexpr std::uint32_t kAxRequestCallback = 0x801269B8u;
+
+        const std::uint32_t r13 = cpu->gpr[13];
+        if (r13 < 0x7400u) {
+            return;
+        }
+
+        const std::uint32_t sdaInput = r13 - 0x7400u;
+        const std::uint32_t sdaOutput = r13 - 0x66DCu;
+
+        try {
+            if (!Memory::Contains(kAxDspTaskAddr, 0x40u) ||
+                !Memory::Contains(kDspInitializedAddr, 0x20u) ||
+                !Memory::Contains(sdaInput, 6u) || !Memory::Contains(sdaOutput, 8u)) {
+                return;
+            }
+
+            Memory::Write32(kDspInitializedAddr, 1u);
+            Memory::Write32(kDspAssertPendingAddr, 0u);
+            Memory::Write32(kDspAssertTaskAddr, 0u);
+            Memory::Write32(kDspUnknownStateAddr, 0u);
+            Memory::Write32(kDspCurrentTaskAddr, 0u);
+            Memory::Write32(kDspFirstTaskAddr, 0u);
+            Memory::Write32(kDspRunningTaskAddr, 0u);
+
+            Memory::Write32(kAxDspTaskAddr + 0x00u, 1u);
+            Memory::Write32(kAxDspTaskAddr + 0x04u, 0u);
+            Memory::Write32(kAxDspTaskAddr + 0x0Cu, kAxIramMmemAddr);
+            Memory::Write32(kAxDspTaskAddr + 0x10u, Memory::Read16(sdaInput + 0x04u));
+            Memory::Write32(kAxDspTaskAddr + 0x14u, 0u);
+            Memory::Write32(kAxDspTaskAddr + 0x18u, kAxDramMmemAddr);
+            Memory::Write32(kAxDspTaskAddr + 0x1Cu, kAxDramLength);
+            Memory::Write32(kAxDspTaskAddr + 0x20u, kAxDramDspAddr);
+            Memory::Write16(kAxDspTaskAddr + 0x24u, Memory::Read16(sdaInput + 0x00u));
+            Memory::Write16(kAxDspTaskAddr + 0x26u, Memory::Read16(sdaInput + 0x02u));
+            Memory::Write32(kAxDspTaskAddr + 0x28u, kAxInitCallback);
+            Memory::Write32(kAxDspTaskAddr + 0x2Cu, kAxResumeCallback);
+            Memory::Write32(kAxDspTaskAddr + 0x30u, kAxDoneCallback);
+            Memory::Write32(kAxDspTaskAddr + 0x34u, kAxRequestCallback);
+            Memory::Write32(kAxDspTaskAddr + 0x38u, 0u);
+            Memory::Write32(kAxDspTaskAddr + 0x3Cu, 0u);
+
+            Memory::Write32(kDspCurrentTaskAddr, kAxDspTaskAddr);
+            Memory::Write32(kDspFirstTaskAddr, kAxDspTaskAddr);
+            Memory::Write32(kDspRunningTaskAddr, kAxDspTaskAddr);
+            Memory::Write32(sdaOutput + 0x04u, 1u);
+            Memory::Write32(sdaOutput + 0x00u, 0u);
+        } catch (...) {
+            // Keep the Switch fast-track best-effort if guest memory is not
+            // available; the real hardware path maps every range above.
         }
     }
 };

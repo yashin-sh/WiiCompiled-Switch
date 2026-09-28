@@ -47,11 +47,11 @@ Hardware has now crossed four exact `GXInitTexObjLOD (0x80170A4C)` descriptors a
 - `obj=0x9018E460`;
 - `obj=0x9018E140`;
 - `obj=0x9018E480`;
-- `obj=0x908FA4E0` (captured; exact bridge candidate).
+- `obj=0x908FA4E0`.
 
 The first three exact `GXInitTexObjWrapMode (0x80170B50)` tuples are
-hardware-crossed. The fourth LOD tuple on `obj=0x9018E480` is also
-hardware-crossed.
+hardware-crossed. A fourth exact wrap tuple on `obj=0x908FA4E0` is captured
+and bridged.
 
 In parallel, the scheduler can reach the NWC24/KD path first. Hardware has
 crossed the exact sequence through:
@@ -74,7 +74,7 @@ The latest accepted 2026-09-27 run durably crosses the merged
 So the current hardware gates are scheduler-order dependent:
 
 ```text
-GX path: fifth GXInitTexObjLOD tuple on obj 0x908FA4E0
+GX path: fourth GXInitTexObjWrapMode tuple on obj 0x908FA4E0
 Audio path: SoundPlayer::SetVolume (0x800A35E0) crossed
 ```
 

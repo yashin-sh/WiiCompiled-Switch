@@ -128,6 +128,7 @@
 - `HARDWARE_RESULTS_2026-09-27_OS_SET_PERIODIC_ALARM_FRONTIER.md` — hardware-crosses the fourth GXInitTexObjLOD descriptor and captures OSSetPeriodicAlarm (0x801A08E0)
 - `HARDWARE_RESULTS_2026-09-27_SOUND_PLAYER_SET_VOLUME_FRONTIER.md` — hardware-crosses OSSetPeriodicAlarm, records real revo_kart.brsar reads, and captures nw4r::snd::SoundPlayer::SetVolume (0x800A35E0)
 - `HARDWARE_RESULTS_2026-09-28_FIFTH_GX_INIT_TEX_OBJ_LOD_FRONTIER.md` — hardware-crosses SoundPlayer::SetVolume and captures the fifth exact GXInitTexObjLOD descriptor on 0x908FA4E0
+- `HARDWARE_RESULTS_2026-09-28_FOURTH_GX_INIT_TEX_OBJ_WRAP_FRONTIER.md` — hardware-crosses the fifth GXInitTexObjLOD descriptor and captures the fourth exact GXInitTexObjWrapMode tuple on 0x908FA4E0
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes
@@ -141,10 +142,10 @@ issue #117.
 Current accepted state as of 2026-09-27:
 
 - real RMCP01 FIFO work and repeated GPU presents are hardware-proven;
-- strongest graphics-path run reaches 1,408 FIFO writes and 92 successful
+- strongest graphics-path run reaches 1,450 FIFO writes and 94 successful
   presents / 0 failures;
-- four exact GXInitTexObjLOD descriptors are hardware-crossed and the fifth on `0x908FA4E0` is the current merged gate;
-- three exact GXInitTexObjWrapMode tuples are hardware-crossed;
+- five exact GXInitTexObjLOD descriptors are hardware-crossed;
+- three exact GXInitTexObjWrapMode tuples are hardware-crossed and the fourth on `0x908FA4E0` is the current merged gate;
 - KD/NWC24 exact handling is hardware-crossed through fd 2003 close;
 - PAL AIInit (0x801240B0) is hardware-crossed;
 - __AXOutInitDSP (0x801269BC) is hardware-crossed;

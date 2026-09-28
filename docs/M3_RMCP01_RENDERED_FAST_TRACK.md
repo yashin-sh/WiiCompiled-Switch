@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **real RMCP01 FIFO/Aurora work and repeated GPU presents are hardware-proven. Real English.szs, StaticR.rel and Home Button/UI resources load successfully. Four exact GXInitTexObjLOD descriptors are hardware-crossed and a fifth exact descriptor on obj 0x908FA4E0 is captured. The first three exact GXInitTexObjWrapMode tuples are hardware-crossed. The KD/NWC24 path is hardware-crossed through fd 2003 close; PAL AIInit (0x801240B0) and __AXOutInitDSP (0x801269BC) are hardware-crossed, AIInitDMA (0x80123FCC) and AIStartDMA (0x80124048) are hardware-crossed. SoundPlayer::SetVolume (0x800A35E0) and OSSetPeriodicAlarm (0x801A08E0) are hardware-crossed. The current exact gate is the fifth GXInitTexObjLOD tuple on obj 0x908FA4E0. Strongest graphics-path evidence is 1,408 RMCP01 FIFO writes and 92 successful presents / 0 failures. No visually correct Mario Kart Wii image is proven yet.**
+Status: **real RMCP01 FIFO/Aurora work and repeated GPU presents are hardware-proven. Real English.szs, StaticR.rel and Home Button/UI resources load successfully. Five exact GXInitTexObjLOD descriptors are hardware-crossed. The first three exact GXInitTexObjWrapMode tuples are hardware-crossed and a fourth exact tuple on obj 0x908FA4E0 is captured. The KD/NWC24 path is hardware-crossed through fd 2003 close; PAL AIInit (0x801240B0) and __AXOutInitDSP (0x801269BC) are hardware-crossed, AIInitDMA (0x80123FCC) and AIStartDMA (0x80124048) are hardware-crossed. SoundPlayer::SetVolume (0x800A35E0) and OSSetPeriodicAlarm (0x801A08E0) are hardware-crossed. The fifth GXInitTexObjLOD tuple on obj 0x908FA4E0 is hardware-crossed. The current exact gate is the fourth GXInitTexObjWrapMode tuple on obj 0x908FA4E0. Strongest graphics-path evidence is 1,450 RMCP01 FIFO writes and 94 successful presents / 0 failures. No visually correct Mario Kart Wii image is proven yet.**
 
 ## Current accepted frontier — 2026-09-27
 
@@ -22,7 +22,8 @@ Audio/resource path
   SoundPlayer::SetVolume 0x800A35E0             ✅ crossed
 
 GX path
-  fifth GXInitTexObjLOD obj 0x908FA4E0            🟡 merged, crossing pending
+  fifth GXInitTexObjLOD obj 0x908FA4E0            ✅ crossed
+  fourth GXInitTexObjWrapMode obj 0x908FA4E0       🟡 merged, crossing pending
 
 KD / audio path
   fd 2003 / cmd 3 / close                     ✅ crossed

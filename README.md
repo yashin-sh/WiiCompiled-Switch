@@ -41,12 +41,13 @@ FST structurally valid: YES
 renderer active       : YES
 ```
 
-Hardware has now crossed four exact `GXInitTexObjLOD (0x80170A4C)` descriptors:
+Hardware has now crossed four exact `GXInitTexObjLOD (0x80170A4C)` descriptors and captured a fifth exact descriptor:
 
 - `obj=0x9018E120`;
 - `obj=0x9018E460`;
 - `obj=0x9018E140`;
-- `obj=0x9018E480`.
+- `obj=0x9018E480`;
+- `obj=0x908FA4E0` (captured; exact bridge candidate).
 
 The first three exact `GXInitTexObjWrapMode (0x80170B50)` tuples are
 hardware-crossed. The fourth LOD tuple on `obj=0x9018E480` is also
@@ -66,14 +67,15 @@ The latest accepted 2026-09-27 run durably crosses the merged
 `__AXOutInitDSP (0x801269BC)` bridge and reaches
 `AIStartDMA (0x80124048)`, the fourth GXInitTexObjLOD descriptor on
 `0x9018E480`, `OSSetPeriodicAlarm (0x801A08E0)`, and then reaches
-`nw4r::snd::SoundPlayer::SetVolume (0x800A35E0)` while loading
-`/sound/revo_kart.brsar`.
+`nw4r::snd::SoundPlayer::SetVolume (0x800A35E0)`, then reaches a fifth
+`GXInitTexObjLOD` descriptor on `obj=0x908FA4E0` while continuing real
+`revo_kart.brsar` and Home Button resource loading.
 
 So the current hardware gates are scheduler-order dependent:
 
 ```text
-Audio path: SoundPlayer::SetVolume (0x800A35E0)
-OS path: OSSetPeriodicAlarm (0x801A08E0) crossed
+GX path: fifth GXInitTexObjLOD tuple on obj 0x908FA4E0
+Audio path: SoundPlayer::SetVolume (0x800A35E0) crossed
 ```
 
 Whichever path hardware reaches first defines the next exact blocker. No

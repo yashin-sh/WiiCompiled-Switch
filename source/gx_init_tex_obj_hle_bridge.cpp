@@ -115,6 +115,16 @@ constexpr std::uint32_t kObservedSixthLodWord5 = 0x00000000u;
 constexpr std::uint32_t kObservedSixthLodWord6 = 0x00000000u;
 constexpr std::uint32_t kObservedSixthLodWord7 = 0x00400102u;
 
+constexpr std::uint32_t kObservedSeventhLodObj = 0x907938A0u;
+constexpr std::uint32_t kObservedSeventhLodWord0 = 0x00000095u;
+constexpr std::uint32_t kObservedSeventhLodWord1 = 0x00000000u;
+constexpr std::uint32_t kObservedSeventhLodWord2 = 0x0000FC3Fu;
+constexpr std::uint32_t kObservedSeventhLodWord3 = 0x0083AC53u;
+constexpr std::uint32_t kObservedSeventhLodWord4 = 0x00000000u;
+constexpr std::uint32_t kObservedSeventhLodWord5 = 0x00000000u;
+constexpr std::uint32_t kObservedSeventhLodWord6 = 0x00000000u;
+constexpr std::uint32_t kObservedSeventhLodWord7 = 0x00400102u;
+
 constexpr std::uint32_t kObservedWrapObj = 0x9018E120u;
 constexpr std::uint32_t kObservedSecondWrapObj = 0x9018E460u;
 constexpr std::uint32_t kObservedThirdWrapObj = 0x9018E140u;
@@ -868,13 +878,25 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept {
         word6 == kObservedSixthLodWord6 &&
         word7 == kObservedSixthLodWord7;
 
+    const bool exactSeventhObservedDescriptor =
+        obj == kObservedSeventhLodObj &&
+        word0 == kObservedSeventhLodWord0 &&
+        word1 == kObservedSeventhLodWord1 &&
+        word2 == kObservedSeventhLodWord2 &&
+        word3 == kObservedSeventhLodWord3 &&
+        word4 == kObservedSeventhLodWord4 &&
+        word5 == kObservedSeventhLodWord5 &&
+        word6 == kObservedSeventhLodWord6 &&
+        word7 == kObservedSeventhLodWord7;
+
     if (!exactObservedArgs ||
         (!exactFirstObservedDescriptor &&
          !exactSecondObservedDescriptor &&
          !exactThirdObservedDescriptor &&
          !exactFourthObservedDescriptor &&
          !exactFifthObservedDescriptor &&
-         !exactSixthObservedDescriptor)) {
+         !exactSixthObservedDescriptor &&
+         !exactSeventhObservedDescriptor)) {
         AbortLodBoundary(
             "GX_INIT_TEX_OBJ_LOD_UNPROVEN_TUPLE",
             cpu,

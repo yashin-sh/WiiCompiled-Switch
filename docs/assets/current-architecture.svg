@@ -1,0 +1,203 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="1024" viewBox="0 0 1536 1024" role="img" aria-labelledby="title desc">
+  <title id="title">WiiCompiled-Switch current architecture</title>
+  <desc id="desc">Detailed technical architecture from a user-owned Mario Kart Wii RMCP01 dump through WiiCompiled static translation to a native AArch64 Nintendo Switch homebrew NRO, with graphics, audio, input, filesystem, system-service integrations and current hardware-proof status.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#06101d"/>
+      <stop offset="1" stop-color="#0a1728"/>
+    </linearGradient>
+    <linearGradient id="titleGrad" x1="0" x2="1">
+      <stop offset="0" stop-color="#28b6ff"/>
+      <stop offset="1" stop-color="#7f63ff"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity=".28"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#55b9ff"/></marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#44e18c"/></marker>
+    <style>
+      text{font-family:Inter,Segoe UI,Arial,sans-serif;fill:#eaf2ff}
+      .muted{fill:#a9b8cc}
+      .small{font-size:14px}
+      .tiny{font-size:12px}
+      .body{font-size:16px}
+      .label{font-size:18px;font-weight:700}
+      .head{font-size:23px;font-weight:800}
+      .panel{stroke-width:2}
+      .bullet{fill:#b8c8dd;font-size:15px}
+      .ok{fill:#62e697}
+      .warn{fill:#ffc14f}
+      .bad{fill:#ff5b66}
+    </style>
+  </defs>
+
+  <rect width="1536" height="1024" fill="url(#bg)"/>
+  <text x="34" y="62" font-size="48" font-weight="900">Current <tspan fill="url(#titleGrad)">Architecture</tspan></text>
+  <text x="36" y="92" font-size="20" class="muted">Mario Kart Wii (RMCP01) on Nintendo Switch — technical architecture</text>
+  <text x="740" y="40" class="body" fill="#d5e1f0">Static translation of Wii PowerPC code to native AArch64 homebrew.</text>
+  <text x="740" y="64" class="body" fill="#d5e1f0">No Dolphin runtime; native Switch integrations are used where implemented.</text>
+
+  <g transform="translate(1240 18)">
+    <rect width="266" height="84" rx="14" fill="#0d1930" stroke="#6556e8" stroke-width="2"/>
+    <circle cx="26" cy="26" r="15" fill="#695cff"/><text x="21" y="32" font-size="18" font-weight="800">i</text>
+    <text x="50" y="25" class="small" font-weight="700">Unofficial community project</text>
+    <text x="50" y="45" class="tiny muted">Not affiliated with or endorsed by Nintendo.</text>
+    <text x="50" y="62" class="tiny muted">No game files, keys, firmware or copyrighted</text>
+    <text x="50" y="77" class="tiny muted">Nintendo assets are distributed.</text>
+  </g>
+
+  <!-- 1 Original game -->
+  <g filter="url(#shadow)">
+    <rect x="24" y="126" width="300" height="510" rx="16" fill="#0c1927" stroke="#60738b" class="panel"/>
+  </g>
+  <circle cx="52" cy="154" r="18" fill="#55b9ff"/><text x="46" y="161" font-size="19" font-weight="900" fill="#041220">1</text>
+  <text x="80" y="162" class="head">Original Game</text>
+  <text x="80" y="187" class="body muted">(user-owned RMCP01 PAL)</text>
+
+  <g>
+    <rect x="42" y="207" width="264" height="72" rx="10" fill="#12263a"/>
+    <text x="62" y="236" class="label">main.dol</text><text x="62" y="260" class="small muted">PowerPC game executable</text>
+    <rect x="42" y="290" width="264" height="72" rx="10" fill="#12263a"/>
+    <text x="62" y="319" class="label">StaticR.rel</text><text x="62" y="343" class="small muted">PowerPC REL module</text>
+    <rect x="42" y="373" width="264" height="86" rx="10" fill="#12263a"/>
+    <text x="62" y="402" class="label">Game resources</text><text x="62" y="426" class="small muted">.szs, .brsar, .arc, .tpl, …</text><text x="62" y="447" class="small muted">loaded locally from user dump</text>
+    <rect x="42" y="470" width="264" height="80" rx="10" fill="#12263a"/>
+    <text x="62" y="499" class="label">FST / filesystem</text><text x="62" y="523" class="small muted">Wii game data structure</text>
+  </g>
+  <text x="42" y="577" class="small muted">You provide your own legally obtained dump.</text>
+  <text x="42" y="599" class="small muted">This repository does not include game data.</text>
+
+  <!-- arrow 1->2 -->
+  <path d="M324 372 H384" fill="none" stroke="#55b9ff" stroke-width="5" marker-end="url(#arrowBlue)"/>
+  <text x="331" y="348" class="tiny muted">PPC code</text><text x="331" y="363" class="tiny muted">&amp; data</text>
+
+  <!-- 2 WiiCompiled -->
+  <g filter="url(#shadow)"><rect x="395" y="126" width="312" height="510" rx="16" fill="#171443" stroke="#7a55f7" class="panel"/></g>
+  <circle cx="424" cy="154" r="18" fill="#9d73ff"/><text x="418" y="161" font-size="19" font-weight="900" fill="#130a2b">2</text>
+  <text x="452" y="162" class="head" fill="#c18cff">WiiCompiled</text>
+  <text x="452" y="187" class="body muted">Static translator (PPC → C++)</text>
+
+  <rect x="417" y="207" width="268" height="114" rx="12" fill="#24205b" stroke="#7055da"/>
+  <text x="438" y="236" class="label">PPC analysis &amp; translation</text>
+  <text x="438" y="262" class="bullet">• translate PowerPC code to C++</text>
+  <text x="438" y="284" class="bullet">• static translation, not runtime emulation</text>
+  <text x="438" y="306" class="bullet">• preserve DOL / REL / data references</text>
+
+  <path d="M551 322 V345" stroke="#9d73ff" stroke-width="4" marker-end="url(#arrowBlue)"/>
+  <rect x="417" y="350" width="268" height="105" rx="12" fill="#24205b" stroke="#7055da"/>
+  <text x="438" y="379" class="label">Generated translation output</text>
+  <text x="438" y="405" class="bullet">• generated C++ game code</text>
+  <text x="438" y="427" class="bullet">• RuntimeConfig</text>
+  <text x="438" y="449" class="bullet">• data init / relocation metadata</text>
+
+  <path d="M551 456 V479" stroke="#9d73ff" stroke-width="4" marker-end="url(#arrowBlue)"/>
+  <rect x="417" y="484" width="268" height="118" rx="12" fill="#24205b" stroke="#7055da"/>
+  <text x="438" y="514" class="label">Native AArch64 build</text>
+  <text x="438" y="540" class="bullet">• compile &amp; link for Nintendo Switch</text>
+  <text x="438" y="562" class="bullet">• devkitA64 / libnx toolchain</text>
+  <text x="438" y="584" class="bullet">• produces homebrew .nro</text>
+
+  <!-- arrow 2->3 -->
+  <path d="M707 372 H760" fill="none" stroke="#55b9ff" stroke-width="5" marker-end="url(#arrowBlue)"/>
+  <text x="713" y="344" class="tiny muted">translated</text><text x="713" y="359" class="tiny muted">&amp; built code</text>
+
+  <!-- 3 native nro -->
+  <g filter="url(#shadow)"><rect x="770" y="126" width="346" height="510" rx="16" fill="#09213b" stroke="#2aa8ff" class="panel"/></g>
+  <circle cx="800" cy="154" r="18" fill="#43b7ff"/><text x="794" y="161" font-size="19" font-weight="900" fill="#041220">3</text>
+  <text x="828" y="162" class="head">Native .nro</text>
+  <text x="828" y="187" class="body muted">translated game + Switch platform adapter</text>
+
+  <rect x="792" y="207" width="302" height="118" rx="12" fill="#0c3152" stroke="#228ee0"/>
+  <text x="814" y="236" class="label">WiiCompiled translated product</text>
+  <text x="814" y="262" class="bullet">• generated C++ game code</text>
+  <text x="814" y="284" class="bullet">• RuntimeConfig (addresses / symbols)</text>
+  <text x="814" y="306" class="bullet">• data initialization</text>
+
+  <text x="929" y="350" font-size="34" font-weight="800">+</text>
+  <rect x="792" y="368" width="302" height="238" rx="12" fill="#0c3152" stroke="#228ee0"/>
+  <text x="814" y="398" class="label">Switch platform adapter / HLE</text>
+  <text x="814" y="423" class="small muted">Wii OS &amp; SDK compatibility layer (HLE)</text>
+  <text x="814" y="450" class="bullet">• OS: threads, scheduler, timing</text>
+  <text x="814" y="472" class="bullet">• guest memory + context switching</text>
+  <text x="814" y="494" class="bullet">• DVD / FST / resource loading</text>
+  <text x="814" y="516" class="bullet">• GX / VI graphics path</text>
+  <text x="814" y="538" class="bullet">• AI / AX / DSP audio  <tspan class="warn">[partial]</tspan></text>
+  <text x="814" y="560" class="bullet">• WPAD / input state  <tspan class="warn">[partial]</tspan></text>
+  <text x="814" y="582" class="bullet">• other Wii subsystems  <tspan class="warn">[as required]</tspan></text>
+
+  <!-- 4 integrations -->
+  <g filter="url(#shadow)"><rect x="1140" y="126" width="370" height="510" rx="16" fill="#082722" stroke="#27d791" class="panel"/></g>
+  <circle cx="1170" cy="154" r="18" fill="#41e69a"/><text x="1164" y="161" font-size="19" font-weight="900" fill="#041a12">4</text>
+  <text x="1198" y="162" class="head">Switch integrations &amp; native backends</text>
+
+  <rect x="1162" y="192" width="326" height="128" rx="12" fill="#0d3a30" stroke="#31d98c"/>
+  <text x="1182" y="221" class="label" fill="#75f0ad">Graphics pipeline</text>
+  <text x="1182" y="247" class="bullet">GX / FIFO → Aurora GX →</text>
+  <text x="1182" y="269" class="bullet">Dawn / WebGPU → Vulkan / NVK →</text>
+  <text x="1182" y="291" class="bullet">Nintendo Switch GPU</text>
+  <text x="1182" y="312" class="tiny muted">textures, render state, FIFO decoding, presents</text>
+
+  <rect x="1162" y="332" width="326" height="82" rx="12" fill="#3a2510" stroke="#ff9b3d"/>
+  <text x="1182" y="360" class="label" fill="#ffc177">Audio (AI / AX / DSP)</text>
+  <text x="1182" y="383" class="small">HLE partial · native output <tspan class="warn">pending / unproven</tspan></text>
+
+  <rect x="1162" y="426" width="326" height="82" rx="12" fill="#0a2e4a" stroke="#39a9ff"/>
+  <text x="1182" y="454" class="label" fill="#70c6ff">Input (WPAD → Switch HID)</text>
+  <text x="1182" y="477" class="small">HLE partial · controller mapping <tspan class="warn">pending</tspan></text>
+
+  <rect x="1162" y="520" width="326" height="94" rx="12" fill="#33114d" stroke="#a15bff"/>
+  <text x="1182" y="548" class="label" fill="#ca97ff">Filesystem &amp; system services</text>
+  <text x="1182" y="572" class="small">libnx / Horizon: fs, applet, HID, diagnostics</text>
+  <text x="1182" y="594" class="small muted">game resources accessed via local HLE filesystem</text>
+
+  <path d="M1116 260 H1140" stroke="#44e18c" stroke-width="5" marker-end="url(#arrowGreen)"/>
+  <path d="M1116 370 H1140" stroke="#ff9b3d" stroke-width="5"/>
+  <path d="M1116 466 H1140" stroke="#39a9ff" stroke-width="5"/>
+  <path d="M1116 566 H1140" stroke="#a15bff" stroke-width="5"/>
+
+  <!-- build down -->
+  <path d="M943 636 V682" stroke="#55b9ff" stroke-width="5" marker-end="url(#arrowBlue)"/>
+  <text x="954" y="663" class="small muted">builds to .nro</text>
+
+  <!-- 5 running -->
+  <g filter="url(#shadow)"><rect x="24" y="696" width="940" height="278" rx="16" fill="#251018" stroke="#ff4f72" class="panel"/></g>
+  <circle cx="52" cy="724" r="18" fill="#ff67a2"/><text x="46" y="731" font-size="19" font-weight="900" fill="#260813">5</text>
+  <text x="80" y="732" class="head">Running on Nintendo Switch</text>
+  <text x="80" y="758" class="body muted">native .nro under a custom-firmware environment (for example Atmosphère)</text>
+
+  <rect x="48" y="782" width="306" height="52" rx="10" fill="#102a43" stroke="#286aa3"/>
+  <text x="66" y="813" class="label">Nintendo Switch hardware</text>
+  <rect x="48" y="846" width="306" height="52" rx="10" fill="#102a43" stroke="#286aa3"/>
+  <text x="66" y="877" class="label">Custom firmware environment</text>
+  <rect x="48" y="910" width="306" height="44" rx="10" fill="#102a43" stroke="#286aa3"/>
+  <text x="66" y="938" class="label">Homebrew application (.nro)</text>
+
+  <!-- generic handheld -->
+  <g transform="translate(408 772)">
+    <rect x="0" y="0" width="478" height="176" rx="38" fill="#dce2e9" stroke="#9da9b7" stroke-width="3"/>
+    <rect x="78" y="15" width="322" height="146" rx="12" fill="#131a22"/>
+    <rect x="94" y="30" width="290" height="116" rx="4" fill="#070c12"/>
+    <circle cx="40" cy="58" r="19" fill="#252d36"/><circle cx="438" cy="92" r="19" fill="#252d36"/>
+    <rect x="28" y="103" width="30" height="9" rx="3" fill="#252d36"/><rect x="38" y="93" width="9" height="30" rx="3" fill="#252d36"/>
+    <circle cx="433" cy="42" r="7" fill="#252d36"/><circle cx="451" cy="56" r="7" fill="#252d36"/><circle cx="415" cy="56" r="7" fill="#252d36"/><circle cx="433" cy="70" r="7" fill="#252d36"/>
+  </g>
+
+  <!-- 6 status -->
+  <g filter="url(#shadow)"><rect x="984" y="696" width="526" height="278" rx="16" fill="#081d2d" stroke="#2aa8ff" class="panel"/></g>
+  <circle cx="1014" cy="724" r="18" fill="#43b7ff"/><text x="1008" y="731" font-size="19" font-weight="900" fill="#041220">6</text>
+  <text x="1042" y="732" class="head">Current status — hardware proof</text>
+
+  <g class="body">
+    <text x="1012" y="770" class="ok">●</text><text x="1038" y="770">Native AArch64 translated execution</text>
+    <text x="1012" y="797" class="ok">●</text><text x="1038" y="797">Real FST / DVD / resource loading</text>
+    <text x="1012" y="824" class="ok">●</text><text x="1038" y="824">Real GX FIFO work</text>
+    <text x="1012" y="851" class="ok">●</text><text x="1038" y="851">Aurora GX → Dawn/WebGPU → Vulkan/NVK</text>
+    <text x="1012" y="878" class="ok">●</text><text x="1038" y="878">Repeated GPU presents</text>
+    <text x="1012" y="905" class="warn">●</text><text x="1038" y="905">Audio HLE partial — native output not proven</text>
+    <text x="1012" y="932" class="warn">●</text><text x="1038" y="932">Input HLE partial — controller mapping pending</text>
+    <text x="1012" y="959" class="bad">●</text><text x="1038" y="959">Visually correct MKW image / full playability not yet proven</text>
+  </g>
+
+  <text x="24" y="1005" class="tiny muted">Unofficial community project. Not affiliated with or endorsed by Nintendo. No Nintendo game files, keys, firmware, or copyrighted assets are distributed.</text>
+  <text x="1110" y="1005" class="tiny muted">Nintendo Switch is a trademark of Nintendo. Other marks belong to their respective owners.</text>
+</svg>

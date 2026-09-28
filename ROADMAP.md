@@ -154,13 +154,13 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 > The stable #117 fast-track intentionally keeps its FIFO sink as a control
 > baseline. The rendered path is now hardware-proven through real
 > English.szs/StaticR/Home Button resource loading, real FIFO work, repeated
-> GXCopyDisp/present, six hardware-crossed GXInitTexObjLOD descriptors plus a seventh captured exact descriptor,
+> GXCopyDisp/present, seven hardware-crossed GXInitTexObjLOD descriptors plus an eighth captured exact descriptor,
 > four hardware-crossed GXInitTexObjWrapMode tuples,
 > and the exact KD sequence through fd 2003 close.
 > AIInit (0x801240B0), __AXOutInitDSP (0x801269BC), AIRegisterDMACallback (0x80123F88), AIInitDMA (0x80123FCC), and AIStartDMA (0x80124048) are hardware-crossed.
 > The third wrap tuple on obj 0x9018E140 and fourth LOD tuple on obj 0x9018E480
 > are hardware-crossed. OSSetPeriodicAlarm (0x801A08E0) is also hardware-crossed.
-> SoundPlayer::SetVolume (0x800A35E0), the fifth GXInitTexObjLOD tuple on obj 0x908FA4E0, the fourth GXInitTexObjWrapMode tuple on obj 0x908FA4E0, and the sixth GXInitTexObjLOD tuple on obj 0x908FA5C0 are hardware-crossed. The current exact gate is the seventh GXInitTexObjLOD tuple on obj 0x907938A0. Visual Mario
+> SoundPlayer::SetVolume (0x800A35E0), the fifth GXInitTexObjLOD tuple on obj 0x908FA4E0, the fourth GXInitTexObjWrapMode tuple on obj 0x908FA4E0, the sixth GXInitTexObjLOD tuple on obj 0x908FA5C0, and the seventh GXInitTexObjLOD tuple on obj 0x907938A0 are hardware-crossed. The current exact gate is the eighth GXInitTexObjLOD tuple on obj 0x908FA820. Visual Mario
 > Kart Wii pixels remain unproven.
 
 ## M4 — input + audio

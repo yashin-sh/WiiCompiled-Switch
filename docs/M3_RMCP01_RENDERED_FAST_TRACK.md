@@ -2,7 +2,7 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **real RMCP01 FIFO/Aurora work and repeated GPU presents are hardware-proven. Real English.szs, StaticR.rel and Home Button/UI resources load successfully. Six exact GXInitTexObjLOD descriptors are hardware-crossed and a seventh exact descriptor on obj 0x907938A0 is captured. Four exact GXInitTexObjWrapMode tuples are hardware-crossed, including obj 0x908FA4E0. The KD/NWC24 path is hardware-crossed through fd 2003 close; PAL AIInit (0x801240B0) and __AXOutInitDSP (0x801269BC) are hardware-crossed, AIInitDMA (0x80123FCC) and AIStartDMA (0x80124048) are hardware-crossed. SoundPlayer::SetVolume (0x800A35E0) and OSSetPeriodicAlarm (0x801A08E0) are hardware-crossed. The fifth and sixth GXInitTexObjLOD tuples on obj 0x908FA4E0 / 0x908FA5C0 and the fourth GXInitTexObjWrapMode tuple on obj 0x908FA4E0 are hardware-crossed. The current exact gate is the seventh GXInitTexObjLOD tuple on obj 0x907938A0. Strongest graphics-path evidence is 1,450 RMCP01 FIFO writes and 94 successful presents / 0 failures. No visually correct Mario Kart Wii image is proven yet.**
+Status: **real RMCP01 FIFO/Aurora work and repeated GPU presents are hardware-proven. Real English.szs, StaticR.rel and Home Button/UI resources load successfully. Seven exact GXInitTexObjLOD descriptors are hardware-crossed and an eighth exact descriptor on obj 0x908FA820 is captured. Four exact GXInitTexObjWrapMode tuples are hardware-crossed, including obj 0x908FA4E0. The KD/NWC24 path is hardware-crossed through fd 2003 close; PAL AIInit (0x801240B0) and __AXOutInitDSP (0x801269BC) are hardware-crossed, AIInitDMA (0x80123FCC) and AIStartDMA (0x80124048) are hardware-crossed. SoundPlayer::SetVolume (0x800A35E0) and OSSetPeriodicAlarm (0x801A08E0) are hardware-crossed. The fifth, sixth and seventh GXInitTexObjLOD tuples on obj 0x908FA4E0 / 0x908FA5C0 / 0x907938A0 and the fourth GXInitTexObjWrapMode tuple on obj 0x908FA4E0 are hardware-crossed. The current exact gate is the eighth GXInitTexObjLOD tuple on obj 0x908FA820. Strongest graphics-path evidence is 1,450 RMCP01 FIFO writes and 94 successful presents / 0 failures. No visually correct Mario Kart Wii image is proven yet.**
 
 ## Current accepted frontier — 2026-09-28
 
@@ -25,7 +25,8 @@ GX path
   fifth GXInitTexObjLOD obj 0x908FA4E0            ✅ crossed
   fourth GXInitTexObjWrapMode obj 0x908FA4E0       ✅ crossed
   sixth GXInitTexObjLOD obj 0x908FA5C0             ✅ crossed
-  seventh GXInitTexObjLOD obj 0x907938A0           🟡 merged, crossing pending
+  seventh GXInitTexObjLOD obj 0x907938A0           ✅ crossed
+  eighth GXInitTexObjLOD obj 0x908FA820            🟡 merged, crossing pending
 
 KD / audio path
   fd 2003 / cmd 3 / close                     ✅ crossed

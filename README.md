@@ -41,14 +41,15 @@ FST structurally valid: YES
 renderer active       : YES
 ```
 
-Hardware has now crossed five exact `GXInitTexObjLOD (0x80170A4C)` descriptors and captured a sixth exact descriptor:
+Hardware has now crossed six exact `GXInitTexObjLOD (0x80170A4C)` descriptors and captured a seventh exact descriptor:
 
 - `obj=0x9018E120`;
 - `obj=0x9018E460`;
 - `obj=0x9018E140`;
 - `obj=0x9018E480`;
 - `obj=0x908FA4E0`;
-- `obj=0x908FA5C0` (captured; exact bridge candidate).
+- `obj=0x908FA5C0`;
+- `obj=0x907938A0` (captured; exact bridge candidate).
 
 The first four exact `GXInitTexObjWrapMode (0x80170B50)` tuples are
 hardware-crossed, including the fourth tuple on `obj=0x908FA4E0`.
@@ -64,15 +65,15 @@ fd 2003 / cmd 3 / close
 ```
 
 The latest accepted 2026-09-28 run durably crosses the merged
-fourth `GXInitTexObjWrapMode (0x80170B50)` tuple on `obj=0x908FA4E0`
-and reaches a sixth exact `GXInitTexObjLOD (0x80170A4C)` descriptor on
-`obj=0x908FA5C0`, while preserving real `revo_kart.brsar` and Home Button
-resource loading, 1,450 FIFO writes and 94 successful presents / 0 failures.
+sixth `GXInitTexObjLOD (0x80170A4C)` descriptor on `obj=0x908FA5C0`
+and reaches a seventh exact descriptor on `obj=0x907938A0`, while preserving
+real `revo_kart.brsar` and Home Button resource loading, 1,450 FIFO writes
+and 94 successful presents / 0 failures.
 
 So the current hardware gates are scheduler-order dependent:
 
 ```text
-GX path: sixth GXInitTexObjLOD tuple on obj 0x908FA5C0
+GX path: seventh GXInitTexObjLOD tuple on obj 0x907938A0
 Audio path: SoundPlayer::SetVolume (0x800A35E0) crossed
 ```
 

@@ -108,6 +108,7 @@ constexpr std::uint32_t kObservedFifthLodWord7 = 0x00400102u;
 constexpr std::uint32_t kObservedWrapObj = 0x9018E120u;
 constexpr std::uint32_t kObservedSecondWrapObj = 0x9018E460u;
 constexpr std::uint32_t kObservedThirdWrapObj = 0x9018E140u;
+constexpr std::uint32_t kObservedFourthWrapObj = 0x908FA4E0u;
 constexpr std::uint32_t kObservedWrapS = 0u;
 constexpr std::uint32_t kObservedWrapT = 0u;
 constexpr std::uint32_t kObservedWrapWord0Before = 0x00000195u;
@@ -1010,9 +1011,23 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_wrap_mode(CpuContext* cpu) noexce
         word6 == kObservedThirdLodWord6 &&
         word7 == kObservedThirdLodWord7;
 
+    const bool exactFourthObservedTuple =
+        obj == kObservedFourthWrapObj &&
+        wrapS == kObservedWrapS &&
+        wrapT == kObservedWrapT &&
+        word0 == kObservedWrapWord0Before &&
+        word1 == kObservedLodWord1After &&
+        word2 == kObservedFifthLodWord2 &&
+        word3 == kObservedFifthLodWord3 &&
+        word4 == kObservedFifthLodWord4 &&
+        word5 == kObservedFifthLodWord5 &&
+        word6 == kObservedFifthLodWord6 &&
+        word7 == kObservedFifthLodWord7;
+
     if (!exactFirstObservedTuple &&
         !exactSecondObservedTuple &&
-        !exactThirdObservedTuple) {
+        !exactThirdObservedTuple &&
+        !exactFourthObservedTuple) {
         AbortWrapBoundary(
             "GX_INIT_TEX_OBJ_WRAP_MODE_UNPROVEN_TUPLE",
             cpu,

@@ -53,7 +53,8 @@ Hardware has now crossed seven exact `GXInitTexObjLOD (0x80170A4C)` descriptors 
 - `obj=0x908FA820` (captured; exact bridge candidate).
 
 The first four exact `GXInitTexObjWrapMode (0x80170B50)` tuples are
-hardware-crossed, including the fourth tuple on `obj=0x908FA4E0`.
+hardware-crossed, including the fourth tuple on `obj=0x908FA4E0`. A fifth
+exact tuple on `obj=0x907938A0` is now hardware-captured and bridged.
 
 In parallel, the scheduler can reach the NWC24/KD path first. Hardware has
 crossed the exact sequence through:
@@ -65,16 +66,18 @@ fd 2002 / cmd 0x0F / close
 fd 2003 / cmd 3 / close
 ```
 
-The latest accepted 2026-09-28 run moves durably beyond the merged
-seventh `GXInitTexObjLOD (0x80170A4C)` descriptor on `obj=0x907938A0`
-and reaches an eighth exact descriptor on `obj=0x908FA820`, while preserving
-real `revo_kart.brsar` and Home Button resource loading, 1,450 FIFO writes
-and 94 successful presents / 0 failures.
+Recent accepted 2026-09-28 runs prove two scheduler-dependent GX
+frontiers while preserving real `revo_kart.brsar` and Home Button resource
+loading, 1,450 FIFO writes and 94 successful presents / 0 failures. One path
+reaches the eighth exact `GXInitTexObjLOD (0x80170A4C)` descriptor on
+`obj=0x908FA820`; another records the seventh LOD on `obj=0x907938A0` as
+`lod-pass` and then reaches its fifth exact `GXInitTexObjWrapMode` tuple.
 
 So the current hardware gates are scheduler-order dependent:
 
 ```text
-GX path: eighth GXInitTexObjLOD tuple on obj 0x908FA820
+GX path A: eighth GXInitTexObjLOD tuple on obj 0x908FA820
+GX path B: fifth GXInitTexObjWrapMode tuple on obj 0x907938A0
 Audio path: SoundPlayer::SetVolume (0x800A35E0) crossed
 ```
 

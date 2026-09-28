@@ -206,37 +206,31 @@ The public probe contains no translated Mario Kart Wii product. Game-derived tra
 
 ## Current architecture
 
+![WiiCompiled-Switch current architecture](docs/assets/current-architecture.svg)
+
+<details>
+<summary>Text-only architecture summary</summary>
+
 ```text
-user-owned Wii dump (local build only)
-            |
-            v
-WiiCompiled translator
-            |
-            v
-generated C++ / RuntimeConfig / data init
-            |
-            +------ linked at build time ------+
-                                              |
-                                              v
-+----------------------------------------------------------+
-| Native AArch64 NRO                                      |
-| WiiCompiled translated product + runtime                |
-| Switch platform adapter                                 |
-| - lifecycle / applet                                    |
-| - runtime filesystem + diagnostics / NAND backing       |
-| - input HLE state (partial, hardware-driven)            |
-| - audio (bootstrap/HLE incomplete)                      |
-| - graphics (headless sink baseline + rendered variant)  |
-| - context switching / timing / guest memory             |
-| - independent fast-track liveness watchdog              |
-+----------------------------------------------------------+
-            |
-            v
-        libnx / Horizon
-            |
-            v
-       Atmosphère / Switch
+user-owned RMCP01 dump
+  -> WiiCompiled static translation (PPC -> generated C++ / RuntimeConfig / data init)
+  -> native AArch64 .nro
+  -> Switch platform adapter / Wii OS & SDK compatibility HLE
+  -> GX/FIFO -> Aurora GX -> Dawn/WebGPU -> Vulkan/NVK -> Switch GPU
+  -> libnx/Horizon filesystem + system services
+  -> input HLE (partial; controller mapping pending)
+  -> audio HLE (partial; native output not hardware-proven)
+  -> custom firmware / Nintendo Switch
 ```
+
+</details>
+
+The diagram reflects the current hardware-proven architecture: translated
+AArch64 execution, real resource loading, real GX FIFO work, the
+Aurora GX -> Dawn/WebGPU -> Vulkan/NVK graphics chain, and repeated GPU
+presents are proven on Switch hardware. Native audio output, complete
+controller mapping, a visually correct Mario Kart Wii frame, and full
+playability are not yet proven.
 
 ## Roadmap and evidence
 

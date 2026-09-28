@@ -32,26 +32,26 @@ presents, and multiple Home Button/UI texture-object setup calls.
 Latest accepted graphics-path evidence reaches:
 
 ```text
-RMCP01 FIFO writes    : 1408
-GXCopyDisp calls      : 92
-present successes     : 92
+RMCP01 FIFO writes    : 1450
+GXCopyDisp calls      : 94
+present successes     : 94
 present failures      : 0
-StaticR dispatches    : 422
+StaticR dispatches    : 3608
 FST structurally valid: YES
 renderer active       : YES
 ```
 
-Hardware has now crossed four exact `GXInitTexObjLOD (0x80170A4C)` descriptors and captured a fifth exact descriptor:
+Hardware has now crossed five exact `GXInitTexObjLOD (0x80170A4C)` descriptors and captured a sixth exact descriptor:
 
 - `obj=0x9018E120`;
 - `obj=0x9018E460`;
 - `obj=0x9018E140`;
 - `obj=0x9018E480`;
-- `obj=0x908FA4E0`.
+- `obj=0x908FA4E0`;
+- `obj=0x908FA5C0` (captured; exact bridge candidate).
 
-The first three exact `GXInitTexObjWrapMode (0x80170B50)` tuples are
-hardware-crossed. A fourth exact wrap tuple on `obj=0x908FA4E0` is captured
-and bridged.
+The first four exact `GXInitTexObjWrapMode (0x80170B50)` tuples are
+hardware-crossed, including the fourth tuple on `obj=0x908FA4E0`.
 
 In parallel, the scheduler can reach the NWC24/KD path first. Hardware has
 crossed the exact sequence through:
@@ -63,18 +63,16 @@ fd 2002 / cmd 0x0F / close
 fd 2003 / cmd 3 / close
 ```
 
-The latest accepted 2026-09-27 run durably crosses the merged
-`__AXOutInitDSP (0x801269BC)` bridge and reaches
-`AIStartDMA (0x80124048)`, the fourth GXInitTexObjLOD descriptor on
-`0x9018E480`, `OSSetPeriodicAlarm (0x801A08E0)`, and then reaches
-`nw4r::snd::SoundPlayer::SetVolume (0x800A35E0)`, then reaches a fifth
-`GXInitTexObjLOD` descriptor on `obj=0x908FA4E0` while continuing real
-`revo_kart.brsar` and Home Button resource loading.
+The latest accepted 2026-09-28 run durably crosses the merged
+fourth `GXInitTexObjWrapMode (0x80170B50)` tuple on `obj=0x908FA4E0`
+and reaches a sixth exact `GXInitTexObjLOD (0x80170A4C)` descriptor on
+`obj=0x908FA5C0`, while preserving real `revo_kart.brsar` and Home Button
+resource loading, 1,450 FIFO writes and 94 successful presents / 0 failures.
 
 So the current hardware gates are scheduler-order dependent:
 
 ```text
-GX path: fourth GXInitTexObjWrapMode tuple on obj 0x908FA4E0
+GX path: sixth GXInitTexObjLOD tuple on obj 0x908FA5C0
 Audio path: SoundPlayer::SetVolume (0x800A35E0) crossed
 ```
 

@@ -130,7 +130,7 @@ memory.
 ## Correlating a hardware blocker with a static callsite
 
 Rendered fast-track durable blocker records include the guest PPC link register
-(`lr`). For a normal direct PPC `bl`, the architectural return address is
+(`lr`) after the dispatch-blocker formatter fix. For a normal direct PPC `bl`, the architectural return address is
 `callsite + 4`. Therefore, when hardware reaches one of these GX APIs and the
 guest LR is still the call return address, the exact static caller candidate is:
 

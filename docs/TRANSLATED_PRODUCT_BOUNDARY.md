@@ -90,7 +90,7 @@ RVL OS alarm initialization                 ✅ OSSetPeriodicAlarm crossed
   ↓
 NW4R sound-player initialization             ✅ SoundPlayer::SetVolume crossed
   ↓
-GX texture-object initialization              🟡 ninth LOD / sixth+eighth+ninth wrap gates
+GX texture-object initialization              🟡 ninth+twelfth LOD / sixth+eighth+ninth wrap gates
 ```
 
 As of 2026-09-29, the KD path is hardware-crossed through fd 2003 close;
@@ -105,9 +105,11 @@ hardware-crossed. The fifth, sixth and seventh `GXInitTexObjLOD` descriptors on
 hardware-crossed. The seventh `GXInitTexObjWrapMode` tuple on
 `obj=0x908FA820` is also hardware-crossed. The tenth and eleventh `GXInitTexObjLOD` descriptors on `obj=0x909019C0`
 / `obj=0x908FA840` are also hardware-crossed. Scheduler-dependent current
-gates are the ninth `GXInitTexObjLOD` descriptor on `obj=0x90793BE0` plus
-the sixth/eighth/ninth `GXInitTexObjWrapMode` tuples on `obj=0x908FA5C0` /
-`obj=0x909019C0` / `obj=0x908FA840`, while
+gates are the ninth `GXInitTexObjLOD` descriptor on `obj=0x90793BE0`,
+the twelfth exact format-2 `GXInitTexObjLOD` descriptor on
+`obj=0x9018E480`, plus the sixth/eighth/ninth `GXInitTexObjWrapMode`
+tuples on `obj=0x908FA5C0` / `obj=0x909019C0` / `obj=0x908FA840`,
+while
 real `revo_kart.brsar` and Home Button resources remain healthy. The
 visually correct Mario Kart Wii image is still unproven.
 

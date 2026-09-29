@@ -140,8 +140,17 @@ callsite = lr - 4
 
 That value can be matched against the scanner JSON. Treat the correlation as
 hardware evidence only after the logged LR actually matches an enumerated
-direct callsite; do not infer a caller from object addresses or descriptor
-similarity alone.
+direct callsite for the API being blocked; do not infer a caller from object
+addresses or descriptor similarity alone.
+
+A 2026-09-29 hardware run demonstrates an important limitation: a
+`GXInitTexObjLOD` blocker logged `lr=0x801814AC`, so `lr-4=0x801814A8`.
+The static inventory identifies `0x801814A8` as a `GXInitTexObj` call, not
+the LOD call. Public PAL Ghidra metadata places that call in
+`FUN_801813e0` (`0x801813E0..0x8018151F`), which also contains the direct
+`GXInitTexObjLOD` callsite at `0x80181500`. In such HLE sequences, use the
+LR for function-family attribution only unless it matches the blocked API's
+own direct callsite.
 
 ## What this gives us
 

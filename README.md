@@ -41,7 +41,7 @@ FST structurally valid: YES
 renderer active       : YES
 ```
 
-Hardware has now crossed seven exact `GXInitTexObjLOD (0x80170A4C)` descriptors and captured two further exact descriptors:
+Hardware has now crossed seven exact `GXInitTexObjLOD (0x80170A4C)` descriptors and captured three further exact descriptors:
 
 - `obj=0x9018E120`;
 - `obj=0x9018E460`;
@@ -51,7 +51,8 @@ Hardware has now crossed seven exact `GXInitTexObjLOD (0x80170A4C)` descriptors 
 - `obj=0x908FA5C0`;
 - `obj=0x907938A0`;
 - `obj=0x908FA820` (captured; exact bridge candidate);
-- `obj=0x90793BE0` (captured; exact bridge candidate).
+- `obj=0x90793BE0` (captured; exact bridge candidate);
+- `obj=0x909019C0` (captured; exact bridge candidate).
 
 The first five exact `GXInitTexObjWrapMode (0x80170B50)` tuples are
 hardware-crossed, including the fifth tuple on `obj=0x907938A0`. A sixth
@@ -74,7 +75,10 @@ reaches the eighth exact `GXInitTexObjLOD (0x80170A4C)` descriptor on
 `obj=0x908FA820`; another reaches the sixth exact
 `GXInitTexObjWrapMode` tuple on `obj=0x908FA5C0`; the latest path
 hardware-crosses the fifth wrap on `obj=0x907938A0` and then reaches a ninth
-exact LOD descriptor on `obj=0x90793BE0`.
+exact LOD descriptor on `obj=0x90793BE0`. A separate later run reaches a
+tenth exact LOD descriptor on `obj=0x909019C0` at the strongest translated
+dispatch frontier so far (62,488 dispatches), without explicit pass evidence
+for the other pending GX gates.
 
 So the current hardware gates are scheduler-order dependent:
 
@@ -82,6 +86,7 @@ So the current hardware gates are scheduler-order dependent:
 GX path A: eighth GXInitTexObjLOD tuple on obj 0x908FA820
 GX path B: sixth GXInitTexObjWrapMode tuple on obj 0x908FA5C0
 GX path C: ninth GXInitTexObjLOD tuple on obj 0x90793BE0
+GX path D: tenth GXInitTexObjLOD tuple on obj 0x909019C0
 Audio path: SoundPlayer::SetVolume (0x800A35E0) crossed
 ```
 

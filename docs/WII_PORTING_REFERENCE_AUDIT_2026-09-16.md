@@ -72,6 +72,28 @@ the runtime behavior to mirror.
 
 Full usage: `docs/RMCP01_ADDRESS_ATTRIBUTION.md`.
 
+#### GX texture callsite inventory
+
+MKW-SP also publishes a PAL Ghidra metadata export and describes it as its most
+complete reverse-engineering resource. The accompanying README requires the
+user to import a PAL MEM1 dump before applying `pal.raw.xml`, so the public
+artifact contributes function/symbol/type metadata without distributing the
+game bytes.
+
+The repository now combines that public metadata with the user's own RMCP01
+binary state through:
+
+```bash
+python3 scripts/scan-rmcp01-gx-texture-calls.py --elf /tmp/rmcp01-merged.elf
+```
+
+The scanner inventories exact direct PPC calls to `GXInitTexObj`,
+`GXInitTexObjLOD`, `GXInitTexObjWrapMode` and `GXLoadTexObj`. Optional
+doldecomp and Ghidra metadata then attribute each callsite. This improves
+forecasting without changing the hardware-first runtime policy.
+
+Full usage: `docs/RMCP01_GX_TEXTURE_CALLSITE_SCAN.md`.
+
 ### 4. NWiiRecomp — secondary architecture reference only
 
 Repository: `BlackLineInteractive/NWiiRecomp`

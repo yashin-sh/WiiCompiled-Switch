@@ -24,6 +24,7 @@
 - `M3_HLE_FIFO_AURORA_PROBE.md` — bytewise fabricated FIFO through pinned WiiCompiled `HleFifoWrite` into Aurora GX
 - `M3_RMCP01_RENDERED_FAST_TRACK.md` — first local game-facing rendered fast-track using the proven FIFO/Aurora/Dawn/NVK path
 - `WII_PORTING_REFERENCE_AUDIT_2026-09-16.md` — reference/tooling hierarchy and licensing notes
+- `RMCP01_GX_TEXTURE_CALLSITE_SCAN.md` — local-only DOL/REL or MEM1 scan for direct GX texture-object callsites, attributed with public doldecomp/Ghidra metadata
 - `STRIKERS_AURORA_REFERENCE_AUDIT_2026-09-17.md` — targeted `new-coke/strikers` / Aurora audit for #154 DVD/FST and #4/#162 first-frame work
 
 ## Hardware evidence

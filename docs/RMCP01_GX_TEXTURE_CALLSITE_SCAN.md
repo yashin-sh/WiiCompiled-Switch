@@ -127,6 +127,22 @@ python3 scripts/scan-rmcp01-gx-texture-calls.py \
 This mode is particularly useful when the REL has already been relocated in
 memory.
 
+## Correlating a hardware blocker with a static callsite
+
+Rendered fast-track durable blocker records include the guest PPC link register
+(`lr`). For a normal direct PPC `bl`, the architectural return address is
+`callsite + 4`. Therefore, when hardware reaches one of these GX APIs and the
+guest LR is still the call return address, the exact static caller candidate is:
+
+```text
+callsite = lr - 4
+```
+
+That value can be matched against the scanner JSON. Treat the correlation as
+hardware evidence only after the logged LR actually matches an enumerated
+direct callsite; do not infer a caller from object addresses or descriptor
+similarity alone.
+
 ## What this gives us
 
 The result answers a different question from the hardware blocker log:

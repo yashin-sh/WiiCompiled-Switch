@@ -27,7 +27,7 @@ jobs:
           grep -Fq 'func_800060A4' local-execution-support/local_first_translated_execution.cpp
           grep -Fq 'BLOCKED_STD_EXCEPTION' local-execution-support/local_first_translated_execution.cpp
           grep -Fq 'fast-track-dispatch-blocker.txt' source/fast_track_crash_diagnostics.cpp
-          grep -Fq '"lr                    : 0x%08x\\n"' source/fast_track_crash_diagnostics.cpp
+          grep -Fq 'lr                    : 0x%08x' source/fast_track_crash_diagnostics.cpp
           grep -Fq 'fast-track-exception.txt' source/fast_track_crash_diagnostics.cpp
           grep -Fq '__libnx_exception_handler' source/fast_track_crash_diagnostics.cpp
           grep -Fq 'if constexpr (KnownTranslatedCpuCall<Target>::kAvailable)' include/abi_bridge.h

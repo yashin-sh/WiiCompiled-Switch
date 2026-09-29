@@ -90,23 +90,23 @@ RVL OS alarm initialization                 ✅ OSSetPeriodicAlarm crossed
   ↓
 NW4R sound-player initialization             ✅ SoundPlayer::SetVolume crossed
   ↓
-GX texture-object initialization              🟡 eighth LOD / fifth+sixth wrap gates
+GX texture-object initialization              🟡 eighth+ninth LOD / sixth wrap gates
 ```
 
-As of 2026-09-28, the KD path is hardware-crossed through fd 2003 close;
+As of 2026-09-29, the KD path is hardware-crossed through fd 2003 close;
 PAL `AIInit (0x801240B0)`, `__AXOutInitDSP (0x801269BC)`,
 `AIRegisterDMACallback (0x80123F88)`, `AIInitDMA (0x80123FCC)` and
-`AIStartDMA (0x80124048)` are hardware-crossed. Seven exact `GXInitTexObjLOD` descriptors and four exact
+`AIStartDMA (0x80124048)` are hardware-crossed. Seven exact `GXInitTexObjLOD` descriptors and five exact
 `GXInitTexObjWrapMode` tuples are hardware-crossed. `OSSetPeriodicAlarm
 (0x801A08E0)` and `nw4r::snd::SoundPlayer::SetVolume (0x800A35E0)` are also
 hardware-crossed. The fifth, sixth and seventh `GXInitTexObjLOD` descriptors on
-`obj=0x908FA4E0` / `obj=0x908FA5C0` / `obj=0x907938A0` and the fourth
-`GXInitTexObjWrapMode` tuple on `obj=0x908FA4E0` are hardware-crossed.
-Scheduler-dependent current gates are the eighth `GXInitTexObjLOD` descriptor
-on `obj=0x908FA820` plus the fifth/sixth `GXInitTexObjWrapMode` tuples on
-`obj=0x907938A0` / `obj=0x908FA5C0`, while real `revo_kart.brsar` and
-Home Button resources remain healthy. The visually correct Mario Kart Wii
-image is still unproven.
+`obj=0x908FA4E0` / `obj=0x908FA5C0` / `obj=0x907938A0` and the fourth/fifth
+`GXInitTexObjWrapMode` tuples on `obj=0x908FA4E0` / `obj=0x907938A0` are
+hardware-crossed. Scheduler-dependent current gates are the eighth/ninth
+`GXInitTexObjLOD` descriptors on `obj=0x908FA820` / `obj=0x90793BE0`
+plus the sixth `GXInitTexObjWrapMode` tuple on `obj=0x908FA5C0`, while
+real `revo_kart.brsar` and Home Button resources remain healthy. The
+visually correct Mario Kart Wii image is still unproven.
 
 ## Important boundary lessons from hardware
 

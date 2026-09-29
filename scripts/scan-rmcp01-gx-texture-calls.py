@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Scan a user-owned RMCP01 image for direct GX texture-call callsites.
 
 This tool never embeds game data. It scans a local MEM1 dump or a DTK-merged
@@ -17,10 +16,10 @@ import re
 import struct
 import sys
 import tempfile
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Iterable
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ATTRIBUTE_HELPER = REPO_ROOT / "scripts" / "attribute-rmcp01-address.py"

@@ -317,13 +317,12 @@ struct KnownNativeCpuCall<0x801707F8u> {
     }
 };
 
-// GXInitTexObjLOD (PAL 0x80170A4C). Hardware has now captured eleven exact
-// tuples, all with min/mag=GX_LINEAR/GX_LINEAR,
-// minLod=maxLod=lodBias=+0.0f, biasClamp=false, edgeLod=false and GX_ANISO_1:
-// obj=0x9018E120, obj=0x9018E460, obj=0x9018E140, obj=0x9018E480,
-// obj=0x908FA4E0, obj=0x908FA5C0, obj=0x907938A0, obj=0x908FA820,
-// obj=0x90793BE0, obj=0x909019C0 and obj=0x908FA840. The bridge accepts only
-// those exact tuples and their separately proven pre-LOD descriptors.
+// GXInitTexObjLOD (PAL 0x80170A4C). Hardware has now captured twelve exact
+// descriptors, all with min/mag=GX_LINEAR/GX_LINEAR,
+// minLod=maxLod=lodBias=+0.0f, biasClamp=false, edgeLod=false and GX_ANISO_1.
+// Eleven object addresses are represented: obj=0x9018E480 has both the earlier
+// format-0 descriptor and a later exact format-2 descriptor. The bridge accepts
+// only those exact descriptors and their separately proven pre-LOD state.
 template <>
 struct KnownNativeCpuCall<0x80170A4Cu> {
     static constexpr bool kAvailable = true;

@@ -52,13 +52,13 @@ Hardware has now crossed eight exact `GXInitTexObjLOD (0x80170A4C)` descriptors 
 - `obj=0x907938A0`;
 - `obj=0x908FA820`;
 - `obj=0x90793BE0` (captured; exact bridge candidate);
-- `obj=0x909019C0` (captured; exact bridge candidate);
+- `obj=0x909019C0`;
 - `obj=0x908FA840` (captured; exact bridge candidate, format-2 pre-LOD descriptor).
 
 The first five exact `GXInitTexObjWrapMode (0x80170B50)` tuples are
 hardware-crossed, including the fifth tuple on `obj=0x907938A0`. The seventh
-tuple on `obj=0x908FA820` is now also hardware-crossed; the sixth tuple on
-`obj=0x908FA5C0` remains hardware-captured and bridged.
+tuple on `obj=0x908FA820` is hardware-crossed; sixth and eighth tuples on
+`obj=0x908FA5C0` / `obj=0x909019C0` are hardware-captured and bridged.
 
 In parallel, the scheduler can reach the NWC24/KD path first. Hardware has
 crossed the exact sequence through:
@@ -86,7 +86,7 @@ So the current hardware gates are scheduler-order dependent:
 ```text
 GX path A: sixth GXInitTexObjWrapMode tuple on obj 0x908FA5C0
 GX path B: ninth GXInitTexObjLOD tuple on obj 0x90793BE0
-GX path C: tenth GXInitTexObjLOD tuple on obj 0x909019C0
+GX path C: eighth GXInitTexObjWrapMode tuple on obj 0x909019C0
 GX path D: eleventh GXInitTexObjLOD tuple on obj 0x908FA840
 Audio path: SoundPlayer::SetVolume (0x800A35E0) crossed
 ```

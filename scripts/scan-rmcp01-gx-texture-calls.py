@@ -198,9 +198,7 @@ def elf_ranges(path: Path) -> list[ExecutableRange]:
         if sh_type != 1 or sh_flags & 0x4 == 0 or sh_size == 0:
             continue
         if sh_offset + sh_size > len(data):
-            raise ValueError(
-                f"ELF executable section {name_at(sh_name)} is truncated"
-            )
+            raise ValueError(f"ELF executable section {name_at(sh_name)} is truncated")
         result.append(
             ExecutableRange(
                 sh_addr & 0xFFFFFFFF,
@@ -243,9 +241,7 @@ def find_ghidra_function(
 def load_attribute_helper() -> ModuleType | None:
     if not ATTRIBUTE_HELPER.is_file():
         return None
-    spec = importlib.util.spec_from_file_location(
-        "rmcp01_attribute", ATTRIBUTE_HELPER
-    )
+    spec = importlib.util.spec_from_file_location("rmcp01_attribute", ATTRIBUTE_HELPER)
     if spec is None or spec.loader is None:
         return None
     module = importlib.util.module_from_spec(spec)
@@ -254,9 +250,7 @@ def load_attribute_helper() -> ModuleType | None:
     return module
 
 
-def resolve_doldecomp(
-    helper: ModuleType | None, requested: Path | None
-) -> Path | None:
+def resolve_doldecomp(helper: ModuleType | None, requested: Path | None) -> Path | None:
     if helper is None:
         return None
     return helper.find_doldecomp_dir(requested)
@@ -413,9 +407,7 @@ def self_test() -> None:
     assert instruction & 1
     assert ppc_direct_branch_target(call, 0x60000000) is None
 
-    raw = ExecutableRange(
-        call, struct.pack(">II", instruction, 0x60000000), "raw"
-    )
+    raw = ExecutableRange(call, struct.pack(">II", instruction, 0x60000000), "raw")
     hits = scan_ranges([raw], {target: "GXInitTexObjLOD"})
     assert hits == [(call, target, "raw")]
 
@@ -496,9 +488,7 @@ def main() -> int:
         return 2
 
     helper = load_attribute_helper()
-    requested = (
-        args.doldecomp.expanduser().resolve() if args.doldecomp else None
-    )
+    requested = args.doldecomp.expanduser().resolve() if args.doldecomp else None
     doldecomp = resolve_doldecomp(helper, requested)
 
     raw_hits = scan_ranges(ranges, targets)

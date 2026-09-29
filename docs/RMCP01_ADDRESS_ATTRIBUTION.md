@@ -9,6 +9,12 @@ The helper uses public `doldecomp/mkw` metadata and optionally emits
 
 It never requires Nintendo data for its default attribution path.
 
+
+> For bulk GX texture-frontier analysis, use
+> `scripts/scan-rmcp01-gx-texture-calls.py`; it scans a user-owned merged ELF
+> or MEM1 image for exact direct calls to GX texture-object APIs and then uses
+> this attribution layer per callsite. See `RMCP01_GX_TEXTURE_CALLSITE_SCAN.md`.
+
 ## Why this exists
 
 A real-Switch blocker often starts as only an address:

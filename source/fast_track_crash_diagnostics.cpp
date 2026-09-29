@@ -445,6 +445,7 @@ std::size_t format_post_main_trace_line(
     }
 
     const std::uint32_t guest_pc = cpu ? cpu->pc : 0u;
+    const std::uint32_t lr = cpu ? cpu->lr : 0u;
     const std::uint32_t r1 = cpu ? cpu->gpr[1] : 0u;
     const std::uint32_t r2 = cpu ? cpu->gpr[2] : 0u;
     const std::uint32_t r3 = cpu ? cpu->gpr[3] : 0u;
@@ -461,6 +462,7 @@ std::size_t format_post_main_trace_line(
         static_cast<unsigned long long>(g_dispatch_count),
         target,
         guest_pc,
+        lr,
         r1,
         r2,
         r3,
@@ -595,6 +597,7 @@ void write_liveness_record(
         "post-main dispatch    : %llu\n"
         "last target           : 0x%08x\n"
         "guest pc              : 0x%08x\n"
+        "lr                    : 0x%08x\n"
         "r1                    : 0x%08x\n"
         "r2                    : 0x%08x\n"
         "r3                    : 0x%08x\n"

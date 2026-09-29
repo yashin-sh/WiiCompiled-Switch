@@ -139,6 +139,7 @@
 - `HARDWARE_RESULTS_2026-09-29_TENTH_GX_INIT_TEX_OBJ_LOD_FRONTIER.md` — captures the tenth exact GXInitTexObjLOD descriptor on 0x909019C0 at the strongest translated-dispatch frontier so far
 - `HARDWARE_RESULTS_2026-09-29_SEVENTH_GX_INIT_TEX_OBJ_WRAP_FRONTIER.md` — hardware-crosses the eighth GXInitTexObjLOD descriptor on 0x908FA820 and captures its seventh exact GXInitTexObjWrapMode tuple
 - `HARDWARE_RESULTS_2026-09-29_ELEVENTH_GX_INIT_TEX_OBJ_LOD_FRONTIER.md` — hardware-crosses the seventh GXInitTexObjWrapMode tuple on 0x908FA820 and captures the first format-2 eleventh exact GXInitTexObjLOD descriptor on 0x908FA840
+- `HARDWARE_RESULTS_2026-09-29_NINTH_GX_INIT_TEX_OBJ_WRAP_FRONTIER.md` — hardware-crosses the eleventh GXInitTexObjLOD descriptor on 0x908FA840 and captures its ninth exact GXInitTexObjWrapMode tuple
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes
@@ -154,8 +155,8 @@ Current accepted state as of 2026-09-29:
 - real RMCP01 FIFO work and repeated GPU presents are hardware-proven;
 - strongest graphics-path run reaches 1,450 FIFO writes and 94 successful
   presents / 0 failures;
-- eight exact GXInitTexObjLOD descriptors are hardware-crossed; the ninth on `0x90793BE0`, tenth on `0x909019C0`, and eleventh on `0x908FA840` are merged gates awaiting hardware crossing;
-- six exact GXInitTexObjWrapMode tuples are hardware-crossed, including the seventh tuple on `0x908FA820`; the sixth on `0x908FA5C0` remains a merged gate awaiting hardware crossing;
+- ten exact GXInitTexObjLOD descriptors are hardware-crossed; the ninth on `0x90793BE0` remains a merged gate awaiting hardware crossing;
+- six exact GXInitTexObjWrapMode tuples are hardware-crossed, including the seventh tuple on `0x908FA820`; the sixth on `0x908FA5C0`, eighth on `0x909019C0`, and ninth on `0x908FA840` are merged gates awaiting hardware crossing;
 - KD/NWC24 exact handling is hardware-crossed through fd 2003 close;
 - PAL AIInit (0x801240B0) is hardware-crossed;
 - __AXOutInitDSP (0x801269BC) is hardware-crossed;

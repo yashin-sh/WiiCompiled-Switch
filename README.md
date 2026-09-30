@@ -41,7 +41,7 @@ FST structurally valid: YES
 renderer active       : YES
 ```
 
-Hardware has now crossed ten exact `GXInitTexObjLOD (0x80170A4C)` descriptors and captured two further exact descriptors:
+Hardware has now crossed ten exact `GXInitTexObjLOD (0x80170A4C)` descriptors and captured three further exact descriptors:
 
 - `obj=0x9018E120`;
 - `obj=0x9018E460`;
@@ -54,12 +54,13 @@ Hardware has now crossed ten exact `GXInitTexObjLOD (0x80170A4C)` descriptors an
 - `obj=0x90793BE0` (captured; exact bridge candidate);
 - `obj=0x909019C0`;
 - `obj=0x908FA840`;
+- `obj=0x908FAE00` (captured; exact bridge candidate).
 
 The first five exact `GXInitTexObjWrapMode (0x80170B50)` tuples are
 hardware-crossed, including the fifth tuple on `obj=0x907938A0`. The seventh
-tuple on `obj=0x908FA820` is hardware-crossed; sixth, eighth and ninth tuples
-on `obj=0x908FA5C0` / `obj=0x909019C0` / `obj=0x908FA840` are
-hardware-captured and bridged.
+tuple on `obj=0x908FA820` is hardware-crossed; the ninth tuple on
+`obj=0x908FA840` is now also hardware-crossed. Sixth and eighth tuples on
+`obj=0x908FA5C0` / `obj=0x909019C0` remain hardware-captured and bridged.
 
 In parallel, the scheduler can reach the NWC24/KD path first. Hardware has
 crossed the exact sequence through:
@@ -81,9 +82,11 @@ translated-dispatch frontier so far (62,488 dispatches). The latest run
 hardware-crosses the seventh wrap on `obj=0x908FA820`, later hardware-crosses
 the tenth LOD on `obj=0x909019C0`, and another run hardware-crosses the
 eleventh LOD on `obj=0x908FA840` before reaching its ninth exact wrap tuple.
-The latest run reaches a second, exact format-2 LOD descriptor on the already
+A later run reaches a second, exact format-2 LOD descriptor on the already
 known `obj=0x9018E480`; it is tracked independently from the earlier
-hardware-crossed format-0 descriptor.
+hardware-crossed format-0 descriptor. The latest run hardware-crosses the
+ninth wrap on `obj=0x908FA840` and then reaches a thirteenth exact LOD
+descriptor on `obj=0x908FAE00`.
 
 So the current hardware gates are scheduler-order dependent:
 
@@ -91,7 +94,7 @@ So the current hardware gates are scheduler-order dependent:
 GX path A: sixth GXInitTexObjWrapMode tuple on obj 0x908FA5C0
 GX path B: ninth GXInitTexObjLOD tuple on obj 0x90793BE0
 GX path C: eighth GXInitTexObjWrapMode tuple on obj 0x909019C0
-GX path D: ninth GXInitTexObjWrapMode tuple on obj 0x908FA840
+GX path D: thirteenth GXInitTexObjLOD descriptor on obj 0x908FAE00
 GX path E: twelfth GXInitTexObjLOD descriptor on obj 0x9018E480 (format 2)
 Audio path: SoundPlayer::SetVolume (0x800A35E0) crossed
 ```

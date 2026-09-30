@@ -317,10 +317,10 @@ struct KnownNativeCpuCall<0x801707F8u> {
     }
 };
 
-// GXInitTexObjLOD (PAL 0x80170A4C). Hardware has now captured twelve exact
+// GXInitTexObjLOD (PAL 0x80170A4C). Hardware has now captured thirteen exact
 // descriptors, all with min/mag=GX_LINEAR/GX_LINEAR,
 // minLod=maxLod=lodBias=+0.0f, biasClamp=false, edgeLod=false and GX_ANISO_1.
-// Eleven object addresses are represented: obj=0x9018E480 has both the earlier
+// Twelve object addresses are represented: obj=0x9018E480 has both the earlier
 // format-0 descriptor and a later exact format-2 descriptor. The bridge accepts
 // only those exact descriptors and their separately proven pre-LOD state.
 template <>

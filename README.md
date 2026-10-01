@@ -41,7 +41,7 @@ FST structurally valid: YES
 renderer active       : YES
 ```
 
-Hardware has now crossed ten exact `GXInitTexObjLOD (0x80170A4C)` descriptors and captured three further exact descriptors:
+Hardware has now crossed eleven exact `GXInitTexObjLOD (0x80170A4C)` descriptors and captured two further exact descriptors:
 
 - `obj=0x9018E120`;
 - `obj=0x9018E460`;
@@ -54,13 +54,14 @@ Hardware has now crossed ten exact `GXInitTexObjLOD (0x80170A4C)` descriptors an
 - `obj=0x90793BE0` (captured; exact bridge candidate);
 - `obj=0x909019C0`;
 - `obj=0x908FA840`;
-- `obj=0x908FAE00` (captured; exact bridge candidate).
+- `obj=0x908FAE00`.
 
 The first five exact `GXInitTexObjWrapMode (0x80170B50)` tuples are
 hardware-crossed, including the fifth tuple on `obj=0x907938A0`. The seventh
 tuple on `obj=0x908FA820` and ninth tuple on `obj=0x908FA840` are also
-hardware-crossed. Sixth, eighth and tenth tuples on `obj=0x908FA5C0` /
-`obj=0x909019C0` / `obj=0x9018E480` remain hardware-captured and bridged.
+hardware-crossed. Sixth, eighth, tenth and eleventh tuples on
+`obj=0x908FA5C0` / `obj=0x909019C0` / `obj=0x9018E480` /
+`obj=0x908FAE00` remain hardware-captured and bridged.
 
 In parallel, the scheduler can reach the NWC24/KD path first. Hardware has
 crossed the exact sequence through:
@@ -86,10 +87,11 @@ A later run reaches a second, exact format-2 LOD descriptor on the already
 known `obj=0x9018E480`; it is tracked independently from the earlier
 hardware-crossed format-0 descriptor. A 2026-09-30 run hardware-crosses the
 ninth wrap on `obj=0x908FA840` and then reaches a thirteenth exact LOD
-descriptor on `obj=0x908FAE00`. The latest 2026-10-01 run takes a different
+descriptor on `obj=0x908FAE00`. A later 2026-10-01 run takes a different
 scheduler branch: the already-proven format-0 LOD on `obj=0x9018E480`
 passes and a tenth exact clamp/clamp wrap tuple is captured for that same
-format-0 descriptor.
+format-0 descriptor. The latest run hardware-crosses the thirteenth LOD on
+`obj=0x908FAE00` and then reaches its eleventh exact clamp/clamp wrap tuple.
 
 So the current hardware gates are scheduler-order dependent:
 
@@ -97,7 +99,7 @@ So the current hardware gates are scheduler-order dependent:
 GX path A: sixth GXInitTexObjWrapMode tuple on obj 0x908FA5C0
 GX path B: ninth GXInitTexObjLOD tuple on obj 0x90793BE0
 GX path C: eighth GXInitTexObjWrapMode tuple on obj 0x909019C0
-GX path D: thirteenth GXInitTexObjLOD descriptor on obj 0x908FAE00
+GX path D: eleventh GXInitTexObjWrapMode tuple on obj 0x908FAE00
 GX path E: twelfth GXInitTexObjLOD descriptor on obj 0x9018E480 (format 2)
 GX path F: tenth GXInitTexObjWrapMode tuple on obj 0x9018E480 (format-0 descriptor)
 Audio path: SoundPlayer::SetVolume (0x800A35E0) crossed

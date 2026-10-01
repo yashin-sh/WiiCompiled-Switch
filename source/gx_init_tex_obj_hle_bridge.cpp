@@ -215,6 +215,16 @@ constexpr std::uint32_t kObservedSixteenthLodWord5 = 0x00000000u;
 constexpr std::uint32_t kObservedSixteenthLodWord6 = 0x00000000u;
 constexpr std::uint32_t kObservedSixteenthLodWord7 = 0x00400102u;
 
+constexpr std::uint32_t kObservedSeventeenthLodObj = 0x90825180u;
+constexpr std::uint32_t kObservedSeventeenthLodWord0 = 0x00000095u;
+constexpr std::uint32_t kObservedSeventeenthLodWord1 = 0x00000000u;
+constexpr std::uint32_t kObservedSeventeenthLodWord2 = 0x0000FC3Fu;
+constexpr std::uint32_t kObservedSeventeenthLodWord3 = 0x0083F51Au;
+constexpr std::uint32_t kObservedSeventeenthLodWord4 = 0x00000000u;
+constexpr std::uint32_t kObservedSeventeenthLodWord5 = 0x00000000u;
+constexpr std::uint32_t kObservedSeventeenthLodWord6 = 0x00000000u;
+constexpr std::uint32_t kObservedSeventeenthLodWord7 = 0x00400102u;
+
 constexpr std::uint32_t kObservedWrapObj = 0x9018E120u;
 constexpr std::uint32_t kObservedSecondWrapObj = 0x9018E460u;
 constexpr std::uint32_t kObservedThirdWrapObj = 0x9018E140u;
@@ -1087,6 +1097,17 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept {
         word6 == kObservedSixteenthLodWord6 &&
         word7 == kObservedSixteenthLodWord7;
 
+    const bool exactSeventeenthObservedDescriptor =
+        obj == kObservedSeventeenthLodObj &&
+        word0 == kObservedSeventeenthLodWord0 &&
+        word1 == kObservedSeventeenthLodWord1 &&
+        word2 == kObservedSeventeenthLodWord2 &&
+        word3 == kObservedSeventeenthLodWord3 &&
+        word4 == kObservedSeventeenthLodWord4 &&
+        word5 == kObservedSeventeenthLodWord5 &&
+        word6 == kObservedSeventeenthLodWord6 &&
+        word7 == kObservedSeventeenthLodWord7;
+
     if (!exactObservedArgs ||
         (!exactFirstObservedDescriptor &&
          !exactSecondObservedDescriptor &&
@@ -1103,7 +1124,8 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept {
          !exactThirteenthObservedDescriptor &&
          !exactFourteenthObservedDescriptor &&
          !exactFifteenthObservedDescriptor &&
-         !exactSixteenthObservedDescriptor)) {
+         !exactSixteenthObservedDescriptor &&
+         !exactSeventeenthObservedDescriptor)) {
         AbortLodBoundary(
             "GX_INIT_TEX_OBJ_LOD_UNPROVEN_TUPLE",
             cpu,

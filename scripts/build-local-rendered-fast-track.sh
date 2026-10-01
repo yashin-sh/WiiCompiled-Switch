@@ -123,6 +123,9 @@ echo "  /switch/WiiCompiled-Switch/fast-track-heartbeat.txt"
 echo "  /switch/WiiCompiled-Switch/fast-track-thread-events.txt"
 echo "  /switch/WiiCompiled-Switch/fast-track-post-video-trace.txt"
 echo "  /switch/WiiCompiled-Switch/fast-track-dispatch-blocker.txt"
+if [[ "$DISCOVERY_MODE" == "ON" || "$DISCOVERY_MODE" == "1" ]]; then
+    echo "  /switch/WiiCompiled-Switch/fast-track-discovery-targets.txt"
+fi
 echo "  /switch/WiiCompiled-Switch/fast-track-exception.txt"
 echo
 echo "Optional: after copying the SD diagnostics to your PC, bundle them into one"

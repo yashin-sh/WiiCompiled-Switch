@@ -120,6 +120,24 @@ struct KnownNativeCpuCall<0x8019E18Cu> {
     }
 };
 
+// NANDGetType (PAL 0x8019E770). Pinned WiiCompiled translates the guest
+// NAND path, checks existence, and writes 1 for a file or 2 for a directory.
+// Reuse the Switch SD-backed NAND runtime so path normalization stays identical
+// to NANDOpen/NANDOpenAsync.
+template <>
+struct KnownNativeCpuCall<0x8019E770u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        const std::int32_t result =
+            mkw::switch_nand_runtime::GetTypeSync(cpu->gpr[3], cpu->gpr[4]);
+        cpu->gpr[3] = static_cast<std::uint32_t>(result);
+    }
+};
+
 // NANDOpen (PAL 0x8019C800). The current Switch NAND runtime already
 // implements the synchronous SD-backed open contract used by the async bridges.
 // Reuse it directly so translated callers receive the same fd/openFlag/result

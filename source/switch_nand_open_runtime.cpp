@@ -224,4 +224,39 @@ std::int32_t CloseSync(std::uint32_t fileInfoPtr) noexcept {
     }
 }
 
+std::int32_t GetTypeSync(std::uint32_t pathPtr,
+                         std::uint32_t outTypePtr) noexcept {
+    if (pathPtr == 0u || outTypePtr == 0u ||
+        !Memory::Contains(outTypePtr, 1u)) {
+        return kResultInvalid;
+    }
+
+    try {
+        std::string guestPath;
+        if (!ReadGuestCString(pathPtr, guestPath)) {
+            return kResultInvalid;
+        }
+
+        const std::filesystem::path hostPath = HostPath(Normalize(guestPath));
+        std::error_code ec;
+        const bool exists = std::filesystem::exists(hostPath, ec);
+        if (ec) {
+            return kResultUnknown;
+        }
+        if (!exists) {
+            return kResultNoExists;
+        }
+
+        const bool isDirectory = std::filesystem::is_directory(hostPath, ec);
+        if (ec) {
+            return kResultUnknown;
+        }
+
+        Memory::Write8(outTypePtr, isDirectory ? 2u : 1u);
+        return kResultOk;
+    } catch (...) {
+        return kResultInvalid;
+    }
+}
+
 } // namespace mkw::switch_nand_runtime

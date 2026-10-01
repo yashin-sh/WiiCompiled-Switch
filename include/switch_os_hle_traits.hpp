@@ -337,9 +337,8 @@ inline void ProcessDueAlarms(CpuContext* cpu, int maxToProcess) noexcept {
             if (handler != 0u) {
                 CpuContext callbackCpu = *cpu;
                 callbackCpu.gpr[3] = alarm;
-                callbackCpu.gpr[4] = Memory::Contains(kOSCurrentContextAddr, 4u)
-                    ? Memory::Read32(kOSCurrentContextAddr)
-                    : 0u;
+                callbackCpu.gpr[4] =
+                    Memory::Contains(kOSCurrentContextAddr, 4u) ? Memory::Read32(kOSCurrentContextAddr) : 0u;
 
                 std::uint32_t disableCount = 0u;
                 const bool hasDisableCount =

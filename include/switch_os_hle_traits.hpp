@@ -279,6 +279,106 @@ inline void InsertAlarm(
     }
 }
 
+inline thread_local bool gProcessingDueAlarms = false;
+
+inline void ProcessDueAlarms(CpuContext* cpu, int maxToProcess) noexcept {
+    constexpr std::uint32_t kOSCurrentContextAddr = 0x800000D4u;
+    constexpr std::uint32_t kSchedulerDisableCountAddr = 0x80386918u;
+
+    if (!cpu || maxToProcess <= 0 || gProcessingDueAlarms ||
+        !Memory::IsInitialized() ||
+        cpu->gpr[13] < kAlarmQueueOffsetFromR13) {
+        return;
+    }
+
+    const std::uint32_t queueBase =
+        cpu->gpr[13] - kAlarmQueueOffsetFromR13;
+    if (!Memory::Contains(queueBase, 8u)) {
+        return;
+    }
+
+    gProcessingDueAlarms = true;
+    try {
+        SanitizeQueue(queueBase);
+        for (int i = 0; i < maxToProcess; ++i) {
+            const std::uint32_t alarm = Memory::Read32(queueBase);
+            if (alarm == 0u || !Memory::Contains(alarm, kAlarmSize)) {
+                break;
+            }
+
+            const std::uint64_t fire =
+                ReadU64(alarm + kAlarmFireHiOffset);
+            if (GetSystemTime() < fire) {
+                break;
+            }
+
+            const std::uint32_t handler =
+                Memory::Read32(alarm + kAlarmHandlerOffset);
+            const std::uint32_t next =
+                Memory::Read32(alarm + kAlarmNextOffset);
+
+            Memory::Write32(queueBase, next);
+            if (next == 0u) {
+                Memory::Write32(queueBase + 4u, 0u);
+            } else if (Memory::Contains(next, kAlarmSize)) {
+                Memory::Write32(next + kAlarmPrevOffset, 0u);
+            }
+
+            Memory::Write32(alarm + kAlarmPrevOffset, 0u);
+            Memory::Write32(alarm + kAlarmNextOffset, 0u);
+            Memory::Write32(alarm + kAlarmHandlerOffset, 0u);
+
+            const std::uint64_t repeat =
+                ReadU64(alarm + kAlarmPeriodHiOffset);
+            if (repeat != 0u) {
+                InsertAlarm(queueBase, alarm, 0u, handler);
+            }
+
+            if (handler != 0u) {
+                CpuContext callbackCpu = *cpu;
+                callbackCpu.gpr[3] = alarm;
+                callbackCpu.gpr[4] =
+                    Memory::Contains(kOSCurrentContextAddr, 4u)
+                    ? Memory::Read32(kOSCurrentContextAddr)
+                    : 0u;
+
+                std::uint32_t disableCount = 0u;
+                const bool hasDisableCount =
+                    Memory::Contains(kSchedulerDisableCountAddr, 4u);
+                if (hasDisableCount) {
+                    disableCount =
+                        Memory::Read32(kSchedulerDisableCountAddr);
+                    Memory::Write32(
+                        kSchedulerDisableCountAddr,
+                        disableCount + 1u);
+                }
+
+                try {
+                    CpuContextScope scope(&callbackCpu);
+                    InvokeIndirectCpu(handler, &callbackCpu);
+                } catch (...) {
+                    if (hasDisableCount) {
+                        Memory::Write32(
+                            kSchedulerDisableCountAddr,
+                            disableCount);
+                    }
+                    throw;
+                }
+
+                if (hasDisableCount) {
+                    Memory::Write32(
+                        kSchedulerDisableCountAddr,
+                        disableCount);
+                }
+            }
+        }
+    } catch (...) {
+        // Keep malformed guest alarm state contained at the HLE boundary.
+    }
+    gProcessingDueAlarms = false;
+}
+
+
 } // namespace mkw::switch_os_alarm_hle
 
 // OSSetPeriodicAlarm (PAL 0x801A08E0). Real Switch hardware reaches this after
@@ -347,6 +447,47 @@ struct KnownNativeCpuCall<0x801A08E0u> {
 
         cpu->gpr[3] = irqState;
         mkw_switch_hle_os_restore_interrupts(cpu);
+    }
+};
+
+// RFLiIsWorking (PAL 0x800BD860). RFLInitRes polls this while Mii-library
+// work completes through the guest alarm queue. Pinned WiiCompiled services up
+// to 32 due alarms before reading manager + 0x1B34; mirror that behavior using
+// the Switch alarm queue/indirect-dispatch primitives and keep callback register
+// writes isolated from the interrupted translated caller.
+template <>
+struct KnownNativeCpuCall<0x800BD860u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        mkw::switch_os_alarm_hle::ProcessDueAlarms(cpu, 32);
+
+        constexpr std::uint32_t kRflManagerPtrAddr = 0x80386298u;
+        constexpr std::uint32_t kWorkingFlagOffset = 0x1B34u;
+
+        std::uint32_t working = 0u;
+        try {
+            if (Memory::IsInitialized() &&
+                Memory::Contains(kRflManagerPtrAddr, 4u)) {
+                const std::uint32_t manager =
+                    Memory::Read32(kRflManagerPtrAddr);
+                if (manager != 0u &&
+                    Memory::Contains(
+                        manager + kWorkingFlagOffset,
+                        4u)) {
+                    working =
+                        Memory::Read32(
+                            manager + kWorkingFlagOffset);
+                }
+            }
+        } catch (...) {
+            working = 0u;
+        }
+        cpu->gpr[3] = working;
     }
 };
 

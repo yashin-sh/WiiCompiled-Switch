@@ -81,7 +81,13 @@ def build_manifest(
     return "\n".join(lines) + "\n"
 
 
-def bundle(source: Path, output: Path, full: bool, raw: bool) -> tuple[int, int, int]:
+def bundle(
+    source: Path,
+    output: Path,
+    full: bool,
+    raw: bool,
+    coverage: Path | None = None,
+) -> tuple[int, int, int]:
     files = discover(source)
     if not files:
         raise ValueError(f"no .txt diagnostics found in {source}")
@@ -97,6 +103,11 @@ def bundle(source: Path, output: Path, full: bool, raw: bool) -> tuple[int, int,
         if raw:
             for path in included:
                 archive.write(path, arcname=f"raw/{path.name}")
+        if coverage is not None:
+            archive.write(
+                coverage,
+                arcname="rmcp01-dispatch-coverage.json",
+            )
 
     return len(files), len(included), sum(path.stat().st_size for path in included)
 
@@ -115,7 +126,9 @@ def self_test() -> None:
         )
 
         compact = root / "compact.zip"
-        total, included, _ = bundle(root, compact, full=False, raw=False)
+        total, included, _ = bundle(
+            root, compact, full=False, raw=False
+        )
         assert total == 3
         assert included == 2
         with zipfile.ZipFile(compact) as archive:
@@ -126,10 +139,19 @@ def self_test() -> None:
             assert "fast-track-os-sleep-events.txt" not in report
 
         full = root / "full.zip"
-        _, included_full, _ = bundle(root, full, full=True, raw=True)
+        coverage = root / "coverage.json"
+        coverage.write_text('{"missing": 1}\n', encoding="utf-8")
+        _, included_full, _ = bundle(
+            root,
+            full,
+            full=True,
+            raw=True,
+            coverage=coverage,
+        )
         assert included_full == 3
         with zipfile.ZipFile(full) as archive:
             assert "raw/fast-track-os-sleep-events.txt" in archive.namelist()
+            assert "rmcp01-dispatch-coverage.json" in archive.namelist()
 
     print("fast-track log bundle self-test: PASS")
 
@@ -162,6 +184,13 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="also place the selected original .txt files under raw/ in the ZIP",
     )
+    parser.add_argument(
+        "--coverage",
+        type=Path,
+        help=(
+            "optional rmcp01-dispatch-coverage.json from the global local-product scan"
+        ),
+    )
     parser.add_argument("--self-test", action="store_true")
     return parser
 
@@ -190,12 +219,21 @@ def main() -> int:
         else source / default_name
     )
 
+    coverage = (
+        args.coverage.expanduser().resolve()
+        if args.coverage is not None
+        else None
+    )
+    if coverage is not None and not coverage.is_file():
+        parser.error(f"coverage report does not exist: {coverage}")
+
     try:
         total, included, included_bytes = bundle(
             source,
             output,
             full=args.full,
             raw=args.raw,
+            coverage=coverage,
         )
     except (OSError, ValueError) as exc:
         print(f"error: {exc}")
@@ -211,6 +249,8 @@ def main() -> int:
     print("archive contents   : fast-track-report.txt + manifest.txt")
     if args.raw:
         print("raw originals      : included under raw/")
+    if coverage is not None:
+        print("static coverage    : rmcp01-dispatch-coverage.json")
 
     return 0
 

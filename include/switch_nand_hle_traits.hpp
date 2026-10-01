@@ -120,6 +120,24 @@ struct KnownNativeCpuCall<0x8019E18Cu> {
     }
 };
 
+// NANDOpen (PAL 0x8019C800). The current Switch NAND runtime already
+// implements the synchronous SD-backed open contract used by the async bridges.
+// Reuse it directly so translated callers receive the same fd/openFlag/result
+// semantics without duplicating host-handle state.
+template <>
+struct KnownNativeCpuCall<0x8019C800u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        const std::int32_t result = mkw::switch_nand_runtime::OpenSync(
+            cpu->gpr[3], cpu->gpr[4], cpu->gpr[5]);
+        cpu->gpr[3] = static_cast<std::uint32_t>(result);
+    }
+};
+
 // NANDPrivateOpenAsync (PAL 0x8019C990). Pinned WiiCompiled forwards the
 // request through the synchronous NANDOpen implementation, queues the guest
 // completion callback with (result, commandBlock), and returns the same result.

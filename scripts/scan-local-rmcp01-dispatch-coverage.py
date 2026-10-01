@@ -53,7 +53,9 @@ def source_files(root: Path) -> list[Path]:
     )
 
 
-def scan_regex(roots: list[Path], pattern: re.Pattern[str]) -> tuple[set[int], dict[int, Counter[str]]]:
+def scan_regex(
+    roots: list[Path], pattern: re.Pattern[str]
+) -> tuple[set[int], dict[int, Counter[str]]]:
     addresses: set[int] = set()
     refs: dict[int, Counter[str]] = defaultdict(Counter)
     for root in roots:
@@ -112,10 +114,7 @@ def build_report(
             coverage = "missing"
 
         trace_hit = runtime.get(address)
-        sample_files = [
-            name
-            for name, _ in direct_refs[address].most_common(4)
-        ]
+        sample_files = [name for name, _ in direct_refs[address].most_common(4)]
         targets.append(
             Target(
                 address=f"0x{address:08X}",
@@ -144,8 +143,7 @@ def build_report(
         "missing": sum(item.coverage == "missing" for item in targets),
         "runtime_seen": sum(item.runtime_seen for item in targets),
         "runtime_seen_missing": sum(
-            item.runtime_seen and item.coverage == "missing"
-            for item in targets
+            item.runtime_seen and item.coverage == "missing" for item in targets
         ),
     }
     return targets, summary
@@ -176,10 +174,7 @@ def print_human(targets: list[Target], summary: dict[str, int]) -> None:
             else "runtime=not-seen"
         )
         files = ", ".join(item.sample_files) if item.sample_files else "-"
-        print(
-            f"  {item.address} refs={item.references:<4d} "
-            f"{runtime} files={files}"
-        )
+        print(f"  {item.address} refs={item.references:<4d} {runtime} files={files}")
 
 
 def self_test() -> None:
@@ -272,8 +267,7 @@ def main() -> int:
     missing_roots = [path for path in roots if not path.exists()]
     if missing_roots:
         parser.error(
-            "missing product root(s): "
-            + ", ".join(str(path) for path in missing_roots)
+            "missing product root(s): " + ", ".join(str(path) for path in missing_roots)
         )
 
     trace = args.trace.expanduser().resolve() if args.trace else None

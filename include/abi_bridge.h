@@ -25,6 +25,9 @@ void mkw_switch_report_unsupported_translated_dispatch(
 void mkw_switch_note_translated_dispatch(
     std::uint32_t target,
     CpuContext* cpu) noexcept;
+void mkw_switch_note_discovery_dispatch(
+    std::uint32_t target,
+    CpuContext* cpu) noexcept;
 
 // Switch-native implementation of Wii SDK __OSGetSystemTime (PAL 0x801AAD7C).
 // The pinned WiiCompiled runtime treats this address as a native override and
@@ -66,6 +69,9 @@ inline void ApplyRuntimeCallOptions(std::uint32_t target, CpuContext* cpu) noexc
     mkw_switch_hle_vi_poll_retrace(cpu);
 #endif
     mkw_switch_note_translated_dispatch(target, cpu);
+#if defined(MKW_DISCOVERY_SCAN_MODE) && MKW_DISCOVERY_SCAN_MODE
+    mkw_switch_note_discovery_dispatch(target, cpu);
+#endif
 }
 
 inline constexpr std::uint32_t kPpcAllNonvolatileFprMask = 0xFFFFC000u;

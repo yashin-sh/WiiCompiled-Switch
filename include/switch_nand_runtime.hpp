@@ -10,6 +10,9 @@ std::int32_t OpenSync(std::uint32_t pathPtr,
                       std::uint32_t fileInfoPtr,
                       std::uint32_t mode) noexcept;
 
+std::int32_t SafeOpenReadSync(std::uint32_t pathPtr,
+                              std::uint32_t fileInfoPtr) noexcept;
+
 std::int32_t ReadSync(std::uint32_t fileInfoPtr,
                       std::uint32_t bufferPtr,
                       std::uint32_t length) noexcept;

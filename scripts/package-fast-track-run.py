@@ -126,9 +126,7 @@ def self_test() -> None:
         )
 
         compact = root / "compact.zip"
-        total, included, _ = bundle(
-            root, compact, full=False, raw=False
-        )
+        total, included, _ = bundle(root, compact, full=False, raw=False)
         assert total == 3
         assert included == 2
         with zipfile.ZipFile(compact) as archive:
@@ -220,9 +218,7 @@ def main() -> int:
     )
 
     coverage = (
-        args.coverage.expanduser().resolve()
-        if args.coverage is not None
-        else None
+        args.coverage.expanduser().resolve() if args.coverage is not None else None
     )
     if coverage is not None and not coverage.is_file():
         parser.error(f"coverage report does not exist: {coverage}")

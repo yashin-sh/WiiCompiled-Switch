@@ -113,8 +113,16 @@ The logs still do **not** prove a visually correct Mario Kart Wii image.
 The complete blocker-by-blocker history and current checklist live in
 [`ROADMAP.md`](ROADMAP.md). Hardware evidence is recorded in dated files under
 [`docs/`](docs/). Static look-ahead is available through
-`scripts/forecast-rmcp01-frontier.py`, but hardware evidence remains the
-authority for runtime patches.
+`scripts/forecast-rmcp01-frontier.py`. For whole-product coverage and
+first-hit runtime tracing, see
+[`docs/RMCP01_DISCOVERY_SCAN.md`](docs/RMCP01_DISCOVERY_SCAN.md) and build:
+
+```sh
+MKW_JOBS=4 bash scripts/build-local-rendered-discovery-scan.sh
+```
+
+Discovery mode still hard-stops on unknown/stateful boundaries; hardware
+evidence remains the authority for runtime patches.
 
 ## Important limitations
 

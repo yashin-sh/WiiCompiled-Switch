@@ -102,6 +102,7 @@ jobs:
           grep -Fq 'InvokeDirectCpu<0x80124048u>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
           grep -Fq 'InvokeDirectCpu<0x80124094u>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
           grep -Fq 'InvokeDirectCpu<0x801A08E0u>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
+          grep -Fq 'InvokeDirectCpu<0x800BD860u>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
           grep -Fq 'InvokeDirectCpu<0x800A35E0u>(ctx)' synthetic-execution/ppc_helper_link_probe.cpp
 
       - name: Locate AArch64 nm

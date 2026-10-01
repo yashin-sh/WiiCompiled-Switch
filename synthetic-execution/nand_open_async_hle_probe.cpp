@@ -2,13 +2,18 @@
 
 #if defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK
 
-// Nintendo-data-free compile/link coverage for PAL NANDOpen / NANDOpenAsync
-// (0x8019C800 / 0x8019C918). Null guest pointers deliberately exercise only
-// the safe invalid-argument path while proving both native dispatches link.
+// Nintendo-data-free compile/link coverage for PAL NANDGetType / NANDOpen /
+// NANDOpenAsync (0x8019E770 / 0x8019C800 / 0x8019C918). Null guest pointers
+// deliberately exercise only safe invalid-argument paths while proving all
+// three native dispatches link.
 extern "C" __attribute__((used)) void synthetic_nand_open_async_hle_probe(CpuContext* ctx) {
     if (!ctx) {
         return;
     }
+
+    ctx->gpr[3] = 0u;
+    ctx->gpr[4] = 0u;
+    InvokeDirectCpu<0x8019E770u>(ctx);
 
     ctx->gpr[3] = 0u;
     ctx->gpr[4] = 0u;

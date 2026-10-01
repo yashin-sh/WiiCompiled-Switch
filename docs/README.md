@@ -143,6 +143,7 @@
 - `HARDWARE_RESULTS_2026-09-29_TWELFTH_GX_INIT_TEX_OBJ_LOD_FRONTIER.md` — captures a second exact, format-2 GXInitTexObjLOD descriptor on the already-known 0x9018E480 and attributes the sequence to FUN_801813e0 at function level
 - `HARDWARE_RESULTS_2026-09-30_THIRTEENTH_GX_INIT_TEX_OBJ_LOD_FRONTIER.md` — hardware-crosses the ninth GXInitTexObjWrapMode tuple on 0x908FA840 and captures the thirteenth exact GXInitTexObjLOD descriptor on 0x908FAE00
 - `HARDWARE_RESULTS_2026-10-01_TENTH_GX_INIT_TEX_OBJ_WRAP_FRONTIER.md` — records the hardware-proven format-0 LOD on 0x9018E480 and captures its first exact clamp/clamp wrap tuple
+- `HARDWARE_RESULTS_2026-10-01_ELEVENTH_GX_INIT_TEX_OBJ_WRAP_FRONTIER.md` — hardware-crosses the thirteenth GXInitTexObjLOD descriptor on 0x908FAE00 and captures its eleventh exact GXInitTexObjWrapMode tuple
 - `HARDWARE_RESULTS_2026-09-21_FIRST_RMCP01_FIFO_WORK_END_RENDER_FRONTIER.md` — `GXBegin` hardware-crossed, first real RMCP01 FIFO/Aurora render work, and new `EGG::AsyncDisplay::endRender` frontier
 
 ## Blocker notes
@@ -158,8 +159,8 @@ Current accepted state as of 2026-09-29:
 - real RMCP01 FIFO work and repeated GPU presents are hardware-proven;
 - strongest graphics-path run reaches 1,450 FIFO writes and 94 successful
   presents / 0 failures;
-- ten exact GXInitTexObjLOD descriptors are hardware-crossed; the ninth on `0x90793BE0`, twelfth format-2 descriptor on `0x9018E480`, and thirteenth descriptor on `0x908FAE00` are merged gates awaiting hardware crossing;
-- seven exact GXInitTexObjWrapMode tuples are hardware-crossed, including the seventh tuple on `0x908FA820` and ninth tuple on `0x908FA840`; the sixth on `0x908FA5C0`, eighth on `0x909019C0`, and tenth format-0 tuple on `0x9018E480` are merged gates awaiting hardware crossing;
+- eleven exact GXInitTexObjLOD descriptors are hardware-crossed; the ninth on `0x90793BE0` and twelfth format-2 descriptor on `0x9018E480` are merged gates awaiting hardware crossing;
+- seven exact GXInitTexObjWrapMode tuples are hardware-crossed, including the seventh tuple on `0x908FA820` and ninth tuple on `0x908FA840`; the sixth on `0x908FA5C0`, eighth on `0x909019C0`, tenth format-0 tuple on `0x9018E480`, and eleventh on `0x908FAE00` are merged gates awaiting hardware crossing;
 - KD/NWC24 exact handling is hardware-crossed through fd 2003 close;
 - PAL AIInit (0x801240B0) is hardware-crossed;
 - __AXOutInitDSP (0x801269BC) is hardware-crossed;

@@ -17,7 +17,16 @@ std::int32_t ReadSync(std::uint32_t fileInfoPtr,
                       std::uint32_t bufferPtr,
                       std::uint32_t length) noexcept;
 
+std::int32_t SeekSync(std::uint32_t fileInfoPtr,
+                      std::int32_t offset,
+                      std::int32_t whence) noexcept;
+
+std::int32_t GetLengthSync(std::uint32_t fileInfoPtr,
+                           std::uint32_t outLengthPtr) noexcept;
+
 std::int32_t CloseSync(std::uint32_t fileInfoPtr) noexcept;
+
+std::int32_t SafeCloseReadSync(std::uint32_t fileInfoPtr) noexcept;
 
 std::int32_t GetTypeSync(std::uint32_t pathPtr,
                          std::uint32_t outTypePtr) noexcept;

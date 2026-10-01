@@ -117,7 +117,7 @@ constexpr std::uint64_t kPostMainTraceFsyncStride = 8u;
 constexpr std::uint64_t kMaxPostVideoTraceEntries = 128u;
 constexpr std::uint64_t kPostVideoTraceFsyncStride = 16u;
 
-constexpr std::size_t kDiscoveryTargetSlots = 2048u;
+constexpr std::size_t kDiscoveryTargetSlots = 8192u;
 
 const char* volatile g_fast_track_stage = "PROCESS_START";
 bool g_liveness_files_reset = false;

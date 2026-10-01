@@ -337,8 +337,7 @@ inline void ProcessDueAlarms(CpuContext* cpu, int maxToProcess) noexcept {
             if (handler != 0u) {
                 CpuContext callbackCpu = *cpu;
                 callbackCpu.gpr[3] = alarm;
-                callbackCpu.gpr[4] =
-                    Memory::Contains(kOSCurrentContextAddr, 4u)
+                callbackCpu.gpr[4] = Memory::Contains(kOSCurrentContextAddr, 4u)
                     ? Memory::Read32(kOSCurrentContextAddr)
                     : 0u;
 
@@ -377,7 +376,6 @@ inline void ProcessDueAlarms(CpuContext* cpu, int maxToProcess) noexcept {
     }
     gProcessingDueAlarms = false;
 }
-
 
 } // namespace mkw::switch_os_alarm_hle
 

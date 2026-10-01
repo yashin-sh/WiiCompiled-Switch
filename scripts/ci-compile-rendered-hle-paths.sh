@@ -121,4 +121,7 @@ for source in "${rendered_sources[@]}"; do
     "$CXX_TOOL" "${common_flags[@]}" "$source"
 done
 
-echo "PASS: all rendered HLE branches compile against pinned WiiCompiled/Aurora headers"
+echo "  CXX source/fast_track_crash_diagnostics.cpp (Discovery mode)"
+"$CXX_TOOL" "${common_flags[@]}"     -DMKW_DISCOVERY_SCAN_MODE=1     "$ROOT_DIR/source/fast_track_crash_diagnostics.cpp"
+
+echo "PASS: all rendered HLE branches and Discovery diagnostics compile against pinned WiiCompiled/Aurora headers"

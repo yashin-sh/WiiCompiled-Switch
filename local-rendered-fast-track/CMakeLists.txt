@@ -26,6 +26,10 @@ endif()
 
 enable_language(ASM)
 
+option(MKW_DISCOVERY_SCAN_MODE
+    "Record first-hit guest targets in the rendered local Discovery NRO"
+    OFF)
+
 file(GLOB M3_FAST_TRACK_SOURCE_CPP CONFIGURE_DEPENDS
     "${M3_REPO_ROOT}/source/*.cpp"
     "${M3_REPO_ROOT}/third_party/WiiCompiled/runtime/src/platform/*.cpp"
@@ -84,6 +88,12 @@ target_compile_definitions(mkw_switch_rendered_fast_track PRIVATE
     MKW_ENABLE_TRANSLATED_EXECUTION_HANDOFF=1
 )
 
+if(MKW_DISCOVERY_SCAN_MODE)
+    target_compile_definitions(mkw_switch_rendered_fast_track PRIVATE
+        MKW_DISCOVERY_SCAN_MODE=1
+    )
+endif()
+
 target_compile_options(mkw_switch_rendered_fast_track PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:-Wall>
     $<$<COMPILE_LANGUAGE:CXX>:-Wextra>
@@ -122,15 +132,25 @@ target_link_options(mkw_switch_rendered_fast_track PRIVATE
 find_program(M3_ELF2NRO elf2nro REQUIRED)
 find_program(M3_NACPTOOL nacptool REQUIRED)
 
-set(M3_NACP "${CMAKE_CURRENT_BINARY_DIR}/WiiCompiled-Switch-local-rendered-fast-track.nacp")
-set(M3_NRO "${CMAKE_CURRENT_BINARY_DIR}/WiiCompiled-Switch-local-rendered-fast-track.nro")
+if(MKW_DISCOVERY_SCAN_MODE)
+    set(M3_NRO_BASENAME "WiiCompiled-Switch-local-rendered-discovery-scan")
+    set(M3_NACP_TITLE "WiiCompiled-Switch Discovery Scan")
+    set(M3_NACP_VERSION "0.0.12-discovery-scan")
+else()
+    set(M3_NRO_BASENAME "WiiCompiled-Switch-local-rendered-fast-track")
+    set(M3_NACP_TITLE "WiiCompiled-Switch Rendered Fast Track")
+    set(M3_NACP_VERSION "0.0.11-rendered-fast-track")
+endif()
+
+set(M3_NACP "${CMAKE_CURRENT_BINARY_DIR}/${M3_NRO_BASENAME}.nacp")
+set(M3_NRO "${CMAKE_CURRENT_BINARY_DIR}/${M3_NRO_BASENAME}.nro")
 
 add_custom_command(
     OUTPUT "${M3_NACP}"
     COMMAND "${M3_NACPTOOL}" --create
-            "WiiCompiled-Switch Rendered Fast Track"
+            "${M3_NACP_TITLE}"
             "WiiCompiled-Switch"
-            "0.0.11-rendered-fast-track"
+            "${M3_NACP_VERSION}"
             "${M3_NACP}"
     VERBATIM
 )

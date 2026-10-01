@@ -26,6 +26,8 @@ namespace {
 
 constexpr const char* kDispatchPath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-dispatch-blocker.txt";
+constexpr const char* kDiscoveryPath =
+    "sdmc:/switch/WiiCompiled-Switch/fast-track-discovery-targets.txt";
 constexpr const char* kExceptionPath =
     "sdmc:/switch/WiiCompiled-Switch/fast-track-exception.txt";
 constexpr const char* kHeartbeatPath =
@@ -115,11 +117,15 @@ constexpr std::uint64_t kPostMainTraceFsyncStride = 8u;
 constexpr std::uint64_t kMaxPostVideoTraceEntries = 128u;
 constexpr std::uint64_t kPostVideoTraceFsyncStride = 16u;
 
+constexpr std::size_t kDiscoveryTargetSlots = 8192u;
+
 const char* volatile g_fast_track_stage = "PROCESS_START";
 bool g_liveness_files_reset = false;
 bool g_main_reached = false;
 bool g_post_main_dispatch_recorded = false;
 std::uint64_t g_dispatch_count = 0u;
+std::uint32_t g_discovery_targets[kDiscoveryTargetSlots]{};
+std::uint32_t g_discovery_unique_count = 0u;
 std::uint64_t g_post_main_dispatch_count = 0u;
 std::uint64_t g_post_main_trace_entries = 0u;
 std::uint64_t g_post_video_trace_entries = 0u;
@@ -563,6 +569,9 @@ void reset_liveness_files_once() noexcept {
     }
     g_liveness_files_reset = true;
     ::unlink(kDispatchPath);
+#if defined(MKW_DISCOVERY_SCAN_MODE) && MKW_DISCOVERY_SCAN_MODE
+    ::unlink(kDiscoveryPath);
+#endif
     ::unlink(kExceptionPath);
     ::unlink(kHeartbeatPath);
     ::unlink(kMainReachedPath);
@@ -971,6 +980,107 @@ extern "C" void mkw_switch_note_translated_dispatch(
             target,
             cpu);
     }
+#else
+    (void)target;
+    (void)cpu;
+#endif
+}
+
+extern "C" void mkw_switch_note_discovery_dispatch(
+    std::uint32_t target,
+    CpuContext* cpu) noexcept {
+#if MKW_FAST_TRACK_DIAGNOSTICS && \
+    defined(MKW_DISCOVERY_SCAN_MODE) && MKW_DISCOVERY_SCAN_MODE
+    if (target == 0u) {
+        return;
+    }
+
+    constexpr std::uint32_t kHashMultiplier = 2654435761u;
+    std::size_t slot =
+        static_cast<std::size_t>((target >> 2u) * kHashMultiplier) &
+        (kDiscoveryTargetSlots - 1u);
+    bool firstSeen = false;
+    for (std::size_t probe = 0u; probe < kDiscoveryTargetSlots; ++probe) {
+        std::uint32_t& stored = g_discovery_targets[slot];
+        if (stored == target) {
+            return;
+        }
+        if (stored == 0u) {
+            stored = target;
+            firstSeen = true;
+            break;
+        }
+        slot = (slot + 1u) & (kDiscoveryTargetSlots - 1u);
+    }
+    if (!firstSeen) {
+        return;
+    }
+
+    ++g_discovery_unique_count;
+    const int fd = ::open(
+        kDiscoveryPath,
+        O_WRONLY | O_CREAT | O_APPEND,
+        0666);
+    if (fd < 0) {
+        return;
+    }
+
+    if (g_discovery_unique_count == 1u) {
+        constexpr const char kHeader[] =
+            "WiiCompiled-Switch discovery unique dispatch targets\n"
+            "===================================================\n"
+            "Policy: record first hit of each target; unknown/stateful "
+            "boundaries still hard-stop.\n";
+        write_all(fd, kHeader, sizeof(kHeader) - 1u);
+    }
+
+    const std::uint32_t pc = cpu ? cpu->pc : 0u;
+    const std::uint32_t lr = cpu ? cpu->lr : 0u;
+    const std::uint32_t r1 = cpu ? cpu->gpr[1] : 0u;
+    const std::uint32_t r2 = cpu ? cpu->gpr[2] : 0u;
+    const std::uint32_t r3 = cpu ? cpu->gpr[3] : 0u;
+    const std::uint32_t r4 = cpu ? cpu->gpr[4] : 0u;
+    const std::uint32_t r5 = cpu ? cpu->gpr[5] : 0u;
+    const std::uint32_t r6 = cpu ? cpu->gpr[6] : 0u;
+    const std::uint32_t r7 = cpu ? cpu->gpr[7] : 0u;
+    const std::uint32_t r8 = cpu ? cpu->gpr[8] : 0u;
+    const std::uint32_t r13 = cpu ? cpu->gpr[13] : 0u;
+    const std::uint32_t fiber =
+        mkw::switch_guest_fiber::current_thread();
+
+    char buffer[640];
+    const int n = std::snprintf(
+        buffer,
+        sizeof(buffer),
+        "[%04u] dispatch=%llu target=0x%08x pc=0x%08x lr=0x%08x "
+        "r1=0x%08x r2=0x%08x r3=0x%08x r4=0x%08x r5=0x%08x "
+        "r6=0x%08x r7=0x%08x r8=0x%08x r13=0x%08x "
+        "fiber=0x%08x stage=%s\n",
+        g_discovery_unique_count,
+        static_cast<unsigned long long>(g_dispatch_count),
+        target,
+        pc,
+        lr,
+        r1,
+        r2,
+        r3,
+        r4,
+        r5,
+        r6,
+        r7,
+        r8,
+        r13,
+        fiber,
+        g_fast_track_stage);
+    if (n > 0) {
+        const std::size_t size =
+            static_cast<std::size_t>(n) < sizeof(buffer)
+                ? static_cast<std::size_t>(n)
+                : sizeof(buffer) - 1u;
+        write_all(fd, buffer, size);
+        ::fsync(fd);
+    }
+    ::close(fd);
 #else
     (void)target;
     (void)cpu;

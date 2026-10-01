@@ -25,6 +25,9 @@ void mkw_switch_report_unsupported_translated_dispatch(
 void mkw_switch_note_translated_dispatch(
     std::uint32_t target,
     CpuContext* cpu) noexcept;
+void mkw_switch_note_discovery_dispatch(
+    std::uint32_t target,
+    CpuContext* cpu) noexcept;
 
 // Switch-native implementation of Wii SDK __OSGetSystemTime (PAL 0x801AAD7C).
 // The pinned WiiCompiled runtime treats this address as a native override and
@@ -66,6 +69,9 @@ inline void ApplyRuntimeCallOptions(std::uint32_t target, CpuContext* cpu) noexc
     mkw_switch_hle_vi_poll_retrace(cpu);
 #endif
     mkw_switch_note_translated_dispatch(target, cpu);
+#if defined(MKW_DISCOVERY_SCAN_MODE) && MKW_DISCOVERY_SCAN_MODE
+    mkw_switch_note_discovery_dispatch(target, cpu);
+#endif
 }
 
 inline constexpr std::uint32_t kPpcAllNonvolatileFprMask = 0xFFFFC000u;
@@ -384,7 +390,11 @@ inline void InvokeDirectCpu(CpuContext* cpu) {
     }
 
     // A target not represented by a translated trait or native HLE is a genuine
-    // boundary for the current Switch port. Record it durably before stopping.
+    // boundary for the current Switch port. Discovery mode records the first
+    // hit as well, but still hard-stops instead of fabricating guest semantics.
+#if defined(MKW_DISCOVERY_SCAN_MODE) && MKW_DISCOVERY_SCAN_MODE
+    mkw_switch_note_discovery_dispatch(Target, cpu);
+#endif
     mkw_switch_report_unsupported_translated_dispatch("DIRECT", Target, cpu);
     std::abort();
 }

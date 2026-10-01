@@ -390,7 +390,11 @@ inline void InvokeDirectCpu(CpuContext* cpu) {
     }
 
     // A target not represented by a translated trait or native HLE is a genuine
-    // boundary for the current Switch port. Record it durably before stopping.
+    // boundary for the current Switch port. Discovery mode records the first
+    // hit as well, but still hard-stops instead of fabricating guest semantics.
+#if defined(MKW_DISCOVERY_SCAN_MODE) && MKW_DISCOVERY_SCAN_MODE
+    mkw_switch_note_discovery_dispatch(Target, cpu);
+#endif
     mkw_switch_report_unsupported_translated_dispatch("DIRECT", Target, cpu);
     std::abort();
 }

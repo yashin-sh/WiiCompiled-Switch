@@ -80,4 +80,22 @@ Acceleration comes from:
 3. pre-porting audited simple families in batches;
 4. preserving the first trustworthy stateful hard frontier.
 
+## Bundle one artifact for analysis
+
+After copying the Switch diagnostics back to the PC, include the static
+whole-product coverage report in the same ZIP:
+
+```bash
+python3 scripts/package-fast-track-run.py \
+  /path/to/copied/WiiCompiled-Switch \
+  --full \
+  --coverage local-product/rmcp01-dispatch-coverage.json
+```
+
+The archive then contains both:
+
+- the runtime first-hit trace and normal hardware diagnostics;
+- `rmcp01-dispatch-coverage.json`, which lists every statically emitted direct
+  target and highlights coverage gaps.
+
 The Discovery NRO is therefore a scanner, not an emulator fallback.

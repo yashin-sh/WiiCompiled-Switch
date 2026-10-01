@@ -49,6 +49,7 @@ inline std::uint32_t FloatBits(float value) noexcept {
 //   0x80123F88 AIRegisterDMACallback
 //   0x80123FCC AIInitDMA
 //   0x80124048 AIStartDMA
+//   0x80124094 AICheckInit
 //   0x801240B0 AIInit
 //   0x801269BC __AXOutInitDSP
 //   0x801A1138 __AIClockInit
@@ -163,6 +164,32 @@ struct KnownNativeCpuCall<0x80124048u> {
         mkw::switch_audio_hle::g_ai_dma_enabled = true;
         mkw::switch_audio_hle::g_ai_dma_bytes_left =
             mkw::switch_audio_hle::g_ai_dma_length;
+    }
+};
+
+// Real-Switch hardware crossed the generic GX texture LOD/wrap bridge and then
+// reached PAL AICheckInit (0x80124094). Pinned WiiCompiled returns the guest
+// AI-initialized flag stored at 0x80386448. Mirror only that exact guest-visible
+// result; no Horizon audio backend work is required at this boundary.
+template <>
+struct KnownNativeCpuCall<0x80124094u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        constexpr std::uint32_t kAIInitializedAddr = 0x80386448u;
+        std::uint32_t initialized = 0u;
+        try {
+            if (Memory::Contains(kAIInitializedAddr, 4u)) {
+                initialized = Memory::Read32(kAIInitializedAddr);
+            }
+        } catch (...) {
+            // Upstream uses TryRead32; unreadable guest memory returns 0.
+        }
+        cpu->gpr[3] = initialized;
     }
 };
 

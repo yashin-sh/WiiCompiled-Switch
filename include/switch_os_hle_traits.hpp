@@ -489,6 +489,41 @@ struct KnownNativeCpuCall<0x800BD860u> {
     }
 };
 
+// Forecasted neighbor of the hardware-proven title-installed query.
+// Pinned WiiCompiled reports the PAL title fully installed by writing flags 3
+// (data + update present) and returning success. Keep the same exact RMCP title
+// guard so unrelated title ids remain hardware frontiers.
+template <>
+struct KnownNativeCpuCall<0x801AD1D4u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        constexpr std::uint32_t kAddress = 0x801AD1D4u;
+        constexpr std::uint32_t kObservedTitleHi = 0x00010004u;
+        constexpr std::uint32_t kObservedTitleLo = 0x524D4350u;
+
+        if (cpu->gpr[4] != kObservedTitleHi ||
+            cpu->gpr[5] != kObservedTitleLo) {
+            mkw_switch_report_unsupported_translated_dispatch(
+                "OS_CHECK_INSTALL_UNPROVEN_TITLE",
+                kAddress,
+                cpu);
+            std::abort();
+        }
+
+        const std::uint32_t outFlagsPtr = cpu->gpr[6];
+        if (outFlagsPtr != 0u &&
+            Memory::Contains(outFlagsPtr, 4u)) {
+            Memory::Write32(outFlagsPtr, 0x3u);
+        }
+        cpu->gpr[3] = 0u;
+    }
+};
+
 // OS__IsTitleInstalled (PAL 0x801AE4A0). The latest real-Switch run
 // reaches this boundary with the PAL Mario Kart Wii title id
 // 0x00010004:0x524D4350 ("RMCP"). Pinned WiiCompiled reports installed;

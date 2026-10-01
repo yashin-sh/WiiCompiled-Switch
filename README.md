@@ -58,9 +58,9 @@ Hardware has now crossed ten exact `GXInitTexObjLOD (0x80170A4C)` descriptors an
 
 The first five exact `GXInitTexObjWrapMode (0x80170B50)` tuples are
 hardware-crossed, including the fifth tuple on `obj=0x907938A0`. The seventh
-tuple on `obj=0x908FA820` is hardware-crossed; the ninth tuple on
-`obj=0x908FA840` is now also hardware-crossed. Sixth and eighth tuples on
-`obj=0x908FA5C0` / `obj=0x909019C0` remain hardware-captured and bridged.
+tuple on `obj=0x908FA820` and ninth tuple on `obj=0x908FA840` are also
+hardware-crossed. Sixth, eighth and tenth tuples on `obj=0x908FA5C0` /
+`obj=0x909019C0` / `obj=0x9018E480` remain hardware-captured and bridged.
 
 In parallel, the scheduler can reach the NWC24/KD path first. Hardware has
 crossed the exact sequence through:
@@ -84,9 +84,12 @@ the tenth LOD on `obj=0x909019C0`, and another run hardware-crosses the
 eleventh LOD on `obj=0x908FA840` before reaching its ninth exact wrap tuple.
 A later run reaches a second, exact format-2 LOD descriptor on the already
 known `obj=0x9018E480`; it is tracked independently from the earlier
-hardware-crossed format-0 descriptor. The latest run hardware-crosses the
+hardware-crossed format-0 descriptor. A 2026-09-30 run hardware-crosses the
 ninth wrap on `obj=0x908FA840` and then reaches a thirteenth exact LOD
-descriptor on `obj=0x908FAE00`.
+descriptor on `obj=0x908FAE00`. The latest 2026-10-01 run takes a different
+scheduler branch: the already-proven format-0 LOD on `obj=0x9018E480`
+passes and a tenth exact clamp/clamp wrap tuple is captured for that same
+format-0 descriptor.
 
 So the current hardware gates are scheduler-order dependent:
 
@@ -96,6 +99,7 @@ GX path B: ninth GXInitTexObjLOD tuple on obj 0x90793BE0
 GX path C: eighth GXInitTexObjWrapMode tuple on obj 0x909019C0
 GX path D: thirteenth GXInitTexObjLOD descriptor on obj 0x908FAE00
 GX path E: twelfth GXInitTexObjLOD descriptor on obj 0x9018E480 (format 2)
+GX path F: tenth GXInitTexObjWrapMode tuple on obj 0x9018E480 (format-0 descriptor)
 Audio path: SoundPlayer::SetVolume (0x800A35E0) crossed
 ```
 

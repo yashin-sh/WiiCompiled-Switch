@@ -242,6 +242,13 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         // data or a Horizon audio backend.
         InvokeDirectCpu<0x80124048u>(ctx);
 
+        // The generalized GX texture path now reaches AICheckInit. Keep public
+        // CI independent of guest memory: an unmapped initialized flag returns
+        // 0 through the same best-effort semantics as upstream TryRead32.
+        const std::uint32_t savedAiCheckR3 = ctx->gpr[3];
+        InvokeDirectCpu<0x80124094u>(ctx);
+        ctx->gpr[3] = savedAiCheckR3;
+
         // After the fourth GX texture LOD descriptor, hardware reaches
         // OSSetPeriodicAlarm. A null synthetic alarm proves the exact native
         // dispatch compiles and links without requiring Nintendo guest memory.

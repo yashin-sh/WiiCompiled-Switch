@@ -19,7 +19,9 @@ constexpr std::int32_t kResultOk = 0;
 constexpr std::int32_t kResultInvalid = -8;
 constexpr std::int32_t kResultNoExists = -12;
 constexpr std::int32_t kResultUnknown = -64;
+constexpr std::size_t kAccessTypeOffset = 0x88u;
 constexpr std::size_t kOpenFlagOffset = 0x8au;
+constexpr std::uint8_t kSafeOpenFlag = 3u;
 
 struct FileHandle {
     FILE* file = nullptr;
@@ -162,6 +164,33 @@ std::int32_t OpenSync(std::uint32_t pathPtr,
         Memory::Write32(fileInfoPtr, static_cast<std::uint32_t>(fd));
         Memory::Write8(fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset), 1u);
         return kResultOk;
+    } catch (...) {
+        return kResultInvalid;
+    }
+}
+
+std::int32_t SafeOpenReadSync(std::uint32_t pathPtr,
+                              std::uint32_t fileInfoPtr) noexcept {
+    if (fileInfoPtr == 0u ||
+        !Memory::Contains(fileInfoPtr, kOpenFlagOffset + 1u)) {
+        return kResultInvalid;
+    }
+
+    try {
+        // The Wii NAND library publishes accType before attempting the open.
+        Memory::Write8(
+            fileInfoPtr + static_cast<std::uint32_t>(kAccessTypeOffset),
+            1u);
+
+        const std::int32_t result = OpenSync(pathPtr, fileInfoPtr, 1u);
+        if (result == kResultOk) {
+            // Safe-open handles are deliberately distinct from normal opens so
+            // a later NANDClose cannot accidentally commit/close them.
+            Memory::Write8(
+                fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset),
+                kSafeOpenFlag);
+        }
+        return result;
     } catch (...) {
         return kResultInvalid;
     }

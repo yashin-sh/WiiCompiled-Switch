@@ -251,9 +251,7 @@ std::int32_t SeekSync(std::uint32_t fileInfoPtr,
             return kResultUnknown;
         }
         const long position = std::ftell(it->second.file);
-        return position < 0
-            ? kResultUnknown
-            : static_cast<std::int32_t>(position);
+        return position < 0 ? kResultUnknown : static_cast<std::int32_t>(position);
     } catch (...) {
         return kResultInvalid;
     }

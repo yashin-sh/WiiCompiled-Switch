@@ -10,7 +10,13 @@ readonly DAWN_DIR="${MKW_M3_DAWN_ROOT:-$DEPS_DIR/dawn-switch}"
 readonly DAWN_BUILD_DIR="${MKW_M3_HLE_FIFO_BUILD_ROOT:-$DEPS_DIR/dawn-switch-hle-fifo-aurora-build}"
 readonly WII_DIR="$ROOT_DIR/third_party/WiiCompiled"
 readonly MESA_IMAGE="${MKW_M3_MESA_IMAGE:-wiicompiled-m3-mesa-b297e230-v3}"
-readonly OUTPUT="$ROOT_DIR/WiiCompiled-Switch-local-rendered-fast-track.nro"
+readonly DISCOVERY_MODE="${MKW_DISCOVERY_SCAN_MODE:-OFF}"
+if [[ "$DISCOVERY_MODE" == "ON" || "$DISCOVERY_MODE" == "1" ]]; then
+    readonly OUTPUT_BASENAME="WiiCompiled-Switch-local-rendered-discovery-scan.nro"
+else
+    readonly OUTPUT_BASENAME="WiiCompiled-Switch-local-rendered-fast-track.nro"
+fi
+readonly OUTPUT="$ROOT_DIR/$OUTPUT_BASENAME"
 readonly SHARD_ROOT="$ROOT_DIR/local-product/generated/build_shards"
 readonly COMMON="$SHARD_ROOT/base_common"
 readonly SENSITIVE="$SHARD_ROOT/base_portable_sensitive"
@@ -77,12 +83,14 @@ docker run --rm \
     bash -lc '
         set -euo pipefail
         export DEVKITPRO=/opt/devkitpro
-        cmake -S /dawn -B /build -DM3_BUILD_RENDERED_FAST_TRACK=ON
+        cmake -S /dawn -B /build \
+            -DM3_BUILD_RENDERED_FAST_TRACK=ON \
+            -DMKW_DISCOVERY_SCAN_MODE="'"$DISCOVERY_MODE"'"
         cmake --build /build --target mkw_switch_rendered_fast_track_nro -j"$MKW_M3_JOBS"
     '
 
 echo "[4/4] Collecting local game-containing NRO..."
-built_nro="$(find "$DAWN_BUILD_DIR" -type f -name 'WiiCompiled-Switch-local-rendered-fast-track.nro' -print -quit)"
+built_nro="$(find "$DAWN_BUILD_DIR" -type f -name "$OUTPUT_BASENAME" -print -quit)"
 if [[ -z "$built_nro" || ! -f "$built_nro" ]]; then
     echo "error: rendered fast-track NRO was not produced" >&2
     exit 1
@@ -90,7 +98,11 @@ fi
 cp -f "$built_nro" "$OUTPUT"
 
 echo
-echo "RMCP01 rendered fast-track ready:"
+if [[ "$DISCOVERY_MODE" == "ON" || "$DISCOVERY_MODE" == "1" ]]; then
+    echo "RMCP01 rendered Discovery Scan ready:"
+else
+    echo "RMCP01 rendered fast-track ready:"
+fi
 echo "  $OUTPUT"
 echo
 echo "This NRO contains locally generated game-derived code. Do not upload or commit it."

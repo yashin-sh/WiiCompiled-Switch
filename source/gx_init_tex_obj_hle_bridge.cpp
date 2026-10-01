@@ -782,19 +782,20 @@ bool IsValidLodArgs(
     std::uint32_t edgeLod,
     std::uint32_t maxAniso) noexcept {
     constexpr float kMaxEncodedLod = 255.0f / 16.0f;
-    return minFilter <= 5u &&
-        magFilter <= 1u &&
-        biasClamp <= 1u &&
-        edgeLod <= 1u &&
-        maxAniso <= 2u &&
-        std::isfinite(minLod) &&
-        std::isfinite(maxLod) &&
-        std::isfinite(lodBias) &&
-        minLod >= 0.0f &&
-        maxLod >= minLod &&
-        maxLod <= kMaxEncodedLod &&
-        lodBias >= -4.0f &&
-        lodBias <= 3.99f;
+    if (minFilter > 5u || magFilter > 1u || maxAniso > 2u) {
+        return false;
+    }
+    if (biasClamp > 1u || edgeLod > 1u) {
+        return false;
+    }
+    if (!std::isfinite(minLod) || !std::isfinite(maxLod) ||
+        !std::isfinite(lodBias)) {
+        return false;
+    }
+    if (minLod < 0.0f || maxLod < minLod || maxLod > kMaxEncodedLod) {
+        return false;
+    }
+    return lodBias >= -4.0f && lodBias <= 3.99f;
 }
 
 bool GetTexObjBlockLayout(
@@ -876,9 +877,11 @@ bool IsStructurallyValidGuestTexObj(
     const std::uint32_t blockType = (word7 >> 8u) & 0xFFu;
     const std::uint32_t flags = word7 & 0xFFu;
 
-    return blockCount == expectedBlockCount &&
-        blockType == expectedBlockType &&
-        (flags == 0x02u || flags == 0x03u);
+    if (blockCount != expectedBlockCount ||
+        blockType != expectedBlockType) {
+        return false;
+    }
+    return flags == 0x02u || flags == 0x03u;
 }
 
 void ApplyGuestTexObjLodWords(

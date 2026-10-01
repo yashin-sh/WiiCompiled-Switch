@@ -5,6 +5,7 @@
 #include "memory.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -242,6 +243,12 @@ constexpr std::uint32_t kObservedWrapS = 0u;
 constexpr std::uint32_t kObservedWrapT = 0u;
 constexpr std::uint32_t kObservedWrapWord0Before = 0x00000195u;
 constexpr std::uint32_t kObservedWrapWord0After = 0x00000190u;
+
+#if defined(MKW_STRICT_GX_TEXTURE_OBSERVED_TUPLES) && MKW_STRICT_GX_TEXTURE_OBSERVED_TUPLES
+constexpr bool kStrictObservedTextureTuples = true;
+#else
+constexpr bool kStrictObservedTextureTuples = false;
+#endif
 
 std::uint32_t CanonicalizeGuestMainRamAddress(std::uint32_t addr) noexcept {
     if (addr < 0x01800000u) {
@@ -761,20 +768,164 @@ std::uint32_t FloatBits(float value) noexcept {
     return bits;
 }
 
-void WriteGuestTexObjLodExact(std::uint32_t obj) {
-    // Pinned WriteGuestTexObjLOD for the exact observed tuple:
-    // min=GX_LINEAR -> HW encoding 4, mag=GX_LINEAR, edgeLod=false,
-    // zero bias/min/max LOD, GX_ANISO_1, biasClamp=false.
-    const std::uint32_t word0 = Memory::Read32(obj + 0x00u);
-    const std::uint32_t updatedWord0 =
-        (word0 & ~0x003BFF00u) |
-        0x00000010u |
-        0x00000080u |
-        0x00000100u;
-    Memory::Write32(obj + 0x00u, updatedWord0);
+bool IsValidWrapMode(std::uint32_t wrap) noexcept {
+    return wrap <= 2u;
+}
 
-    const std::uint32_t word1 = Memory::Read32(obj + 0x04u);
-    Memory::Write32(obj + 0x04u, word1 & 0xFFFF0000u);
+bool IsValidLodArgs(
+    std::uint32_t minFilter,
+    std::uint32_t magFilter,
+    float minLod,
+    float maxLod,
+    float lodBias,
+    std::uint32_t biasClamp,
+    std::uint32_t edgeLod,
+    std::uint32_t maxAniso) noexcept {
+    constexpr float kMaxEncodedLod = 255.0f / 16.0f;
+    if (minFilter > 5u || magFilter > 1u || maxAniso > 2u) {
+        return false;
+    }
+    if (biasClamp > 1u || edgeLod > 1u) {
+        return false;
+    }
+    if (!std::isfinite(minLod) || !std::isfinite(maxLod) ||
+        !std::isfinite(lodBias)) {
+        return false;
+    }
+    if (minLod < 0.0f || maxLod < minLod || maxLod > kMaxEncodedLod) {
+        return false;
+    }
+    return lodBias >= -4.0f && lodBias <= 3.99f;
+}
+
+bool GetTexObjBlockLayout(
+    std::uint32_t format,
+    std::uint32_t& shiftX,
+    std::uint32_t& shiftY,
+    std::uint32_t& blockType) noexcept {
+    switch (format) {
+    case 0u:
+    case 8u:
+        shiftX = 3u;
+        shiftY = 3u;
+        blockType = 1u;
+        return true;
+    case 1u:
+    case 2u:
+    case 9u:
+        shiftX = 3u;
+        shiftY = 2u;
+        blockType = 2u;
+        return true;
+    case 3u:
+    case 4u:
+    case 5u:
+    case 10u:
+        shiftX = 2u;
+        shiftY = 2u;
+        blockType = 2u;
+        return true;
+    case 6u:
+        shiftX = 2u;
+        shiftY = 2u;
+        blockType = 3u;
+        return true;
+    case 14u:
+        shiftX = 3u;
+        shiftY = 3u;
+        blockType = 0u;
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool IsStructurallyValidGuestTexObj(
+    std::uint32_t word0,
+    std::uint32_t word2,
+    std::uint32_t word3,
+    std::uint32_t word5,
+    std::uint32_t word7) noexcept {
+    if (!IsValidWrapMode(word0 & 0x3u) ||
+        !IsValidWrapMode((word0 >> 2u) & 0x3u) ||
+        (word3 & 0xFF000000u) != 0u) {
+        return false;
+    }
+
+    const std::uint32_t format = word5;
+    if (((word2 >> 20u) & 0xFu) != (format & 0xFu)) {
+        return false;
+    }
+
+    std::uint32_t shiftX = 0u;
+    std::uint32_t shiftY = 0u;
+    std::uint32_t expectedBlockType = 0u;
+    if (!GetTexObjBlockLayout(format, shiftX, shiftY, expectedBlockType)) {
+        return false;
+    }
+
+    const std::uint32_t width = (word2 & 0x3FFu) + 1u;
+    const std::uint32_t height = ((word2 >> 10u) & 0x3FFu) + 1u;
+    const std::uint32_t blocksX =
+        (width + ((1u << shiftX) - 1u)) >> shiftX;
+    const std::uint32_t blocksY =
+        (height + ((1u << shiftY) - 1u)) >> shiftY;
+    const std::uint32_t expectedBlockCount =
+        (blocksX * blocksY) & 0x7FFFu;
+
+    const std::uint32_t blockCount = (word7 >> 16u) & 0xFFFFu;
+    const std::uint32_t blockType = (word7 >> 8u) & 0xFFu;
+    const std::uint32_t flags = word7 & 0xFFu;
+
+    if (blockCount != expectedBlockCount ||
+        blockType != expectedBlockType) {
+        return false;
+    }
+    return flags == 0x02u || flags == 0x03u;
+}
+
+void ApplyGuestTexObjLodWords(
+    std::uint32_t& word0,
+    std::uint32_t& word1,
+    std::uint32_t minFilter,
+    std::uint32_t magFilter,
+    float minLod,
+    float maxLod,
+    float lodBias,
+    std::uint32_t biasClamp,
+    std::uint32_t edgeLod,
+    std::uint32_t maxAniso) noexcept {
+    static constexpr std::uint8_t kGxToHwMinFilter[6] = {
+        0u, 4u, 1u, 5u, 2u, 6u};
+
+    const std::uint32_t minFilterBits = kGxToHwMinFilter[minFilter];
+    word0 =
+        (word0 & ~0xF0u) |
+        ((magFilter & 1u) << 4u) |
+        ((minFilterBits & 7u) << 5u);
+
+    const auto scaledBias =
+        static_cast<std::int8_t>(static_cast<int>(lodBias * 32.0f));
+    word0 =
+        (word0 & ~0x3FF00u) |
+        ((edgeLod != 0u ? 0u : 1u) << 8u) |
+        (static_cast<std::uint32_t>(
+             static_cast<std::uint8_t>(scaledBias))
+         << 9u);
+
+    word0 =
+        (word0 & ~0x380000u) |
+        ((maxAniso & 0x3u) << 19u) |
+        ((biasClamp != 0u ? 1u : 0u) << 21u);
+
+    const auto minLodScaled =
+        static_cast<std::uint32_t>(minLod * 16.0f) & 0xFFu;
+    const auto maxLodScaled =
+        static_cast<std::uint32_t>(maxLod * 16.0f) & 0xFFu;
+    word1 =
+        (word1 & 0xFFFF0000u) |
+        minLodScaled |
+        (maxLodScaled << 8u);
 }
 
 } // namespace
@@ -1108,24 +1259,67 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept {
         word6 == kObservedSeventeenthLodWord6 &&
         word7 == kObservedSeventeenthLodWord7;
 
-    if (!exactObservedArgs ||
-        (!exactFirstObservedDescriptor &&
-         !exactSecondObservedDescriptor &&
-         !exactThirdObservedDescriptor &&
-         !exactFourthObservedDescriptor &&
-         !exactFifthObservedDescriptor &&
-         !exactSixthObservedDescriptor &&
-         !exactSeventhObservedDescriptor &&
-         !exactEighthObservedDescriptor &&
-         !exactNinthObservedDescriptor &&
-         !exactTenthObservedDescriptor &&
-         !exactEleventhObservedDescriptor &&
-         !exactTwelfthObservedDescriptor &&
-         !exactThirteenthObservedDescriptor &&
-         !exactFourteenthObservedDescriptor &&
-         !exactFifteenthObservedDescriptor &&
-         !exactSixteenthObservedDescriptor &&
-         !exactSeventeenthObservedDescriptor)) {
+    const bool knownObservedDescriptor =
+        exactFirstObservedDescriptor ||
+        exactSecondObservedDescriptor ||
+        exactThirdObservedDescriptor ||
+        exactFourthObservedDescriptor ||
+        exactFifthObservedDescriptor ||
+        exactSixthObservedDescriptor ||
+        exactSeventhObservedDescriptor ||
+        exactEighthObservedDescriptor ||
+        exactNinthObservedDescriptor ||
+        exactTenthObservedDescriptor ||
+        exactEleventhObservedDescriptor ||
+        exactTwelfthObservedDescriptor ||
+        exactThirteenthObservedDescriptor ||
+        exactFourteenthObservedDescriptor ||
+        exactFifteenthObservedDescriptor ||
+        exactSixteenthObservedDescriptor ||
+        exactSeventeenthObservedDescriptor;
+    const bool knownObservedTuple =
+        exactObservedArgs && knownObservedDescriptor;
+
+    if (!IsValidLodArgs(
+            minFilter,
+            magFilter,
+            minLod,
+            maxLod,
+            lodBias,
+            biasClamp,
+            edgeLod,
+            maxAniso)) {
+        AbortLodBoundary(
+            "GX_INIT_TEX_OBJ_LOD_INVALID_ARGS",
+            cpu,
+            obj,
+            minFilter,
+            magFilter,
+            minLodBits,
+            maxLodBits,
+            lodBiasBits,
+            biasClamp,
+            edgeLod,
+            maxAniso);
+    }
+
+    if (!IsStructurallyValidGuestTexObj(
+            word0, word2, word3, word5, word7)) {
+        AbortLodBoundary(
+            "GX_INIT_TEX_OBJ_LOD_INVALID_DESCRIPTOR",
+            cpu,
+            obj,
+            minFilter,
+            magFilter,
+            minLodBits,
+            maxLodBits,
+            lodBiasBits,
+            biasClamp,
+            edgeLod,
+            maxAniso);
+    }
+
+    if (kStrictObservedTextureTuples && !knownObservedTuple) {
         AbortLodBoundary(
             "GX_INIT_TEX_OBJ_LOD_UNPROVEN_TUPLE",
             cpu,
@@ -1160,14 +1354,14 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept {
         }
         GXInitTexObjLOD(
             hostObj,
-            GX_LINEAR,
-            GX_LINEAR,
-            0.0f,
-            0.0f,
-            0.0f,
-            GX_FALSE,
-            GX_FALSE,
-            GX_ANISO_1);
+            static_cast<GXTexFilter>(minFilter),
+            static_cast<GXTexFilter>(magFilter),
+            minLod,
+            maxLod,
+            lodBias,
+            biasClamp != 0u ? GX_TRUE : GX_FALSE,
+            edgeLod != 0u ? GX_TRUE : GX_FALSE,
+            static_cast<GXAnisotropy>(maxAniso));
     } catch (...) {
         AbortLodBoundary(
             "GX_INIT_TEX_OBJ_LOD_HOST_EXCEPTION",
@@ -1184,10 +1378,24 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept {
     }
 #endif
 
-    WriteGuestTexObjLodExact(obj);
+    std::uint32_t expectedWord0 = word0;
+    std::uint32_t expectedWord1 = word1;
+    ApplyGuestTexObjLodWords(
+        expectedWord0,
+        expectedWord1,
+        minFilter,
+        magFilter,
+        minLod,
+        maxLod,
+        lodBias,
+        biasClamp,
+        edgeLod,
+        maxAniso);
+    Memory::Write32(obj + 0x00u, expectedWord0);
+    Memory::Write32(obj + 0x04u, expectedWord1);
 
-    if (Memory::Read32(obj + 0x00u) != kObservedLodWord0After ||
-        Memory::Read32(obj + 0x04u) != kObservedLodWord1After) {
+    if (Memory::Read32(obj + 0x00u) != expectedWord0 ||
+        Memory::Read32(obj + 0x04u) != expectedWord1) {
         AbortLodBoundary(
             "GX_INIT_TEX_OBJ_LOD_GUEST_STATE_MISMATCH",
             cpu,
@@ -1414,19 +1622,43 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_wrap_mode(CpuContext* cpu) noexce
         word6 == kObservedTwelfthLodWord6 &&
         word7 == kObservedTwelfthLodWord7;
 
-    if (!exactFirstObservedTuple &&
-        !exactSecondObservedTuple &&
-        !exactThirdObservedTuple &&
-        !exactFourthObservedTuple &&
-        !exactFifthObservedTuple &&
-        !exactSixthObservedTuple &&
-        !exactSeventhObservedTuple &&
-        !exactEighthObservedTuple &&
-        !exactNinthObservedTuple &&
-        !exactTenthObservedTuple &&
-        !exactEleventhObservedTuple &&
-        !exactTwelfthObservedTuple &&
-        !exactThirteenthObservedTuple) {
+    const bool knownObservedTuple =
+        exactFirstObservedTuple ||
+        exactSecondObservedTuple ||
+        exactThirdObservedTuple ||
+        exactFourthObservedTuple ||
+        exactFifthObservedTuple ||
+        exactSixthObservedTuple ||
+        exactSeventhObservedTuple ||
+        exactEighthObservedTuple ||
+        exactNinthObservedTuple ||
+        exactTenthObservedTuple ||
+        exactEleventhObservedTuple ||
+        exactTwelfthObservedTuple ||
+        exactThirteenthObservedTuple;
+
+    if (!IsValidWrapMode(wrapS) || !IsValidWrapMode(wrapT)) {
+        AbortWrapBoundary(
+            "GX_INIT_TEX_OBJ_WRAP_MODE_INVALID_ARGS",
+            cpu,
+            obj,
+            wrapS,
+            wrapT,
+            word0);
+    }
+
+    if (!IsStructurallyValidGuestTexObj(
+            word0, word2, word3, word5, word7)) {
+        AbortWrapBoundary(
+            "GX_INIT_TEX_OBJ_WRAP_MODE_INVALID_DESCRIPTOR",
+            cpu,
+            obj,
+            wrapS,
+            wrapT,
+            word0);
+    }
+
+    if (kStrictObservedTextureTuples && !knownObservedTuple) {
         AbortWrapBoundary(
             "GX_INIT_TEX_OBJ_WRAP_MODE_UNPROVEN_TUPLE",
             cpu,
@@ -1449,7 +1681,10 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_wrap_mode(CpuContext* cpu) noexce
                 wrapT,
                 word0);
         }
-        GXInitTexObjWrapMode(hostObj, GX_CLAMP, GX_CLAMP);
+        GXInitTexObjWrapMode(
+            hostObj,
+            static_cast<GXTexWrapMode>(wrapS),
+            static_cast<GXTexWrapMode>(wrapT));
     } catch (...) {
         AbortWrapBoundary(
             "GX_INIT_TEX_OBJ_WRAP_MODE_HOST_EXCEPTION",
@@ -1467,8 +1702,8 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_wrap_mode(CpuContext* cpu) noexce
         ((wrapT & 0x3u) << 2u);
     Memory::Write32(obj + 0x00u, updatedWord0);
 
-    if (Memory::Read32(obj + 0x00u) != kObservedWrapWord0After ||
-        Memory::Read32(obj + 0x04u) != kObservedLodWord1After) {
+    if (Memory::Read32(obj + 0x00u) != updatedWord0 ||
+        Memory::Read32(obj + 0x04u) != word1) {
         AbortWrapBoundary(
             "GX_INIT_TEX_OBJ_WRAP_MODE_GUEST_STATE_MISMATCH",
             cpu,

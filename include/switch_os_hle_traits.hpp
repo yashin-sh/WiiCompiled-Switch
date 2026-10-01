@@ -6,6 +6,7 @@
 #include "isa/ppc_isa_int.h"
 
 #include <cstdint>
+#include <cstdlib>
 
 extern "C" void mkw_switch_hle_os_send_message(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_os_receive_message(CpuContext* cpu) noexcept;
@@ -485,6 +486,37 @@ struct KnownNativeCpuCall<0x800BD860u> {
             working = 0u;
         }
         cpu->gpr[3] = working;
+    }
+};
+
+// OS__IsTitleInstalled (PAL 0x801AE4A0). The latest real-Switch run
+// reaches this boundary with the PAL Mario Kart Wii title id
+// 0x00010004:0x524D4350 ("RMCP"). Pinned WiiCompiled reports installed;
+// keep any other title id as a fresh hardware frontier instead of globally
+// stubbing every title as present.
+template <>
+struct KnownNativeCpuCall<0x801AE4A0u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        constexpr std::uint32_t kAddress = 0x801AE4A0u;
+        constexpr std::uint32_t kObservedTitleHi = 0x00010004u;
+        constexpr std::uint32_t kObservedTitleLo = 0x524D4350u;
+
+        if (cpu->gpr[3] != kObservedTitleHi ||
+            cpu->gpr[4] != kObservedTitleLo) {
+            mkw_switch_report_unsupported_translated_dispatch(
+                "OS_IS_TITLE_INSTALLED_UNPROVEN_TITLE",
+                kAddress,
+                cpu);
+            std::abort();
+        }
+
+        cpu->gpr[3] = 1u;
     }
 };
 

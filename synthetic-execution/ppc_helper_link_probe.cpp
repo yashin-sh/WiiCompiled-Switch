@@ -264,6 +264,17 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         InvokeDirectCpu<0x800BD860u>(ctx);
         ctx->gpr[3] = savedRflWorkingR3;
 
+        // The latest real-Switch frontier queries whether PAL Mario Kart Wii is
+        // installed. Exercise that exact observed title id so CI proves the
+        // native bridge without widening support to arbitrary titles.
+        const std::uint32_t savedTitleR3 = ctx->gpr[3];
+        const std::uint32_t savedTitleR4 = ctx->gpr[4];
+        ctx->gpr[3] = 0x00010004u;
+        ctx->gpr[4] = 0x524D4350u;
+        InvokeDirectCpu<0x801AE4A0u>(ctx);
+        ctx->gpr[3] = savedTitleR3;
+        ctx->gpr[4] = savedTitleR4;
+
         // Hardware next reaches nw4r::snd::SoundPlayer::SetVolume. Use a null
         // synthetic SoundPlayer so public CI stays Nintendo-data-free while
         // still proving the exact floating-point native dispatch compiles.

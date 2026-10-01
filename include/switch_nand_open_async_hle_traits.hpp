@@ -74,4 +74,3 @@ struct KnownNativeCpuCall<0x8019D104u> {
         mkw::switch_nand_runtime::PumpCallbacks(cpu);
     }
 };
-

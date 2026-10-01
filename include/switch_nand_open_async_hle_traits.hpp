@@ -74,3 +74,91 @@ struct KnownNativeCpuCall<0x8019D104u> {
         mkw::switch_nand_runtime::PumpCallbacks(cpu);
     }
 };
+
+// Forecasted simple read-only NAND frontiers. These mirror pinned WiiCompiled
+// wrappers over the already shared SD-backed synchronous runtime; no write,
+// create, delete or safe-write commit path is enabled here.
+
+template <>
+struct KnownNativeCpuCall<0x8019BA04u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        const std::uint32_t fileInfoPtr = cpu->gpr[3];
+        const std::int32_t offset =
+            static_cast<std::int32_t>(cpu->gpr[4]);
+        const std::int32_t whence =
+            static_cast<std::int32_t>(cpu->gpr[5]);
+        const std::uint32_t callbackPtr = cpu->gpr[6];
+        const std::uint32_t commandBlockPtr = cpu->gpr[7];
+
+        const std::int32_t result =
+            mkw::switch_nand_runtime::SeekSync(
+                fileInfoPtr, offset, whence);
+        mkw::switch_nand_runtime::QueueCallback(
+            callbackPtr, result, commandBlockPtr);
+        cpu->gpr[3] = static_cast<std::uint32_t>(
+            result < 0 ? result : 0);
+        mkw::switch_nand_runtime::PumpCallbacks(cpu);
+    }
+};
+
+template <>
+struct KnownNativeCpuCall<0x8019C048u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        const std::int32_t result =
+            mkw::switch_nand_runtime::GetLengthSync(
+                cpu->gpr[3], cpu->gpr[4]);
+        mkw::switch_nand_runtime::QueueCallback(
+            cpu->gpr[5], result, cpu->gpr[6]);
+        cpu->gpr[3] = static_cast<std::uint32_t>(result);
+        mkw::switch_nand_runtime::PumpCallbacks(cpu);
+    }
+};
+
+template <>
+struct KnownNativeCpuCall<0x8019D720u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        const std::int32_t result =
+            mkw::switch_nand_runtime::SafeCloseReadSync(cpu->gpr[3]);
+        mkw::switch_nand_runtime::QueueCallback(
+            cpu->gpr[4], result, cpu->gpr[5]);
+        cpu->gpr[3] = static_cast<std::uint32_t>(result);
+        mkw::switch_nand_runtime::PumpCallbacks(cpu);
+    }
+};
+
+template <>
+struct KnownNativeCpuCall<0x8019E7B4u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        const std::int32_t result =
+            mkw::switch_nand_runtime::GetTypeSync(
+                cpu->gpr[3], cpu->gpr[4]);
+        mkw::switch_nand_runtime::QueueCallback(
+            cpu->gpr[5], result, cpu->gpr[6]);
+        cpu->gpr[3] = static_cast<std::uint32_t>(result);
+        mkw::switch_nand_runtime::PumpCallbacks(cpu);
+    }
+};

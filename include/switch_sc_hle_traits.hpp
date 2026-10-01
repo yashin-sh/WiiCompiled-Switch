@@ -12,6 +12,8 @@ constexpr std::uint32_t kProductAreaTable = 0x8029CEB0u;
 constexpr std::uint32_t kProductAreaStride = 5u;
 constexpr std::uint32_t kProductAreaCount = 13u;
 constexpr char kDefaultPalArea[] = "EUR";
+constexpr std::uint32_t kProductCodeAddress = 0x803869E0u;
+constexpr char kDefaultPalCode[] = "LEH";
 
 // Match pinned WiiCompiled's SC product-region lookup against the SDK-owned
 // PAL table already present in the locally translated guest data. The public
@@ -62,5 +64,37 @@ struct KnownNativeCpuCall<0x801B23A0u> {
 
         cpu->gpr[3] = mkw::switch_sc_hle::LookupProductArea(
             mkw::switch_sc_hle::kDefaultPalArea, 3u);
+    }
+};
+
+// Forecasted adjacent SC identity getter. Pinned WiiCompiled's fresh PAL NAND
+// identity uses CODE=LEH and publishes that short string at the SDK-owned guest
+// storage address 0x803869E0. This adds no host identity backend and remains
+// Nintendo-data-free.
+template <>
+struct KnownNativeCpuCall<0x801B2424u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+
+        constexpr std::uint32_t kSize = 4u;
+        if (!Memory::Contains(
+                mkw::switch_sc_hle::kProductCodeAddress,
+                kSize)) {
+            cpu->gpr[3] = 0u;
+            return;
+        }
+
+        std::memcpy(
+            Memory::GetPointer(
+                mkw::switch_sc_hle::kProductCodeAddress,
+                kSize),
+            mkw::switch_sc_hle::kDefaultPalCode,
+            kSize);
+        cpu->gpr[3] =
+            mkw::switch_sc_hle::kProductCodeAddress;
     }
 };

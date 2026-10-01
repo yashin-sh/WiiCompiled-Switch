@@ -275,6 +275,29 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         ctx->gpr[3] = savedTitleR3;
         ctx->gpr[4] = savedTitleR4;
 
+        // Forecast the adjacent install-status query with the same guarded PAL
+        // RMCP title id. A null outFlags pointer keeps public CI data-free.
+        const std::uint32_t savedCheckInstallR3 = ctx->gpr[3];
+        const std::uint32_t savedCheckInstallR4 = ctx->gpr[4];
+        const std::uint32_t savedCheckInstallR5 = ctx->gpr[5];
+        const std::uint32_t savedCheckInstallR6 = ctx->gpr[6];
+        ctx->gpr[3] = 0u;
+        ctx->gpr[4] = 0x00010004u;
+        ctx->gpr[5] = 0x524D4350u;
+        ctx->gpr[6] = 0u;
+        InvokeDirectCpu<0x801AD1D4u>(ctx);
+        ctx->gpr[3] = savedCheckInstallR3;
+        ctx->gpr[4] = savedCheckInstallR4;
+        ctx->gpr[5] = savedCheckInstallR5;
+        ctx->gpr[6] = savedCheckInstallR6;
+
+        // Forecast the adjacent PAL console product-code getter. Public
+        // synthetic memory is unmapped, so it safely returns null while still
+        // proving that the exact dispatch compiles and links.
+        const std::uint32_t savedProductCodeR3 = ctx->gpr[3];
+        InvokeDirectCpu<0x801B2424u>(ctx);
+        ctx->gpr[3] = savedProductCodeR3;
+
         // Hardware next reaches nw4r::snd::SoundPlayer::SetVolume. Use a null
         // synthetic SoundPlayer so public CI stays Nintendo-data-free while
         // still proving the exact floating-point native dispatch compiles.

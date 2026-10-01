@@ -224,6 +224,78 @@ std::int32_t ReadSync(std::uint32_t fileInfoPtr,
     }
 }
 
+std::int32_t SeekSync(std::uint32_t fileInfoPtr,
+                      std::int32_t offset,
+                      std::int32_t whence) noexcept {
+    if (fileInfoPtr == 0u || !Memory::Contains(fileInfoPtr, 4u)) {
+        return kResultInvalid;
+    }
+
+    try {
+        const std::int32_t fd =
+            static_cast<std::int32_t>(Memory::Read32(fileInfoPtr));
+        std::lock_guard<std::mutex> lock(g_fileMutex);
+        const auto it = g_fileHandles.find(fd);
+        if (it == g_fileHandles.end() || !it->second.file) {
+            return kResultInvalid;
+        }
+
+        int origin = SEEK_SET;
+        if (whence == 1) {
+            origin = SEEK_CUR;
+        } else if (whence == 2) {
+            origin = SEEK_END;
+        }
+
+        if (std::fseek(it->second.file, offset, origin) != 0) {
+            return kResultUnknown;
+        }
+        const long position = std::ftell(it->second.file);
+        return position < 0 ? kResultUnknown : static_cast<std::int32_t>(position);
+    } catch (...) {
+        return kResultInvalid;
+    }
+}
+
+std::int32_t GetLengthSync(std::uint32_t fileInfoPtr,
+                           std::uint32_t outLengthPtr) noexcept {
+    if (fileInfoPtr == 0u || outLengthPtr == 0u ||
+        !Memory::Contains(fileInfoPtr, 4u) ||
+        !Memory::Contains(outLengthPtr, 4u)) {
+        return kResultInvalid;
+    }
+
+    try {
+        const std::int32_t fd =
+            static_cast<std::int32_t>(Memory::Read32(fileInfoPtr));
+        std::lock_guard<std::mutex> lock(g_fileMutex);
+        const auto it = g_fileHandles.find(fd);
+        if (it == g_fileHandles.end() || !it->second.file) {
+            return kResultInvalid;
+        }
+
+        const long original = std::ftell(it->second.file);
+        if (original < 0 ||
+            std::fseek(it->second.file, 0, SEEK_END) != 0) {
+            return kResultUnknown;
+        }
+
+        const long end = std::ftell(it->second.file);
+        const bool restored =
+            std::fseek(it->second.file, original, SEEK_SET) == 0;
+        if (end < 0 || !restored) {
+            return kResultUnknown;
+        }
+
+        Memory::Write32(
+            outLengthPtr,
+            static_cast<std::uint32_t>(end));
+        return kResultOk;
+    } catch (...) {
+        return kResultInvalid;
+    }
+}
+
 std::int32_t CloseSync(std::uint32_t fileInfoPtr) noexcept {
     if (fileInfoPtr == 0u || !Memory::Contains(fileInfoPtr, kOpenFlagOffset + 1u)) {
         return kResultInvalid;
@@ -247,6 +319,47 @@ std::int32_t CloseSync(std::uint32_t fileInfoPtr) noexcept {
         }
 
         Memory::Write8(fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset), 0u);
+        return kResultOk;
+    } catch (...) {
+        return kResultInvalid;
+    }
+}
+
+std::int32_t SafeCloseReadSync(std::uint32_t fileInfoPtr) noexcept {
+    if (fileInfoPtr == 0u ||
+        !Memory::Contains(fileInfoPtr, kOpenFlagOffset + 1u)) {
+        return kResultInvalid;
+    }
+
+    try {
+        const std::uint8_t openFlag =
+            Memory::Read8(
+                fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset));
+        if (openFlag == 1u) {
+            return CloseSync(fileInfoPtr);
+        }
+        if (openFlag != kSafeOpenFlag) {
+            return kResultInvalid;
+        }
+
+        const std::int32_t fd =
+            static_cast<std::int32_t>(Memory::Read32(fileInfoPtr));
+        {
+            std::lock_guard<std::mutex> lock(g_fileMutex);
+            const auto it = g_fileHandles.find(fd);
+            if (it == g_fileHandles.end() || !it->second.file) {
+                return kResultInvalid;
+            }
+            if (std::fclose(it->second.file) != 0) {
+                return kResultUnknown;
+            }
+            g_fileHandles.erase(it);
+        }
+
+        // Pinned WiiCompiled uses 4 for a synchronously safe-closed handle.
+        Memory::Write8(
+            fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset),
+            4u);
         return kResultOk;
     } catch (...) {
         return kResultInvalid;

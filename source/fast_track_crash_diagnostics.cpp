@@ -989,7 +989,8 @@ extern "C" void mkw_switch_note_translated_dispatch(
 extern "C" void mkw_switch_note_discovery_dispatch(
     std::uint32_t target,
     CpuContext* cpu) noexcept {
-#if MKW_FAST_TRACK_DIAGNOSTICS &&     defined(MKW_DISCOVERY_SCAN_MODE) && MKW_DISCOVERY_SCAN_MODE
+#if MKW_FAST_TRACK_DIAGNOSTICS && \
+    defined(MKW_DISCOVERY_SCAN_MODE) && MKW_DISCOVERY_SCAN_MODE
     if (target == 0u) {
         return;
     }
@@ -1074,8 +1075,8 @@ extern "C" void mkw_switch_note_discovery_dispatch(
     if (n > 0) {
         const std::size_t size =
             static_cast<std::size_t>(n) < sizeof(buffer)
-            ? static_cast<std::size_t>(n)
-            : sizeof(buffer) - 1u;
+                ? static_cast<std::size_t>(n)
+                : sizeof(buffer) - 1u;
         write_all(fd, buffer, size);
         ::fsync(fd);
     }

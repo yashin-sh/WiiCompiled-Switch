@@ -257,6 +257,13 @@ void synthetic_ppc_helper_link_probe(CpuContext* ctx) {
         InvokeDirectCpu<0x801A08E0u>(ctx);
         ctx->gpr[3] = savedAlarmR3;
 
+        // RFLiIsWorking has no guest arguments. In the Nintendo-data-free
+        // synthetic build guest memory is unmapped, so the bridge safely
+        // returns zero while proving the exact native dispatch is retained.
+        const std::uint32_t savedRflWorkingR3 = ctx->gpr[3];
+        InvokeDirectCpu<0x800BD860u>(ctx);
+        ctx->gpr[3] = savedRflWorkingR3;
+
         // Hardware next reaches nw4r::snd::SoundPlayer::SetVolume. Use a null
         // synthetic SoundPlayer so public CI stays Nintendo-data-free while
         // still proving the exact floating-point native dispatch compiles.

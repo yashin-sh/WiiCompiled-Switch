@@ -124,6 +124,7 @@ bool g_liveness_files_reset = false;
 bool g_main_reached = false;
 bool g_post_main_dispatch_recorded = false;
 std::uint64_t g_dispatch_count = 0u;
+std::uint64_t g_first_dispatch_tick = 0u;
 std::uint32_t g_discovery_targets[kDiscoveryTargetSlots]{};
 std::uint32_t g_discovery_unique_count = 0u;
 std::uint64_t g_post_main_dispatch_count = 0u;
@@ -166,6 +167,21 @@ std::uint64_t g_gx_begin_dispatch_count = 0u;
 std::uint64_t g_gx_set_num_chans_dispatch_count = 0u;
 std::uint64_t g_gx_set_chan_mat_color_dispatch_count = 0u;
 std::uint64_t g_gx_set_chan_ctrl_dispatch_count = 0u;
+
+std::uint64_t elapsed_since_first_dispatch_ms() noexcept {
+    // This measures host time from the first translated dispatch, not guest
+    // time or time spent in nxlink before the program starts.
+    if (g_dispatch_count == 0u) {
+        return 0u;
+    }
+    const std::uint64_t now = armGetSystemTick();
+    const std::uint64_t frequency = armGetSystemTickFreq();
+    if (frequency == 0u || now < g_first_dispatch_tick) {
+        return 0u;
+    }
+    const std::uint64_t ticks = now - g_first_dispatch_tick;
+    return (ticks / frequency) * 1000u + ((ticks % frequency) * 1000u) / frequency;
+}
 
 struct FstSnapshot {
     std::uint32_t address = 0u;
@@ -811,6 +827,9 @@ extern "C" void mkw_switch_note_translated_dispatch(
     std::uint32_t target,
     CpuContext* cpu) noexcept {
 #if MKW_FAST_TRACK_DIAGNOSTICS
+    if (g_dispatch_count == 0u) {
+        g_first_dispatch_tick = armGetSystemTick();
+    }
     reset_liveness_files_once();
     ++g_dispatch_count;
     if (target == kRkSystemRunAddress) {
@@ -1284,6 +1303,8 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         "=================================================\n"
         "kind                  : %s\n"
         "target                : 0x%08x\n"
+        "elapsed_ms            : %llu\n"
+        "dispatch count        : %llu\n"
         "guest pc              : 0x%08x\n"
         "lr                    : 0x%08x\n"
         "r1                    : 0x%08x\n"
@@ -1354,6 +1375,8 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         "action                : abort after durable blocker record\n",
         kind ? kind : "UNKNOWN",
         target,
+        static_cast<unsigned long long>(elapsed_since_first_dispatch_ms()),
+        static_cast<unsigned long long>(g_dispatch_count),
         guest_pc,
         lr,
         r1,
@@ -1516,6 +1539,7 @@ extern "C" void __libnx_exception_handler(ThreadExceptionDump* ctx) {
         "==================================\n"
         "error desc            : 0x%08x\n"
         "fast-track stage      : %s\n"
+        "elapsed_ms            : %llu\n"
         "aarch64 pc            : 0x%016llx\n"
         "aarch64 lr            : 0x%016llx\n"
         "aarch64 sp            : 0x%016llx\n"
@@ -1543,6 +1567,7 @@ extern "C" void __libnx_exception_handler(ThreadExceptionDump* ctx) {
         "note                  : process will still terminate after this handler\n",
         ctx->error_desc,
         g_fast_track_stage,
+        static_cast<unsigned long long>(elapsed_since_first_dispatch_ms()),
         static_cast<unsigned long long>(ctx->pc.x),
         static_cast<unsigned long long>(ctx->lr.x),
         static_cast<unsigned long long>(ctx->sp.x),

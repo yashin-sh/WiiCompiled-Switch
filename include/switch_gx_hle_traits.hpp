@@ -12,6 +12,7 @@ extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_viewport(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_scissor(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_load_pos_mtx_imm(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_load_tex_mtx_imm(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_current_mtx(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_clear_vtx_desc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_vtx_desc(CpuContext* cpu) noexcept;
@@ -117,6 +118,19 @@ struct KnownNativeCpuCall<0x8017310Cu> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_load_pos_mtx_imm(cpu);
+    }
+};
+
+// GXLoadTexMtxImm (PAL 0x80173234). Hardware reached r3=0x802581C8,
+// r4=30, r5=0 after eight IA8 map loads. Decode the guest big-endian matrix
+// (12 entries for type 0, otherwise 8 with zero padding), then forward the
+// id/type unchanged to Aurora. Invalid guest backing records a hard stop.
+template <>
+struct KnownNativeCpuCall<0x80173234u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_load_tex_mtx_imm(cpu);
     }
 };
 

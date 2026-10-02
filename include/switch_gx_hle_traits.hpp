@@ -33,6 +33,7 @@ extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_copy_filter(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_flush(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_invalidate_tex_all(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_init_tex_obj(CpuContext* cpu) noexcept;
@@ -345,6 +346,19 @@ struct KnownNativeCpuCall<0x80170B50u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_init_tex_obj_wrap_mode(cpu);
+    }
+};
+
+// GXInvalidateTexAll (PAL 0x80171110). Discovery hardware reaches this
+// no-argument texture-cache invalidation boundary after 604,194 translated
+// dispatches. Pinned WiiCompiled forwards it directly to Aurora's
+// GXInvalidateTexAll with no guest-register return value.
+template <>
+struct KnownNativeCpuCall<0x80171110u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_invalidate_tex_all(cpu);
     }
 };
 

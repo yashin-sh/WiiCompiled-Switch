@@ -57,3 +57,33 @@ Discovery trace plus a later distinct target or durable milestone. Unreached
 members remain pre-ported. Compare scheduler identities, FST/DVD evidence,
 FIFO/present counters and native exceptions against the baseline. GPU
 presentation does not establish visual pixel correctness.
+
+## Local validation result
+
+Code candidate: `1406039e9addbeeb7889002faf96cb870934fba3`.
+The following local gates pass:
+
+- rendered and non-rendered executable contracts with ASan/UBSan;
+- all rendered HLE branches and Discovery diagnostics syntax-compiled with
+  devkitA64 and pinned WiiCompiled/Aurora headers;
+- lint/format checks and repository tool self-tests;
+- 25 build/verification steps from the four build workflows, including
+  retention of all three bridges in the synthetic fast-track ELF;
+- the private rendered Discovery CMake target, using the previously validated
+  prepared Dawn/Aurora/NVK tree, with the pins and build command recorded locally;
+- the final rendered ELF contains all three bridges and the real Aurora
+  GXSetClipMode, GXSetDither and GXSetDstAlpha symbols.
+
+GitHub Actions itself was not run. The original nine-file WiiCompiled working
+patch was preserved byte-for-byte. No game-derived product or raw report was
+committed.
+
+The resulting `WiiCompiled-Switch-local-rendered-discovery-scan.nro` is
+73,277,496 bytes, SHA-256
+`cfa889d80b8e3a6b4435131142926fcc4801c2dd8b955940b5c73ca408108027`.
+The static scan now reports 317 missing direct targets and 138 native targets.
+These are coverage counts, not evidence of runtime progression.
+
+Hardware validation of this batch is pending. The latest accepted hardware
+frontier remains GXSetClipMode until this exact NRO produces new attributable
+reports.

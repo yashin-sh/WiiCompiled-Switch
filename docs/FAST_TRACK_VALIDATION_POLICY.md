@@ -54,7 +54,9 @@ Every blocker-driven change should pass these stages in order:
      signature drift) before merge.
 5. **Private rendered build gate**
    - build `scripts/build-local-rendered-fast-track.sh` successfully from the
-     exact candidate revision;
+     exact candidate revision, or build the same rendered/Discovery CMake
+     target directly in the validated prepared tree, recording dependency
+     pins, mode, command and candidate source hashes locally;
    - this is a required sixth gate for rendered RMCP01 work because the public
      CI graph does not include the local game-derived product or the complete
      Aurora/Dawn/NVK rendered target.

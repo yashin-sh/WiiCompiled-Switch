@@ -77,3 +77,10 @@ No hardware crossing or visible game image is claimed yet. The next run must
 show a later distinct dispatch/frontier after the matrix bridge returns, with
 fresh reports linked to the exact candidate NRO. Static callers forecast ten
 3x4 loads (ids 30,33,...57) in `0x802412C8`; that count is not hardware evidence.
+
+## Initial launch
+
+Nxlink transferred the exact candidate to `192.168.1.194` with exit 0,
+2026-10-02 17:39:00–17:39:32 UTC (19:39 Europe/Paris). This records the
+completed transfer/launch request, not a matrix return or visible image.
+USB/MTP retrieval and the user screen observation are pending.

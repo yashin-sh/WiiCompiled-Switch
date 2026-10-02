@@ -55,7 +55,24 @@ unchanged; the diagnostic watchdog does not terminate the program.
 
 ## Validation and hardware acceptance
 
-Local validation and the rendered NRO build are pending for this candidate.
+Source candidate `02010aaaa974581f49ed2dddfd02ebf0e2bc0e96` passes all
+10 lint checks, 28 local workflow steps, and the rendered AArch64 syntax gate.
+The five GX host contracts pass in both modes under ASan/UBSan. The new
+matrix contract exercises 200 successful headless calls, 110 rendered calls
+with legal types 0/1, and 32 diagnosed memory refusals per mode.
+GitHub Actions itself was not run.
+
+The local Rendered Discovery build completed with exit 0 after 164 build
+steps, 2026-10-02 17:09:43–17:36:06 UTC. The final ELF contains strong
+`mkw_switch_hle_gx_load_tex_mtx_imm` and `GXLoadTexMtxImm` symbols.
+The NRO is `WiiCompiled-Switch-local-rendered-discovery-scan.nro`,
+73,293,880 bytes, SHA-256
+`e666413d2c76a2ef9a5a278a4feb4a1e94ae01632464b643a62f885905bb656e`.
+Local validation/build metadata is retained under
+`.deps/network-tests/gx-load-tex-mtx-imm`; no game fixture or NRO is committed.
+The existing integration patch is byte-identical (SHA-256
+`92984dd129257e15e006fb7df1d891b6a7799f88620ad560c7a9733d4c19d0f7`).
+
 No hardware crossing or visible game image is claimed yet. The next run must
 show a later distinct dispatch/frontier after the matrix bridge returns, with
 fresh reports linked to the exact candidate NRO. Static callers forecast ten

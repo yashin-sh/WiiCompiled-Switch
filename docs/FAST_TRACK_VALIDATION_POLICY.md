@@ -193,7 +193,12 @@ requires 12 big-endian float32 coefficients from the actual 48-byte guest
 range, exact ID/type forwarding and preservation of the pinned frame contract.
 The coefficients are not captured or inferred. Adjacent coordinate, TEV and
 pixel-state calls remain forecasts until reached or explicitly audited for
-a bounded candidate. Matrix loading is the next observed contract to handle.
+a bounded candidate. The matrix bridge is implemented and passes local contracts, all workflow
+steps and the rendered build; see `GX_LOAD_TEX_MTX_IMM_2026-10-02.md`.
+Its hardware acceptance is pending. The coordinate neighbors are documented
+in `GX_TEX_COORD_NEIGHBORS_2026-10-02.md` as static forecasts only.
+The matrix candidate also timestamps blocker/native-exception reports from
+the first translated dispatch; diagnostic hard-stop behavior is unchanged.
 
 ## Governance note
 

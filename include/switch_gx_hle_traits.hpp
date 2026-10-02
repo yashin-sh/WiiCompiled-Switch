@@ -19,6 +19,8 @@ extern "C" void mkw_switch_hle_gx_set_vtx_attr_fmt(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_tex_gens(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tex_coord_gen2(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_ind_stages(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_ind_tex_mtx(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_ind_tex_coord_scale(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_tev_stages(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_op(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_order(CpuContext* cpu) noexcept;
@@ -330,6 +332,29 @@ struct KnownNativeCpuCall<0x8017351Cu> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_clip_mode(cpu);
+    }
+};
+
+// GXSetIndTexMtx (PAL 0x80171814). Hardware captured r3=1, r4=0x802581F8,
+// r5=1. Pinned WiiCompiled decodes six guest float32 coefficients, forwards
+// r3 as GXIndTexMtxID and narrows r5 to s8. Invalid memory/coefficients stop.
+template <>
+struct KnownNativeCpuCall<0x80171814u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_ind_tex_mtx(cpu);
+    }
+};
+
+// GXSetIndTexCoordScale (PAL 0x80171968). Audited adjacent scalar setter:
+// pinned WiiCompiled forwards r3/r4/r5 as stage/S-scale/T-scale enums.
+template <>
+struct KnownNativeCpuCall<0x80171968u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_ind_tex_coord_scale(cpu);
     }
 };
 

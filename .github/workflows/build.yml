@@ -7,6 +7,25 @@ on:
   pull_request:
 
 jobs:
+  gx-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install host GX contract compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang
+      - name: Verify WiiCompiled pin for GX contracts
+        run: test "$(git -C third_party/WiiCompiled rev-parse HEAD)" = "a135beb201042b20f390c6695ca6b26768820fb4"
+      - name: Prepare pinned Switch headers for GX contracts
+        run: git -C third_party/WiiCompiled apply ../../patches/wiicompiled/m3-wiicompiled-switch-build.patch
+      - name: Execute scalar and indirect GX contracts
+        run: |
+          bash scripts/test-gx-scalar-batch.sh
+          bash scripts/test-gx-indirect-batch.sh
+
   nro:
     runs-on: ubuntu-latest
     container: devkitpro/devkita64:latest

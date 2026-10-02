@@ -96,6 +96,12 @@ under `.deps/network-tests/gx-tex-coord-batch/`. The original nine-file
 WiiCompiled integration patch was preserved byte-for-byte, SHA-256
 `92984dd129257e15e006fb7df1d891b6a7799f88620ad560c7a9733d4c19d0f7`.
 
+Nxlink transferred this exact NRO with exit 0 at `2026-10-02T23:09:38Z`
+(01:09:38 on October 3, Europe/Paris), after the user restarted hbmenu's
+netloader. Two earlier attempts failed before starting a transfer; the
+Switch remained reachable, and the same command succeeded after that reset.
+Successful transfer is not evidence that the coordinate loop returned.
+
 Hardware validation is pending. No new hardware crossing, presentation
 effect or visible game image is claimed by the build. Acceptance must use
 fresh reports tied to this exact NRO, a later distinct dispatch and

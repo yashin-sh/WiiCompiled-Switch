@@ -170,22 +170,25 @@ If a new run:
 ## Current frontier
 
 The latest attributable real-Switch evidence is recorded in
-`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_SET_IND_TEX_MTX_FRONTIER.md`:
+`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_SET_CHAN_AMB_COLOR_FRONTIER.md`:
 
-- GXSetCoPlanar and GXSetClipMode are hardware-crossed;
-- the distinct DIRECT blocker is GXSetIndTexMtx (`0x80171814`), with r3=1,
-  r4=`0x802581F8`, r5=1 and stage `RMCP01_GX_SET_NUM_IND_STAGES`;
+- GXSetCoPlanar, GXSetClipMode, GXSetIndTexMtx and GXSetIndTexCoordScale
+  are hardware-crossed;
+- the distinct DIRECT blocker is GXSetChanAmbColor (`0x8017039C`), with
+  r3=4, r4=`0x80398FD0` and stage `RMCP01_GX_SET_NUM_CHANS`;
 - the preceding durable snapshot records 99 successful presents, zero present
   failures, a valid FST, and coherent guest scheduler identities;
-- that changed snapshot follows GXSetClipMode and precedes the matrix blocker;
-  it does not measure GXSetClipMode's own FIFO writes;
+- that changed snapshot follows both indirect-texture bridges and precedes
+  ambient color; its FIFO counter does not independently measure native
+  Aurora matrix/scale writes;
 - pinned WiiCompiled remains `a135beb201042b20f390c6695ca6b26768820fb4`;
 - GPU presentation is proven; visual pixel correctness remains unverified.
 
 The scalar batch covers GXSetClipMode, GXSetDither, and GXSetDstAlpha. The latter
 two are not reached in this run and remain pre-ported, with hardware validation
-pending. The observed matrix boundary and adjacent scalar coordinate-scale
-setter are the next bounded candidate to audit and validate.
+pending. The indirect-texture candidate is hardware-crossed. The observed
+ambient-color boundary is the next candidate to audit and validate, including
+guest color decoding and preservation of frame activation.
 
 ## Governance note
 

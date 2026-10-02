@@ -104,5 +104,9 @@ The resulting `WiiCompiled-Switch-local-rendered-discovery-scan.nro` is
 The static scan now reports 140 native targets and 315 missing direct targets.
 These counts do not establish runtime progression.
 
-Hardware acceptance is pending. The latest attributable frontier remains
-GXSetIndTexMtx until this exact NRO produces new reports proving progression.
+This exact NRO subsequently produced attributable hardware reports. Both
+GXSetIndTexMtx and GXSetIndTexCoordScale are hardware-crossed; the new DIRECT
+frontier is GXSetChanAmbColor (`0x8017039C`). GXSetDither and GXSetDstAlpha
+remain unreached. See
+`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_SET_CHAN_AMB_COLOR_FRONTIER.md` for
+per-boundary proof, invariant comparison and the ambient-color contract audit.

@@ -37,6 +37,7 @@ extern "C" void mkw_switch_hle_gx_set_dst_alpha(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_begin(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_chan_amb_color(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_copy_filter(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_flush(CpuContext* cpu) noexcept;
@@ -403,6 +404,18 @@ struct KnownNativeCpuCall<0x801707F8u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_init_tex_obj(cpu);
+    }
+};
+
+// GXSetChanAmbColor (PAL 0x8017039C). Hardware captured channel 4 in r3 and
+// guest color pointer 0x80398FD0 in r4. Preserve frame activation, decode
+// the big-endian RGBA word, and forward the unchanged channel to Aurora.
+template <>
+struct KnownNativeCpuCall<0x8017039Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_chan_amb_color(cpu);
     }
 };
 

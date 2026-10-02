@@ -57,3 +57,24 @@ at GXSetChanAmbColor. This candidate needs a later distinct dispatch or durable
 milestone after its ambient-color stage to establish hardware progression.
 Other unknown boundaries continue to hard-stop. GXSetDither and GXSetDstAlpha
 remain unreached. Hardware acceptance is pending.
+
+## Local validation result
+
+Code candidate: `990a241`. Ten lint checks and 28 runnable checks from the
+four local build workflows pass, including all three rendered/headless GX
+host contracts and retention of the ambient bridge/probe in the synthetic
+fast-track ELF. All rendered HLE branches and Discovery diagnostics compile
+with devkitA64 and the pinned headers. Existing local tools replace CI setup;
+the already-applied Switch patch is verified rather than applied twice.
+GitHub Actions itself was not run.
+
+The private rendered Discovery target builds in the prepared Dawn/Aurora/NVK
+tree with network disabled and three build jobs. The final ELF contains both
+`mkw_switch_hle_gx_set_chan_amb_color` and actual Aurora `GXSetChanAmbColor`.
+The original nine-file WiiCompiled working patch is preserved byte-for-byte.
+
+The new `WiiCompiled-Switch-local-rendered-discovery-scan.nro` is 73,289,784
+bytes, SHA-256
+`d92132a4004e92ec435990d5f4e514eea99c4cfd78a30f162f273f86718db17a`.
+This identifies the candidate for the upcoming hardware run; a successful
+build does not establish runtime progression.

@@ -170,25 +170,26 @@ If a new run:
 ## Current frontier
 
 The latest attributable real-Switch evidence is recorded in
-`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_SET_CHAN_AMB_COLOR_FRONTIER.md`:
+`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_LOAD_TEX_OBJ_IA8_FRONTIER.md`:
 
-- GXSetCoPlanar, GXSetClipMode, GXSetIndTexMtx and GXSetIndTexCoordScale
-  are hardware-crossed;
-- the distinct DIRECT blocker is GXSetChanAmbColor (`0x8017039C`), with
-  r3=4, r4=`0x80398FD0` and stage `RMCP01_GX_SET_NUM_CHANS`;
+- GXSetCoPlanar, GXSetClipMode, GXSetIndTexMtx, GXSetIndTexCoordScale and
+  GXSetChanAmbColor are hardware-crossed;
+- the new blocker is `GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR` at GXLoadTexObj
+  (`0x80170F2C`), with r3=`0x80384500`, r4=0 and stage
+  `RMCP01_GX_LOAD_TEX_OBJ`; it is an existing bridge's descriptor gate;
 - the preceding durable snapshot records 99 successful presents, zero present
   failures, a valid FST, and coherent guest scheduler identities;
-- that changed snapshot follows both indirect-texture bridges and precedes
-  ambient color; its FIFO counter does not independently measure native
-  Aurora matrix/scale writes;
+- that changed snapshot follows ambient color and precedes the new texture
+  load; its FIFO counter does not independently measure native Aurora writes;
 - pinned WiiCompiled remains `a135beb201042b20f390c6695ca6b26768820fb4`;
 - GPU presentation is proven; visual pixel correctness remains unverified.
 
 The scalar batch covers GXSetClipMode, GXSetDither, and GXSetDstAlpha. The latter
 two are not reached in this run and remain pre-ported, with hardware validation
-pending. The indirect-texture candidate is hardware-crossed. The observed
-ambient-color boundary is the next candidate to audit and validate, including
-guest color decoding and preservation of frame activation.
+pending. The indirect-texture and ambient-color candidates are hardware-crossed.
+The next bounded texture candidate must handle the observed 4x4 IA8 descriptor,
+its real 32-byte backing and decoded LOD state. The load status's old
+`0xB9400` size constant is not evidence for this texture's backing range.
 
 ## Governance note
 

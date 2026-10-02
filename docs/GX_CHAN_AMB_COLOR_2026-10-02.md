@@ -56,7 +56,7 @@ It crosses the indirect texture matrix and coordinate-scale calls, then stops
 at GXSetChanAmbColor. This candidate needs a later distinct dispatch or durable
 milestone after its ambient-color stage to establish hardware progression.
 Other unknown boundaries continue to hard-stop. GXSetDither and GXSetDstAlpha
-remain unreached. Hardware acceptance is pending.
+remain unreached. Hardware acceptance requires the attributable run below.
 
 ## Local validation result
 
@@ -82,4 +82,10 @@ build does not establish runtime progression.
 The exact NRO was subsequently transferred to the user's restarted netloader
 at `192.168.1.194`. Nxlink completed with exit code 0 at
 2026-10-02 15:28:20 UTC (17:28:20 Europe/Paris). Hardware progression remains
-pending retrieval and analysis of fresh console reports.
+pending retrieval and analysis of fresh console reports at transfer time.
+
+The subsequent USB/MTP reports establish GXSetChanAmbColor as hardware-crossed:
+first hit dispatch 606,223, later distinct caller `0x80241240` at dispatch
+606,248, then a GXLoadTexObj refusal for a new 4x4 IA8 descriptor. See
+`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_LOAD_TEX_OBJ_IA8_FRONTIER.md` for
+the ordered proof, invariant comparison and next bounded texture audit.

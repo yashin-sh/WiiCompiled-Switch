@@ -3,10 +3,12 @@
 This document defines the validation contract for blocker-driven RMCP01 bring-up
 on real Nintendo Switch hardware.
 
-The 2026-09-20 audit confirmed that the overall strategy is sound: advance from
-the first exact hardware blocker, map it against the pinned WiiCompiled
-revision, implement only that boundary, validate, retest on hardware, and let
-the next observed blocker decide the next change.
+The 2026-09-20 audit established a hardware-first strategy: attribute the first
+exact blocker against pinned WiiCompiled, preserve its semantics, validate, and
+retest on hardware. On 2026-10-02, the user authorized audited scalar GX batches
+to reduce repeated builds and console round trips, as described in
+`RMCP01_DISCOVERY_SCAN.md`. A batch changes implementation scope, not the proof
+required to call each boundary hardware-crossed.
 
 The audit also identified two places where the proof standard must be stricter:
 public CI does not build the private RMCP01 rendered target, and a dispatch
@@ -28,10 +30,16 @@ Every blocker-driven change should pass these stages in order:
      `a135beb201042b20f390c6695ca6b26768820fb4`;
    - use RMCP01 / decomp / DTK attribution only as needed;
    - distinguish upstream semantics, hardware evidence, and inference.
-3. **Minimal implementation**
-   - implement only the observed boundary;
+3. **Bounded implementation**
+   - implement the observed boundary, or a documented audited scalar GX batch;
    - preserve pinned argument/register semantics;
-   - do not pre-port neighboring GX, DVD, resource, input, or audio calls.
+   - for each batch member, audit both the pinned native wrapper and the real
+     Aurora implementation, including conversions and state/FIFO effects;
+   - require a separate diagnostic stage and synthetic dispatch/link coverage
+     for every member, plus executable argument/context-preservation tests;
+   - identify members not yet reached on hardware as pre-ported, not validated;
+   - keep unknown boundaries as hard stops; guest-memory, callback, scheduler,
+     resource, DVD, input, and audio behavior remains hardware-driven.
 4. **Nintendo-data-free validation**
    - add or update narrow synthetic/link coverage where practical;
    - require the five repository workflows to pass on the exact PR HEAD:
@@ -109,9 +117,9 @@ Track separately:
 - present successes and failures;
 - renderer/frame lifecycle state.
 
-The latest accepted run reaches eleven FIFO writes. The two new writes are
-additional GX-state traffic; with no drawable work, display list, `GXCopyDisp`,
-or present they are **not** proof that RMCP01 drawing works.
+GX-state FIFO writes alone are **not** proof that RMCP01 drawing works. Compare
+the counters in the attributable durable reports for each run; snapshots may
+precede a later bridge and cannot prove that bridge's FIFO effects.
 
 The first transition to drawable FIFO work, a game-facing display list,
 `GXCopyDisp`, or a successful RMCP01 present is a distinct milestone and must
@@ -139,15 +147,19 @@ fixtures or committed Nintendo-derived data.
 
 ## Scope discipline
 
-The default remains **hardware-first, boundary-minimal**.
+The default remains **hardware-first**. Discovery may additionally pre-port a
+bounded family of audited scalar GX setters in one candidate, one rendered
+build, and one hardware run. See `GX_SCALAR_BATCH_2026-10-02.md` for the first
+batch and its explicit evidence limits.
 
 Preparing generic instrumentation, build checks, or reusable dispatch plumbing
-is allowed when it does not implement speculative game behavior. Implementing
-the next GX/resource/DVD boundary before hardware reaches it is not.
+is allowed. Audited batching is not permission to skip unknown calls, guess
+guest-memory values, or substitute success for unimplemented stateful behavior.
 
 If a new run:
 
-- crosses the current blocker and exposes target X: branch for X;
+- crosses the current blocker and exposes target X: record X and audit the next
+  bounded candidate;
 - hits the same blocker again: fix only that current boundary;
 - raises a host/native exception first: that exception becomes the frontier;
 - runs without a blocker: use liveness/invariant evidence before assuming
@@ -155,29 +167,20 @@ If a new run:
 
 ## Current frontier
 
-The latest real-Switch rendered evidence is the 2026-09-21 run after the
-merged `GXSetCopyFilter` bridge:
+The latest attributable real-Switch evidence is recorded in
+`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_SET_CLIP_MODE_FRONTIER.md`:
 
-- real RMCP01 FIFO work remains proven;
-- the renderer records `PASS FIRST_RMCP01_GX_PRESENT hadWork=1`;
-- that PASS record is emitted only after `g_surface.Present()` succeeds;
-- the final durable blocker is the distinct DIRECT target
-  `GXFlush (0x8016E654)`;
-- its durable stage is `RMCP01_GX_PRESENTED`, which is written only after
-  the `GXCopyDisp` host seam completes a successful present;
-- therefore `GXSetCopyFilter`, the game-facing `GXCopyDisp` boundary, and
-  the first successful RMCP01 GPU present are hardware-crossed/proven;
-- an earlier periodic durable snapshot still reports zero
-  `GXSetCopyFilter`/present counters because it predates the final transition;
-  the later final blocker + renderer PASS are the stronger evidence;
-- pinned WiiCompiled remains
-  `a135beb201042b20f390c6695ca6b26768820fb4`;
-- pinned `0x8016E654` semantics are the no-argument `GXFlush()` call;
-- the logs prove GPU presentation, not visual correctness of the displayed
-  Mario Kart Wii pixels.
+- GXSetCoPlanar is hardware-crossed;
+- the distinct DIRECT blocker is GXSetClipMode (`0x8017351C`), with r3=0
+  and stage `RMCP01_GX_SET_CO_PLANAR`;
+- the preceding durable snapshot records 99 successful presents, zero present
+  failures, a valid FST, and coherent guest scheduler identities;
+- that snapshot precedes GXSetCoPlanar and does not measure its later writes;
+- pinned WiiCompiled remains `a135beb201042b20f390c6695ca6b26768820fb4`;
+- GPU presentation is proven; visual pixel correctness remains unverified.
 
-The candidate implements only `GXFlush`. The following GX/resource/game
-boundary must remain hardware-defined.
+The scalar batch covers GXSetClipMode, GXSetDither, and GXSetDstAlpha. Each
+member still needs attributable runtime evidence before being hardware-crossed.
 
 ## Governance note
 

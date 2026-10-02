@@ -1,7 +1,7 @@
 """Forecast likely RMCP01 boundaries from public decompilation callsites.
 
-This is a static-analysis hinting tool. Hardware evidence still decides which
-boundary may be implemented.
+This is a static-analysis hinting tool. Candidates need pinned semantic audits
+before implementation; hardware evidence still decides which are crossed.
 """
 
 from __future__ import annotations

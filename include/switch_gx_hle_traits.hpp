@@ -29,6 +29,9 @@ extern "C" void mkw_switch_hle_gx_set_z_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_pixel_fmt(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_cull_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_co_planar(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_clip_mode(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_dither(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_dst_alpha(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_begin(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
@@ -316,6 +319,39 @@ struct KnownNativeCpuCall<0x8016F3E0u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_co_planar(cpu);
+    }
+};
+
+// GXSetClipMode (PAL 0x8017351C). Hardware reaches this boundary with
+// r3=0 after GXSetCoPlanar. Pinned WiiCompiled forwards r3 as GXClipMode.
+template <>
+struct KnownNativeCpuCall<0x8017351Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_clip_mode(cpu);
+    }
+};
+
+// GXSetDither (PAL 0x80172930). Pre-ported in the audited scalar batch:
+// pinned WiiCompiled forwards r3 as GXBool.
+template <>
+struct KnownNativeCpuCall<0x80172930u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_dither(cpu);
+    }
+};
+
+// GXSetDstAlpha (PAL 0x8017295C). Pre-ported in the audited scalar batch:
+// pinned WiiCompiled forwards r3 as GXBool and r4 as u8.
+template <>
+struct KnownNativeCpuCall<0x8017295Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_dst_alpha(cpu);
     }
 };
 

@@ -19,6 +19,8 @@ extern "C" void mkw_switch_hle_gx_set_vtx_desc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_vtx_attr_fmt(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_tex_gens(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tex_coord_gen2(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tex_coord_scale_manually(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tex_coord_bias(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_ind_stages(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_ind_tex_mtx(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_ind_tex_coord_scale(CpuContext* cpu) noexcept;
@@ -183,15 +185,38 @@ struct KnownNativeCpuCall<0x8016DC68u> {
     }
 };
 
-// GXSetTexCoordGen2 (PAL 0x8016E37C). Hardware currently proves only
-// GX_TEXCOORD0 / GX_TG_MTX2x4 / GX_TG_TEX0 / GX_IDENTITY / GX_FALSE /
-// GX_PTIDENTITY. Any later argument variation remains a fresh blocker.
+// GXSetTexCoordGen2 (PAL 0x8016E37C). Hardware proves coord 0 with the
+// tuple (coord,1,4,60,0,125). The audited local setup loop forecasts coords
+// 0..7; accept only that bounded variation and retain all other guards.
 template <>
 struct KnownNativeCpuCall<0x8016E37Cu> {
     static constexpr bool kAvailable = true;
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_tex_coord_gen2(cpu);
+    }
+};
+
+// GXSetTexCoordScaleManually (PAL 0x80171180). Hardware captured
+// (coord,enable,S,T)=(0,0,0,0). The audited batch accepts coords 0..7,
+// canonical bools and u16 size narrowing, then the pinned guest GX mirror.
+template <>
+struct KnownNativeCpuCall<0x80171180u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tex_coord_scale_manually(cpu);
+    }
+};
+
+// GXSetTexCoordBias (PAL 0x801711FC). Audited neighbor in the same local
+// loop: coords 0..7, canonical bools, native call then guest S/T bias mirror.
+template <>
+struct KnownNativeCpuCall<0x801711FCu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tex_coord_bias(cpu);
     }
 };
 

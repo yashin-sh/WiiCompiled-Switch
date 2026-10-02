@@ -28,6 +28,7 @@ jobs:
           bash scripts/test-gx-chan-amb-color.sh
           bash scripts/test-gx-texture-load.sh
           bash scripts/test-gx-tex-mtx.sh
+          bash scripts/test-gx-tex-coord-batch.sh
 
   nro:
     runs-on: ubuntu-latest

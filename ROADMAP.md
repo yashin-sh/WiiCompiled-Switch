@@ -1,5 +1,21 @@
 # Roadmap
 
+## Current checkpoint — 2026-10-03
+
+- [x] Hardware-cross GXSetCoPlanar, GXSetClipMode, indirect texture matrix/scale and ambient channel color on the documented Discovery path.
+- [x] Hardware-cross the exact IA8 descriptor loads on maps 0..7.
+- [x] Hardware-cross the ten type-0 GXLoadTexMtxImm loop calls (IDs 30,33,...,57), followed by return from Gen2 coord 0.
+- [x] Capture the next DIRECT frontier: GXSetTexCoordScaleManually `0x80171180`, `(0,0,0,0)`, dispatch 605350, 99.513 seconds from the first dispatch.
+- [x] Build and locally validate bounded coordinate candidate `91a4a01b8e316f9010e9d31754e279065772f9f3`; transfer its exact Rendered Discovery NRO with nxlink exit 0.
+- [ ] Retrieve fresh reports and a screen observation for NRO SHA-256 `64ba837720f4e37cbd127c37a0e9bde6dc146ed229a92c8697b9c531a8984d08`, transferred at 2026-10-02 23:09:38 UTC.
+- [ ] Hardware-accept the eight Gen2/Scale/Bias triples on coords 0..7 by a later distinct dispatch and executed control-flow evidence.
+- [ ] Record the actual next frontier; `0x80241380` / GXSetTevDirect `0x80171B58` is currently only a static forecast.
+- [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
+
+The latest accepted reports are the [matrix-to-Scale result](docs/HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md). The [coordinate candidate record](docs/GX_TEX_COORD_BATCH_2026-10-03.md) separates completed local validation and transfer from pending hardware acceptance. Its enabled Scale/Bias branches have host contracts, not hardware proof. The preceding snapshot records 1556 FIFO writes and 99 successful presents / 0 failures, before the matrix calls.
+
+The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
+
 ## M0 — libnx bootstrap
 - [x] Minimal AArch64 `.nro` target
 - [x] Atmosphère/hbmenu launch loop
@@ -124,7 +140,7 @@ Hardware evidence is recorded in:
 - `docs/HARDWARE_RESULTS_2026-09-18_M3_HLE_FIFO_AURORA.md`
 - `docs/HARDWARE_RESULTS_2026-09-19_RMCP01_RESOURCE_THREAD_FRONTIER.md`
 
-The current hardware-driven method remains deliberate after `main`: execute the broadest safe translated path, stop on the first unsupported native/translated boundary or attributable exception, and when no blocker appears use the independent heartbeat watchdog to distinguish sustained execution from a real stall. New runtime behavior is still added only from hardware evidence and pinned WiiCompiled semantics. Post-main bring-up remains tracked in #117.
+The current hardware-driven method remains deliberate after `main`: execute the broadest safe translated path, stop on the first unsupported native/translated boundary or attributable exception, and when no blocker appears use the independent heartbeat watchdog to distinguish sustained execution from a real stall. The default remains hardware evidence plus pinned WiiCompiled semantics; the user-authorized exception is a documented bounded GX batch with wrapper/Aurora audits and executable contracts. Each member still needs its own hardware progression proof. Post-main bring-up remains tracked in #117.
 
 Validation policy after the 2026-09-20 audit: the five public CI workflows remain mandatory, but rendered RMCP01 changes additionally require a successful private `build-local-rendered-fast-track.sh` build before hardware testing. A dispatch hit counter is telemetry, not a standalone PASS; a boundary is hardware-crossed only when execution durably progresses beyond the tested target. See `docs/FAST_TRACK_VALIDATION_POLICY.md`.
 
@@ -160,8 +176,10 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 > AIInit (0x801240B0), __AXOutInitDSP (0x801269BC), AIRegisterDMACallback (0x80123F88), AIInitDMA (0x80123FCC), and AIStartDMA (0x80124048) are hardware-crossed.
 > The third wrap tuple on obj 0x9018E140 and fourth LOD tuple on obj 0x9018E480
 > are hardware-crossed. OSSetPeriodicAlarm (0x801A08E0) is also hardware-crossed.
-> SoundPlayer::SetVolume (0x800A35E0), the fifth GXInitTexObjLOD tuple on obj 0x908FA4E0, the fourth GXInitTexObjWrapMode tuple on obj 0x908FA4E0, the sixth GXInitTexObjLOD tuple on obj 0x908FA5C0, the seventh GXInitTexObjLOD tuple on obj 0x907938A0, and the fifth GXInitTexObjWrapMode tuple on obj 0x907938A0 are hardware-crossed. The eighth GXInitTexObjLOD tuple and seventh GXInitTexObjWrapMode tuple on obj 0x908FA820, the tenth GXInitTexObjLOD tuple on obj 0x909019C0, and the eleventh GXInitTexObjLOD tuple on obj 0x908FA840 are hardware-crossed. The ninth GXInitTexObjWrapMode tuple on obj 0x908FA840 is now also hardware-crossed. The thirteenth GXInitTexObjLOD descriptor on obj 0x908FAE00 is now also hardware-crossed. Scheduler-dependent current gates are the ninth GXInitTexObjLOD tuple on obj 0x90793BE0, the twelfth exact GXInitTexObjLOD descriptor on obj 0x9018E480 (format 2), plus the sixth/eighth/tenth/eleventh GXInitTexObjWrapMode tuples on obj 0x908FA5C0 / 0x909019C0 / 0x9018E480 / 0x908FAE00. Visual Mario
-> Kart Wii pixels remain unproven.
+> Earlier scheduler-dependent texture-object, KD and audio gates are retained
+> in the dated hardware reports. The current accepted Discovery frontier and
+> the coordinate candidate awaiting reports are listed in the checkpoint above.
+> A recognizable Mario Kart Wii image remains unproven.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input

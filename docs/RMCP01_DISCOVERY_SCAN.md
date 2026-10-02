@@ -51,7 +51,7 @@ Output:
 WiiCompiled-Switch-local-rendered-discovery-scan.nro
 ```
 
-The Discovery build records the first runtime hit of up to 2048 distinct guest
+The Discovery build records the first runtime hit of up to 8192 distinct guest
 targets to:
 
 ```text
@@ -61,8 +61,19 @@ targets to:
 Each record contains the target, dispatch index, guest PC/LR, r1-r8, r13,
 current guest fiber and fast-track stage.
 
-The table is fixed-size and allocation-free. A target is written only on its
+The 8192-slot table in `source/fast_track_crash_diagnostics.cpp` is fixed-size and allocation-free. A target is written only on its
 first hit, so a 600k-dispatch run does not generate a 600k-line file.
+Records are emitted before the callee executes. A first-hit entry proves
+arrival, not return. The native/translated path increments the dispatch
+counter; an unknown DIRECT frontier records the current counter without a
+new increment. VI polling can add callback dispatches before that record.
+
+A later distinct caller/frontier, coherent captured state and verified loop
+control flow can establish repeated returns without logging every iteration.
+This is the method used to accept ten texture-matrix returns in the
+[latest accepted report](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md).
+Scope and limits are defined in the
+[validation policy](FAST_TRACK_VALIDATION_POLICY.md).
 
 ## Safety rule
 
@@ -77,18 +88,22 @@ Acceleration comes from:
 
 1. statically exposing all missing direct dependencies at once;
 2. recording which covered targets are actually reached and in what order;
-3. pre-porting audited simple families in batches;
+3. implementing bounded audited GX setter families with wrapper/Aurora,
+   argument and any required guest-mirror contracts;
 4. preserving the first trustworthy stateful hard frontier.
 
 ## Bundle one artifact for analysis
 
-After copying the Switch diagnostics back to the PC, include the static
-whole-product coverage report in the same ZIP:
+After copying diagnostics from one run to a new local directory, generate
+coverage from that same first-hit trace, then include it in the ZIP:
 
 ```bash
+python3 scripts/scan-local-rmcp01-dispatch-coverage.py --json \
+  --trace /path/to/copied/WiiCompiled-Switch/fast-track-discovery-targets.txt \
+  > local-product/rmcp01-dispatch-coverage.json
 python3 scripts/package-fast-track-run.py \
   /path/to/copied/WiiCompiled-Switch \
-  --full \
+  --full --raw \
   --coverage local-product/rmcp01-dispatch-coverage.json
 ```
 
@@ -99,3 +114,14 @@ The archive then contains both:
   target and highlights coverage gaps.
 
 The Discovery NRO is therefore a scanner, not an emulator fallback.
+
+Record candidate revision, exact NRO size/SHA-256 and transfer outcome alongside
+the archive. Retained SD files are not automatically fresh; compare hashes
+against the previous run and use the attributable blocker/trace cohort.
+See [log bundle guidance](FAST_TRACK_LOG_BUNDLES.md). Static missing-target
+counts are coverage gaps, not a count of future hardware blockers.
+
+The [coordinate candidate](GX_TEX_COORD_BATCH_2026-10-03.md) has completed
+local validation, a private build and transfer, but has no retrieved new
+hardware reports or screen observation. Its anticipated TEV path remains
+analysis until those reports establish progression.

@@ -1,12 +1,17 @@
 # M2 — Horizon runtime bootstrap / translated fast-track
 
-Status: **runtime/bootstrap foundation is hardware-validated. Since this M2 bring-up,
-the rendered RMCP01 path has advanced through real FST/DVD/SZS/StaticR/Home
-Button resource loading, real FIFO work and repeated GPU presents. Current
-frontier tracking lives in README.md, ROADMAP.md, M3_RMCP01_RENDERED_FAST_TRACK.md
-and issue #117. As of 2026-09-27 the merged pending gates are the third exact
-GXInitTexObjWrapMode tuple on obj 0x9018E140 and IOS_Close(2003), depending on
-scheduler ordering.**
+Status: **the runtime/bootstrap foundation is hardware-validated.** The
+rendered RMCP01 path has advanced through real FST/DVD/SZS/StaticR/Home Button
+resources, FIFO work and repeated GPU presents. As of 2026-10-03, the latest
+accepted Discovery result proves ten type-0 texture-matrix returns and stops
+at Scale `0x80171180` after 99.513 seconds. The coordinate candidate was built
+and transferred, but its new reports and screen observation are pending.
+
+Current frontier tracking lives in [the root README](../README.md),
+[the roadmap](../ROADMAP.md),
+[the accepted report](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md)
+and [the coordinate candidate record](GX_TEX_COORD_BATCH_2026-10-03.md).
+The foundation/history below must not be read as a newer hardware result.
 
 Upstream WiiCompiled pin: `a135beb201042b20f390c6695ca6b26768820fb4`.
 
@@ -112,12 +117,21 @@ For a concrete unsupported boundary:
 2. capture a durable `fast-track-dispatch-blocker.txt` or attributable exception;
 3. identify the exact PAL address;
 4. inspect semantics at the exact pinned WiiCompiled revision;
-5. implement only the behavior proven or required by that boundary;
-6. add Nintendo-data-free synthetic/CI coverage;
-7. run the five repository CI workflows;
-8. merge only after all five are green;
-9. update `README.md`, `ROADMAP.md`, this document, the dated hardware result, and issue #117;
-10. repeat on hardware.
+5. implement the behavior required by that boundary, or a documented bounded
+   GX batch under [the validation policy](FAST_TRACK_VALIDATION_POLICY.md);
+6. add Nintendo-data-free executable argument, state and context contracts;
+7. pass the five repository workflows at the exact candidate revision;
+8. pass the required private rendered-build gate for rendered RMCP01 work;
+9. run the exact NRO on hardware, bind fresh diagnostics to its revision,
+   size and SHA-256, and compare them against the previous baseline;
+10. record implementation, local validation and hardware acceptance separately
+    in `README.md`, `ROADMAP.md`, the candidate record, the dated hardware result
+    and issue #117 as applicable.
+
+The five public checks alone are insufficient for rendered RMCP01 work. A
+successful private build or transfer also does not establish a native return:
+hardware acceptance requires later attributable progression. Unknown/stateful
+calls remain hard stops, including after an audited GX batch.
 
 When no new blocker appears, use the independent liveness watchdog rather than guessing. It samples the translated heartbeat from a separate Horizon thread and records whether dispatch state is still changing.
 
@@ -214,16 +228,22 @@ Fast-track changes are expected to pass exactly these five workflows:
 - `bootstrap-register-prelude`;
 - `build-switch`.
 
+These five checks must pass at the exact candidate revision. Rendered RMCP01
+work additionally requires the private rendered-build gate, including the
+local game-derived product and complete Aurora link graph. See
+[the validation policy](FAST_TRACK_VALIDATION_POLICY.md).
+
 ## Next slices
 
-1. preserve the current #117 runtime path as the hardware-validated active baseline;
-2. proceed with isolated graphics spike #162;
-3. prove Horizon clear-frame and triangle presentation through the candidate Dawn/Vulkan/NVK path;
-4. feed fabricated Nintendo-data-free GX/FIFO traffic through pinned WiiCompiled `HleFifoWrite`;
-5. measure Tegra X1 CPU overhead, memory use and frame pacing before choosing the backend;
-6. only then connect the private local RMCP01 GX stream;
-7. if a new runtime blocker/exception appears, return to the exact-address/pinned-semantics workflow;
-8. keep the real local FST/DVD path hardware-driven: FST publication and the first `/Boot/Strap/eu/English.szs` read are proven; extend semantics only when the game reaches a new read/resource boundary.
+1. preserve the headless control target and the accepted rendered baseline;
+2. retrieve fresh reports and visual feedback for the transferred coordinate NRO;
+3. assess the eight triples by their later caller/frontier, then attribute the
+   actual next blocker against pinned WiiCompiled;
+4. record FIFO/present snapshots separately from recognizable game pixels;
+5. profile Tegra X1 overhead, memory and frame pacing when the executed path
+   is sufficiently representative; functional bring-up is not a full-speed claim;
+6. extend filesystem, scheduler, input or audio behavior only from its own
+   hardware evidence; bounded audited GX batches retain the validation policy.
 
 ## Evidence index
 

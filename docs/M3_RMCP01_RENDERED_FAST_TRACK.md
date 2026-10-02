@@ -2,9 +2,45 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **real RMCP01 FIFO/Aurora work and repeated GPU presents are hardware-proven. Real English.szs, StaticR.rel and Home Button/UI resources load successfully. Eleven exact GXInitTexObjLOD descriptors are hardware-crossed; the ninth descriptor on obj 0x90793BE0 and a twelfth exact format-2 descriptor on the already-known obj 0x9018E480 remain captured. Seven exact GXInitTexObjWrapMode tuples are hardware-crossed, including obj 0x908FA820 and obj 0x908FA840; sixth, eighth, tenth and eleventh exact tuples on obj 0x908FA5C0 / 0x909019C0 / 0x9018E480 / 0x908FAE00 remain captured after hardware-proven LOD passes. The KD/NWC24 path is hardware-crossed through fd 2003 close; PAL AIInit (0x801240B0) and __AXOutInitDSP (0x801269BC) are hardware-crossed, AIInitDMA (0x80123FCC) and AIStartDMA (0x80124048) are hardware-crossed. SoundPlayer::SetVolume (0x800A35E0) and OSSetPeriodicAlarm (0x801A08E0) are hardware-crossed. The fifth, sixth and seventh GXInitTexObjLOD tuples on obj 0x908FA4E0 / 0x908FA5C0 / 0x907938A0 and the fourth/fifth GXInitTexObjWrapMode tuples on obj 0x908FA4E0 / 0x907938A0 are hardware-crossed. Current exact GX gates are scheduler-dependent: ninth GXInitTexObjLOD on obj 0x90793BE0, twelfth exact GXInitTexObjLOD descriptor on obj 0x9018E480 (format 2), plus sixth/eighth/tenth/eleventh GXInitTexObjWrapMode on obj 0x908FA5C0 / 0x909019C0 / 0x9018E480 / 0x908FAE00. Strongest graphics-path evidence remains 1,450 RMCP01 FIFO writes and 94 successful presents / 0 failures. No visually correct Mario Kart Wii image is proven yet.**
+Status: **real RMCP01 FIFO/Aurora work and repeated GPU presents are
+hardware-proven; a recognizable Mario Kart Wii image remains unproven.**
+The latest accepted Discovery frontier is Scale `0x80171180`, after ten
+type-0 texture-matrix returns and Gen2 coord 0. The coordinate candidate
+has been built and transferred; its new reports and screen observation are
+pending.
 
-## Current accepted frontier — 2026-09-29
+## Current accepted frontier — 2026-10-03
+
+The [2026-10-02 matrix-to-Scale result](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md)
+records the exact IA8 map loads 0..7, then ten matrix calls with IDs
+30,33,...,57, type 0, followed by return from Gen2 coord 0. Its durable
+DIRECT blocker is GXSetTexCoordScaleManually `0x80171180`, `(0,0,0,0)`,
+LR `0x80241334`, dispatch 605350, 99.513 seconds after the first dispatch.
+This is an intentional unsupported-call abort, not evidence of a 60-second
+termination timer.
+
+The preceding snapshot at dispatch 605265 records 1556 FIFO writes, 99
+successful presents / 0 failures, valid FST and coherent scheduler identities.
+It precedes the matrix calls and does not independently measure their native
+FIFO emissions or establish visible game content.
+
+The [coordinate candidate](GX_TEX_COORD_BATCH_2026-10-03.md), code `91a4a01`,
+passed local host/workflow checks and the private Rendered Discovery build.
+Its NRO `64ba8377...` transferred with nxlink exit 0 at 2026-10-02
+23:09:38 UTC. **No new reports or screen observation have been retrieved.**
+Scale/Bias and Gen2 coords 1..7 remain pending hardware acceptance. The
+anticipated `0x80241380` / GXSetTevDirect path is a
+[static TEV forecast](GX_TEV_NEIGHBORS_2026-10-03.md).
+
+The [validation policy](FAST_TRACK_VALIDATION_POLICY.md) permits bounded
+audited GX families with wrapper/Aurora, guard and required guest-mirror
+contracts. A first-hit record or transfer alone is insufficient; each member
+still requires attributable progression beyond its executed scope.
+
+## Earlier scheduler-dependent gates — through 2026-10-01
+
+This earlier texture/KD/audio summary is retained for historical branch
+coverage. It is not the latest accepted Discovery frontier.
 
 There is no single deterministic next boundary because guest scheduling can
 reach the GX texture path or the audio path first.
@@ -49,9 +85,9 @@ KD / audio path
   AIStartDMA 0x80124048                        ✅ crossed
 ```
 
-Whichever merged gate is crossed first defines the next durable blocker.
-Static forecasting may be used to prepare attribution, but no neighboring
-boundary is implemented without real-Switch evidence.
+These earlier branches can still affect scheduler-dependent progression.
+The current checkpoint and pending candidate are recorded above; static
+forecasts and host validation must remain distinct from hardware acceptance.
 
 ## Purpose
 
@@ -202,7 +238,36 @@ It records:
 
 No guest scheduler, DVD, REL or renderer behavior is changed by this diagnostic.
 
-## Hardware result after #184 — DVD retry frontier\n\nThe scheduler-focused hardware run closes the earlier ambiguity:\n\n- the default/main thread (`0x80347498`) is still present and becomes `READY`\n  at priority 16 on run queue `0x80347830`;\n- guest thread `0x90112660` remains `RUNNING` at priority 6;\n- `VIWaitForRetrace`, `PostRetraceCallback`, and `OSWakeupThread` then advance\n  together at the sustained retrace cadence while `SelectThread` barely advances;\n- `RKSystem::run` and StaticR remain at zero;\n- the graphics path still contains only the eight `Video::configure` BP writes.\n\nThis disproves the idea that the default thread was simply lost. The higher-\npriority worker remains active while the default thread is runnable.\n\nSource attribution provides the next concrete gate: in pinned RMCP01,\n`EGG::DvdRipper::loadToMainRAM` is the explicit non-video path that retries a\nnegative `DVDRead` by calling `VIWaitForRetrace()` and trying again. Pinned\nWiiCompiled therefore native-overrides `DVDReadPrio` (`0x8015E834`) and the\ninternal `DVDReadAsyncPrio` (`0x8015E74C`) against the user-owned extracted\n`DATA/files` source.\n\nThe Switch port already publishes the local FST but did not yet provide those\nread overrides. The next hardware slice adds only that missing read contract:\nresolve `DVDFileInfo::startAddr` through the published FST, read the matching\n`DATA/files` payload into guest RAM, publish DVD completion state, and notify\nthe existing guest-RAM DMA seam. A bounded `dvd-read-status.txt` records the\nfirst 32 attempts for hardware attribution.\n\n## Hardware result after #185 — later prio-6 guest thread frontier
+## Hardware result after #184 — DVD retry frontier
+
+The scheduler-focused hardware run closes the earlier ambiguity:
+
+- the default/main thread (`0x80347498`) is still present and becomes `READY`
+  at priority 16 on run queue `0x80347830`;
+- guest thread `0x90112660` remains `RUNNING` at priority 6;
+- `VIWaitForRetrace`, `PostRetraceCallback`, and `OSWakeupThread` then advance
+  together at the sustained retrace cadence while `SelectThread` barely advances;
+- `RKSystem::run` and StaticR remain at zero;
+- the graphics path still contains only the eight `Video::configure` BP writes.
+
+This disproves the idea that the default thread was simply lost. The higher-
+priority worker remains active while the default thread is runnable.
+
+Source attribution provides the next concrete gate: in pinned RMCP01,
+`EGG::DvdRipper::loadToMainRAM` is the explicit non-video path that retries a
+negative `DVDRead` by calling `VIWaitForRetrace()` and trying again. Pinned
+WiiCompiled therefore native-overrides `DVDReadPrio` (`0x8015E834`) and the
+internal `DVDReadAsyncPrio` (`0x8015E74C`) against the user-owned extracted
+`DATA/files` source.
+
+The Switch port already publishes the local FST but did not yet provide those
+read overrides. The next hardware slice adds only that missing read contract:
+resolve `DVDFileInfo::startAddr` through the published FST, read the matching
+`DATA/files` payload into guest RAM, publish DVD completion state, and notify
+the existing guest-RAM DMA seam. A bounded `dvd-read-status.txt` records the
+first 32 attempts for hardware attribution.
+
+## Hardware result after #185 — later prio-6 guest thread frontier
 
 The first hardware run with the local DVD-read bridge disproves the previous
 DVD-retry attribution for the current startup path:

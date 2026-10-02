@@ -12,7 +12,7 @@ trap 'rm -rf "$TEST_DIR"' EXIT
 # calls through small GX sinks. FIFO effects require the private rendered run.
 for rendered in 0 1; do
     "$HOST_CXX" -std=c++20 -O2 -Wall -Wextra -Werror \
-        -fsanitize=address,undefined -fno-omit-frame-pointer \
+        -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer \
         -DTARGET_PC -DMKW_LOCAL_FUNCTION_EXECUTION=1 \
         -DMKW_LOCAL_RENDERED_FAST_TRACK="$rendered" \
         -include "$ROOT_DIR/include/devkita64_gcc_compat.hpp" \

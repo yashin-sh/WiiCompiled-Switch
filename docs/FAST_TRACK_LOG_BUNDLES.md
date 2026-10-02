@@ -109,3 +109,38 @@ Once a visible Mario Kart frame is hardware-proven and scheduler behavior is
 less volatile, the project can safely introduce a compile-time compact runtime
 profile that disables selected historical traces. Until then, the bundler
 reduces user-facing clutter without reducing diagnostic coverage on hardware.
+
+## Run identity and freshness
+
+Keep each retrieval in its own local directory. Record the candidate revision,
+NRO size/SHA-256, launch/transfer outcome and retrieval time alongside the
+archive. The bundler records source filenames, sizes and hashes; it does not
+infer which NRO generated them. A completed nxlink transfer is transport
+success, not hardware acceptance.
+
+Several subsystem reports can remain on SD after a new launch. Compare the
+copied hashes with the preceding baseline and distinguish changed,
+byte-identical and missing files. MTP timestamps can be unavailable; unchanged
+resource/renderer files are not independently attributable to the new run.
+An absent native-exception report is not proof that no native failure occurred.
+A snapshot before a bridge cannot establish that bridge's FIFO effects, and
+successful presents do not establish recognizable game pixels.
+
+For Discovery, create coverage against the copied first-hit trace and include
+it with the original reports:
+
+```bash
+python3 scripts/scan-local-rmcp01-dispatch-coverage.py --json \
+  --trace /path/to/copied/WiiCompiled-Switch/fast-track-discovery-targets.txt \
+  > local-product/rmcp01-dispatch-coverage.json
+python3 scripts/package-fast-track-run.py \
+  /path/to/copied/WiiCompiled-Switch --full --raw \
+  --coverage local-product/rmcp01-dispatch-coverage.json
+```
+
+The first-hit trace records entry, not return; repeated-call acceptance needs
+the later frontier and verified caller/control flow. `elapsed_ms` in current
+blocker/exception records measures host time from the first translated
+dispatch, excluding nxlink transfer time. See the
+[Discovery guide](RMCP01_DISCOVERY_SCAN.md) and
+[validation policy](FAST_TRACK_VALIDATION_POLICY.md).

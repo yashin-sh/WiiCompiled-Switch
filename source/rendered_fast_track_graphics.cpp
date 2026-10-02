@@ -367,7 +367,18 @@ bool present_frame_locked(bool clear) {
     g_queue.Submit(1, &commands);
     aurora::gfx::after_submit();
 
-    if (!g_surface.Present()) {
+    const bool presented = g_surface.Present();
+    const bool hadWork =
+        g_auroraFrameHadWork.load(std::memory_order_acquire);
+
+    // Aurora has completed this frame before Present returns. Release the
+    // consumed surface state even on failure so a later call begins a frame
+    // instead of reusing Aurora's already-unmapped staging buffers.
+    aurora::webgpu::g_frameBuffer = {};
+    g_currentSurfaceTexture = {};
+    g_auroraFrameActive.store(false, std::memory_order_release);
+
+    if (!presented) {
         g_presentFailures.fetch_add(1u, std::memory_order_relaxed);
         report("FRAME PRESENT FAIL frame=%llu\n",
                static_cast<unsigned long long>(g_presentedFrames + 1));
@@ -375,8 +386,6 @@ bool present_frame_locked(bool clear) {
     }
     g_presentSuccesses.fetch_add(1u, std::memory_order_relaxed);
 
-    const bool hadWork =
-        g_auroraFrameHadWork.load(std::memory_order_acquire);
     ++g_presentedFrames;
     ++g_gxFrameCount;
 
@@ -388,10 +397,6 @@ bool present_frame_locked(bool clear) {
                static_cast<unsigned long long>(g_presentedFrames),
                hadWork ? 1u : 0u);
     }
-
-    aurora::webgpu::g_frameBuffer = {};
-    g_currentSurfaceTexture = {};
-    g_auroraFrameActive.store(false, std::memory_order_release);
 
     // Match the pinned runtime's pre-warm strategy: keep a valid frame open so
     // CP/BP/XF state emitted before the next draw is not dropped by Aurora.
@@ -486,6 +491,7 @@ extern "C" void mkw_switch_renderer_shutdown() noexcept {
     report("STAGE RENDERER_TEARDOWN begin frames=%llu\n",
            static_cast<unsigned long long>(g_presentedFrames));
 
+    bool teardownSucceeded = true;
     try {
         if (g_auroraFrameActive.exchange(false, std::memory_order_acq_rel)) {
             aurora::gfx::abort_frame();
@@ -509,11 +515,12 @@ extern "C" void mkw_switch_renderer_shutdown() noexcept {
 
         report("STAGE RENDERER_TEARDOWN PASS\n");
     } catch (...) {
+        teardownSucceeded = false;
         report("STAGE RENDERER_TEARDOWN FAIL exception\n");
     }
 
     g_initialized = false;
-    report("RESULT=PASS renderer-shutdown\n");
+    report("RESULT=%s renderer-shutdown\n", teardownSucceeded ? "PASS" : "FAIL");
     close_report();
 }
 

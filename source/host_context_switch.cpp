@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <malloc.h>
+#include <limits>
 #include <new>
 
 extern "C" void mkw_switch_co_switch(void** target_sp, void** source_sp);
@@ -69,7 +70,8 @@ void ShutdownScheduler(Handle scheduler) {
 
 Handle Create(std::size_t stackSize, Entry entry, void* argument) {
     mkw_switch_set_fast_track_stage("HOST_CONTEXT_CREATE");
-    if (!g_current || !entry || stackSize == 0) {
+    if (!g_current || !entry || stackSize == 0 ||
+        stackSize > std::numeric_limits<std::size_t>::max() - (kStackAlignment - 1)) {
         mkw_switch_set_fast_track_stage("HOST_CONTEXT_CREATE_INVALID");
         return nullptr;
     }

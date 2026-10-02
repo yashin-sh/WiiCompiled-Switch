@@ -5,7 +5,7 @@ on real Nintendo Switch hardware.
 
 The 2026-09-20 audit established a hardware-first strategy: attribute the first
 exact blocker against pinned WiiCompiled, preserve its semantics, validate, and
-retest on hardware. On 2026-10-02, the user authorized audited scalar GX batches
+retest on hardware. On 2026-10-02, the user authorized bounded audited GX batches
 to reduce repeated builds and console round trips, as described in
 `RMCP01_DISCOVERY_SCAN.md`. A batch changes implementation scope, not the proof
 required to call each boundary hardware-crossed.
@@ -31,18 +31,21 @@ Every blocker-driven change should pass these stages in order:
    - use RMCP01 / decomp / DTK attribution only as needed;
    - distinguish upstream semantics, hardware evidence, and inference.
 3. **Bounded implementation**
-   - implement the observed boundary, or a documented audited scalar GX batch;
+   - implement the observed boundary, or a documented bounded audited GX setter family;
    - preserve pinned argument/register semantics;
    - for each batch member, audit both the pinned native wrapper and the real
      Aurora implementation, including conversions and state/FIFO effects;
    - require a separate diagnostic stage and synthetic dispatch/link coverage
      for every member, plus executable argument/context-preservation tests;
    - identify members not yet reached on hardware as pre-ported, not validated;
-   - keep unknown boundaries as hard stops; guest-memory, callback, scheduler,
-     resource, DVD, input, and audio behavior remains hardware-driven.
+   - keep unknown boundaries as hard stops; a batch may include the exact
+     guest GXData mirror required by its audited setters, with executable
+     memory contracts. Other guest-memory, callback, scheduler, resource, DVD,
+     input, and audio behavior remains hardware-driven.
 4. **Nintendo-data-free validation**
    - add or update narrow synthetic/link coverage where practical;
-   - require the five repository workflows to pass on the exact PR HEAD:
+   - require the five repository workflows to pass on the exact candidate
+     revision (the exact PR HEAD when a PR is used):
      `lint`, `fast-track-startup`, `bootstrap-register-prelude`,
      `stateful-translated-sequence`, and `build-switch`;
    - `build-switch` must additionally syntax-compile every
@@ -76,7 +79,8 @@ A boundary is considered **hardware-crossed** only when all applicable evidence
 supports progression beyond it:
 
 ```text
-target hit count > 0
+target is attributable to the executed path
+  (first-hit record, counter, or verified caller/control-flow evidence)
 AND current blocker != that target
 AND execution reaches a later durable dispatch / milestone
 ```
@@ -86,6 +90,20 @@ to a later known state or milestone can also qualify when the control flow does
 not naturally produce another blocker.
 
 Do not mark a boundary hardware-crossed solely because `GX... hits = 1`.
+Discovery records entries before invocation and only the first occurrence of
+an address. For a repeated loop, a later caller can establish all returns
+when the verified control flow, captured arguments, stack/fiber state and
+counter agree. State that inference explicitly; do not turn one first-hit
+line into a claim of individually captured calls. Acceptance remains scoped
+to the executed argument family, not every branch of the bridge.
+
+Bind each run to its candidate revision and exact NRO size/SHA-256, successful
+launch/transfer record and raw-report manifest. Compare report hashes against
+the previous baseline. Files retained on SD can be byte-identical or stale;
+MTP timestamps may be unavailable. A successful nxlink transfer, host test,
+private link, or static coverage entry does not prove a native return or an
+observed image. Newly recorded `elapsed_ms` measures host time from the first
+translated dispatch, excluding transfer time.
 
 ## Hardware invariants checked on every rendered run
 
@@ -150,7 +168,7 @@ fixtures or committed Nintendo-derived data.
 ## Scope discipline
 
 The default remains **hardware-first**. Discovery may additionally pre-port a
-bounded family of audited scalar GX setters in one candidate, one rendered
+bounded family of audited GX setters in one candidate, one rendered
 build, and one hardware run. See `GX_SCALAR_BATCH_2026-10-02.md` for the first
 batch and its explicit evidence limits.
 
@@ -194,8 +212,15 @@ The latest attributable real-Switch evidence is recorded in
 The scalar batch covers GXSetClipMode, GXSetDither and GXSetDstAlpha. The
 latter two remain unreached. The indirect, ambient, bounded IA8 and current
 matrix candidates are hardware-accepted within their documented scopes.
-The coordinate neighbors are audited in `GX_TEX_COORD_NEIGHBORS_2026-10-02.md`:
-Scale is now observed; Bias and Gen2 coords 1..7 remain forecasts. Native
+The coordinate neighbors are audited in
+[GX_TEX_COORD_NEIGHBORS_2026-10-02.md](GX_TEX_COORD_NEIGHBORS_2026-10-02.md).
+The [bounded coordinate candidate](GX_TEX_COORD_BATCH_2026-10-03.md), code
+`91a4a01`, passed local host/workflow checks and its private Rendered Discovery
+build. NRO `64ba8377...` transferred with nxlink exit 0 at 2026-10-02
+23:09:38 UTC. Fresh reports and a screen observation for it are pending:
+Scale is observed at the prior blocker; Bias and Gen2 coords 1..7 have no
+hardware acceptance yet. Enabled Scale/Bias branches have host contracts
+only. The next TEV caller/frontier is a static forecast, not a runtime result. Native
 forwarding alone would omit Scale/Bias guest state mirrors. Adjacent TEV and
 pixel-state calls remain forecasts until reached or explicitly audited for
 a bounded candidate. No unknown/stateful call is skipped to suppress an exit.

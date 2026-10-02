@@ -62,8 +62,9 @@ That path is now hardware-validated far beyond metadata inspection:
   hardware-proven;
 - real RMCP01 FIFO work reaches Aurora/Dawn/NVK;
 - repeated `GXCopyDisp` / successful presents are hardware-proven;
-- current blocker tracking has moved into exact Home Button texture-object and
-  KD/NWC24 sequences.
+- the latest accepted Discovery path reaches texture-matrix setup and stops
+  at GXSetTexCoordScaleManually; older texture/KD/audio branches remain
+  recorded in dated reports.
 
 The translated-product seam itself is therefore no longer an active blocker. Current work is post-main runtime/game initialization and first-frame preparation.
 
@@ -84,34 +85,30 @@ real RMCP01 FIFO work                      ✅ hardware validated
   ↓
 GXCopyDisp / GPU present                   ✅ hardware validated
   ↓
-Home Button texture-object initialization  ✅ four LOD / three wrap tuples crossed
+exact IA8 loads on maps 0..7                ✅ hardware crossed
   ↓
-RVL OS alarm initialization                 ✅ OSSetPeriodicAlarm crossed
+ten type-0 texture matrices + Gen2 coord 0 ✅ hardware crossed
   ↓
-NW4R sound-player initialization             ✅ SoundPlayer::SetVolume crossed
+GXSetTexCoordScaleManually 0x80171180       🟡 observed DIRECT frontier
   ↓
-GX texture-object initialization              🟡 ninth+twelfth LOD / sixth+eighth+tenth+eleventh wrap gates
+bounded Gen2/Scale/Bias coords 0..7         🟡 candidate transferred; reports pending
+  ↓
+recognizable Mario Kart Wii image          ❌ not proven
 ```
 
-As of 2026-09-29, the KD path is hardware-crossed through fd 2003 close;
-PAL `AIInit (0x801240B0)`, `__AXOutInitDSP (0x801269BC)`,
-`AIRegisterDMACallback (0x80123F88)`, `AIInitDMA (0x80123FCC)` and
-`AIStartDMA (0x80124048)` are hardware-crossed. Eleven exact `GXInitTexObjLOD` descriptors and seven exact
-`GXInitTexObjWrapMode` tuples are hardware-crossed. `OSSetPeriodicAlarm
-(0x801A08E0)` and `nw4r::snd::SoundPlayer::SetVolume (0x800A35E0)` are also
-hardware-crossed. The fifth, sixth and seventh `GXInitTexObjLOD` descriptors on
-`obj=0x908FA4E0` / `obj=0x908FA5C0` / `obj=0x907938A0` and the fourth/fifth
-`GXInitTexObjWrapMode` tuples on `obj=0x908FA4E0` / `obj=0x907938A0` are
-hardware-crossed. The seventh `GXInitTexObjWrapMode` tuple on
-`obj=0x908FA820` is also hardware-crossed. The tenth and eleventh `GXInitTexObjLOD` descriptors on `obj=0x909019C0`
-/ `obj=0x908FA840` are also hardware-crossed. Scheduler-dependent current
-gates are the ninth `GXInitTexObjLOD` descriptor on `obj=0x90793BE0`,
-the twelfth exact format-2 `GXInitTexObjLOD` descriptor on
-`obj=0x9018E480`, plus the sixth/eighth/tenth/eleventh
-`GXInitTexObjWrapMode` tuples on `obj=0x908FA5C0` /
-`obj=0x909019C0` / `obj=0x9018E480` / `obj=0x908FAE00`, while
-real `revo_kart.brsar` and Home Button resources remain healthy. The
-visually correct Mario Kart Wii image is still unproven.
+As of 2026-10-03, the latest accepted
+[Discovery result](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md)
+stops at Scale `(0,0,0,0)`, dispatch 605350, 99.513 seconds from the first
+translated dispatch. The preceding snapshot records 1556 FIFO writes and
+99 successful presents / 0 failures; it precedes the matrix setup and does
+not prove those later emissions or recognizable pixels.
+
+Coordinate code candidate `91a4a01`, NRO `64ba8377...`, passed local
+validation/build and transferred with nxlink exit 0 at 2026-10-02
+23:09:38 UTC. Fresh reports and a screen observation are pending; see its
+[bounded contract and validation record](GX_TEX_COORD_BATCH_2026-10-03.md).
+Older exact LOD/wrap, KD and audio crossings remain in dated hardware reports.
+They do not make the unobserved coordinate or TEV paths hardware-accepted.
 
 ## Important boundary lessons from hardware
 
@@ -156,7 +153,7 @@ These files distinguish:
 
 `fast-track-main-reached.txt` is the durable proof marker for PAL `main` at `0x8000B6B0`.
 
-For the current sustained-black-screen frontier, `fast-track-heartbeat-history.txt` is the primary diagnostic. `ACTIVE` means the translated heartbeat changed between watchdog samples; consecutive `STALE` samples mean the watchdog thread remains alive while translated execution stopped advancing.
+For a sustained black screen with no new blocker, `fast-track-heartbeat-history.txt` is the primary liveness diagnostic. For an exit, inspect the attributable dispatch-blocker or native-exception report first. `ACTIVE` means the translated heartbeat changed between watchdog samples; consecutive `STALE` samples mean the watchdog thread remains alive while translated execution stopped advancing.
 
 ## Hardware history summary
 
@@ -210,11 +207,14 @@ Only Nintendo-data-free runtime/platform code, documentation and synthetic probe
 
 ## Next boundary
 
-The meaningful boundary is now post-main liveness rather than translated-product linkage:
+The translated-product link seam is crossed. The next action is to retrieve
+fresh diagnostics and a screen observation for the transferred coordinate
+candidate, then compare them with the last accepted matrix-to-Scale baseline.
 
-1. run the current local fast-track on real hardware;
-2. if the display remains black, leave it running long enough to collect the independent watchdog history;
-3. inspect `fast-track-heartbeat-history.txt` to classify ACTIVE vs STALE behavior;
-4. if a new unsupported dispatch or exception appears, attribute that exact boundary against the pinned WiiCompiled revision;
-5. use the already-published user-owned FST and installed #185 DVD bridge without extending them unless hardware reaches a new resource boundary;
-6. use `fast-track-thread-events.txt` to identify later OSThread `0x90112660` before changing scheduler or renderer behavior.
+1. bind the copied reports to the exact candidate/NRO and retain their hashes;
+2. inspect a new blocker or exception before diagnosing a timing/scheduler issue;
+3. if no blocker appears, classify ACTIVE versus STALE watchdog history;
+4. require a later distinct dispatch and verified caller/control flow to
+   accept the coordinate loop; first hits alone do not prove returns;
+5. retain the headless control target and the hardware-driven FST/DVD/input/audio
+   scopes; do not extend unrelated behavior from a static forecast.

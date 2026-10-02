@@ -13,7 +13,7 @@ mkdir -p "$TEST_DIR/sdmc:/switch/WiiCompiled-Switch"
 # Keep all other warnings fatal while compiling that real translation unit.
 for rendered in 0 1; do
     "$HOST_CXX" -std=c++20 -O2 -Wall -Wextra -Werror -Wno-unused-const-variable \
-        -fsanitize=address,undefined -fno-omit-frame-pointer \
+        -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer \
         -ffunction-sections -fdata-sections -Wl,--gc-sections \
         -DTARGET_PC -DAURORA -DMKW_LOCAL_FUNCTION_EXECUTION=1 \
         -DMKW_LOCAL_RENDERED_FAST_TRACK="$rendered" \

@@ -146,7 +146,7 @@ def constrained_symbols(repo_root: Path) -> set[str]:
             }:
                 continue
             text = path.read_text(encoding="utf-8", errors="replace")
-            if "UNPROVEN_TUPLE" not in text and "exact observed" not in text.lower():
+            if "UNPROVEN_" not in text and "exact observed" not in text.lower():
                 continue
             for symbol in re.findall(
                 r"\b(?:GX|IOS|OS|VI|WPAD|PAD)[A-Za-z0-9_]+\b", text
@@ -387,12 +387,12 @@ def write_fixture(root: Path, helper: ModuleType) -> tuple[Path, Path]:
         "// PAL: 0x80003000..0x80003100\n"
         "void Caller() {\n"
         "    TestFunction();\n"
-        "    NextNative();\n"
+        "    GXNextNative();\n"
         "    LaterTranslated();\n"
         "}\n"
-        "// Symbol: NextNative\n"
+        "// Symbol: GXNextNative\n"
         "// PAL: 0x80002000..0x80002020\n"
-        "void NextNative() {}\n"
+        "void GXNextNative() {}\n"
         "// Symbol: LaterTranslated\n"
         "// PAL: 0x80004000..0x80004020\n"
         "void LaterTranslated() {}\n",
@@ -426,10 +426,18 @@ def self_test() -> None:
         )
         assert current.symbol == "TestFunction"
         names = [candidate.symbol for candidate in candidates]
-        assert "NextNative" in names
-        next_native = next(c for c in candidates if c.symbol == "NextNative")
+        assert "GXNextNative" in names
+        next_native = next(c for c in candidates if c.symbol == "GXNextNative")
         assert next_native.address == "0x80002000"
         assert next_native.coverage == "mapped-native"
+
+        (repo / "source" / "bounded.cpp").write_text(
+            'void GXNextNative() { report("GX_NEXT_UNPROVEN_ARGS"); }\n',
+            encoding="utf-8",
+        )
+        _, candidates = forecast(0x80001020, decomp, helper, repo, window=8, depth=8)
+        next_native = next(c for c in candidates if c.symbol == "GXNextNative")
+        assert next_native.coverage == "mapped-native-constrained"
 
     print("RMCP01 frontier forecast self-test: PASS")
 

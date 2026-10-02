@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -306,7 +307,7 @@ def dtk_follow_up(
     if dtk is None:
         return []
 
-    quoted_dtk = json.dumps(dtk)
+    quoted_dtk = shlex.quote(dtk)
     if disc is None:
         if module == "StaticR.rel":
             return [
@@ -321,10 +322,10 @@ def dtk_follow_up(
     disc_text = str(disc.expanduser().resolve())
     if module == "StaticR.rel":
         rel_vfs = f"{disc_text}:files/rel/StaticR.rel"
-        return [f"{quoted_dtk} rel info {json.dumps(rel_vfs)}"]
+        return [f"{quoted_dtk} rel info {shlex.quote(rel_vfs)}"]
 
     dol_vfs = f"{disc_text}:sys/main.dol"
-    return [f"{quoted_dtk} dol info {json.dumps(dol_vfs)}"]
+    return [f"{quoted_dtk} dol info {shlex.quote(dol_vfs)}"]
 
 
 def attribute(
@@ -482,6 +483,18 @@ def self_test() -> None:
         missing = attribute(0x81234567, root, None, None)
         assert missing.module is None
         assert missing.confidence == "unresolved"
+
+        # Printed follow-ups are shell commands, so filenames containing
+        # dollar expansion, backticks and quotes must remain literal tokens.
+        tool = "/tmp/dtk $(not-a-command) `literal` 'quote'"
+        disc = root / "disc $(literal) `text` 'quote'.iso"
+        command = dtk_follow_up(tool, "StaticR.rel", disc)[0]
+        assert shlex.split(command) == [
+            tool,
+            "rel",
+            "info",
+            f"{disc.resolve()}:files/rel/StaticR.rel",
+        ]
 
     print("RMCP01 attribution self-test: PASS")
 

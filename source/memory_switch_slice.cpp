@@ -143,10 +143,10 @@ std::uint8_t* Memory::GetPointer(std::uint32_t address, std::size_t length) {
     }
 
     const std::uint64_t start = address;
-    const std::uint64_t end = start + length;
-    if (end > (std::uint64_t{1} << 32)) {
+    if (length > (std::uint64_t{1} << 32) - start) {
         return nullptr;
     }
+    const std::uint64_t end = start + length;
 
     for (const auto& region : regions()) {
         const std::uint64_t base = region.config.baseAddress;

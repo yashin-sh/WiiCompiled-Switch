@@ -2,19 +2,24 @@ name: lint
 
 on:
   push:
-    branches-ignore:
-      - main
   pull_request:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}-${{ github.ref_type }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
           fetch-depth: 0
 
       - name: Install lint tools
@@ -28,9 +33,12 @@ jobs:
           echo "/tmp/wc-lint-venv/bin" >> "$GITHUB_PATH"
 
           mkdir -p "$HOME/.local/bin"
-          curl -fsSL \
-            https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz \
-            | tar -xz -C "$HOME/.local/bin" actionlint
+          curl -fsSL -o /tmp/wc-actionlint.tar.gz \
+            https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
+          printf '%s  %s\n' \
+            '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8' \
+            /tmp/wc-actionlint.tar.gz | sha256sum --check --strict -
+          tar -xz -f /tmp/wc-actionlint.tar.gz -C "$HOME/.local/bin" actionlint
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Bash syntax
@@ -110,9 +118,11 @@ jobs:
           if [[ -z "${BASE_SHA:-}" || "$BASE_SHA" =~ ^0+$ ]]; then
             BASE_SHA="$(git rev-list --max-parents=0 HEAD | tail -n1)"
           fi
+          git cat-file -e "${BASE_SHA}^{commit}"
+          DIFF_BASE="$(git merge-base "$BASE_SHA" HEAD)"
 
           mapfile -t cpp_files < <(
-            git diff --name-only --diff-filter=ACMRT "$BASE_SHA" HEAD -- \
+            git diff --name-only --diff-filter=ACMRT "$DIFF_BASE" HEAD -- \
               '*.c' '*.cc' '*.cpp' '*.h' '*.hh' '*.hpp' \
               ':(exclude)third_party/**' \
               ':(exclude)local-product/generated/**'
@@ -135,7 +145,7 @@ jobs:
                   ranges+=("--lines=${start}:${end}")
                 fi
               fi
-            done < <(git diff -U0 --no-color "$BASE_SHA" HEAD -- "$file" | grep '^@@' || true)
+            done < <(git diff -U0 --no-color "$DIFF_BASE" HEAD -- "$file" | grep '^@@' || true)
 
             if ((${#ranges[@]} == 0)); then
               continue

@@ -119,7 +119,18 @@ def scan_ranges(
 
 
 def raw_ranges(path: Path, base: int) -> list[ExecutableRange]:
-    return [ExecutableRange(base, path.read_bytes(), path.name)]
+    data = path.read_bytes()
+    validate_executable_range(base, len(data))
+    return [ExecutableRange(base, data, path.name)]
+
+
+def validate_executable_range(address: int, size: int) -> None:
+    if not 0 <= address <= 0xFFFFFFFF or address % 4 != 0:
+        raise ValueError(
+            "PPC executable addresses must be aligned unsigned 32-bit values"
+        )
+    if address + size > 1 << 32:
+        raise ValueError("PPC executable range exceeds the 32-bit address space")
 
 
 def elf_ranges(path: Path) -> list[ExecutableRange]:
@@ -129,37 +140,21 @@ def elf_ranges(path: Path) -> list[ExecutableRange]:
 
     elf_class = data[4]
     data_encoding = data[5]
-    if data_encoding == 1:
-        endian = "<"
-    elif data_encoding == 2:
-        endian = ">"
-    else:
-        raise ValueError("unsupported ELF data encoding")
+    if elf_class != 1 or data_encoding != 2:
+        raise ValueError("expected a 32-bit big-endian PowerPC ELF for RMCP01")
+    header_fmt = ">16sHHIIIIIHHHHHH"
+    sh_fmt = ">IIIIIIIIII"
+    header = struct.unpack_from(header_fmt, data, 0)
+    shoff, shentsize, shnum, shstrndx = (
+        header[6],
+        header[11],
+        header[12],
+        header[13],
+    )
+    addr_index, offset_index, size_index, flags_index = 3, 4, 5, 2
 
-    if elf_class == 1:
-        header_fmt = endian + "16sHHIIIIIHHHHHH"
-        sh_fmt = endian + "IIIIIIIIII"
-        header = struct.unpack_from(header_fmt, data, 0)
-        shoff, shentsize, shnum, shstrndx = (
-            header[6],
-            header[11],
-            header[12],
-            header[13],
-        )
-        addr_index, offset_index, size_index, flags_index = 3, 4, 5, 2
-    elif elf_class == 2:
-        header_fmt = endian + "16sHHIQQQIHHHHHH"
-        sh_fmt = endian + "IIQQQQIIQQ"
-        header = struct.unpack_from(header_fmt, data, 0)
-        shoff, shentsize, shnum, shstrndx = (
-            header[6],
-            header[11],
-            header[12],
-            header[13],
-        )
-        addr_index, offset_index, size_index, flags_index = 3, 4, 5, 2
-    else:
-        raise ValueError("unsupported ELF class")
+    if header[2] != 20:  # EM_PPC; other ISAs cannot supply PPC callsite proof.
+        raise ValueError("ELF machine is not 32-bit PowerPC")
 
     expected_sh = struct.calcsize(sh_fmt)
     if shentsize < expected_sh or shnum == 0:
@@ -177,6 +172,8 @@ def elf_ranges(path: Path) -> list[ExecutableRange]:
     shstr = sections[shstrndx]
     names_offset = shstr[offset_index]
     names_size = shstr[size_index]
+    if names_offset + names_size > len(data):
+        raise ValueError("ELF section-name table is truncated")
     names = data[names_offset : names_offset + names_size]
 
     def name_at(offset: int) -> str:
@@ -199,6 +196,7 @@ def elf_ranges(path: Path) -> list[ExecutableRange]:
             continue
         if sh_offset + sh_size > len(data):
             raise ValueError(f"ELF executable section {name_at(sh_name)} is truncated")
+        validate_executable_range(sh_addr, sh_size)
         result.append(
             ExecutableRange(
                 sh_addr & 0xFFFFFFFF,
@@ -303,6 +301,8 @@ def parse_targets(values: list[str] | None) -> dict[int, str]:
         else:
             address_text, symbol = value, value
         address = int(address_text, 0)
+        if not 0 <= address <= 0xFFFFFFFF or address % 4 != 0:
+            raise ValueError("GX target must be an aligned unsigned 32-bit address")
         result[address] = symbol
     return result
 
@@ -421,6 +421,28 @@ def self_test() -> None:
             (call, target, ".text")
         ]
 
+        original = elf.read_bytes()
+        wrong_machine = bytearray(original)
+        struct.pack_into(">H", wrong_machine, 18, 183)  # EM_AARCH64
+        elf.write_bytes(wrong_machine)
+        try:
+            elf_ranges(elf)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("an unrelated ELF machine must not produce PPC proof")
+        elf.write_bytes(original)
+        for address, size in ((-1, 4), (0x80000001, 4), (0xFFFFFFFC, 8)):
+            try:
+                validate_executable_range(address, size)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError(
+                    "invalid executable range must not wrap or misalign"
+                )
+        validate_executable_range(0xFFFFFFFC, 4)
+
         xml = Path(temp) / "test.xml"
         xml.write_text(
             '<FUNCTION ENTRY_POINT="8000fff0" NAME="Caller" LIBRARY_FUNCTION="n">\n'
@@ -473,8 +495,8 @@ def main() -> int:
     if args.elf is None and args.mem1 is None:
         parser.error("provide --elf or --mem1 unless --self-test is used")
 
-    targets = parse_targets(args.target)
     try:
+        targets = parse_targets(args.target)
         ranges = (
             elf_ranges(args.elf.expanduser().resolve())
             if args.elf is not None

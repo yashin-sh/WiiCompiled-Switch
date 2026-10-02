@@ -10,7 +10,7 @@ trap 'rm -rf "$TEST_DIR"' EXIT
 
 for rendered in 0 1; do
     "$HOST_CXX" -std=c++20 -O2 -Wall -Wextra -Werror \
-        -fsanitize=address,undefined,float-cast-overflow -fno-omit-frame-pointer \
+        -fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=all -fno-omit-frame-pointer \
         -DTARGET_PC -DMKW_LOCAL_FUNCTION_EXECUTION=1 \
         -DMKW_LOCAL_RENDERED_FAST_TRACK="$rendered" \
         -include "$ROOT_DIR/include/devkita64_gcc_compat.hpp" \

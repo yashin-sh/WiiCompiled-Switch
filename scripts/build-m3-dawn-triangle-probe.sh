@@ -34,6 +34,62 @@ need() {
     fi
 }
 
+
+# Leave an already configured dependency untouched, including its mtimes.
+# Refuse other local edits rather than restoring a dependency over them.
+apply_pinned_patch() {
+    local checkout="$1" patch="$2" predecessor=""
+    shift 2
+    if [[ "${1:-}" == "--after-patch" ]]; then
+        predecessor="$2"
+        shift 2
+    fi
+    if git -C "$checkout" apply --reverse --check "$patch" >/dev/null 2>&1; then
+        return 0
+    fi
+    if ! git -C "$checkout" diff --cached --quiet -- "$@"; then
+        echo "error: staged patch paths have local changes in $checkout" >&2
+        return 1
+    fi
+    if ! git -C "$checkout" diff --quiet -- "$@"; then
+        if [[ -z "$predecessor" ]]; then
+            echo "error: patch paths have local changes in $checkout; refusing to overwrite them" >&2
+            return 1
+        fi
+        # Dawn's second patch touches the first patch's file. Accept exactly
+        # HEAD plus that explicit predecessor, using only temporary storage.
+        local expected_dir file matches=1
+        expected_dir="$(mktemp -d)"
+        for file in "$@"; do
+            mkdir -p "$(dirname "$expected_dir/$file")"
+            if ! git -C "$checkout" show "HEAD:$file" >"$expected_dir/$file"; then
+                matches=0
+                break
+            fi
+        done
+        if ((matches != 0)) && git -C "$expected_dir" apply "$predecessor"; then
+            for file in "$@"; do
+                if ! cmp -s "$expected_dir/$file" "$checkout/$file"; then
+                    matches=0
+                    break
+                fi
+            done
+        else
+            matches=0
+        fi
+        rm -rf -- "$expected_dir"
+        if ((matches == 0)); then
+            echo "error: patch paths differ from the authorized predecessor in $checkout" >&2
+            return 1
+        fi
+    fi
+    if ! git -C "$checkout" apply --check "$patch"; then
+        echo "error: integration patch no longer applies: $patch" >&2
+        return 1
+    fi
+    git -C "$checkout" apply "$patch"
+}
+
 need git
 need docker
 
@@ -65,27 +121,28 @@ fi
 
 mkdir -p "$DEPS_DIR" "$DAWN_BUILD_DIR" "$OUTPUT_DIR"
 
-if [[ ! -d "$MESA_DIR/.git" ]]; then
+if [[ ! -e "$MESA_DIR/.git" ]]; then
     echo "[1/7] Cloning pinned mesa-switch dependency..."
     git clone --filter=blob:none "$MESA_REPO" "$MESA_DIR"
 else
     echo "[1/7] Reusing mesa-switch checkout..."
 fi
 
-git -C "$MESA_DIR" fetch --quiet origin "$MESA_PIN"
-git -C "$MESA_DIR" checkout --quiet --detach "$MESA_PIN"
+if ! git -C "$MESA_DIR" cat-file -e "${MESA_PIN}^{commit}" 2>/dev/null; then
+    git -C "$MESA_DIR" fetch --quiet origin "$MESA_PIN"
+fi
+if [[ "$(git -C "$MESA_DIR" rev-parse HEAD)" != "$MESA_PIN" ]]; then
+    git -C "$MESA_DIR" checkout --quiet --detach "$MESA_PIN"
+fi
 actual_mesa_pin="$(git -C "$MESA_DIR" rev-parse HEAD)"
 if [[ "$actual_mesa_pin" != "$MESA_PIN" ]]; then
     echo "error: mesa-switch pin mismatch: $actual_mesa_pin" >&2
     exit 1
 fi
 
-git -C "$MESA_DIR" restore --source="$MESA_PIN" -- Docker.rust build-switch.sh
-if ! git -C "$MESA_DIR" apply --check "$MESA_PATCH"; then
-    echo "error: Mesa integration patch no longer applies to $MESA_PIN" >&2
-    exit 1
-fi
-git -C "$MESA_DIR" apply "$MESA_PATCH"
+apply_pinned_patch "$MESA_DIR" "$MESA_PATCH" \
+    Docker.rust \
+    build-switch.sh
 echo "      mesa-switch: $actual_mesa_pin"
 
 need_mesa_build=0
@@ -117,15 +174,19 @@ if ! docker image inspect "$MESA_IMAGE" >/dev/null 2>&1; then
     exit 1
 fi
 
-if [[ ! -d "$DAWN_DIR/.git" ]]; then
+if [[ ! -e "$DAWN_DIR/.git" ]]; then
     echo "[3/7] Cloning pinned dawn-switch dependency..."
     git clone --filter=blob:none "$DAWN_REPO" "$DAWN_DIR"
 else
     echo "[3/7] Reusing dawn-switch checkout..."
 fi
 
-git -C "$DAWN_DIR" fetch --quiet origin "$DAWN_PIN"
-git -C "$DAWN_DIR" checkout --quiet --detach "$DAWN_PIN"
+if ! git -C "$DAWN_DIR" cat-file -e "${DAWN_PIN}^{commit}" 2>/dev/null; then
+    git -C "$DAWN_DIR" fetch --quiet origin "$DAWN_PIN"
+fi
+if [[ "$(git -C "$DAWN_DIR" rev-parse HEAD)" != "$DAWN_PIN" ]]; then
+    git -C "$DAWN_DIR" checkout --quiet --detach "$DAWN_PIN"
+fi
 actual_dawn_pin="$(git -C "$DAWN_DIR" rev-parse HEAD)"
 if [[ "$actual_dawn_pin" != "$DAWN_PIN" ]]; then
     echo "error: dawn-switch pin mismatch: $actual_dawn_pin" >&2
@@ -145,37 +206,41 @@ if [[ ! -e "$ABSEIL_DIR/.git" ]]; then
 fi
 
 # Dawn's pinned Abseil assumes glibc/POSIX details that differ under Switch
-# newlib. Restore the exact submodule revision and apply only our narrow
-# Horizon portability delta.
-git -C "$ABSEIL_DIR" restore --source=HEAD -- \
+# newlib. Reuse or apply our Horizon portability delta at the pinned revision,
+# refusing conflicting local edits.
+apply_pinned_patch "$ABSEIL_DIR" "$ABSEIL_PATCH" \
     absl/base/internal/sysinfo.cc \
     absl/base/internal/thread_identity.cc \
     absl/debugging/internal/elf_mem_image.h \
     absl/time/internal/cctz/src/time_zone_libc.cc
-if ! git -C "$ABSEIL_DIR" apply --check "$ABSEIL_PATCH"; then
-    echo "error: Abseil Switch/newlib patch no longer applies" >&2
-    exit 1
-fi
-git -C "$ABSEIL_DIR" apply "$ABSEIL_PATCH"
 
 # The public fork contains Switch NWindow/Vulkan support, but its sample CMake
 # linkage assumes a different NVK package shape. Keep the upstream pin exact,
-# then apply only our narrow static-link integration delta.
-git -C "$DAWN_DIR" restore --source="$DAWN_PIN" -- src/dawn/native/CMakeLists.txt
-if ! git -C "$DAWN_DIR" apply --check "$DAWN_PATCH"; then
-    echo "error: Dawn integration patch no longer applies to $DAWN_PIN" >&2
-    exit 1
-fi
-git -C "$DAWN_DIR" apply "$DAWN_PATCH"
+# then reuse or apply our static-link delta without overwriting local edits.
+apply_pinned_patch "$DAWN_DIR" "$DAWN_PATCH" src/dawn/native/CMakeLists.txt
 
 # The fork's CMake recipe names src/dawn/switch/triangle_nro.cpp while the public
 # examples live elsewhere. Supply our independent Nintendo-data-free probe at
 # that expected path without committing generated/dependency content.
 mkdir -p "$DAWN_DIR/src/dawn/switch"
-cp "$PROBE_SOURCE" "$DAWN_DIR/src/dawn/switch/triangle_nro.cpp"
+if ! cmp -s "$PROBE_SOURCE" "$DAWN_DIR/src/dawn/switch/triangle_nro.cpp"; then
+    cp "$PROBE_SOURCE" "$DAWN_DIR/src/dawn/switch/triangle_nro.cpp"
+fi
 
 if [[ "${MKW_M3_FORCE_DAWN_RECONFIGURE:-0}" == "1" ]]; then
-    rm -rf "$DAWN_BUILD_DIR"
+    build_path="$(realpath -m -- "$DAWN_BUILD_DIR")"
+    if [[ "$build_path" == "/" ]]; then
+        echo "error: refusing to clean the filesystem root" >&2
+        exit 1
+    fi
+    for protected_root in "$ROOT_DIR" "$MESA_DIR" "$DAWN_DIR"; do
+        protected_path="$(realpath -m -- "$protected_root")"
+        if [[ "$protected_path" == "$build_path" || "$protected_path" == "$build_path/"* ]]; then
+            echo "error: build cleanup would remove source files: $DAWN_BUILD_DIR" >&2
+            exit 1
+        fi
+    done
+    rm -rf -- "$DAWN_BUILD_DIR"
     mkdir -p "$DAWN_BUILD_DIR"
 fi
 
@@ -314,11 +379,13 @@ docker run --rm \
     '
 
 echo "[6/7] Collecting NRO..."
-built_nro="$(find "$DAWN_BUILD_DIR" -type f -name 'dawn_switch_triangle.nro' -print -quit)"
-if [[ -z "$built_nro" || ! -f "$built_nro" ]]; then
-    echo "error: Dawn build did not produce dawn_switch_triangle.nro" >&2
+built_nro_listing="$(find "$DAWN_BUILD_DIR" -type f -name 'dawn_switch_triangle.nro' -print)"
+mapfile -t built_nros <<< "$built_nro_listing"
+if (( ${#built_nros[@]} != 1 )) || [[ ! -f "${built_nros[0]}" ]]; then
+    echo "error: Dawn build did not produce exactly one dawn_switch_triangle.nro" >&2
     exit 1
 fi
+built_nro="${built_nros[0]}"
 cp "$built_nro" "$OUTPUT"
 
 echo "[7/7] Probe ready."

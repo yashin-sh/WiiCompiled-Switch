@@ -21,11 +21,12 @@ jobs:
         run: test "$(git -C third_party/WiiCompiled rev-parse HEAD)" = "a135beb201042b20f390c6695ca6b26768820fb4"
       - name: Prepare pinned Switch headers for GX contracts
         run: git -C third_party/WiiCompiled apply ../../patches/wiicompiled/m3-wiicompiled-switch-build.patch
-      - name: Execute scalar, indirect and ambient GX contracts
+      - name: Execute GX host contracts
         run: |
           bash scripts/test-gx-scalar-batch.sh
           bash scripts/test-gx-indirect-batch.sh
           bash scripts/test-gx-chan-amb-color.sh
+          bash scripts/test-gx-texture-load.sh
 
   nro:
     runs-on: ubuntu-latest

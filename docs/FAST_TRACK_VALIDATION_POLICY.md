@@ -170,19 +170,22 @@ If a new run:
 ## Current frontier
 
 The latest attributable real-Switch evidence is recorded in
-`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_SET_CLIP_MODE_FRONTIER.md`:
+`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_SET_IND_TEX_MTX_FRONTIER.md`:
 
-- GXSetCoPlanar is hardware-crossed;
-- the distinct DIRECT blocker is GXSetClipMode (`0x8017351C`), with r3=0
-  and stage `RMCP01_GX_SET_CO_PLANAR`;
+- GXSetCoPlanar and GXSetClipMode are hardware-crossed;
+- the distinct DIRECT blocker is GXSetIndTexMtx (`0x80171814`), with r3=1,
+  r4=`0x802581F8`, r5=1 and stage `RMCP01_GX_SET_NUM_IND_STAGES`;
 - the preceding durable snapshot records 99 successful presents, zero present
   failures, a valid FST, and coherent guest scheduler identities;
-- that snapshot precedes GXSetCoPlanar and does not measure its later writes;
+- that changed snapshot follows GXSetClipMode and precedes the matrix blocker;
+  it does not measure GXSetClipMode's own FIFO writes;
 - pinned WiiCompiled remains `a135beb201042b20f390c6695ca6b26768820fb4`;
 - GPU presentation is proven; visual pixel correctness remains unverified.
 
-The scalar batch covers GXSetClipMode, GXSetDither, and GXSetDstAlpha. Each
-member still needs attributable runtime evidence before being hardware-crossed.
+The scalar batch covers GXSetClipMode, GXSetDither, and GXSetDstAlpha. The latter
+two are not reached in this run and remain pre-ported, with hardware validation
+pending. The observed matrix boundary and adjacent scalar coordinate-scale
+setter are the next bounded candidate to audit and validate.
 
 ## Governance note
 

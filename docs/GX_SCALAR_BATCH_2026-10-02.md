@@ -84,6 +84,10 @@ The resulting `WiiCompiled-Switch-local-rendered-discovery-scan.nro` is
 The static scan now reports 317 missing direct targets and 138 native targets.
 These are coverage counts, not evidence of runtime progression.
 
-Hardware validation of this batch is pending. The latest accepted hardware
-frontier remains GXSetClipMode until this exact NRO produces new attributable
-reports.
+This exact NRO was subsequently transferred successfully and produced new
+attributable reports. GXSetClipMode is hardware-crossed; the next DIRECT
+blocker is GXSetIndTexMtx (`0x80171814`). GXSetDither and GXSetDstAlpha are
+absent from the first-hit trace and remain pre-ported, with hardware validation
+pending. See
+`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_SET_IND_TEX_MTX_FRONTIER.md` for the
+per-member evidence, invariant comparison and matrix boundary audit.

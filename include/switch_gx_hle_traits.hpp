@@ -26,6 +26,7 @@ extern "C" void mkw_switch_hle_gx_set_blend_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_color_update(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_alpha_update(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_z_mode(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_pixel_fmt(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_cull_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_begin(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
@@ -278,6 +279,19 @@ struct KnownNativeCpuCall<0x80172824u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_z_mode(cpu);
+    }
+};
+
+// GXSetPixelFmt (PAL 0x80172888). Discovery hardware reaches this exact
+// pixel-format boundary after crossing GXInvalidateTexAll, with r3=1/r4=0.
+// Pinned WiiCompiled casts r3/r4 directly to GXPixelFmt/GXZFmt16 and forwards
+// them to Aurora GXSetPixelFmt.
+template <>
+struct KnownNativeCpuCall<0x80172888u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_pixel_fmt(cpu);
     }
 };
 

@@ -28,6 +28,7 @@ extern "C" void mkw_switch_hle_gx_set_alpha_update(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_z_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_pixel_fmt(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_cull_mode(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_co_planar(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_begin(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
@@ -303,6 +304,18 @@ struct KnownNativeCpuCall<0x8016F3B8u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_cull_mode(cpu);
+    }
+};
+
+// GXSetCoPlanar (PAL 0x8016F3E0). Discovery hardware reaches this boundary
+// after GXSetPixelFmt returns, with r3=0. Pinned WiiCompiled casts r3 directly
+// to GXBool and forwards it to Aurora GXSetCoPlanar.
+template <>
+struct KnownNativeCpuCall<0x8016F3E0u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_co_planar(cpu);
     }
 };
 

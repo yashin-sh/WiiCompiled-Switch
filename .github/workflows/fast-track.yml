@@ -120,7 +120,7 @@ jobs:
             TARGET=WiiCompiled-Switch-synthetic-fast-track \
             BUILD=build-synthetic-fast-track \
             APP_VERSION=0.0.17-synthetic-fast-track-os-init-hle \
-            TRANSLATED_RETAIN_SYMBOL=synthetic_ppc_helper_link_probe \
+            TRANSLATED_RETAIN_SYMBOL='synthetic_ppc_helper_link_probe synthetic_gx_set_co_planar_hle_probe' \
             DEFINES='-DMKW_SYNTHETIC_EXECUTION=1 -DMKW_SYNTHETIC_FAST_TRACK=1 -DMKW_ENABLE_DATA_INIT_HANDOFF=1 -DMKW_ENABLE_TRANSLATED_EXECUTION_HANDOFF=1'
 
       - name: Verify fast-track execution seam and PPC runtime helpers
@@ -132,6 +132,8 @@ jobs:
           grep -E ' T mkw_switch_get_translated_product_handoff_api$' /tmp/fast-track.nm
           grep -E ' T mkw_switch_get_translated_execution_handoff_api$' /tmp/fast-track.nm
           grep -E ' T synthetic_ppc_helper_link_probe$' /tmp/fast-track.nm
+          grep -E ' T synthetic_gx_set_co_planar_hle_probe$' /tmp/fast-track.nm
+          grep -E ' T mkw_switch_hle_gx_set_co_planar$' /tmp/fast-track.nm
           grep -E ' T synthetic_translated_fast_track_start$' /tmp/fast-track.nm
           grep -E ' T synthetic_translated_fast_track_stage2$' /tmp/fast-track.nm
           grep -E ' T synthetic_translated_fast_track_stage3$' /tmp/fast-track.nm

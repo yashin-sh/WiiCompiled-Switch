@@ -199,7 +199,9 @@ LDFLAGS     := -specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notd
 ifeq ($(TRANSLATED_LINK_MODE),1)
 # All function shards are compiled, but link-time GC keeps only reachable code.
 # Force the selected translated proof function to remain auditable in the ELF.
-LDFLAGS     += -Wl,--gc-sections -Wl,-u,$(TRANSLATED_RETAIN_SYMBOL)
+# Accept a space-separated list so CI can retain both the execution seam and
+# a boundary probe whose native bridge must survive link-time GC.
+LDFLAGS     += -Wl,--gc-sections $(foreach symbol,$(TRANSLATED_RETAIN_SYMBOL),-Wl,-u,$(symbol))
 endif
 ifneq ($(filter 1,$(MKW_LOCAL_FAST_TRACK) $(MKW_SYNTHETIC_FAST_TRACK)),)
 # libnx's exception trampoline and translated-dispatch fallbacks reach these

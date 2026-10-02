@@ -73,14 +73,20 @@ Local validation/build metadata is retained under
 The existing integration patch is byte-identical (SHA-256
 `92984dd129257e15e006fb7df1d891b6a7799f88620ad560c7a9733d4c19d0f7`).
 
-No hardware crossing or visible game image is claimed yet. The next run must
-show a later distinct dispatch/frontier after the matrix bridge returns, with
-fresh reports linked to the exact candidate NRO. Static callers forecast ten
-3x4 loads (ids 30,33,...57) in `0x802412C8`; that count is not hardware evidence.
+Hardware acceptance is now recorded in
+`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md`.
+The fresh later scale frontier at dispatch 605350 follows the first matrix
+at 605340, with coherent caller/state and an exact +10 delta. The executed
+loop establishes ten type-0 returns (ids 30,33,...57), then Gen2 coord 0.
+This is control-flow evidence, not ten individually logged matrix hits.
+The new DIRECT blocker is GXSetTexCoordScaleManually (`0x80171180`),
+99,513 ms after the first dispatch. No recognizable game image is established
+by these reports; the screen observation for this launch is pending.
 
 ## Initial launch
 
 Nxlink transferred the exact candidate to `192.168.1.194` with exit 0,
 2026-10-02 17:39:00–17:39:32 UTC (19:39 Europe/Paris). This records the
 completed transfer/launch request, not a matrix return or visible image.
-USB/MTP retrieval and the user screen observation are pending.
+USB/MTP retrieval preserved 28 reports (526,625 bytes), with 12 changed
+against the previous IA8 run. The user screen observation is pending.

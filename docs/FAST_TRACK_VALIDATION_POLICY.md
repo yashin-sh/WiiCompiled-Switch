@@ -170,35 +170,35 @@ If a new run:
 ## Current frontier
 
 The latest attributable real-Switch evidence is recorded in
-`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_LOAD_TEX_MTX_IMM_FRONTIER.md`:
+`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md`:
 
 - GXSetCoPlanar, GXSetClipMode, GXSetIndTexMtx, GXSetIndTexCoordScale and
   GXSetChanAmbColor are hardware-crossed;
-- the exact observed IA8 descriptor's loads on maps 0..7 are hardware-crossed,
-  with map-7 load-pass and a later distinct translated caller;
-- the new DIRECT blocker is GXLoadTexMtxImm (`0x80173234`), with
-  r3=`0x802581C8`, r4=30, r5=0 and stage `RMCP01_GX_SET_NUM_TEX_GENS`;
-- the preceding durable snapshot records 99 successful presents, zero present
-  failures, a valid FST, and coherent guest scheduler identities;
-- that changed snapshot follows ambient color and precedes the new texture
-  load; its FIFO counter does not independently measure native Aurora writes;
+- the exact IA8 descriptor loads on maps 0..7 remain crossed;
+- GXLoadTexMtxImm is hardware-accepted for the ten observed type-0 loop
+  loads, ids 30,33,...57, followed by return from Gen2 coord 0;
+- the new DIRECT blocker is GXSetTexCoordScaleManually (`0x80171180`),
+  with r3..r6=0, LR `0x80241334`, stage `RMCP01_GX_SET_TEX_COORD_GEN2`;
+- its newly instrumented elapsed time is 99,513 ms after the first dispatch,
+  and the action remains abort after durable blocker record;
+- the preceding durable snapshot is at dispatch 605265, before matrix setup,
+  with 99 successful presents, no present failures, valid FST and coherent
+  guest scheduler identities;
 - pinned WiiCompiled remains `a135beb201042b20f390c6695ca6b26768820fb4`;
-- GPU presentation is proven; visual pixel correctness remains unverified.
+- matrix returns are proven by executed control flow, a distinct later
+  frontier and +10 dispatch delta, not ten individually captured log hits;
+- the earlier FIFO/present counters do not independently measure the new
+  matrix writes or prove recognizable pixels. This launch's screen
+  observation is pending; the preceding run showed black.
 
-The scalar batch covers GXSetClipMode, GXSetDither, and GXSetDstAlpha. The latter
-two are not reached in this run and remain pre-ported, with hardware validation
-pending. The indirect-texture and ambient-color candidates are hardware-crossed.
-The bounded IA8 correction is hardware-accepted. The new matrix boundary
-requires 12 big-endian float32 coefficients from the actual 48-byte guest
-range, exact ID/type forwarding and preservation of the pinned frame contract.
-The coefficients are not captured or inferred. Adjacent coordinate, TEV and
+The scalar batch covers GXSetClipMode, GXSetDither and GXSetDstAlpha. The
+latter two remain unreached. The indirect, ambient, bounded IA8 and current
+matrix candidates are hardware-accepted within their documented scopes.
+The coordinate neighbors are audited in `GX_TEX_COORD_NEIGHBORS_2026-10-02.md`:
+Scale is now observed; Bias and Gen2 coords 1..7 remain forecasts. Native
+forwarding alone would omit Scale/Bias guest state mirrors. Adjacent TEV and
 pixel-state calls remain forecasts until reached or explicitly audited for
-a bounded candidate. The matrix bridge is implemented and passes local contracts, all workflow
-steps and the rendered build; see `GX_LOAD_TEX_MTX_IMM_2026-10-02.md`.
-Its hardware acceptance is pending. The coordinate neighbors are documented
-in `GX_TEX_COORD_NEIGHBORS_2026-10-02.md` as static forecasts only.
-The matrix candidate also timestamps blocker/native-exception reports from
-the first translated dispatch; diagnostic hard-stop behavior is unchanged.
+a bounded candidate. No unknown/stateful call is skipped to suppress an exit.
 
 ## Governance note
 

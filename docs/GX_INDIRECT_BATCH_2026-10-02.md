@@ -82,4 +82,27 @@ durable milestone to establish hardware progression. GXSetIndTexCoordScale,
 GXSetDither and GXSetDstAlpha remain unvalidated on hardware until reached.
 Unknown boundaries continue to hard-stop.
 
-Validation results and the final NRO identity will be recorded after the gates.
+## Local validation result
+
+Code candidate: `c6b7a209f593e987b0e147164cb39a00a4b16ed6`.
+The rendered and non-rendered executable contracts pass under ASan/UBSan.
+All rendered HLE branches and Discovery diagnostics syntax-compile with
+devkitA64 and the pinned headers. Ten lint checks and 28 local runnable checks
+from the four build workflows pass, including the new host contracts and
+retention of both bridges in the synthetic fast-track ELF. Existing local
+tools replace CI tool installation; the already-applied Switch patch is
+verified rather than reapplied. GitHub Actions itself was not run.
+
+The private rendered Discovery CMake target builds successfully in the
+validated prepared Dawn/Aurora/NVK tree. Its final ELF contains both bridges
+and the real Aurora GXSetIndTexMtx and GXSetIndTexCoordScale symbols. The
+original nine-file WiiCompiled working patch is preserved byte-for-byte.
+
+The resulting `WiiCompiled-Switch-local-rendered-discovery-scan.nro` is
+73,281,592 bytes, SHA-256
+`9baf0d8141be506e2c75bbc63217466c6412f777cf6b3aea95419d9deddedc4b`.
+The static scan now reports 140 native targets and 315 missing direct targets.
+These counts do not establish runtime progression.
+
+Hardware acceptance is pending. The latest attributable frontier remains
+GXSetIndTexMtx until this exact NRO produces new reports proving progression.

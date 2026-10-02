@@ -1786,9 +1786,12 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
         wrapT == 0u &&
         mipmap == 0u;
 
+    // Pinned GXLoadTexObj guards eight binding slots, and Aurora indexes
+    // eight-entry register tables. Forward each legal slot for this exact
+    // observed IA8 descriptor; null/disable/out-of-range IDs still abort.
     const bool exactIa8Descriptor =
         obj == kObservedIa8LoadObj &&
-        tid == kObservedLoadTid &&
+        tid < 8u &&
         word0 == 0x00000190u &&
         word1 == 0x00000000u &&
         word2 == 0x00300C03u &&
@@ -1879,7 +1882,7 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
             ((word0 >> 8u) & 1u) == 0u ? GX_TRUE : GX_FALSE,
             GX_ANISO_1);
         GXInitTexObjUserData(hostObj, nullptr);
-        GXLoadTexObj(hostObj, GX_TEXMAP0);
+        GXLoadTexObj(hostObj, static_cast<GXTexMapID>(tid));
     } catch (...) {
         AbortLoadBoundary(
             "GX_LOAD_TEX_OBJ_HOST_EXCEPTION",

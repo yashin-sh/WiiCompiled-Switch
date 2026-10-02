@@ -170,13 +170,14 @@ If a new run:
 ## Current frontier
 
 The latest attributable real-Switch evidence is recorded in
-`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_LOAD_TEX_OBJ_IA8_FRONTIER.md`:
+`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_LOAD_TEX_OBJ_IA8_MAP1_FRONTIER.md`:
 
 - GXSetCoPlanar, GXSetClipMode, GXSetIndTexMtx, GXSetIndTexCoordScale and
   GXSetChanAmbColor are hardware-crossed;
 - the new blocker is `GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR` at GXLoadTexObj
-  (`0x80170F2C`), with r3=`0x80384500`, r4=0 and stage
-  `RMCP01_GX_LOAD_TEX_OBJ`; it is an existing bridge's descriptor gate;
+  (`0x80170F2C`), with r3=`0x80384500`, r4=1 and stage
+  `RMCP01_GX_LOAD_TEX_OBJ`; the same IA8 descriptor's map-0 call returned,
+  as proven by the later map-1 return address and audited caller order;
 - the preceding durable snapshot records 99 successful presents, zero present
   failures, a valid FST, and coherent guest scheduler identities;
 - that changed snapshot follows ambient color and precedes the new texture
@@ -187,9 +188,10 @@ The latest attributable real-Switch evidence is recorded in
 The scalar batch covers GXSetClipMode, GXSetDither, and GXSetDstAlpha. The latter
 two are not reached in this run and remain pre-ported, with hardware validation
 pending. The indirect-texture and ambient-color candidates are hardware-crossed.
-The next bounded texture candidate must handle the observed 4x4 IA8 descriptor,
-its real 32-byte backing and decoded LOD state. The load status's old
-`0xB9400` size constant is not evidence for this texture's backing range.
+The bounded follow-up covers legal map IDs 0..7 for the exact observed IA8
+descriptor while retaining its real 32-byte backing and decoded LOD state.
+Maps 1..7 remain hardware-unvalidated. The new refusal size zero denotes no
+approved size; the original `0xB9400` constant applied only to RGB565.
 
 ## Governance note
 

@@ -44,6 +44,7 @@ std::uint16_t currentWidth = 0;
 std::uint16_t currentHeight = 0;
 GXTexFmt currentFormat = GX_TF_I4;
 GXBool currentEdgeLod = GX_FALSE;
+std::uint32_t expectedMap = 0u;
 struct HostRegion {
     std::uint32_t base;
     std::vector<std::uint8_t> bytes;
@@ -142,11 +143,12 @@ void ExpectAbort(CpuContext cpu, const char* reason, std::uint32_t size) {
     assert(WIFSIGNALED(status) && WTERMSIG(status) == SIGABRT);
     CheckStatus(reason, size);
 }
-void CheckLoad(bool ia8) {
+void CheckLoad(bool ia8, std::uint32_t tid = 0u) {
     const auto object = ia8 ? ia8Obj : rgbObj;
     const auto data = ia8 ? ia8Data : rgbData;
     const auto size = ia8 ? 32u : rgbSize;
-    auto cpu = MakeCpu(object);
+    auto cpu = MakeCpu(object, tid);
+    expectedMap = tid;
     std::array<unsigned char, sizeof(cpu)> before{};
     std::memcpy(before.data(), &cpu, sizeof(cpu));
     std::array<std::uint8_t, 32> descriptor{};
@@ -183,6 +185,9 @@ void CheckLoad(bool ia8) {
     assert(nativeCalls == 0u);
 #endif
     CheckStatus("load-pass", size);
+#if MKW_LOCAL_RENDERED_FAST_TRACK
+    assert(Status().find("tid=" + std::to_string(tid) + "\n") != std::string::npos);
+#endif
 }
 } // namespace
 
@@ -244,7 +249,7 @@ extern "C" void GXInitTexObjUserData(GXTexObj* obj, void* data) {
 }
 extern "C" void GXLoadTexObj(GXTexObj* obj, GXTexMapID id) {
     CheckStage();
-    assert(nativeCalls++ == 3u && obj == currentHost && id == GX_TEXMAP0);
+    assert(nativeCalls++ == 3u && obj == currentHost && id == static_cast<GXTexMapID>(expectedMap));
 }
 extern "C" void mkw_switch_report_unsupported_translated_dispatch(
     const char* reason, std::uint32_t target, CpuContext* cpu) noexcept {
@@ -271,7 +276,9 @@ int main() {
     InitMemory();
     for (auto ia8 : {false, true, false, true})
         CheckLoad(ia8);
-    // Each word, object identity and texture-map variation must still stop.
+    for (std::uint32_t tid = 0u; tid < 8u; ++tid)
+        CheckLoad(true, tid);
+    // Each descriptor word/object variation and unapproved map must still stop.
     InitMemory();
     for (auto ia8 : {false, true}) {
         const auto object = ia8 ? ia8Obj : rgbObj;
@@ -281,7 +288,11 @@ int main() {
             ExpectAbort(MakeCpu(object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
             WriteWord(object + 4u * word, value);
         }
-        ExpectAbort(MakeCpu(object, 1u), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+        for (auto tid : {8u, 0xffu, 0xffffffffu}) {
+            ExpectAbort(MakeCpu(object, tid), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+        }
+        if (!ia8)
+            ExpectAbort(MakeCpu(object, 1u), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
         ExpectAbort(MakeCpu(object + 32u), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
     }
     for (auto bytes : {0u, 31u}) {

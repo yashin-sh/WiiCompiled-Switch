@@ -76,8 +76,37 @@ No Nintendo-derived memory bytes are committed or used as test fixtures.
 
 ## Validation status
 
-Local contracts, workflow checks and the Rendered Discovery build are in
-progress. No new hardware crossing, presentation effect or visible game
-image is claimed by this implementation. The next hardware acceptance must
-use fresh reports tied to the exact candidate NRO, a later distinct dispatch
-and caller/control-flow evidence for the coordinate loop.
+Code candidate `91a4a01b8e316f9010e9d31754e279065772f9f3` passed:
+
+- all six GX executable host contracts in headless and rendered modes with
+  ASan/UBSan; this coordinate contract executes 199 valid calls and 29
+  diagnosed argument refusals per mode, plus null-CPU checks;
+- all 10 local lint checks and all 28 local steps of the five required
+  workflows; these are local equivalents, not a GitHub Actions run;
+- the rendered AArch64 syntax gate for the GX bridges and Discovery
+  diagnostics;
+- the private Rendered Discovery build, including strong definitions of all
+  three bridges and the actual Aurora Scale, Bias and Gen2 functions.
+
+The build completed at `2026-10-02T22:56:35Z` (00:56:35 on October 3,
+Europe/Paris). It produced a 73,297,976-byte NRO with SHA-256
+`64ba837720f4e37cbd127c37a0e9bde6dc146ed229a92c8697b9c531a8984d08`.
+Dependency pins, command, source hashes and validation results remain local
+under `.deps/network-tests/gx-tex-coord-batch/`. The original nine-file
+WiiCompiled integration patch was preserved byte-for-byte, SHA-256
+`92984dd129257e15e006fb7df1d891b6a7799f88620ad560c7a9733d4c19d0f7`.
+
+Hardware validation is pending. No new hardware crossing, presentation
+effect or visible game image is claimed by the build. Acceptance must use
+fresh reports tied to this exact NRO, a later distinct dispatch and
+caller/control-flow evidence for the coordinate loop.
+
+The generated caller forecasts entry to `func_80241380` after all eight
+Gen2/disabled-Scale/disabled-Bias triples return. Without intervening
+callbacks, that entry is 23 dispatch increments after the first Scale hit,
+with LR `0x80240F98`, r3=7 and r8=125. The forecast next missing DIRECT call
+is GXSetTevDirect (`0x80171B58`), stage 0, one dispatch later after the
+existing GXSetNumTevStages bridge. These are static forecasts until new
+hardware reports establish the actual frontier. Callback polling can add
+dispatches or replace the global diagnostic stage; the control flow and
+captured state must be assessed together with the counter.

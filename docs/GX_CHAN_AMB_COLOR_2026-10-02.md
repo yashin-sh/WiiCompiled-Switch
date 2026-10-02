@@ -78,3 +78,8 @@ bytes, SHA-256
 `d92132a4004e92ec435990d5f4e514eea99c4cfd78a30f162f273f86718db17a`.
 This identifies the candidate for the upcoming hardware run; a successful
 build does not establish runtime progression.
+
+The exact NRO was subsequently transferred to the user's restarted netloader
+at `192.168.1.194`. Nxlink completed with exit code 0 at
+2026-10-02 15:28:20 UTC (17:28:20 Europe/Paris). Hardware progression remains
+pending retrieval and analysis of fresh console reports.

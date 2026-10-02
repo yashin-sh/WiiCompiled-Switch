@@ -170,14 +170,14 @@ If a new run:
 ## Current frontier
 
 The latest attributable real-Switch evidence is recorded in
-`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_LOAD_TEX_OBJ_IA8_MAP1_FRONTIER.md`:
+`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_LOAD_TEX_MTX_IMM_FRONTIER.md`:
 
 - GXSetCoPlanar, GXSetClipMode, GXSetIndTexMtx, GXSetIndTexCoordScale and
   GXSetChanAmbColor are hardware-crossed;
-- the new blocker is `GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR` at GXLoadTexObj
-  (`0x80170F2C`), with r3=`0x80384500`, r4=1 and stage
-  `RMCP01_GX_LOAD_TEX_OBJ`; the same IA8 descriptor's map-0 call returned,
-  as proven by the later map-1 return address and audited caller order;
+- the exact observed IA8 descriptor's loads on maps 0..7 are hardware-crossed,
+  with map-7 load-pass and a later distinct translated caller;
+- the new DIRECT blocker is GXLoadTexMtxImm (`0x80173234`), with
+  r3=`0x802581C8`, r4=30, r5=0 and stage `RMCP01_GX_SET_NUM_TEX_GENS`;
 - the preceding durable snapshot records 99 successful presents, zero present
   failures, a valid FST, and coherent guest scheduler identities;
 - that changed snapshot follows ambient color and precedes the new texture
@@ -188,10 +188,12 @@ The latest attributable real-Switch evidence is recorded in
 The scalar batch covers GXSetClipMode, GXSetDither, and GXSetDstAlpha. The latter
 two are not reached in this run and remain pre-ported, with hardware validation
 pending. The indirect-texture and ambient-color candidates are hardware-crossed.
-The bounded follow-up covers legal map IDs 0..7 for the exact observed IA8
-descriptor while retaining its real 32-byte backing and decoded LOD state.
-Maps 1..7 remain hardware-unvalidated. The new refusal size zero denotes no
-approved size; the original `0xB9400` constant applied only to RGB565.
+The bounded IA8 correction is hardware-accepted. The new matrix boundary
+requires 12 big-endian float32 coefficients from the actual 48-byte guest
+range, exact ID/type forwarding and preservation of the pinned frame contract.
+The coefficients are not captured or inferred. Adjacent coordinate, TEV and
+pixel-state calls remain forecasts until reached or explicitly audited for
+a bounded candidate. Matrix loading is the next observed contract to handle.
 
 ## Governance note
 

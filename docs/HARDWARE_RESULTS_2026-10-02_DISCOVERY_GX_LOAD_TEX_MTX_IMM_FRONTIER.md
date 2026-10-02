@@ -85,4 +85,7 @@ are identical to the baseline and are not independently fresh evidence.
 Static coverage remains 141 native, 10,494 translated and 314 missing among
 10,949 direct targets, with 837 runtime-seen and 20 runtime-seen missing.
 These counts do not predict remaining runtime blockers. Raw reports, hashes,
-analysis JSON and bundle remain local. Visual game pixels remain unverified.
+analysis JSON and bundle remain local. The user reports a black screen during
+this launch, so no recognizable game image is established. Successful presents
+and IA8-bind progression do not explain the whole visual failure, and this
+result does not attribute the black screen solely to the matrix frontier.

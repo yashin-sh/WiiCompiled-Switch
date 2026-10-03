@@ -68,16 +68,40 @@ the [official release manifest](https://github.com/rhysd/actionlint/releases/dow
 
 ## Validation and outstanding work
 
-Validation of the final audit candidate is in progress. Results and candidate
-identity will be recorded after the checks complete. Public synthetic NRO
-builds and nm assertions prove compilation/link retention; they do not run
-the NROs on Switch. Executable host contracts cover their stated argument and
-memory domains, not every resource/scheduler/audio/input behavior.
+The code candidate `b3484117f5923d72a04d860eecd702452157cdde` passed the final local gates:
 
-The separate private rendered build remains required. Its broad
-`--allow-multiple-definition` linker policy deserves an explicit symbol
-ownership audit; this review does not prove that every selected definition is
-the intended one. Exact-state HLE guards and large texture-descriptor tables
+- all 10 lint/quality steps and 28 executable build/verification steps from
+  the five workflow definitions; local setup substitutions are recorded in
+  `.deps/network-tests/audit-2026-10-03/validation.json`;
+- all eight executable host contracts under fatal ASan/UBSan, including six
+  GX contracts in both rendered modes and the memory/context boundaries;
+- all 21 build-script fixtures, plus current documentation-link checks;
+- the Nintendo-data-free AArch64 rendered HLE/Discovery syntax gate;
+- the complete private Rendered Discovery NRO build, with both intended flags
+  ON and the existing WiiCompiled/Dawn/Mesa pins preserved.
+
+The private build used the immutable local image
+`sha256:b79d1d41459f5596427bff78007bcd61a5b398ac0def8e623798335dc124712f`
+with network disabled. Its separate local artifact is
+`.deps/network-tests/audit-2026-10-03/WiiCompiled-Switch-audit-rendered-discovery.nro`,
+73,297,976 bytes, SHA-256
+`7ecbc8a9fe1efb31697c2ee36d0b0b648a8e87d3fa7dda1fb9d262d6de5b7d09`.
+The rendered ELF retains the three coordinate HLE bridges, their three native
+Aurora setters and the libnx exception handler as strong text symbols. Build
+metadata and logs are retained locally beside that artifact. The nine-file
+WiiCompiled integration patch and its modification times remain unchanged.
+
+No GitHub Actions run was started for this local candidate, and the audit NRO
+has not run on Switch. The previously sent coordinate NRO remains intact for
+its pending console reports. Public synthetic NRO builds and nm assertions
+prove compilation/link retention; they do not execute NROs on Switch.
+Executable host contracts cover their stated argument and memory domains,
+not every resource/scheduler/audio/input behavior.
+
+The private rendered link's broad `--allow-multiple-definition` policy still
+deserves an explicit symbol ownership audit; successful linking does not prove
+that every selected definition is the intended one. Exact-state HLE guards and
+large texture-descriptor tables
 are useful bring-up boundaries but need contract-based generalization before
 broader compatibility can be claimed.
 
@@ -92,8 +116,12 @@ hardening and targeted tests before its overflow path is accepted.
 
 The GCC return normalizer is scoped to the pinned emitter's output forms.
 Its regex transformation is not a general C++ parser: arbitrary string/lambda
-forms can be rewritten incorrectly. No corruption of the current generated
-shards was established. The headless incremental helper also keys its cache
+forms can be rewritten incorrectly. A read-only review of the 106 current
+generated C++ shards, including the
+72 targeted base_common files and 507 typed statefree returns, found no
+problematic active-body literal/lambda match or braced return left to rewrite.
+That current-input check does not establish safety for arbitrary future forms.
+The headless incremental helper also keys its cache
 on HEAD, so documentation-only commits can trigger a full rebuild; content-based
 cache identities remain an optimization task.
 

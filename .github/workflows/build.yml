@@ -37,6 +37,7 @@ jobs:
           bash scripts/test-gx-texture-load.sh
           bash scripts/test-gx-tex-mtx.sh
           bash scripts/test-gx-tex-coord-batch.sh
+          bash scripts/test-gx-tev-scalar-batch.sh
           bash scripts/test-memory-slice.sh
           bash scripts/test-host-context.sh
 

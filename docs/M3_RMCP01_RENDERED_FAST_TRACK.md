@@ -4,15 +4,15 @@ Tracking: #117, #162, #154, #4
 
 Status: **real RMCP01 FIFO/Aurora work and repeated GPU presents are
 hardware-proven; a recognizable Mario Kart Wii image remains unproven.**
-The latest accepted Discovery run crosses the eight Gen2/Scale/Bias coordinate
+The latest accepted audit run preserves the eight Gen2/Scale/Bias coordinate
 triples with Scale/Bias disabled and reaches GXSetTevDirect `0x80171B58`, stage 0. That
 unsupported call has not returned; the user observed a black screen.
 
 ## Current accepted frontier — 2026-10-03
 
-The [2026-10-03 coordinate-to-TEV result](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md)
-accepts, for every c=0..7, `Gen2(c,1,4,60,0,125)`, `Scale(c,0,0,0)` and
-`Bias(c,0,0)`. The later caller `0x80241380`, dispatch 605620, retains final
+The [2026-10-03 audit result](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md)
+preserves, for every c=0..7, `Gen2(c,1,4,60,0,125)`, `Scale(c,0,0,0)` and
+`Bias(c,0,0)`. The later caller `0x80241380`, dispatch 608374, retains final
 coordinate r3=7, r8=125, the restored stack and stage
 `RMCP01_GX_SET_TEX_COORD_BIAS`. Verified loop control flow and that later
 coherent state establish returns without 24 individual return records.
@@ -20,19 +20,19 @@ Enabled Scale/Bias branches and arbitrary Scale sizes remain host-tested only;
 the run does not independently establish every best-effort guest-mirror write.
 
 The new durable DIRECT blocker is GXSetTevDirect `0x80171B58`, stage ID 0,
-LR `0x80240F98`, dispatch 605633, 100.205 seconds after the first dispatch.
+LR `0x80240F98`, dispatch 608381, 107.925 seconds after the first dispatch.
 Arrival is observed; return and the remaining
 [TEV neighbors](GX_TEV_NEIGHBORS_2026-10-03.md) remain unproven. Scale-to-later-caller
-is +35 rather than the callback-free forecast +23; later-caller-to-frontier
-is +13 rather than +1. The deltas are compatible with VI callback polling,
+is +41 rather than the callback-free forecast +23; later-caller-to-frontier
+is +7 rather than +1. The deltas are compatible with VI callback polling,
 but first-hit tracing does not establish an exact callback count. The exit
 remains an intentional unsupported-call abort, not evidence of a timer.
 
-The snapshot at dispatch 605367 precedes this loop and records 1556 FIFO writes,
+The snapshot at dispatch 608109 precedes this loop and records 1556 FIFO writes,
 99 successful presents / 0 failures, valid FST and coherent scheduler identities.
 It does not independently measure the later native FIFO emissions or establish
-visible game content. Watchdog history has 94 ACTIVE samples and one one-second
-STALE interval, followed by ACTIVE at 95,808 ms and later progression.
+visible game content. Watchdog history has 101 ACTIVE samples and one one-second
+STALE interval at 31,615 ms, followed by ACTIVE at 34,134 ms and later progression.
 
 The accepted [coordinate candidate](GX_TEX_COORD_BATCH_2026-10-03.md) is code
 `91a4a01`, NRO `64ba8377...`, transferred with nxlink exit 0 at 2026-10-02
@@ -42,9 +42,19 @@ were checked. **The user confirmed a black screen.** The preceding
 [matrix-to-Scale result](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md)
 remains the dated baseline for the ten type-0 matrix loads, IDs 30,33,...,57.
 
-The separate [audit candidate](PORT_AUDIT_2026-10-03.md), code `b3484117`, NRO
-`7ecbc8a9...`, has passed its private build but has never run on Switch. The
-coordinate result does not validate those later runtime fixes on hardware.
+The [audit candidate](PORT_AUDIT_2026-10-03.md), code `b3484117`, NRO
+`7ecbc8a9...`, transferred with nxlink exit 0 at 2026-10-03 09:25:19 UTC.
+Retrieval at 09:32:30 UTC preserved 28 reports, 528,058 bytes, with 12 changed
+from the coordinate baseline and verified hashes/ZIP CRC. The user again
+confirmed a black screen. This accepts normal-path non-regression only:
+SIZE_MAX rejection, Present(false), teardown exceptions and shutdown recovery
+were not exercised by the console run.
+
+The next [bounded TEV scalar candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md)
+implements six per-stage setters on legal SDK domains, stages 0..15. Its
+validation gates, private build and fresh console progression remain pending.
+KColor guest-pointer handling is outside this lot; the current Direct stage-0
+entry still has no hardware return.
 
 The [validation policy](FAST_TRACK_VALIDATION_POLICY.md) permits bounded
 audited GX families with wrapper/Aurora, guard and required guest-mirror

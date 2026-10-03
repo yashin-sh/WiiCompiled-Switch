@@ -116,8 +116,12 @@ emissions or establish recognizable pixels. See the
 [bounded contract and validation record](GX_TEX_COORD_BATCH_2026-10-03.md).
 Older exact LOD/wrap, KD and audio crossings remain in dated hardware reports.
 They do not accept broader coordinate arguments or unreturned TEV calls.
-The separate [audit NRO](PORT_AUDIT_2026-10-03.md), `b3484117` / `7ecbc8a9...`,
-has compiled but has never launched; these reports do not validate its fixes.
+The subsequent [audit hardware run](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md),
+`b3484117` / `7ecbc8a9...`, preserves that normal path, reaching the same
+Direct stage-0 frontier at dispatch 608381. The user again saw black. That
+run establishes normal-path non-regression, with negative failure branches
+remaining host/static evidence. The [six-setter TEV batch](GX_TEV_SCALAR_BATCH_2026-10-03.md)
+is a separate candidate awaiting validation and a new console run.
 
 ## Important boundary lessons from hardware
 

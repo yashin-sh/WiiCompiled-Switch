@@ -158,8 +158,9 @@ here. The pointers are static expressions, not addresses observed in a
 hardware report. Finally it prepares four SwapModeTable calls:
 `(0,0,1,2,3)`, `(1,0,0,0,3)`, `(2,1,1,1,3)` and `(3,2,2,2,3)`.
 
-For a future reviewed batch, the seven scalar entries form one bounded group:
-the six per-stage calls plus SwapModeTable. Preserve the distinct stage,
+The selected bounded batch covers the six per-stage scalar entries.
+SwapModeTable follows the two pointer setters in the actual caller and stays
+outside this batch until that preceding boundary is established. Preserve the distinct stage,
 output-register and swap-selector guard rules and shared cache behavior. The
 two pointer entries need a separate guest-memory boundary review, ID-first
 ordering and independent synthetic RGBA cases. Their full legal ID sets are
@@ -172,6 +173,8 @@ already executes, or that adding the bridges will produce recognizable game
 images. The user confirmed a black screen. Snapshot 605367, before the
 coordinate loop, records 1556 FIFO writes and 99 successful presents / 0
 failures; it does not measure the later native work. The separate audit NRO
-`b3484117` / `7ecbc8a9...` has compiled but never run on hardware. No build,
-test, implementation, Nintendo-derived payload fixture or commit is produced
-by this audit.
+`b3484117` / `7ecbc8a9...` subsequently preserved this normal path on
+hardware; see [the audit report](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md).
+The six-setter implementation is now a [separate bounded candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md)
+with pending validation and a fresh hardware run. This neighbor audit itself provides static readiness evidence; the separate
+candidate record owns implementation, build, test and hardware claims.

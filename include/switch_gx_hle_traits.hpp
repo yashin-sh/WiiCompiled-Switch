@@ -25,6 +25,12 @@ extern "C" void mkw_switch_hle_gx_set_num_ind_stages(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_ind_tex_mtx(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_ind_tex_coord_scale(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_tev_stages(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_direct(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_color_in(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_color_op(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_alpha_in(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_alpha_op(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_swap_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_op(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_order(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_blend_mode(CpuContext* cpu) noexcept;
@@ -253,6 +259,74 @@ struct KnownNativeCpuCall<0x801722A8u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_num_tev_stages(cpu);
+    }
+};
+
+// Bounded TEV scalar batch. All six bridges preserve CpuContext and accept
+// stage IDs 0..15, independently of the active stage count. SDK-domain guards
+// are deliberately stricter than the pinned wrappers' unchecked enums;
+// unknown arguments emit a durable UNPROVEN_ARGS blocker before native GX.
+// Native Aurora owns the shared TEV caches and BP effects; these bridges do
+// not add guest mirrors, frame activation or work markers.
+// GXSetTevDirect: r3 stage.
+template <>
+struct KnownNativeCpuCall<0x80171B58u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_direct(cpu);
+    }
+};
+
+// GXSetTevColorIn: r3 stage, r4..r7 color inputs 0..15.
+template <>
+struct KnownNativeCpuCall<0x80171CE0u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_color_in(cpu);
+    }
+};
+
+// GXSetTevColorOp: r3 stage, r4 op {0,1,8..15}, r5 bias 0..2,
+// r6 scale 0..3, r7 clamp (any u32, nonzero is true), r8 output register 0..3.
+template <>
+struct KnownNativeCpuCall<0x80171D60u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_color_op(cpu);
+    }
+};
+
+// GXSetTevAlphaIn: r3 stage, r4..r7 alpha inputs 0..7.
+template <>
+struct KnownNativeCpuCall<0x80171D20u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_alpha_in(cpu);
+    }
+};
+
+// GXSetTevAlphaOp: r3 stage, r4 op {0,1,14,15}, r5 bias 0..2,
+// r6 scale 0..3, r7 clamp (any u32, nonzero is true), r8 output register 0..3.
+template <>
+struct KnownNativeCpuCall<0x80171DB8u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_alpha_op(cpu);
+    }
+};
+
+// GXSetTevSwapMode: r3 stage, r4 raster selector and r5 texture selector 0..3.
+template <>
+struct KnownNativeCpuCall<0x80171FD0u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_swap_mode(cpu);
     }
 };
 

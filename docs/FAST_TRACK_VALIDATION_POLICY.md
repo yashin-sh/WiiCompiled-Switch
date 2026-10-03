@@ -233,6 +233,13 @@ captured. The remaining TEV neighbors stay static forecasts; Direct stage 0
 arrival does not accept its return or stage IDs 1..15. No unknown/stateful call
 is skipped to suppress an exit.
 
+The subsequent [audit run](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md),
+`b3484117` / `7ecbc8a9...`, preserves this normal path and reaches Direct
+stage 0 at dispatch 608381, elapsed 107,925 ms. It establishes normal-path
+non-regression, while negative failure branches remain host/static evidence.
+The user again saw black. The [six-setter TEV candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md)
+must pass its recorded gates and fresh hardware proof before acceptance.
+
 The separate [audit candidate](PORT_AUDIT_2026-10-03.md), code `b3484117`,
 NRO `7ecbc8a9...`, passed local gates and its private build but has never run
 on Switch. Its runtime fixes require attributable hardware evidence of their own.

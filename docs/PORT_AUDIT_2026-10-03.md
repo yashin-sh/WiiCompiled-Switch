@@ -5,12 +5,12 @@
 The architecture and evidence-driven bring-up method are coherent, but this
 is an incomplete experimental port. Neither passing CI nor this audit proves
 bug-free code, full Wii compatibility, recognizable game pixels or playable
-performance. The [latest accepted hardware result](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md)
-for coordinate NRO `91a4a01` / `64ba8377…` crosses all eight Gen2/Scale/Bias
-triples with Scale/Bias disabled and reaches GXSetTevDirect `0x80171B58`, stage 0.
-Direct has not returned, other TEV neighbors remain static, and the user saw
-black output. These reports come from the earlier coordinate binary and do
-not validate the separate audit candidate described below.
+performance. The [latest audit hardware result](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md)
+for code `b3484117` / NRO `7ecbc8a9…` preserves the eight exact disabled
+coordinate triples and reaches the same GXSetTevDirect `0x80171B58`, stage 0.
+It accepts normal-path non-regression only. Direct has not returned, and the
+user again saw black output. SIZE_MAX, Present(false), teardown exceptions
+and shutdown recovery were not exercised by this console run.
 
 The audit reviewed all five workflow definitions, the 31 existing shell/Python
 scripts and the current documentation. Manual runtime review focused on memory,
@@ -36,7 +36,7 @@ proof of every translated game function or every native subsystem.
 | Build preparation | Already present pins/patches and identical probe source are reused; rendered preparation carries its intended mode instead of toggling OFF then ON and building an unrelated triangle probe. Cleanup and ambiguous output selection have explicit failure boundaries. |
 | CI | Main pushes were excluded; permissions, timeouts and concurrency were incomplete; action tags floated; PR checkout differed from the exact-HEAD policy. All five workflows now check the candidate HEAD, include main, use read-only tokens and immutable action revisions, and bound/cancel overlapping work. Actionlint's archive is checksum-verified before extraction. |
 | Formatting gate | Failure to resolve a diff base could become an empty-file PASS. The base is checked and the merge-base used before selecting candidate changes. |
-| Documentation | September snapshots/frontiers were presented as current. README, roadmap, index and current guides now distinguish the accepted coordinate-to-TEV run, the compiled but unrun audit candidate, audited batching and evidence limits. |
+| Documentation | September snapshots/frontiers were presented as current. README, roadmap, index and current guides now distinguish the accepted coordinate baseline, audit normal-path non-regression, pending TEV scalar batch and evidence limits. |
 
 The runtime fixes do not expand guest dispatch coverage or claim a new
 hardware crossing. The presentation-failure path has been attributed to the
@@ -95,9 +95,11 @@ Aurora setters and the libnx exception handler as strong text symbols. Build
 metadata and logs are retained locally beside that artifact. The nine-file
 WiiCompiled integration patch and its modification times remain unchanged.
 
-No GitHub Actions run was started for this local candidate, and the audit NRO
-has not run on Switch. The previously sent coordinate NRO remains intact;
-its retrieved reports accept only that earlier candidate's bounded loop.
+No GitHub Actions run was started for this local candidate. The audit NRO
+has now run on Switch: transfer exit 0 at 2026-10-03 09:25:19 UTC and fresh
+reports accept normal-path non-regression through the same TEV Direct frontier.
+The earlier coordinate result remains its baseline; it was not reused as
+proof that the audit binary ran.
 Public synthetic NRO builds and nm assertions
 prove compilation/link retention; they do not execute NROs on Switch.
 Executable host contracts cover their stated argument and memory domains,
@@ -142,9 +144,23 @@ loop: 1556 FIFO writes, 99 successful presents / 0 failures. Watchdog history
 has 94 ACTIVE samples and one recovered one-second STALE interval. These
 counters do not measure later native FIFO work or establish visible pixels.
 
-The next hardware step is the separate compiled audit NRO, followed by fresh
-attribution and comparison with this coordinate-to-TEV baseline. Then use the
-actual frontier to select a bounded candidate.
+Audit retrieval at 2026-10-03 09:32:30 UTC preserved 28 reports, 528,058
+bytes, with 12 changed from the coordinate baseline and verified hashes/ZIP
+CRC. Scale at 608333 and Bias at 608346 precede the restored caller at
+608374; Direct stage 0 then blocks at 608381, 107,925 ms. The +41/+7 deltas
+versus callback-free +23/+1 are compatible with VI polling, without an exact
+callback count. Snapshot 608109 precedes the loop and retains 1556 FIFO
+writes, 99 successful presents / 0 failures, valid FST and coherent guest
+identities. Watchdog history has 101 ACTIVE and one recovered STALE sample.
+The user confirmed black output. This accepts the audit binary's ordinary
+executed path; SIZE_MAX rejection, Present(false), teardown exceptions and
+shutdown/error-recovery paths remain unexercised on hardware.
+
+The next [TEV scalar candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md) covers
+six per-stage setters on legal SDK domains. It adds a new contract beyond the
+eight contracts recorded above for `b3484117`; its revision, gates, private
+build and console progression are pending. KColor guest-pointer handling
+stays outside the lot.
 Input mapping, audio output, remaining Wii services, pixel correctness and
 representative-scene profiling are still open. See the updated
 [`ARCHITECTURE.md`](ARCHITECTURE.md) and

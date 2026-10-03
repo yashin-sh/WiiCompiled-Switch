@@ -38,7 +38,8 @@
 
 ## Hardware evidence
 
-- [Latest accepted Discovery result](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md) — all eight coordinate triples return; TEV Direct stage-0 frontier, timing and confirmed black screen
+- [Latest accepted audit result](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md) — normal-path non-regression at TEV Direct stage 0; error-path limits and black screen
+- [Coordinate-to-TEV result](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md) — all eight coordinate triples return; TEV Direct stage-0 frontier, timing and confirmed black screen
 - [Matrix-to-Scale result](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md) — ten texture-matrix returns; preceding Scale frontier and freshness limits
 - [IA8 maps 0..7 result](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_LOAD_TEX_MTX_IMM_FRONTIER.md) — all eight exact texture bindings return before the matrix frontier
 
@@ -161,6 +162,7 @@
 
 ## Blocker notes
 
+- [Pending TEV scalar batch](GX_TEV_SCALAR_BATCH_2026-10-03.md) — six setters, legal SDK domains and required gates; no batch hardware acceptance yet
 - [Coordinate batch hardware scope](GX_TEX_COORD_BATCH_2026-10-03.md) — eight exact triples accepted; enabled branches remain host-only
 - [Coordinate neighbor audit](GX_TEX_COORD_NEIGHBORS_2026-10-02.md) — pinned wrapper/Aurora semantics and static caller
 - [TEV neighbor audit](GX_TEV_NEIGHBORS_2026-10-03.md) — pinned contracts and static look-ahead; Direct is now observed, with no TEV return accepted
@@ -182,12 +184,15 @@ Current accepted state as of 2026-10-03:
 - all eight Gen2(c,1,4,60,0,125), disabled Scale(c,0,0,0) and disabled
   Bias(c,0,0) triples are accepted for c=0..7; enabled branches remain host-only;
 - the durable frontier is TEV Direct `0x80171B58`, stage 0, LR `0x80240F98`,
-  dispatch 605633, 100.205 seconds from the first dispatch;
-- the user confirmed a black screen for coordinate NRO `64ba8377...`;
+  dispatch 608381, 107.925 seconds from the first dispatch;
+- the user confirmed black screens for coordinate NRO `64ba8377...` and
+  audit NRO `7ecbc8a9...`;
   no recognizable Mario Kart Wii image is proven;
-- separate audit NRO `7ecbc8a9...` has not been launched or hardware-accepted.
+- audit NRO `7ecbc8a9...` is accepted for normal-path non-regression only;
+  SIZE_MAX, Present(false), teardown/shutdown error paths were not exercised;
+- the six-setter TEV scalar candidate remains pending gates/build/console proof.
 
-See [the latest accepted hardware report](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md),
+See [the latest accepted hardware report](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md),
 [the coordinate candidate](GX_TEX_COORD_BATCH_2026-10-03.md), and
 [the static TEV audit](GX_TEV_NEIGHBORS_2026-10-03.md).
 

@@ -39,8 +39,12 @@ static. The user confirmed black output. The preceding snapshot at dispatch
 it does not measure later native emissions or prove recognizable pixels. See
 [the accepted result](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md)
 and [the coordinate record](GX_TEX_COORD_BATCH_2026-10-03.md).
-The separate [audit NRO](PORT_AUDIT_2026-10-03.md), `b3484117` / `7ecbc8a9...`,
-is compiled but has never launched on Switch.
+The subsequent [audit hardware run](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md),
+`b3484117` / `7ecbc8a9...`, preserves that normal path and reaches the same
+Direct stage-0 frontier at dispatch 608381. Its preceding snapshot remains
+1556 FIFO writes and 99 successful presents / 0 failures; the user again
+saw black. Negative failure branches remain host/static evidence. The
+[next six-setter TEV candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md) is being validated.
 
 ## Fallback — Deko3D native Aurora backend
 

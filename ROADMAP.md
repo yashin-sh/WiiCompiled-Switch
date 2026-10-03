@@ -2,7 +2,7 @@
 
 ## Current checkpoint — 2026-10-03
 
-- [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Console validation of this separate audit artifact remains pending.
+- [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
 
 - [x] Hardware-cross GXSetCoPlanar, GXSetClipMode, indirect texture matrix/scale and ambient channel color on the documented Discovery path.
 - [x] Hardware-cross the exact IA8 descriptor loads on maps 0..7.
@@ -12,10 +12,11 @@
 - [x] Retrieve fresh reports for NRO SHA-256 `64ba837720f4e37cbd127c37a0e9bde6dc146ed229a92c8697b9c531a8984d08`, transferred at 2026-10-02 23:09:38 UTC; the user confirms a black screen.
 - [x] Hardware-accept the eight Gen2(c,1,4,60,0,125) / disabled Scale(c,0,0,0) / disabled Bias(c,0,0) triples on coords 0..7 by return to caller `0x80241380` and a later distinct frontier.
 - [x] Record the new DIRECT frontier: GXSetTevDirect `0x80171B58`, stage 0, LR `0x80240F98`, dispatch 605633, 100.205 seconds from the first dispatch.
-- [ ] Launch and validate the separate audit NRO SHA-256 `7ecbc8a9fe1efb31697c2ee36d0b0b648a8e87d3fa7dda1fb9d262d6de5b7d09`; the coordinate result does not accept its runtime changes.
+- [x] Launch audit NRO SHA-256 `7ecbc8a9fe1efb31697c2ee36d0b0b648a8e87d3fa7dda1fb9d262d6de5b7d09`, transfer exit 0 at 2026-10-03 09:25:19 UTC, and accept normal-path non-regression through TEV Direct stage 0 at dispatch 608381 / 107.925 seconds. Error-path fixes remain outside this hardware acceptance.
+- [ ] Validate/build/run the six-setter [TEV scalar candidate](docs/GX_TEV_SCALAR_BATCH_2026-10-03.md) on stages 0..15 and capture progression beyond Direct; KColor pointer handling is outside the lot.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The latest accepted reports are the [coordinate-to-TEV result](docs/HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md). The [coordinate candidate record](docs/GX_TEX_COORD_BATCH_2026-10-03.md) scopes acceptance to the eight exact triples. Enabled Scale/Bias branches retain host contracts only. The preceding snapshot at dispatch 605367 records 1556 FIFO writes and 99 successful presents / 0 failures, before the matrix and coordinate loops. The returned caller and new frontier prove progress; the confirmed black screen still leaves recognizable pixels unproven.
+The latest accepted reports are the [audit non-regression result](docs/HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md), preserving the [coordinate-to-TEV baseline](docs/HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md). The eight exact disabled coordinate triples remain accepted; enabled branches retain host contracts only. Snapshot 608109 records 1556 FIFO writes and 99 successful presents / 0 failures before the matrix/coordinate loops. SIZE_MAX, Present(false), teardown/shutdown recovery and new TEV setters were not exercised. The user confirmed a black screen.
 
 The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
 

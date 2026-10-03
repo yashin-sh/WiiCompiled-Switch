@@ -137,6 +137,10 @@ Enabled Scale/Bias branches remain host-tested only. The user saw black;
 the 1556 FIFO writes and 99 successful presents / 0 failures at snapshot
 605367 precede the loop and do not prove later native emissions or game pixels.
 
-The [audit NRO](PORT_AUDIT_2026-10-03.md), code `b3484117` / `7ecbc8a9...`,
-has compiled but has never launched on hardware. Keep its future evidence
-separate from this accepted coordinate run.
+The subsequent [audit run](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md),
+code `b3484117` / `7ecbc8a9...`, has 28 verified retrieved reports, 528,058
+bytes and 12 changed files. It preserves the accepted normal path to Direct
+stage 0 at dispatch 608381, elapsed 107,925 ms; the user again saw black.
+This accepts normal-path non-regression, while the negative failure branches
+remain host/static evidence. The [six-setter TEV candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md)
+has separate pending validation and hardware requirements.

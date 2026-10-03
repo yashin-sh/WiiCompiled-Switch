@@ -76,12 +76,16 @@ pinned wrapper requires it. Frame activation and presentation are explicit
 contracts, not operations to add to every new setter by analogy.
 
 Hardware has established real FIFO work and repeated successful presents.
-The latest accepted coordinate run has crossed ten type-0 texture-matrix
+The latest accepted audit run preserves ten type-0 texture-matrix
 loads and all eight exact Gen2/disabled-Scale/disabled-Bias triples. It returns
 to `0x80241380` and stops at GXSetTevDirect, TEV stage 0. Enabled Scale/Bias
 branches retain host contracts only. The user confirmed a black screen.
-The separate audit NRO `7ecbc8a9...` has not been launched, so these reports
-do not validate that artifact's runtime changes. See
+The audit NRO `7ecbc8a9...` is accepted only for normal-path non-regression.
+SIZE_MAX rejection, Present(false), teardown exceptions and shutdown recovery
+were not exercised by this console run. The next six-setter TEV scalar
+candidate remains pending gates, private build and hardware progression.
+KColor guest-pointer handling stays outside that candidate. See
+[`HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md`](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md),
 [`HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md`](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md),
 [`FAST_TRACK_VALIDATION_POLICY.md`](FAST_TRACK_VALIDATION_POLICY.md) and
 [`GX_TEX_COORD_BATCH_2026-10-03.md`](GX_TEX_COORD_BATCH_2026-10-03.md).

@@ -167,8 +167,12 @@ five exact-code GitHub workflows and private Rendered Discovery build pass;
 its subsequent [console run](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md)
 accepts AlphaCompare returned on (7,0,0,7,0), through existing ZMode to Fog.
 Fog type 0, four f64 parameters and readable RGBA 255,255,255,255 are captured.
-Fog has not returned. The user confirms a black screen followed by an error;
-the exact on-screen wording is unavailable.
+That preceding run stopped before Fog returned; the user confirmed black output
+and an error. The [later Fog/ZCompLoc result](HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md)
+now accepts both new bridge returns and the existing pixel setup. Native init
+of a 4×4 depth texture passed; GXInitTexObjLOD rejects its valid format 22
+because the structural layout table lacks it. The current visual observation
+is pending, and recognizable game pixels remain unproven.
 
 
 ## Earlier console result — TEV colors crossed (2026-10-03)
@@ -182,7 +186,7 @@ time includes an unexplained watchdog sampling gap, so it is not a performance
 measurement. Prior dated results above retain their original scope.
 
 
-## Latest console result — AlphaCompare crossed (2026-10-03)
+## Earlier console result — AlphaCompare crossed (2026-10-03)
 
 The [fresh AlphaCompare hardware result](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md)
 establishes its observed tuple returned. Fog `0x801722CC` is the new DIRECT
@@ -191,3 +195,15 @@ and readable color captured. All 96 watchdog samples are ACTIVE. Preceding
 present counters do not prove visible pixels. The user confirms a black screen
 followed by an error; the exact on-screen wording is unavailable. Earlier dated
 sections retain their original scope.
+
+
+## Latest console result — Fog/ZCompLoc crossed (2026-10-03)
+
+The [fresh hardware result](HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md)
+establishes the admitted Fog call, ZCompLoc(1) and existing pixel setup returned.
+The next stop is GXInitTexObjLOD at `0x80170A4C`, dispatch 609384 / 109.572
+seconds. Native init passed for the 4×4 `GX_TF_Z24X8` object; the LOD layout
+validator lacks full format 22. Its forwarding and later drawing remain
+unproven. The later snapshot records 1558 guest FIFO writes and the same 99
+successful presents; those counters do not establish a visible frame. Current
+screen observation is pending. Earlier dated sections retain their scope.

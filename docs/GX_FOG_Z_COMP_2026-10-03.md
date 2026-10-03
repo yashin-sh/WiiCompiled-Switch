@@ -1,11 +1,13 @@
 # Bounded Fog and prepared ZCompLoc bridges (2026-10-03)
 
-The latest [accepted console run](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md)
+The preceding [accepted console run](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md)
 returned from AlphaCompare, then stopped at unsupported `GXSetFog`
 `0x801722CC`. The user confirmed a black screen followed by an error.
 This candidate implements that measured Fog call and prepares the next missing
-`GXSetZCompLoc` `0x80172858` from the checked caller. Neither new bridge has
-returned on the console yet. The preceding hardware result remains authoritative.
+`GXSetZCompLoc` `0x80172858` from the checked caller. The [later console run](HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md)
+now establishes both new bridges returned on the executed inputs and the
+following pixel setup; depth-texture LOD is the new boundary. Earlier hardware
+records retain their original scope.
 
 ## Fog scope and pinned semantics
 
@@ -55,18 +57,20 @@ It accepts all u32 inputs, changes no CPU/guest bytes and performs no lookup.
 Native Aurora updates only PE control bit 6, writes the PE register and sets
 `bpSent=1`.
 
-The checked local generated caller forecasts, after Fog:
+The checked local generated caller orders, after Fog:
 
 1. Existing translated `GXSetFogRangeAdj` `0x80172658`, arguments `(0,0,0)`.
    Its disabled branch does not dereference the table, emits BP `E8000156`,
    and writes its existing guest state. No replacement bridge is added.
-2. Prepared ZCompLoc `0x80172858`, r3 **1**.
+2. ZCompLoc `0x80172858`, r3 **1**.
 3. Existing DstAlpha bridge `0x8017295C`, arguments `(0,0)`.
 4. Return to the outer caller and its existing pixel-state setup: ColorUpdate,
    AlphaUpdate, Dither and DstAlpha.
 
-This is a static forecast, not a console observation or an exhaustive list of
-work before a first image. No new generated game code is published.
+Fresh console progression now accepts this executed continuation using first hits,
+checked caller flow and later coherent state. This is not a standalone return
+trace or an exhaustive list of work before a first image. No new generated
+game code is published.
 
 ## Contracts and build acceptance
 
@@ -125,6 +129,13 @@ The fresh private build at **19:00:14 UTC** performed no compilation and
 produced the exact same NRO digest as `c329b6d0`; the Switch sources and
 binary are unchanged by the host-test optimization.
 
-Console acceptance still requires an exact NRO transfer,
-fresh attributable reports and later coherent execution beyond these calls.
+## Console acceptance
+
+The exact NRO transferred with exit 0 at **19:20:07 UTC**. Fresh verified reports
+establish the observed Fog call and ZCompLoc(1) returned, through existing
+disabled FogRangeAdj and pixel setup. See the [hardware result](HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md)
+for attribution, context and limits. The next durable stop is
+`GX_INIT_TEX_OBJ_LOD_INVALID_DESCRIPTOR` at `0x80170A4C`, a 4×4 depth texture
+whose valid format 22 is missing from the structural validator. Its native
+init passed; LOD has not returned. Current visual observation is pending.
 Recognizable pixels and sustained playability remain unproven.

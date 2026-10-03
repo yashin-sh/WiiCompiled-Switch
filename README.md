@@ -32,43 +32,31 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest accepted Discovery reports were retrieved on 2026-10-03. They
-preserve the exact IA8 loads on maps 0..7, ten type-0 matrix loads, eight
-disabled coordinate triples, the sixteen-stage scalar loop and twelve TEV
-color/table calls. AlphaCompare now returns on `(7,0,0,7,0)`, followed by
-existing ZMode. Execution stops at **DIRECT GXSetFog (`0x801722CC`)**, type 0,
-color pointer `0x80398FD0`, LR `0x80240F9C`, dispatch 603961 and ZMode stage.
-The durable report records an intentional unsupported-call abort at 99.156
-seconds. Exact Fog parameter bits and RGBA 255,255,255,255 are captured.
-See the [latest hardware report](docs/HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md).
-The user confirms a black screen followed by an error for this run. The exact
-on-screen error wording is unavailable; recognizable game pixels remain unproven.
+The latest [accepted Discovery run](docs/HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md)
+returns from the captured Fog call, existing disabled FogRangeAdj,
+ZCompLoc(1) and the following pixel setup. It preserves the earlier IA8,
+matrix, coordinate, TEV and AlphaCompare progression. The next durable stop is
+**GXInitTexObjLOD (`0x80170A4C`)**, object `0x80384170`, dispatch 609384,
+at 109.572 seconds. Native init of its 4×4 `GX_TF_Z24X8` depth texture passed;
+the LOD structural validator lacks full format 22 and intentionally aborts.
+That guard still needs correction and contracts. The current on-screen
+observation is pending; recognizable game pixels remain unproven.
 
-The [next Fog/ZCompLoc candidate](docs/GX_FOG_Z_COMP_2026-10-03.md) implements
-the captured Fog tuple and prepares the following missing ZCompLoc call. Its
+The [Fog/ZCompLoc candidate](docs/GX_FOG_Z_COMP_2026-10-03.md) passed
 host/native contracts, rendered syntax, all five bridge-code workflows and
-private NRO build pass. All five workflows also pass with the host-test-only
-core-dump optimization; its NRO is byte-identical. It has not yet crossed
-Fog on hardware.
+the private NRO build. All five workflows also passed after the host-test-only
+core-dump optimization; its NRO is byte-identical. Nxlink transferred the
+validated NRO with exit 0 at **19:20:07 UTC** on 2026-10-03, and fresh reports
+now accept both new bridge returns on the executed inputs.
 
-The latest preceding durable heartbeat, at dispatch 603,545, records:
-
-```text
-RMCP01 FIFO writes    : 1556
-GXCopyDisp calls      : 99
-present successes     : 99
-present failures      : 0
-StaticR dispatches    : 3826
-FST structurally valid: YES
-renderer frame active: YES
-```
-
-That snapshot precedes the matrix, coordinate and TEV loops; these counters do not
-independently measure their native FIFO emissions or establish recognizable
-game pixels. Discovery records the first occurrence of each target. The eight
-triples are established by the executed caller path, coherent context and the
-later distinct frontier, rather than 24 individual return records. Extra
-dispatches are compatible with VI callbacks; their exact count was not traced.
+The preceding heartbeat at dispatch 608712 records 1556 guest FIFO writes,
+99 successful presents and zero failures. A later post-main snapshot at
+609104 records 1558 FIFO writes, including the existing FogRangeAdj command
+`E8000156`, and the same 99 presents. These counters do not establish a new
+visible frame or separately count native BP emissions. Discovery first hits,
+checked caller control flow and coherent later milestones establish returns;
+they do not trace every invocation. The watchdog has 98 ACTIVE and four
+isolated STALE samples, each followed by renewed progression.
 
 The [bounded coordinate candidate](docs/GX_TEX_COORD_BATCH_2026-10-03.md),
 code `91a4a01b8e316f9010e9d31754e279065772f9f3`, passed its local host/workflow

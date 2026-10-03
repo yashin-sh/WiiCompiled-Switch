@@ -27,19 +27,16 @@
 - [x] Implement the [bounded Fog/ZCompLoc candidate](docs/GX_FOG_Z_COMP_2026-10-03.md), including exact f64 guards, complete color range and full-word bool semantics; pass host/native contracts and rendered syntax.
 - [x] Pass all five exact-bridge-code workflows and the private Fog/ZCompLoc NRO build, with 31 symbols and unique scoped native providers.
 - [x] Validate the host-test-only core-dump optimization on all five workflows; preserve real SIGABRT and sanitizers, with byte-identical NRO. The observed host job is 10 min 39 sec versus 19 min 03 sec initially.
-- [ ] Establish fresh console progression beyond Fog and prepared ZCompLoc.
+- [x] Transfer Fog/ZCompLoc NRO `652afed4...` with exit 0 at 19:20:07 UTC; accept both observed returns and the existing pixel setup from fresh coherent reports.
+- [x] Capture the 4×4 `GX_TF_Z24X8` depth texture: native init passes, LOD rejects full format 22 at dispatch 609384 / 109.572 seconds.
+- [ ] Correct and contract-test the depth-texture LOD structural validation, then establish fresh console continuation.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The latest accepted reports are the [AlphaCompare-to-Fog result](docs/HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md). They establish AlphaCompare returned on the observed tuple and preserve the prior color/scalar/coordinate path. Fog is reached with captured f64 arguments and four readable color bytes, but has not returned. The preceding heartbeat at 603545 records 1556 guest FIFO writes, 99 successful presents and zero failures; it does not prove later native commands or pixels. All 96 watchdog samples are ACTIVE, with no long sampling gap. Alternate inputs and runtime negative branches retain host evidence only. The user confirms a black screen followed by an error; exact on-screen wording is unavailable.
+The latest accepted reports are the [Fog/ZCompLoc-to-depth-LOD result](docs/HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md). They establish both new bridge returns, the intervening disabled FogRangeAdj and existing pixel setup. The next stop is the structural validation of a 4×4 depth texture in GXInitTexObjLOD, not another unsupported Fog call. Its format 22 is a valid pinned `GX_TF_Z24X8` enum missing from our layout table. Native initialization passed; LOD forwarding and later depth drawing remain unproven.
 
-The checked caller forecasts existing translated `GXSetFogRangeAdj`
-(`0x80172658`, disabled arguments), then prepared `GXSetZCompLoc`
-(`0x80172858`, argument 1), then the existing `GXSetDstAlpha` bridge
-(`0x8017295C`, arguments 0,0). These successors have not been reached in the
-latest console run. They guide preparation, but do not establish a finite
-number of fixes before the first image. After passing the executed setup path,
-visible drawing, textures and GX state still need validation, followed by a
-sustained scene without an error, input/audio correctness and performance.
+The changed post-main snapshot after pixel setup records 1558 guest FIFO writes and the same preceding 99 successful presents / zero failures. No recognizable image follows from those counters. The watchdog records 98 ACTIVE and four recovered STALE samples; the current screen observation is pending. Alternate inputs and negative branches retain host evidence only.
+
+After correcting this observed validation boundary, later texture loading, drawing and GX state still need validation, followed by sustained execution without an error, input/audio correctness and performance. Static forecasts do not establish a finite number of fixes or an ETA before the first image.
 
 The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
 

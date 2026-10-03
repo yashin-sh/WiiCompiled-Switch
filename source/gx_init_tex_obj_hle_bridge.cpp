@@ -832,6 +832,7 @@ bool GetTexObjBlockLayout(
         blockType = 2u;
         return true;
     case 6u:
+    case 22u: // GX_TF_Z24X8: same 4x4, two-plane layout as RGBA8.
         shiftX = 2u;
         shiftY = 2u;
         blockType = 3u;

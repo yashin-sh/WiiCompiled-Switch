@@ -31,3 +31,6 @@ for rendered in 0 1; do
     (cd "$TEST_DIR" && ./"contract-$rendered")
     echo "PASS: GX texture load contract (rendered=$rendered)"
 done
+
+# LOD shares the real texture bridge and runs in every existing texture CI gate.
+bash "$ROOT_DIR/scripts/test-gx-depth-lod.sh"

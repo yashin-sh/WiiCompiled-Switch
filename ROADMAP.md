@@ -29,7 +29,9 @@
 - [x] Validate the host-test-only core-dump optimization on all five workflows; preserve real SIGABRT and sanitizers, with byte-identical NRO. The observed host job is 10 min 39 sec versus 19 min 03 sec initially.
 - [x] Transfer Fog/ZCompLoc NRO `652afed4...` with exit 0 at 19:20:07 UTC; accept both observed returns and the existing pixel setup from fresh coherent reports.
 - [x] Capture the 4×4 `GX_TF_Z24X8` depth texture: native init passes, LOD rejects full format 22 at dispatch 609384 / 109.572 seconds.
-- [ ] Correct and contract-test the depth-texture LOD structural validation, then establish fresh console continuation.
+- [x] Correct and locally contract-test the depth-texture LOD structural validation; see [the candidate](docs/GX_DEPTH_LOD_2026-10-03.md).
+- [ ] Pass exact-code remote workflows and the private depth-LOD NRO build.
+- [ ] Establish fresh console return from the observed depth-texture LOD and inspect the display-list continuation.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
 The latest accepted reports are the [Fog/ZCompLoc-to-depth-LOD result](docs/HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md). They establish both new bridge returns, the intervening disabled FogRangeAdj and existing pixel setup. The next stop is the structural validation of a 4×4 depth texture in GXInitTexObjLOD, not another unsupported Fog call. Its format 22 is a valid pinned `GX_TF_Z24X8` enum missing from our layout table. Native initialization passed; LOD forwarding and later depth drawing remain unproven.

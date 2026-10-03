@@ -2,6 +2,7 @@
 
 ## Architecture / runtime
 
+- [GX_DEPTH_LOD_2026-10-03.md](GX_DEPTH_LOD_2026-10-03.md) — fixes the missing full Z24X8 format in LOD validation; local contracts/native fixture pass, remote/build/console gates pending
 - [HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md](HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md) — latest accepted Fog/ZCompLoc and pixel-setup returns; native depth-texture init passes, LOD validation is the next stop; visual observation pending
 - [GX_FOG_Z_COMP_2026-10-03.md](GX_FOG_Z_COMP_2026-10-03.md) — bounded Fog/ZCompLoc, passing host/native contracts, workflows and private build; observed console returns accepted
 - [HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md) — preceding accepted AlphaCompare return and captured Fog arguments; user-confirmed black screen and error at exit

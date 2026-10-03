@@ -39,7 +39,9 @@ matrix, coordinate, TEV and AlphaCompare progression. The next durable stop is
 **GXInitTexObjLOD (`0x80170A4C`)**, object `0x80384170`, dispatch 609384,
 at 109.572 seconds. Native init of its 4×4 `GX_TF_Z24X8` depth texture passed;
 the LOD structural validator lacks full format 22 and intentionally aborts.
-That guard still needs correction and contracts. The current on-screen
+The [depth-LOD candidate](docs/GX_DEPTH_LOD_2026-10-03.md) corrects this format
+entry with passing local contracts; its remote/private-build gates and
+console return remain pending. The current on-screen
 observation is pending; recognizable game pixels remain unproven.
 
 The [Fog/ZCompLoc candidate](docs/GX_FOG_Z_COMP_2026-10-03.md) passed

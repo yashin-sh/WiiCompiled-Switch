@@ -12,6 +12,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <string>
+#include <sys/prctl.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -125,6 +126,9 @@ void ExpectAbort(CpuContext cpu, const char* reason, std::uint32_t size) {
     const auto child = fork();
     assert(child >= 0);
     if (child == 0) {
+        // Linux core-pipe handlers can ignore RLIMIT_CORE; retain real SIGABRT
+        // without sending expected-refusal children to the system core collector.
+        assert(prctl(PR_SET_DUMPABLE, 0) == 0);
         close(descriptors[0]);
         reportPipe = descriptors[1];
         expectedReason = reason;

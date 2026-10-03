@@ -67,9 +67,25 @@ load contract now uses the same mechanism; Linux core-pipe handlers can ignore
 its existing RLIMIT_CORE=0. No sanitizer is disabled.
 
 Local texture/LOD contracts, native fixture, four mutation rejections, rendered
-AArch64 syntax, C++ formatting and script lint pass. Remote exact-code CI and
-the private NRO build are pending. No Switch run of this correction is accepted
-yet; the preceding hardware result remains the current runtime frontier.
+AArch64 syntax, C++ formatting and script lint pass. The private Rendered
+Discovery build of code `b5f0a2b0d50266e7538f76cd3438306c3a6293e9` passed at
+**2026-10-03 19:49:29 UTC**. Only the corrected bridge, final ELF link and NRO
+packaging ran (three build tasks, about 30 seconds including configuration).
+The 73,396,280-byte NRO has SHA-256
+`596ba38a52d588b61eb1edff241d3b6969c8a2c459e70d849a3236f3ed02551a`.
+All **35 required strong text symbols** are retained. A fresh scan of 225
+explicit host inputs, 19 Rust archives and seven named image libraries found
+one Aurora GXTexture.o provider each for GXInitTexObj and GXInitTexObjLOD;
+the bridge defines its own entry points and references those native functions.
+This scoped check does not prove whole-link duplicate ownership. Dependency
+pins, the user's integration patch bytes/nine mtimes and the preceding Fog NRO
+are preserved. All **five workflows / six jobs** pass on exact code
+`b5f0a2b0d50266e7538f76cd3438306c3a6293e9`. Actual CI logs confirm the old
+texture-load modes, all four depth-LOD configurations/counts and the pinned
+native fixture. No Switch run of this correction is accepted yet: the first
+nxlink attempt at 20:05:21 UTC could not connect to `192.168.1.194` (exit 1),
+after unanswered UDP discovery and ICMP probes. No transfer or console return
+is claimed; the preceding hardware result remains the runtime frontier.
 
 ## Checked continuation and limits
 
@@ -78,7 +94,10 @@ constructor that prepares GX display lists. Static inspection identifies
 `GXBeginDisplayList` `0x80172E00`, followed later by `GXEndDisplayList`
 `0x80172EB4`; these lack local KnownNative bridges. They are candidates for a
 later observed boundary, not evidence of console arrival or return. Their
-stateful recording effects require their own audit. No generated game code is
+stateful recording effects require their own audit: pinned Aurora redirects
+FIFO writes to a bounded caller buffer, optionally saves/restores GX shadow
+state and returns the 32-byte-rounded written length. A no-op would lose
+those effects. No generated game code is
 published, and no display-list behavior is bypassed here.
 
 Recognizable pixels, depth texture upload/decoding, sustained scenes,

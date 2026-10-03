@@ -40,8 +40,8 @@ matrix, coordinate, TEV and AlphaCompare progression. The next durable stop is
 at 109.572 seconds. Native init of its 4×4 `GX_TF_Z24X8` depth texture passed;
 the LOD structural validator lacks full format 22 and intentionally aborts.
 The [depth-LOD candidate](docs/GX_DEPTH_LOD_2026-10-03.md) corrects this format
-entry with passing local contracts; its remote/private-build gates and
-console return remain pending. The current on-screen
+entry with passing local contracts, all five workflows and private NRO build.
+Its first transfer attempt could not connect; console return remains pending. The current on-screen
 observation is pending; recognizable game pixels remain unproven.
 
 The [Fog/ZCompLoc candidate](docs/GX_FOG_Z_COMP_2026-10-03.md) passed

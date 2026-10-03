@@ -30,7 +30,7 @@
 - [x] Transfer Fog/ZCompLoc NRO `652afed4...` with exit 0 at 19:20:07 UTC; accept both observed returns and the existing pixel setup from fresh coherent reports.
 - [x] Capture the 4×4 `GX_TF_Z24X8` depth texture: native init passes, LOD rejects full format 22 at dispatch 609384 / 109.572 seconds.
 - [x] Correct and locally contract-test the depth-texture LOD structural validation; see [the candidate](docs/GX_DEPTH_LOD_2026-10-03.md).
-- [ ] Pass exact-code remote workflows and the private depth-LOD NRO build.
+- [x] Pass all five workflows / six jobs on depth-LOD code `b5f0a2b0`, with actual new contract/native-fixture logs; build NRO `596ba38a...` with 35 strong symbols and unique scoped native Init/LOD providers.
 - [ ] Establish fresh console return from the observed depth-texture LOD and inspect the display-list continuation.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 

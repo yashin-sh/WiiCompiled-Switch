@@ -41,8 +41,9 @@ dispatch 609010 / 108.440 seconds,
 with a 32-byte-aligned buffer `0x80394F00` and 16 KiB capacity. Its stateful
 FIFO recording and GX context effects are the next hardware boundary.
 A [coordinated Begin/End candidate](docs/GX_DISPLAY_LIST_2026-10-03.md) now
-implements bounded mixed native/guest recording and context restoration;
-its console return remains unaccepted.
+implements bounded mixed native/guest recording and context restoration. Its
+335 rendered cases / 30 diagnosed refusals, five exact-code GitHub workflows /
+six jobs and private NRO build pass; its console return remains unaccepted.
 The user confirms **a black screen followed by an error**; recognizable game
 pixels remain unproven.
 

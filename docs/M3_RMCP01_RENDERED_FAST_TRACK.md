@@ -4,33 +4,47 @@ Tracking: #117, #162, #154, #4
 
 Status: **real RMCP01 FIFO/Aurora work and repeated GPU presents are
 hardware-proven; a recognizable Mario Kart Wii image remains unproven.**
-The latest accepted Discovery frontier is Scale `0x80171180`, after ten
-type-0 texture-matrix returns and Gen2 coord 0. The coordinate candidate
-has been built and transferred; its new reports and screen observation are
-pending.
+The latest accepted Discovery run crosses the eight Gen2/Scale/Bias coordinate
+triples with Scale/Bias disabled and reaches GXSetTevDirect `0x80171B58`, stage 0. That
+unsupported call has not returned; the user observed a black screen.
 
 ## Current accepted frontier — 2026-10-03
 
-The [2026-10-02 matrix-to-Scale result](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md)
-records the exact IA8 map loads 0..7, then ten matrix calls with IDs
-30,33,...,57, type 0, followed by return from Gen2 coord 0. Its durable
-DIRECT blocker is GXSetTexCoordScaleManually `0x80171180`, `(0,0,0,0)`,
-LR `0x80241334`, dispatch 605350, 99.513 seconds after the first dispatch.
-This is an intentional unsupported-call abort, not evidence of a 60-second
-termination timer.
+The [2026-10-03 coordinate-to-TEV result](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md)
+accepts, for every c=0..7, `Gen2(c,1,4,60,0,125)`, `Scale(c,0,0,0)` and
+`Bias(c,0,0)`. The later caller `0x80241380`, dispatch 605620, retains final
+coordinate r3=7, r8=125, the restored stack and stage
+`RMCP01_GX_SET_TEX_COORD_BIAS`. Verified loop control flow and that later
+coherent state establish returns without 24 individual return records.
+Enabled Scale/Bias branches and arbitrary Scale sizes remain host-tested only;
+the run does not independently establish every best-effort guest-mirror write.
 
-The preceding snapshot at dispatch 605265 records 1556 FIFO writes, 99
-successful presents / 0 failures, valid FST and coherent scheduler identities.
-It precedes the matrix calls and does not independently measure their native
-FIFO emissions or establish visible game content.
+The new durable DIRECT blocker is GXSetTevDirect `0x80171B58`, stage ID 0,
+LR `0x80240F98`, dispatch 605633, 100.205 seconds after the first dispatch.
+Arrival is observed; return and the remaining
+[TEV neighbors](GX_TEV_NEIGHBORS_2026-10-03.md) remain unproven. Scale-to-later-caller
+is +35 rather than the callback-free forecast +23; later-caller-to-frontier
+is +13 rather than +1. The deltas are compatible with VI callback polling,
+but first-hit tracing does not establish an exact callback count. The exit
+remains an intentional unsupported-call abort, not evidence of a timer.
 
-The [coordinate candidate](GX_TEX_COORD_BATCH_2026-10-03.md), code `91a4a01`,
-passed local host/workflow checks and the private Rendered Discovery build.
-Its NRO `64ba8377...` transferred with nxlink exit 0 at 2026-10-02
-23:09:38 UTC. **No new reports or screen observation have been retrieved.**
-Scale/Bias and Gen2 coords 1..7 remain pending hardware acceptance. The
-anticipated `0x80241380` / GXSetTevDirect path is a
-[static TEV forecast](GX_TEV_NEIGHBORS_2026-10-03.md).
+The snapshot at dispatch 605367 precedes this loop and records 1556 FIFO writes,
+99 successful presents / 0 failures, valid FST and coherent scheduler identities.
+It does not independently measure the later native FIFO emissions or establish
+visible game content. Watchdog history has 94 ACTIVE samples and one one-second
+STALE interval, followed by ACTIVE at 95,808 ms and later progression.
+
+The accepted [coordinate candidate](GX_TEX_COORD_BATCH_2026-10-03.md) is code
+`91a4a01`, NRO `64ba8377...`, transferred with nxlink exit 0 at 2026-10-02
+23:09:38 UTC. Retrieval at 2026-10-03 09:03:40 UTC preserved 28 reports,
+526,932 bytes, with 12 changed from the matrix baseline; hashes and ZIP CRC
+were checked. **The user confirmed a black screen.** The preceding
+[matrix-to-Scale result](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md)
+remains the dated baseline for the ten type-0 matrix loads, IDs 30,33,...,57.
+
+The separate [audit candidate](PORT_AUDIT_2026-10-03.md), code `b3484117`, NRO
+`7ecbc8a9...`, has passed its private build but has never run on Switch. The
+coordinate result does not validate those later runtime fixes on hardware.
 
 The [validation policy](FAST_TRACK_VALIDATION_POLICY.md) permits bounded
 audited GX families with wrapper/Aurora, guard and required guest-mirror
@@ -86,8 +100,8 @@ KD / audio path
 ```
 
 These earlier branches can still affect scheduler-dependent progression.
-The current checkpoint and pending candidate are recorded above; static
-forecasts and host validation must remain distinct from hardware acceptance.
+The current checkpoint and separate unrun audit candidate are recorded above;
+static forecasts and host validation must remain distinct from hardware acceptance.
 
 ## Purpose
 

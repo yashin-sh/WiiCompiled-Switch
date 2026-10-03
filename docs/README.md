@@ -38,7 +38,8 @@
 
 ## Hardware evidence
 
-- [Latest accepted Discovery result](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md) — ten texture-matrix returns; Scale frontier, timing and freshness limits
+- [Latest accepted Discovery result](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md) — all eight coordinate triples return; TEV Direct stage-0 frontier, timing and confirmed black screen
+- [Matrix-to-Scale result](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md) — ten texture-matrix returns; preceding Scale frontier and freshness limits
 - [IA8 maps 0..7 result](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_LOAD_TEX_MTX_IMM_FRONTIER.md) — all eight exact texture bindings return before the matrix frontier
 
 - [HARDWARE_RESULTS_2026-09-09.md](HARDWARE_RESULTS_2026-09-09.md) — first recorded hardware evidence
@@ -160,9 +161,9 @@
 
 ## Blocker notes
 
-- [Coordinate batch awaiting hardware reports](GX_TEX_COORD_BATCH_2026-10-03.md) — bounded guards, guest mirrors, contracts, exact build and transfer
+- [Coordinate batch hardware scope](GX_TEX_COORD_BATCH_2026-10-03.md) — eight exact triples accepted; enabled branches remain host-only
 - [Coordinate neighbor audit](GX_TEX_COORD_NEIGHBORS_2026-10-02.md) — pinned wrapper/Aurora semantics and static caller
-- [TEV neighbor audit](GX_TEV_NEIGHBORS_2026-10-03.md) — static look-ahead, no TEV implementation or hardware crossing
+- [TEV neighbor audit](GX_TEV_NEIGHBORS_2026-10-03.md) — pinned contracts and static look-ahead; Direct is now observed, with no TEV return accepted
 
 - [fast-track-blockers/](fast-track-blockers/) — blocker-specific mapping, pinned semantics and fix notes
 
@@ -177,15 +178,16 @@ Current accepted state as of 2026-10-03:
 - the latest accepted pre-matrix snapshot records 1556 FIFO writes and 99
   successful presents / 0 failures; it does not measure later matrix emissions;
 - the exact IA8 descriptor loads on maps 0..7 and ten type-0 texture-matrix
-  calls are crossed, followed by return from Gen2 coord 0;
-- the durable frontier is Scale `0x80171180`, `(0,0,0,0)`, dispatch 605350,
-  99.513 seconds from the first dispatch;
-- coordinate code candidate `91a4a01` and NRO `64ba8377...` passed local
-  validation/build and nxlink transfer; fresh reports and screen observation
-  are pending, so Scale/Bias and Gen2 coords 1..7 are not hardware-accepted;
-- no recognizable Mario Kart Wii image is proven.
+  calls remain crossed;
+- all eight Gen2(c,1,4,60,0,125), disabled Scale(c,0,0,0) and disabled
+  Bias(c,0,0) triples are accepted for c=0..7; enabled branches remain host-only;
+- the durable frontier is TEV Direct `0x80171B58`, stage 0, LR `0x80240F98`,
+  dispatch 605633, 100.205 seconds from the first dispatch;
+- the user confirmed a black screen for coordinate NRO `64ba8377...`;
+  no recognizable Mario Kart Wii image is proven;
+- separate audit NRO `7ecbc8a9...` has not been launched or hardware-accepted.
 
-See [the latest accepted hardware report](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md),
+See [the latest accepted hardware report](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md),
 [the coordinate candidate](GX_TEX_COORD_BATCH_2026-10-03.md), and
 [the static TEV audit](GX_TEV_NEIGHBORS_2026-10-03.md).
 

@@ -30,11 +30,17 @@ Minimum progression:
 8. measure CPU frame overhead, memory use and presentation stability on Tegra X1.
 
 The direct-Vulkan clear/triangle probes, Dawn clear/present, Dawn WGSL triangle, Aurora GX triangle and pinned `HleFifoWrite` synthetic FIFO path have now all passed on hardware. The FIFO run remained active for 1,435 frames and exited cleanly. That graphics chain is established for local RMCP01 FIFO work and GPU presents.
-The latest accepted Discovery frontier is Scale `0x80171180`, after ten
-texture-matrix returns. The coordinate NRO has been transferred but its new
-reports and screen observation are pending. See
-[the accepted result](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md)
-and [the candidate record](GX_TEX_COORD_BATCH_2026-10-03.md).
+The latest accepted Discovery run crosses all eight
+`Gen2(c,1,4,60,0,125)`, `Scale(c,0,0,0)` and `Bias(c,0,0)` triples for c=0..7,
+then reaches GXSetTevDirect `0x80171B58`, stage 0, without return. Enabled
+Scale/Bias branches remain host-tested only, and other TEV neighbors remain
+static. The user confirmed black output. The preceding snapshot at dispatch
+605367 records 1556 FIFO writes and 99 successful presents / 0 failures;
+it does not measure later native emissions or prove recognizable pixels. See
+[the accepted result](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md)
+and [the coordinate record](GX_TEX_COORD_BATCH_2026-10-03.md).
+The separate [audit NRO](PORT_AUDIT_2026-10-03.md), `b3484117` / `7ecbc8a9...`,
+is compiled but has never launched on Switch.
 
 ## Fallback — Deko3D native Aurora backend
 

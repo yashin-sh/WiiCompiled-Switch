@@ -188,42 +188,54 @@ If a new run:
 ## Current frontier
 
 The latest attributable real-Switch evidence is recorded in
-`HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md`:
+[HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md):
 
 - GXSetCoPlanar, GXSetClipMode, GXSetIndTexMtx, GXSetIndTexCoordScale and
   GXSetChanAmbColor are hardware-crossed;
 - the exact IA8 descriptor loads on maps 0..7 remain crossed;
-- GXLoadTexMtxImm is hardware-accepted for the ten observed type-0 loop
-  loads, ids 30,33,...57, followed by return from Gen2 coord 0;
-- the new DIRECT blocker is GXSetTexCoordScaleManually (`0x80171180`),
-  with r3..r6=0, LR `0x80241334`, stage `RMCP01_GX_SET_TEX_COORD_GEN2`;
-- its newly instrumented elapsed time is 99,513 ms after the first dispatch,
-  and the action remains abort after durable blocker record;
-- the preceding durable snapshot is at dispatch 605265, before matrix setup,
+- GXLoadTexMtxImm remains accepted for the ten type-0 loop loads, IDs
+  30,33,...57, as recorded in the dated matrix baseline;
+- all eight `Gen2(c,1,4,60,0,125)`, `Scale(c,0,0,0)` and `Bias(c,0,0)` triples
+  are accepted for c=0..7;
+- restored caller `0x80241380`, dispatch 605620, captures r3=7, r8=125 and
+  stage `RMCP01_GX_SET_TEX_COORD_BIAS`; coherent state and verified loop
+  control flow support repeated returns without logging every call;
+- the new DIRECT blocker is GXSetTevDirect (`0x80171B58`), stage ID 0,
+  LR `0x80240F98`, stage `RMCP01_GX_SET_NUM_TEV_STAGES`, dispatch 605633;
+- elapsed time is 100,205 ms after the first dispatch, and the action
+  remains abort after durable blocker record; Direct has arrived, not returned;
+- the preceding durable snapshot is at dispatch 605367, before the loop,
   with 99 successful presents, no present failures, valid FST and coherent
   guest scheduler identities;
 - pinned WiiCompiled remains `a135beb201042b20f390c6695ca6b26768820fb4`;
-- matrix returns are proven by executed control flow, a distinct later
-  frontier and +10 dispatch delta, not ten individually captured log hits;
-- the earlier FIFO/present counters do not independently measure the new
-  matrix writes or prove recognizable pixels. This launch's screen
-  observation is pending; the preceding run showed black.
+- Scale-to-later-caller is +35 versus the callback-free forecast +23, and
+  later-caller-to-frontier is +13 versus +1. These deltas are compatible with
+  VI callback polling, without establishing an exact callback count;
+- the earlier FIFO/present counters do not independently measure later
+  native writes or prove recognizable pixels. The user saw a black screen;
+- watchdog history records 94 ACTIVE samples and one one-second STALE interval,
+  then ACTIVE at 95,808 ms and later progression, rather than a persistent stall.
 
 The scalar batch covers GXSetClipMode, GXSetDither and GXSetDstAlpha. The
 latter two remain unreached. The indirect, ambient, bounded IA8 and current
-matrix candidates are hardware-accepted within their documented scopes.
+matrix and disabled coordinate candidates are hardware-accepted within their
+documented scopes.
 The coordinate neighbors are audited in
 [GX_TEX_COORD_NEIGHBORS_2026-10-02.md](GX_TEX_COORD_NEIGHBORS_2026-10-02.md).
 The [bounded coordinate candidate](GX_TEX_COORD_BATCH_2026-10-03.md), code
 `91a4a01`, passed local host/workflow checks and its private Rendered Discovery
 build. NRO `64ba8377...` transferred with nxlink exit 0 at 2026-10-02
-23:09:38 UTC. Fresh reports and a screen observation for it are pending:
-Scale is observed at the prior blocker; Bias and Gen2 coords 1..7 have no
-hardware acceptance yet. Enabled Scale/Bias branches have host contracts
-only. The next TEV caller/frontier is a static forecast, not a runtime result. Native
-forwarding alone would omit Scale/Bias guest state mirrors. Adjacent TEV and
-pixel-state calls remain forecasts until reached or explicitly audited for
-a bounded candidate. No unknown/stateful call is skipped to suppress an exit.
+23:09:38 UTC. Retrieval on October 3 produced 28 reports, 526,932 bytes, with
+12 changed files and verified hashes/ZIP CRC. Enabled Scale/Bias branches
+and arbitrary sizes still have host contracts only. Native return does not
+establish every best-effort guest-mirror write completed; no GXData dump was
+captured. The remaining TEV neighbors stay static forecasts; Direct stage 0
+arrival does not accept its return or stage IDs 1..15. No unknown/stateful call
+is skipped to suppress an exit.
+
+The separate [audit candidate](PORT_AUDIT_2026-10-03.md), code `b3484117`,
+NRO `7ecbc8a9...`, passed local gates and its private build but has never run
+on Switch. Its runtime fixes require attributable hardware evidence of their own.
 
 ## Governance note
 

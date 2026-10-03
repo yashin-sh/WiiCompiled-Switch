@@ -62,8 +62,9 @@ That path is now hardware-validated far beyond metadata inspection:
   hardware-proven;
 - real RMCP01 FIFO work reaches Aurora/Dawn/NVK;
 - repeated `GXCopyDisp` / successful presents are hardware-proven;
-- the latest accepted Discovery path reaches texture-matrix setup and stops
-  at GXSetTexCoordScaleManually; older texture/KD/audio branches remain
+- the latest accepted Discovery path crosses texture-matrix setup and all
+  eight disabled coordinate triples, then stops at GXSetTevDirect stage 0;
+  older texture/KD/audio branches remain
   recorded in dated reports.
 
 The translated-product seam itself is therefore no longer an active blocker. Current work is post-main runtime/game initialization and first-frame preparation.
@@ -87,28 +88,36 @@ GXCopyDisp / GPU present                   ✅ hardware validated
   ↓
 exact IA8 loads on maps 0..7                ✅ hardware crossed
   ↓
-ten type-0 texture matrices + Gen2 coord 0 ✅ hardware crossed
+ten type-0 texture matrices                ✅ hardware crossed
   ↓
-GXSetTexCoordScaleManually 0x80171180       🟡 observed DIRECT frontier
+Gen2/disabled Scale/Bias triples, c0..7     ✅ hardware crossed
   ↓
-bounded Gen2/Scale/Bias coords 0..7         🟡 candidate transferred; reports pending
+GXSetTevDirect 0x80171B58, stage 0          🟡 arrived; not returned
   ↓
 recognizable Mario Kart Wii image          ❌ not proven
 ```
 
 As of 2026-10-03, the latest accepted
-[Discovery result](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md)
-stops at Scale `(0,0,0,0)`, dispatch 605350, 99.513 seconds from the first
-translated dispatch. The preceding snapshot records 1556 FIFO writes and
-99 successful presents / 0 failures; it precedes the matrix setup and does
-not prove those later emissions or recognizable pixels.
+[Discovery result](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md)
+accepts `Gen2(c,1,4,60,0,125)`, `Scale(c,0,0,0)` and `Bias(c,0,0)` for c=0..7.
+Restored caller `0x80241380` at dispatch 605620 retains final coordinate 7
+and the Bias stage; verified control flow and the later DIRECT frontier
+establish the loop returns. GXSetTevDirect stage 0 is observed at dispatch
+605633, LR `0x80240F98`, 100.205 seconds from the first translated dispatch,
+but has not returned. The other TEV neighbors remain static forecasts.
+Enabled Scale/Bias branches and arbitrary Scale sizes remain host-tested only.
 
-Coordinate code candidate `91a4a01`, NRO `64ba8377...`, passed local
-validation/build and transferred with nxlink exit 0 at 2026-10-02
-23:09:38 UTC. Fresh reports and a screen observation are pending; see its
+Coordinate code candidate `91a4a01`, NRO `64ba8377...`, transferred with nxlink
+exit 0 at 2026-10-02 23:09:38 UTC. Its 28 reports, 526,932 bytes, include
+12 changed files retrieved on October 3; the user confirmed a black screen.
+The snapshot at dispatch 605367 records 1556 FIFO writes and 99 successful
+presents / 0 failures before the loop. It does not measure those later native
+emissions or establish recognizable pixels. See the
 [bounded contract and validation record](GX_TEX_COORD_BATCH_2026-10-03.md).
 Older exact LOD/wrap, KD and audio crossings remain in dated hardware reports.
-They do not make the unobserved coordinate or TEV paths hardware-accepted.
+They do not accept broader coordinate arguments or unreturned TEV calls.
+The separate [audit NRO](PORT_AUDIT_2026-10-03.md), `b3484117` / `7ecbc8a9...`,
+has compiled but has never launched; these reports do not validate its fixes.
 
 ## Important boundary lessons from hardware
 
@@ -207,14 +216,14 @@ Only Nintendo-data-free runtime/platform code, documentation and synthetic probe
 
 ## Next boundary
 
-The translated-product link seam is crossed. The next action is to retrieve
-fresh diagnostics and a screen observation for the transferred coordinate
-candidate, then compare them with the last accepted matrix-to-Scale baseline.
+The translated-product link seam and bounded disabled coordinate loop are
+crossed. The next hardware action is the separate compiled audit candidate,
+with fresh attribution and comparison against the coordinate-to-TEV baseline.
 
 1. bind the copied reports to the exact candidate/NRO and retain their hashes;
 2. inspect a new blocker or exception before diagnosing a timing/scheduler issue;
 3. if no blocker appears, classify ACTIVE versus STALE watchdog history;
-4. require a later distinct dispatch and verified caller/control flow to
-   accept the coordinate loop; first hits alone do not prove returns;
+4. preserve the accepted coordinate-loop scope and require later progression
+   before accepting a TEV return; arrival at stage 0 alone is insufficient;
 5. retain the headless control target and the hardware-driven FST/DVD/input/audio
    scopes; do not extend unrelated behavior from a static forecast.

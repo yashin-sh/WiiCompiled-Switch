@@ -32,16 +32,16 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest accepted Discovery reports were retrieved on 2026-10-02. They
-prove the exact IA8 texture loads on maps 0..7, then ten type-0
-`GXLoadTexMtxImm (0x80173234)` calls with IDs 30,33,...,57 and the return of
-Gen2 coord 0. Execution stops at the next **DIRECT
-GXSetTexCoordScaleManually (`0x80171180`)**, with `(coord,enable,S,T)=(0,0,0,0)`.
-The durable blocker records 605,350 dispatches and 99.513 seconds from the
+The latest accepted Discovery reports were retrieved on 2026-10-03. They
+establish return from all eight coordinate triples: Gen2(c,1,4,60,0,125),
+Scale(c,0,0,0) and Bias(c,0,0), c=0..7. The exact IA8 loads on maps 0..7
+and ten type-0 matrix loads remain crossed. Execution now stops at **DIRECT
+GXSetTevDirect (`0x80171B58`), TEV stage 0**, with LR `0x80240F98`.
+The durable blocker records 605,633 dispatches and 100.205 seconds from the
 first translated dispatch, followed by an intentional unsupported-call abort.
-See the [accepted hardware report](docs/HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md).
+See the [accepted hardware report](docs/HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md).
 
-The preceding durable graphics snapshot, at dispatch 605,265, records:
+The preceding durable graphics snapshot, at dispatch 605,367, records:
 
 ```text
 RMCP01 FIFO writes    : 1556
@@ -53,21 +53,27 @@ FST structurally valid: YES
 renderer frame active: YES
 ```
 
-That snapshot precedes the matrix calls; these counters do not independently
-measure their native FIFO emissions or establish recognizable game pixels.
-Discovery records the first occurrence of each target. The ten matrix returns
-are established by the executed caller path, a later distinct frontier and
-the dispatch delta, rather than ten separate matrix log lines.
+That snapshot precedes the matrix and coordinate loops; these counters do not
+independently measure their native FIFO emissions or establish recognizable
+game pixels. Discovery records the first occurrence of each target. The eight
+triples are established by the executed caller path, coherent context and the
+later distinct frontier, rather than 24 individual return records. Extra
+dispatches are compatible with VI callbacks; their exact count was not traced.
 
 The [bounded coordinate candidate](docs/GX_TEX_COORD_BATCH_2026-10-03.md),
 code `91a4a01b8e316f9010e9d31754e279065772f9f3`, passed its local host/workflow
 checks and private Rendered Discovery build. Its 73,297,976-byte NRO has
 SHA-256 `64ba837720f4e37cbd127c37a0e9bde6dc146ed229a92c8697b9c531a8984d08`.
 Nxlink transferred it with exit 0 at 2026-10-02 23:09:38 UTC (01:09:38 on
-October 3, Europe/Paris). **Fresh reports and a screen observation for that
-candidate are pending.** Transfer success does not accept Scale/Bias or
-Gen2 coords 1..7 on hardware. The anticipated TEV caller remains a static
-forecast until the new reports identify the actual frontier.
+October 3, Europe/Paris). Fresh reports now accept the eight exact triples;
+enabled Scale/Bias branches still have host contracts only. The user confirmed
+a black screen for this run. GXSetTevDirect is observed but has not returned;
+the later TEV calls remain static forecasts.
+
+The separate audit NRO has SHA-256
+`7ecbc8a9fe1efb31697c2ee36d0b0b648a8e87d3fa7dda1fb9d262d6de5b7d09`.
+It has not been launched; the coordinate result does not validate its runtime
+changes on hardware. See [the audit record](docs/PORT_AUDIT_2026-10-03.md).
 
 The method now permits bounded GX batches after auditing the pinned wrapper,
 Aurora effects, argument guards and relevant guest-memory mirrors. Every
@@ -75,8 +81,7 @@ member still requires its own progression proof; unknown/stateful calls
 remain hard stops. Older texture-object, KD and audio results are dated
 historical evidence, and different scheduler paths can expose different gates.
 A visually correct Mario Kart Wii image is still unproven. The preceding
-IA8 run was observed black; the later matrix and coordinate launches have no
-new visual confirmation.
+IA8 run and this coordinate run were observed black.
 
 The complete blocker-by-blocker history and current checklist live in
 [`ROADMAP.md`](ROADMAP.md). Hardware evidence is recorded in dated files under
@@ -253,8 +258,8 @@ playability are not yet proven.
 
 Start with:
 
-- [Latest accepted Discovery frontier](docs/HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md) — ten texture-matrix returns, Scale blocker and measured termination time;
-- [Coordinate candidate awaiting hardware reports](docs/GX_TEX_COORD_BATCH_2026-10-03.md) — scope, host/private-build validation, exact NRO and completed transfer;
+- [Latest accepted Discovery frontier](docs/HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md) — eight coordinate triples returned, TEV Direct stage-0 blocker and confirmed black screen;
+- [Accepted coordinate batch](docs/GX_TEX_COORD_BATCH_2026-10-03.md) — eight exact triples, host/private-build validation, exact NRO and enabled-branch limits;
 - [`ROADMAP.md`](ROADMAP.md) — authoritative current milestone/frontier checklist;
 - [`docs/FAST_TRACK_VALIDATION_POLICY.md`](docs/FAST_TRACK_VALIDATION_POLICY.md) — required validation ladder, strict hardware-cross definition, invariant checklist, and private rendered-build gate;
 - [`docs/M2_RUNTIME_BOOTSTRAP.md`](docs/M2_RUNTIME_BOOTSTRAP.md) — current runtime/bootstrap architecture and hardware method;

@@ -7,14 +7,15 @@
 - [x] Hardware-cross GXSetCoPlanar, GXSetClipMode, indirect texture matrix/scale and ambient channel color on the documented Discovery path.
 - [x] Hardware-cross the exact IA8 descriptor loads on maps 0..7.
 - [x] Hardware-cross the ten type-0 GXLoadTexMtxImm loop calls (IDs 30,33,...,57), followed by return from Gen2 coord 0.
-- [x] Capture the next DIRECT frontier: GXSetTexCoordScaleManually `0x80171180`, `(0,0,0,0)`, dispatch 605350, 99.513 seconds from the first dispatch.
+- [x] Capture the preceding DIRECT frontier: GXSetTexCoordScaleManually `0x80171180`, `(0,0,0,0)`, dispatch 605350, 99.513 seconds from the first dispatch.
 - [x] Build and locally validate bounded coordinate candidate `91a4a01b8e316f9010e9d31754e279065772f9f3`; transfer its exact Rendered Discovery NRO with nxlink exit 0.
-- [ ] Retrieve fresh reports and a screen observation for NRO SHA-256 `64ba837720f4e37cbd127c37a0e9bde6dc146ed229a92c8697b9c531a8984d08`, transferred at 2026-10-02 23:09:38 UTC.
-- [ ] Hardware-accept the eight Gen2/Scale/Bias triples on coords 0..7 by a later distinct dispatch and executed control-flow evidence.
-- [ ] Record the actual next frontier; `0x80241380` / GXSetTevDirect `0x80171B58` is currently only a static forecast.
+- [x] Retrieve fresh reports for NRO SHA-256 `64ba837720f4e37cbd127c37a0e9bde6dc146ed229a92c8697b9c531a8984d08`, transferred at 2026-10-02 23:09:38 UTC; the user confirms a black screen.
+- [x] Hardware-accept the eight Gen2(c,1,4,60,0,125) / disabled Scale(c,0,0,0) / disabled Bias(c,0,0) triples on coords 0..7 by return to caller `0x80241380` and a later distinct frontier.
+- [x] Record the new DIRECT frontier: GXSetTevDirect `0x80171B58`, stage 0, LR `0x80240F98`, dispatch 605633, 100.205 seconds from the first dispatch.
+- [ ] Launch and validate the separate audit NRO SHA-256 `7ecbc8a9fe1efb31697c2ee36d0b0b648a8e87d3fa7dda1fb9d262d6de5b7d09`; the coordinate result does not accept its runtime changes.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The latest accepted reports are the [matrix-to-Scale result](docs/HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md). The [coordinate candidate record](docs/GX_TEX_COORD_BATCH_2026-10-03.md) separates completed local validation and transfer from pending hardware acceptance. Its enabled Scale/Bias branches have host contracts, not hardware proof. The preceding snapshot records 1556 FIFO writes and 99 successful presents / 0 failures, before the matrix calls.
+The latest accepted reports are the [coordinate-to-TEV result](docs/HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md). The [coordinate candidate record](docs/GX_TEX_COORD_BATCH_2026-10-03.md) scopes acceptance to the eight exact triples. Enabled Scale/Bias branches retain host contracts only. The preceding snapshot at dispatch 605367 records 1556 FIFO writes and 99 successful presents / 0 failures, before the matrix and coordinate loops. The returned caller and new frontier prove progress; the confirmed black screen still leaves recognizable pixels unproven.
 
 The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
 

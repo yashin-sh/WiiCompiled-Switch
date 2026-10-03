@@ -70,8 +70,13 @@ new increment. VI polling can add callback dispatches before that record.
 
 A later distinct caller/frontier, coherent captured state and verified loop
 control flow can establish repeated returns without logging every iteration.
-This is the method used to accept ten texture-matrix returns in the
-[latest accepted report](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md).
+This method accepted ten texture-matrix returns in the
+[dated matrix baseline](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md)
+and the eight disabled coordinate triples in the
+[latest accepted report](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md).
+The latter has +35 Scale-to-later-caller dispatches rather than the callback-free
+forecast +23, then +13 to the TEV frontier rather than +1. VI polling is
+compatible with these deltas; first-hit records do not count every callback.
 Scope and limits are defined in the
 [validation policy](FAST_TRACK_VALIDATION_POLICY.md).
 
@@ -121,7 +126,17 @@ against the previous run and use the attributable blocker/trace cohort.
 See [log bundle guidance](FAST_TRACK_LOG_BUNDLES.md). Static missing-target
 counts are coverage gaps, not a count of future hardware blockers.
 
-The [coordinate candidate](GX_TEX_COORD_BATCH_2026-10-03.md) has completed
-local validation, a private build and transfer, but has no retrieved new
-hardware reports or screen observation. Its anticipated TEV path remains
-analysis until those reports establish progression.
+The [coordinate candidate](GX_TEX_COORD_BATCH_2026-10-03.md), code `91a4a01` /
+NRO `64ba8377...`, now has 28 retrieved reports totaling 526,932 bytes, with
+12 changed from the preceding run. They establish all eight
+`Gen2(c,1,4,60,0,125)`, `Scale(c,0,0,0)` and `Bias(c,0,0)` triples for c=0..7.
+The restored caller `0x80241380` at dispatch 605620 and the later durable
+GXSetTevDirect `0x80171B58` frontier at 605633 support that bounded acceptance.
+Arrival at Direct stage 0 is observed; its return and other TEV neighbors remain unproven.
+Enabled Scale/Bias branches remain host-tested only. The user saw black;
+the 1556 FIFO writes and 99 successful presents / 0 failures at snapshot
+605367 precede the loop and do not prove later native emissions or game pixels.
+
+The [audit NRO](PORT_AUDIT_2026-10-03.md), code `b3484117` / `7ecbc8a9...`,
+has compiled but has never launched on hardware. Keep its future evidence
+separate from this accepted coordinate run.

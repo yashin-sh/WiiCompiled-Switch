@@ -1,11 +1,13 @@
 # TEV neighbors: static contract audit (2026-10-03)
 
 This audit prepares nine entries called by `func_80241380`. It adds no HLE
-implementation and records no new hardware validation. The latest retrieved
-run is still stopped at **GXSetTexCoordScaleManually (`0x80171180`)**, dispatch
-605350, after 99513 host milliseconds. Its coverage report marks all nine TEV
-entries and `0x80241380` as `runtime_seen=false`. The forecasts below must not
-be described as calls already reached or returned on the Switch.
+implementation. The [latest retrieved coordinate run](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md)
+now reaches `0x80241380` at dispatch 605620, after all eight Gen2/Scale/Bias
+triples with Scale/Bias disabled return. It stops at **GXSetTevDirect (`0x80171B58`),
+stage 0**, dispatch 605633, after 100205 host milliseconds, LR `0x80240F98`.
+That arrival is observed; Direct has not returned. The other eight audited
+entries and the rest of the stage loop remain static forecasts. The earlier
+matrix-to-Scale reports remain historical evidence, not the current frontier.
 
 The runtime and bundled Aurora pin is
 `a135beb201042b20f390c6695ca6b26768820fb4`. Sources inspected:
@@ -19,7 +21,9 @@ The runtime and bundled Aurora pin is
 - Local generated `local-product/generated/functions/func_80241380.cpp`,
   lines 27-240, for caller order and argument forecasts only.
 - `.deps/network-tests/gx-load-tex-mtx-imm/runs/20261002T174349Z/` for the
-  historical hardware frontier and coverage; those reports remain local.
+  historical matrix-to-Scale frontier and coverage, and
+  `.deps/network-tests/gx-tex-coord-batch/runs/20261003T090340Z/` for the current
+  coordinate-to-Direct arrival; those reports remain local.
 
 ## Entry contracts
 
@@ -134,7 +138,8 @@ build; relying on Aurora assertions would change that boundary.
 The local generated caller sets the number of TEV stages to 1, then still
 initializes **all stage IDs 0..15**. An implementation must not reject stages
 above the current active count or assume only stage 0 is used. For each
-stage `s`, the static argument sequence is:
+stage `s`, the static argument sequence is below. Only Direct stage 0 has an
+arrival record; none of this loop is accepted as returned:
 
 | Call | Forecast tuple in native argument order |
 | --- | --- |
@@ -160,9 +165,13 @@ two pointer entries need a separate guest-memory boundary review, ID-first
 ordering and independent synthetic RGBA cases. Their full legal ID sets are
 0..3, not an active-count restriction or a single forecast ID.
 
-This audit is readiness work. The current hardware frontier must first be
-crossed and new reports attributed to the actual candidate. Static call
-order does not establish that any of these nine entries will be the next
-blocker, that its whole loop already executes, or that adding the bridges
-will produce recognizable game images. No build, test, implementation,
-Nintendo-derived payload fixture or commit is produced by this audit.
+This audit remains readiness work. Direct stage 0 is now the actual frontier,
+but needs an attributable later return before acceptance. Static call order
+does not establish which other entry will block next, that its whole loop
+already executes, or that adding the bridges will produce recognizable game
+images. The user confirmed a black screen. Snapshot 605367, before the
+coordinate loop, records 1556 FIFO writes and 99 successful presents / 0
+failures; it does not measure the later native work. The separate audit NRO
+`b3484117` / `7ecbc8a9...` has compiled but never run on hardware. No build,
+test, implementation, Nintendo-derived payload fixture or commit is produced
+by this audit.

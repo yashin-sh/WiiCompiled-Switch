@@ -217,6 +217,8 @@ std::uint8_t* HostPointer(std::uint32_t pointer) {
 static_assert(sizeof(std::size_t) == 8u);
 extern "C" std::uint8_t* __real__ZN6Memory10GetPointerEjm(std::uint32_t, std::size_t);
 extern "C" std::uint8_t* __wrap__ZN6Memory10GetPointerEjm(std::uint32_t pointer, std::size_t length) {
+    if (reportPipe >= 0 && reportCalls != 0u)
+        _exit(93); // A refusal cannot perform a lookup after its report either.
     CheckCpuAndStage();
     assert(expectedOperation != Operation::SwapTable);
     assert(pointer == expectedCpu.gpr[4] && length == 4u);

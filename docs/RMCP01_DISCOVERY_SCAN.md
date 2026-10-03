@@ -155,3 +155,8 @@ The user saw black and an error at exit. Snapshot 604804 precedes the loop;
 its 1556 FIFO writes / 99 successful presents / 0 failures do not prove
 later native emissions or pixels. KColor bytes and later setters remain
 unproven, and alternate scalar arguments retain host evidence only.
+
+The separate [TEV color/table candidate](GX_TEV_COLOR_BATCH_2026-10-03.md)
+now passes all five GitHub workflows and its exact private build (code
+`1333b0e2`, NRO `a56be881...`). KColor and adjacent Color/SwapModeTable are
+implemented with bounded memory/enum guards; fresh console return remains pending.

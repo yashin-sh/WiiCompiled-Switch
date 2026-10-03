@@ -51,7 +51,11 @@ KColor ID 0, pointer `0x80398FCC`, dispatch 605056 / 98.265 seconds. The
 user saw black and an error at exit. Its changed snapshot 604804 precedes
 the loop, retaining 1556 FIFO writes and 99 successful presents / 0 failures;
 it does not measure later native emissions or prove pixels. Alternate TEV
-inputs retain host contracts, and KColor pointer handling remains a hard stop.
+inputs retain host contracts, and KColor is the latest accepted arrival boundary.
+The separate [TEV color/table candidate](GX_TEV_COLOR_BATCH_2026-10-03.md)
+now passes all five GitHub workflows and its exact private build (code
+`1333b0e2`, NRO `a56be881...`). KColor and adjacent Color/SwapModeTable are
+implemented with bounded memory/enum guards; fresh console return remains pending.
 
 ## Fallback — Deko3D native Aurora backend
 

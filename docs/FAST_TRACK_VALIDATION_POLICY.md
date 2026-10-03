@@ -245,7 +245,11 @@ loop control flow, coherent state and the later KColor frontier at 605056.
 This is 96 new calls plus 16 existing Order calls, not individual return
 tracing or hardware proof of alternate inputs. The user reported black output
 and an error at exit. KColor ID 0 / pointer `0x80398FCC` is arrived at, not
-returned; unknown RGBA bytes and guest-pointer handling remain a hard stop.
+returned; the actual RGBA bytes remain unknown.
+The separate [TEV color/table candidate](GX_TEV_COLOR_BATCH_2026-10-03.md)
+now passes all five GitHub workflows and its exact private build (code
+`1333b0e2`, NRO `a56be881...`). KColor and adjacent Color/SwapModeTable are
+implemented with bounded memory/enum guards; fresh console return remains pending.
 
 The separate [audit candidate](PORT_AUDIT_2026-10-03.md), code `b3484117`,
 NRO `7ecbc8a9...`, passed local gates, its private build and the attributable

@@ -232,10 +232,15 @@ Only Nintendo-data-free runtime/platform code, documentation and synthetic probe
 ## Next boundary
 
 The translated-product link seam, bounded disabled coordinate loop and
-default six-setter TEV loop are crossed. The next implementation boundary is
-KColor ID 0 / guest pointer `0x80398FCC`, requiring ID-before-memory guards,
-a complete readable four-byte range, exact RGBA copying and native forwarding.
-Color and SwapModeTable remain static later forecasts.
+default six-setter TEV loop are crossed. KColor ID 0 / pointer `0x80398FCC`
+is the latest accepted arrival boundary.
+The separate [TEV color/table candidate](GX_TEV_COLOR_BATCH_2026-10-03.md)
+now passes all five GitHub workflows and its exact private build (code
+`1333b0e2`, NRO `a56be881...`). KColor and adjacent Color/SwapModeTable are
+implemented with bounded memory/enum guards; fresh console return remains pending.
+The next console test must establish later coherent progression beyond the
+twelve color/table calls before accepting their return. Actual RGBA bytes
+and recognizable game pixels remain unproven.
 
 1. bind the copied reports to the exact candidate/NRO and retain their hashes;
 2. inspect a new blocker or exception before diagnosing a timing/scheduler issue;

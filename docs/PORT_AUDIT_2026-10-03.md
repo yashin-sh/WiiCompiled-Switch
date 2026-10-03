@@ -163,7 +163,11 @@ all five GitHub workflows on integrated code `e76e8f38`, private build and
 returns from six setters on default tuples across stages 0..15, then stops at
 KColor ID 0, pointer `0x80398FCC`, dispatch 605056 / 98.265 seconds. The
 user reported black output and an error at exit. Alternate scalar arguments
-retain host contracts only; KColor guest-pointer handling remains a hard stop.
+retain host contracts only; KColor is the latest accepted arrival boundary.
+The separate [TEV color/table candidate](GX_TEV_COLOR_BATCH_2026-10-03.md)
+now passes all five GitHub workflows and its exact private build (code
+`1333b0e2`, NRO `a56be881...`). KColor and adjacent Color/SwapModeTable are
+implemented with bounded memory/enum guards; fresh console return remains pending.
 Input mapping, audio output, remaining Wii services, pixel correctness and
 representative-scene profiling are still open. See the updated
 [`ARCHITECTURE.md`](ARCHITECTURE.md) and

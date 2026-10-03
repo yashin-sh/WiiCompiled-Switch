@@ -27,6 +27,11 @@ not measure later native commands or prove pixels. The user reported black
 output and an error at exit. Alternate scalar inputs and enabled coordinate
 branches remain host-only; KColor bytes and return are unproven.
 
+The separate [TEV color/table candidate](GX_TEV_COLOR_BATCH_2026-10-03.md)
+now passes all five GitHub workflows and its exact private build (code
+`1333b0e2`, NRO `a56be881...`). KColor and adjacent Color/SwapModeTable are
+implemented with bounded memory/enum guards; fresh console return remains pending.
+
 ## Earlier coordinate and audit baselines
 
 The [2026-10-03 audit result](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md)

@@ -88,7 +88,9 @@ contracts only. The user saw a black screen and an error at the end. The
 following KColor guest-pointer boundary stays outside this accepted lot.
 The next [TEV color/table candidate](docs/GX_TEV_COLOR_BATCH_2026-10-03.md)
 implements KColor plus the audited adjacent Color and SwapModeTable setters.
-Its host contracts pass; remaining validation and console return are pending.
+All five GitHub workflows, its ten host contracts, rendered syntax gate and
+exact private build pass on code `1333b0e2`. NRO `a56be881...` is ready;
+console return remains pending.
 
 The method now permits bounded GX batches after auditing the pinned wrapper,
 Aurora effects, argument guards and relevant guest-memory mirrors. Every

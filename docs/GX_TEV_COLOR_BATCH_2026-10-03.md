@@ -82,7 +82,9 @@ Each mode passes 9,504 valid calls and 132 diagnosed SIGABRT refusals:
 A native attempt in a refusal child exits with a distinct status to avoid
 mistaking a native assertion for the expected abort. The tests do not establish
 native BP decoding, full guest alias allocation, GPU pixels or console execution.
-Existing memory contracts retain alias/range implementation coverage.
+Existing memory contracts retain alias/range implementation coverage. Three
+local mutation checks reject lookup-before-ID, reversed RGBA and CPU mutation
+after reporting; only temporary source copies were changed.
 
 `build-switch` runs this tenth host contract. `fast-track-startup` retains the
 three direct traits/bridges with a link-only synthetic probe and checks all
@@ -109,10 +111,37 @@ Neither the exact dispatch delta nor a future image is assumed.
 
 - [x] Actual rendered/headless host contracts with sanitizers.
 - [x] AArch64 rendered syntax gate, all current bridges and Discovery diagnostics.
-- [ ] Exact candidate lint, synthetic link and all five workflows.
-- [ ] Private Rendered Discovery build, unchanged pins/patch and native provider check.
+- [x] Exact candidate lint, synthetic link and all five GitHub workflows.
+- [x] Private Rendered Discovery build, unchanged pins/patch and native provider check.
 - [ ] Successful exact-NRO transfer and fresh attributable console reports.
 - [ ] Later coherent progression establishes each executed member's return.
+
+Integrated candidate `1333b0e2c5b6695a2d8512ee1080041792308718` passed
+all five GitHub workflows and both build jobs, including all ten host contracts.
+The remote logs independently confirm the new contract counts in both modes.
+The private Rendered Discovery build completed with exit 0 at
+2026-10-03 12:49:28 UTC (14:49:28 Europe/Paris), after 27 minutes 44 seconds,
+with Rendered/Discovery ON, three jobs, network disabled and immutable image
+`sha256:b79d1d41459f5596427bff78007bcd61a5b398ac0def8e623798335dc124712f`.
+
+NRO: 73,343,032 bytes, SHA-256
+`a56be88113ff7c2cc20808111cf7d6c0e947b0c8955b2252737b974b28a9e0ad`.
+The ELF has all 25 checked strong text symbols, including the three new
+bridges and three actual Aurora setters. All tracked source hashes stayed
+unchanged during compilation; WiiCompiled/Dawn/Mesa pins and the existing
+WiiCompiled patch bytes/modification times were preserved. Previous coordinate,
+audit and scalar TEV NROs remain intact. The NRO, full logs and validation
+metadata remain local under `.deps/network-tests/gx-tev-color-batch/`.
+
+A fresh post-build provider scan checked 222 actual host link inputs, nineteen
+Rust archives and seven named libraries inside the same immutable image.
+Each new object defines its bridge and references the expected native symbol;
+none defines a replacement GX native name. Each native name has exactly one
+expected provider in Aurora `libm3_aurora_gx.a:GXTev.o`. The current graph differs
+from the previous accepted scalar graph only by these three object inputs.
+This covers those three names, not every symbol under the private link's broad
+allow-multiple-definition option, nor BP decoding/pixels. Detailed source,
+object, graph and artifact hashes remain local.
 
 The latest accepted frontier remains KColor arrival. This new batch is a
 candidate; no pointer-setter return or recognizable game image is accepted yet.

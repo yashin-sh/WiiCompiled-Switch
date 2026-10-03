@@ -17,7 +17,8 @@
 - [x] Pass all five GitHub workflows on integrated code `e76e8f38`; transfer NRO `cc88a78c...` with exit 0 and hardware-accept the six TEV setters on default tuples across stages 0..15 (96 new calls plus 16 existing Order calls).
 - [x] Capture the [KColor frontier](docs/HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md): ID 0, pointer `0x80398FCC`, dispatch 605056 / 98.265 seconds; user reports black screen and error at exit.
 - [x] Implement the [bounded TEV color/table candidate](docs/GX_TEV_COLOR_BATCH_2026-10-03.md): KColor and adjacent Color/SwapModeTable, with ID-before-memory guards and passing executable host contracts.
-- [ ] Complete exact-candidate workflow/private-build gates and establish fresh console return beyond the twelve color/table calls.
+- [x] Pass all five GitHub workflows and the exact private Rendered Discovery build for color/table code `1333b0e2`, NRO SHA-256 `a56be88113ff7c2cc20808111cf7d6c0e947b0c8955b2252737b974b28a9e0ad`, with 25 retained symbols and the three unique Aurora providers checked.
+- [ ] Transfer the color/table NRO and establish fresh console return beyond the twelve calls.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
 The latest accepted reports are the [TEV-to-KColor result](docs/HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md), preserving the coordinate path and audit normal-path scope. Six TEV setters return on default tuples across stages 0..15; alternate tuples and enabled coordinate branches remain host-only. Snapshot 604804 records 1556 FIFO writes and 99 successful presents / 0 failures before the matrix/coordinate/TEV loops. It does not prove later native emissions or pixels. SIZE_MAX, Present(false) and teardown/shutdown recovery remain unexercised on hardware. The user reported black output and an error at exit.

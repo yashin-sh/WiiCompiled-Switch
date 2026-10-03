@@ -83,7 +83,12 @@ frontier is KColor ID 0, guest pointer `0x80398FCC`, dispatch 605056.
 Enabled Scale/Bias and alternate TEV inputs retain host contracts only.
 The user reported black output and an error at exit. KColor pointer handling
 remains a hard stop. SIZE_MAX rejection, Present(false), teardown exceptions
-and shutdown recovery were not exercised on hardware. See
+and shutdown recovery were not exercised on hardware.
+The separate [TEV color/table candidate](GX_TEV_COLOR_BATCH_2026-10-03.md)
+now passes all five GitHub workflows and its exact private build (code
+`1333b0e2`, NRO `a56be881...`). KColor and adjacent Color/SwapModeTable are
+implemented with bounded memory/enum guards; fresh console return remains pending.
+See
 [`HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md`](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md),
 [`HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md`](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md),
 [`HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md`](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md),

@@ -316,6 +316,12 @@ int main() {
     primitiveCpu.gpr[5] = 1;
     g_hleGxState.vtxDesc[GX_VA_POS] = GX_INDEX16;
     Refusal([&] { mkw_switch_gx_record_begin(&primitiveCpu); }, "GX_DISPLAY_LIST_INDEXED_VERTEX");
+    g_hleGxState.vtxDesc[GX_VA_POS] = GX_DIRECT;
+    g_hleGxState.vtxDesc[GX_VA_PNMTXIDX] = GX_DIRECT;
+    Refusal([&] { mkw_switch_gx_record_begin(&primitiveCpu); }, "GX_DISPLAY_LIST_MATRIX_INDEX");
+    g_hleGxState.vtxDesc[GX_VA_PNMTXIDX] = GX_NONE;
+    g_hleGxState.vtxDesc[GX_VA_TEX0] = GX_DIRECT;
+    mkw_switch_gx_record_begin(&primitiveCpu);
     activeCpu = &c;
     End(c);
     ++cases;

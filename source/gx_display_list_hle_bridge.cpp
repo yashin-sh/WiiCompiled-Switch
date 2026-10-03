@@ -34,6 +34,21 @@ namespace {
         if (cpu) {
             std::fprintf(out, "r3=0x%08x\nr4=0x%08x\n", cpu->gpr[3], cpu->gpr[4]);
         }
+#if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+        const auto cursor = mkw_switch_gx_display_list_cursor();
+        std::fprintf(out, "capacity=%u\ncursor=%u\nnative_active=%u\nhle_in_begin=%u\nhle_fifo_bytes=%zu\n",
+                     cursor.capacity, cursor.written, cursor.active ? 1u : 0u,
+                     g_hleGxState.inBegin ? 1u : 0u, g_hleGxState.fifoByteCount);
+        if (Memory::Contains(kGXDataPtrAddr, 4u)) {
+            const auto gd = Memory::Read32(kGXDataPtrAddr);
+            std::fprintf(out, "gx_data=0x%08x\n", gd);
+            if (Memory::Contains(gd, kGxDataSize)) {
+                std::fprintf(out, "guest_dirty=0x%08x\nguest_in_list=%u\nguest_save_context=%u\n",
+                             Memory::Read32(gd + 0x5FCu), Memory::Read8(gd + 0x5F8u),
+                             Memory::Read8(gd + 0x5F9u));
+            }
+        }
+#endif
         std::fclose(out);
     }
     mkw_switch_report_unsupported_translated_dispatch(reason, target, cpu);
@@ -191,6 +206,13 @@ extern "C" void mkw_switch_gx_record_begin(CpuContext* cpu) noexcept {
     }
     // Immediate-mode indexed attributes are expanded to direct Aurora layout.
     // Their raw recorded layout needs a separate implementation, not truncation.
+    // The immediate bridge deliberately skips native matrix-index VCD writes.
+    // Raw recording cannot inherit that expansion without changing the layout.
+    for (unsigned attr = GX_VA_PNMTXIDX; attr <= GX_VA_TEX7MTXIDX; ++attr) {
+        if (g_hleGxState.vtxDesc[attr] != GX_NONE) {
+            Refuse("GX_DISPLAY_LIST_MATRIX_INDEX", cpu, 0x8016F0F0u);
+        }
+    }
     for (const auto type : g_hleGxState.vtxDesc) {
         if (type != GX_NONE && type != GX_DIRECT) {
             Refuse("GX_DISPLAY_LIST_INDEXED_VERTEX", cpu, 0x8016F0F0u);

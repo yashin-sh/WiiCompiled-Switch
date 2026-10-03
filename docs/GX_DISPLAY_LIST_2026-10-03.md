@@ -49,7 +49,7 @@ Switch memory implementation and bridge/transport sources, plus extracted
 pinned native Begin/End and FIFO recording/padding bodies. Only allocation,
 normal decoder transport and native dirty-register emission are host seams.
 ASan, fatal UBSan and LeakSanitizer remain enabled. The final local run passes
-331 rendered cases and 29 diagnosed refusals; non-rendered builds pass both
+331 rendered cases and 30 diagnosed refusals; non-rendered builds pass both
 explicit recording refusals. It covers mixed native and
 guest writes, empty and full buffers, all padding residues, repeated recording,
 both save flags, the observed 16 KiB capacity and diagnosed refusals. Expected
@@ -61,7 +61,9 @@ proof or a complete native dirty-register decoder test.
 `GXBegin` flushes native dirty state before recording its primitive header.
 The existing immediate path expands indexed guest attributes into direct
 Aurora attributes. Recording those raw indexed bytes needs a separate layout
-implementation, so indexed recording remains a diagnosed refusal. Pending
+implementation, so indexed recording remains a diagnosed refusal. Enabled matrix-index
+attributes are likewise refused because the immediate bridge omits their native
+VCD publication. Pending
 guest dirty state also remains unsupported rather than being cleared.
 
 The public build workflow executes the new contract. The synthetic fast-track

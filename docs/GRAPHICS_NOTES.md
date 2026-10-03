@@ -67,8 +67,11 @@ That preceding run stopped before Fog returned; the user confirmed black output
 and an error. The [later Fog/ZCompLoc result](HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md)
 now accepts both new bridge returns and the existing pixel setup. Native init
 of a 4×4 depth texture passed; GXInitTexObjLOD rejects its valid format 22
-because the structural layout table lacks it. The current visual observation
-is pending, and recognizable game pixels remain unproven.
+because the structural layout table lacks it in that preceding candidate.
+The subsequent [depth-LOD hardware result](HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md)
+accepts the corrected LOD return and identifies GXBeginDisplayList as the new
+DIRECT boundary. The user confirms black output followed by an error;
+recognizable game pixels remain unproven.
 
 ## Fallback — Deko3D native Aurora backend
 
@@ -111,7 +114,7 @@ followed by an error; the exact on-screen wording is unavailable. Earlier dated
 sections retain their original scope.
 
 
-## Latest console result — Fog/ZCompLoc crossed (2026-10-03)
+## Earlier console result — Fog/ZCompLoc crossed (2026-10-03)
 
 The [fresh hardware result](HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md)
 establishes the admitted Fog call, ZCompLoc(1) and existing pixel setup returned.
@@ -121,3 +124,15 @@ validator lacks full format 22. Its forwarding and later drawing remain
 unproven. The later snapshot records 1558 guest FIFO writes and the same 99
 successful presents; those counters do not establish a visible frame. Current
 screen observation is pending. Earlier dated sections retain their scope.
+
+
+## Latest console result — depth LOD crossed (2026-10-03)
+
+The [fresh hardware result](HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md)
+establishes LOD returned on the observed depth object with `lod-pass` and guest
+word0 `0x105`, then reaches GXBeginDisplayList `0x80172E00`: buffer
+`0x80394F00`, capacity 16 KiB, dispatch 609010 / 108.440 seconds. Begin has
+not returned; recording/replay require coordinated FIFO/context/buffer work.
+The user confirms black output and an error. The snapshot before the texture
+constructor retains 99 successful presents, without proof of visible pixels.
+Earlier dated records retain their scope.

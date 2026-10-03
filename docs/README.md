@@ -2,8 +2,9 @@
 
 ## Architecture / runtime
 
-- [GX_DEPTH_LOD_2026-10-03.md](GX_DEPTH_LOD_2026-10-03.md) — fixes the missing full Z24X8 format in LOD validation; local/native contracts, all five workflows and private NRO build pass; transfer/console acceptance pending
-- [HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md](HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md) — latest accepted Fog/ZCompLoc and pixel-setup returns; native depth-texture init passes, LOD validation is the next stop; visual observation pending
+- [HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md](HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md) — latest accepted depth LOD return; GXBeginDisplayList 16 KiB buffer frontier, user-confirmed black screen and error
+- [GX_DEPTH_LOD_2026-10-03.md](GX_DEPTH_LOD_2026-10-03.md) — fixes the missing full Z24X8 format in LOD validation; local/native contracts, all workflows and private build pass; observed LOD console return accepted
+- [HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md](HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md) — preceding accepted Fog/ZCompLoc and pixel-setup returns; native depth-texture init passes, LOD validation is the next stop; that run’s visual observation was not supplied
 - [GX_FOG_Z_COMP_2026-10-03.md](GX_FOG_Z_COMP_2026-10-03.md) — bounded Fog/ZCompLoc, passing host/native contracts, workflows and private build; observed console returns accepted
 - [HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md) — preceding accepted AlphaCompare return and captured Fog arguments; user-confirmed black screen and error at exit
 
@@ -47,7 +48,7 @@
 
 ## Hardware evidence
 
-- [Latest accepted TEV result](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md) — six setters return on stages 0..15; KColor pointer frontier, black screen and error at exit
+- [TEV scalar hardware result](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md) — six setters return on stages 0..15; KColor pointer frontier, black screen and error at exit
 - [Earlier audit result](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md) — normal-path non-regression at the preceding Direct frontier; error-path limits
 - [Coordinate-to-TEV result](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md) — all eight coordinate triples return; TEV Direct stage-0 frontier, timing and confirmed black screen
 - [Matrix-to-Scale result](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md) — ten texture-matrix returns; preceding Scale frontier and freshness limits
@@ -172,7 +173,7 @@
 
 ## Blocker notes
 
-- [Pending TEV color/table batch](GX_TEV_COLOR_BATCH_2026-10-03.md) — KColor pointer fix and pre-ported Color/SwapModeTable; host/remote/private-build gates pass, console return pending
+- [TEV color/table batch](GX_TEV_COLOR_BATCH_2026-10-03.md) — KColor pointer fix and pre-ported Color/SwapModeTable; host/remote/private-build gates pass, console return pending
 
 - [TEV scalar batch](GX_TEV_SCALAR_BATCH_2026-10-03.md) — six setters, legal SDK domains, completed gates and default-tuple hardware acceptance
 - [Coordinate batch hardware scope](GX_TEX_COORD_BATCH_2026-10-03.md) — eight exact triples accepted; enabled branches remain host-only

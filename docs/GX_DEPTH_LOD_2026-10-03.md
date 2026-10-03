@@ -82,23 +82,27 @@ pins, the user's integration patch bytes/nine mtimes and the preceding Fog NRO
 are preserved. All **five workflows / six jobs** pass on exact code
 `b5f0a2b0d50266e7538f76cd3438306c3a6293e9`. Actual CI logs confirm the old
 texture-load modes, all four depth-LOD configurations/counts and the pinned
-native fixture. No Switch run of this correction is accepted yet: the first
-nxlink attempt at 20:05:21 UTC could not connect to `192.168.1.194` (exit 1),
-after unanswered UDP discovery and ICMP probes. No transfer or console return
-is claimed; the preceding hardware result remains the runtime frontier.
+native fixture. The first nxlink attempt at 20:05:21 UTC could not connect (exit 1).
+The later retry transferred this exact NRO with exit 0 at **20:49:11 UTC**.
+Fresh verified reports now accept the observed LOD return: `lod-pass`,
+word0 `0x105`, word1 zero and coherent later GXBeginDisplayList arrival.
+See [the accepted hardware result](HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md)
+for scope, attribution and limits. The user confirms black output followed by
+an error; no recognizable image is established.
 
 ## Checked continuation and limits
 
 The checked local caller continues from LOD through inline matrix setup to a
 constructor that prepares GX display lists. Static inspection identifies
 `GXBeginDisplayList` `0x80172E00`, followed later by `GXEndDisplayList`
-`0x80172EB4`; these lack local KnownNative bridges. They are candidates for a
-later observed boundary, not evidence of console arrival or return. Their
+`0x80172EB4`; these lack local KnownNative bridges. The later test now
+establishes Begin arrival as the new DIRECT boundary;
+End remains a static forecast and neither recording call has returned. Their
 stateful recording effects require their own audit: pinned Aurora redirects
 FIFO writes to a bounded caller buffer, optionally saves/restores GX shadow
 state and returns the 32-byte-rounded written length. A no-op would lose
-those effects. No generated game code is
-published, and no display-list behavior is bypassed here.
+those effects. No generated game code is published, and no display-list
+behavior is bypassed here.
 
 Recognizable pixels, depth texture upload/decoding, sustained scenes,
 input/audio correctness and representative performance remain unproven.

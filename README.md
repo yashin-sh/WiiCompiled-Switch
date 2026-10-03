@@ -32,33 +32,31 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest [accepted Discovery run](docs/HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md)
-returns from the captured Fog call, existing disabled FogRangeAdj,
-ZCompLoc(1) and the following pixel setup. It preserves the earlier IA8,
-matrix, coordinate, TEV and AlphaCompare progression. The next durable stop is
-**GXInitTexObjLOD (`0x80170A4C`)**, object `0x80384170`, dispatch 609384,
-at 109.572 seconds. Native init of its 4×4 `GX_TF_Z24X8` depth texture passed;
-the LOD structural validator lacks full format 22 and intentionally aborts.
-The [depth-LOD candidate](docs/GX_DEPTH_LOD_2026-10-03.md) corrects this format
-entry with passing local contracts, all five workflows and private NRO build.
-Its first transfer attempt could not connect; console return remains pending. The current on-screen
-observation is pending; recognizable game pixels remain unproven.
+The latest [accepted Discovery run](docs/HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md)
+returns from the corrected depth-texture LOD on the observed 4×4 Z24X8 object.
+The fresh report records `lod-pass`, zero/nearest arguments and guest word0
+`0x105`; later coherent execution reaches **GXBeginDisplayList (`0x80172E00`)**.
+That unbridged call intentionally aborts at dispatch 609010 / 108.440 seconds,
+with a 32-byte-aligned buffer `0x80394F00` and 16 KiB capacity. Its stateful
+FIFO recording and GX context effects are the next porting boundary.
+The user confirms **a black screen followed by an error**; recognizable game
+pixels remain unproven.
 
-The [Fog/ZCompLoc candidate](docs/GX_FOG_Z_COMP_2026-10-03.md) passed
-host/native contracts, rendered syntax, all five bridge-code workflows and
-the private NRO build. All five workflows also passed after the host-test-only
-core-dump optimization; its NRO is byte-identical. Nxlink transferred the
-validated NRO with exit 0 at **19:20:07 UTC** on 2026-10-03, and fresh reports
-now accept both new bridge returns on the executed inputs.
+The [depth-LOD fix](docs/GX_DEPTH_LOD_2026-10-03.md) passes local/native
+contracts, all five exact-code workflows / six jobs and its private NRO build.
+The first transfer failed; the later retry completed with exit 0 at
+**20:49:11 UTC** on 2026-10-03. Fresh verified reports now accept the observed
+LOD return. The earlier IA8/matrix/coordinate/TEV/AlphaCompare/Fog/ZCompLoc and
+pixel-setup progression remains crossed; alternate inputs retain host proof.
 
-The preceding heartbeat at dispatch 608712 records 1556 guest FIFO writes,
+The preceding heartbeat at dispatch 608302 records 1556 guest FIFO writes,
 99 successful presents and zero failures. A later post-main snapshot at
-609104 records 1558 FIFO writes, including the existing FogRangeAdj command
-`E8000156`, and the same 99 presents. These counters do not establish a new
-visible frame or separately count native BP emissions. Discovery first hits,
-checked caller control flow and coherent later milestones establish returns;
-they do not trace every invocation. The watchdog has 98 ACTIVE and four
-isolated STALE samples, each followed by renewed progression.
+608722, before the texture constructor, records 1558 FIFO writes, last word
+`E8000156`, and the same 99 presents. These counters do not establish a frame
+with visible content after LOD or separately count native BP emissions.
+The watchdog has 102 ACTIVE and one recovered STALE sample, maximum interval
+2168 ms. Discovery first hits, checked caller flow and later coherent state
+establish returns without tracing every invocation.
 
 The [bounded coordinate candidate](docs/GX_TEX_COORD_BATCH_2026-10-03.md),
 code `91a4a01b8e316f9010e9d31754e279065772f9f3`, passed its local host/workflow
@@ -281,7 +279,7 @@ playability are not yet proven.
 
 Start with:
 
-- [Latest accepted TEV result](docs/HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md) — six setters on stages 0..15 return; KColor pointer frontier, black screen and error at exit;
+- [TEV scalar hardware result](docs/HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md) — six setters on stages 0..15 return; KColor pointer frontier, black screen and error at exit;
 - [TEV scalar batch](docs/GX_TEV_SCALAR_BATCH_2026-10-03.md) — legal SDK domains, host/private-build validation and bounded hardware scope;
 - [Earlier audit result](docs/HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md) — normal-path non-regression at the preceding Direct frontier;
 - [Accepted coordinate batch](docs/GX_TEX_COORD_BATCH_2026-10-03.md) — eight exact triples, host/private-build validation, exact NRO and enabled-branch limits;

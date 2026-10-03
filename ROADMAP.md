@@ -31,14 +31,16 @@
 - [x] Capture the 4×4 `GX_TF_Z24X8` depth texture: native init passes, LOD rejects full format 22 at dispatch 609384 / 109.572 seconds.
 - [x] Correct and locally contract-test the depth-texture LOD structural validation; see [the candidate](docs/GX_DEPTH_LOD_2026-10-03.md).
 - [x] Pass all five workflows / six jobs on depth-LOD code `b5f0a2b0`, with actual new contract/native-fixture logs; build NRO `596ba38a...` with 35 strong symbols and unique scoped native Init/LOD providers.
-- [ ] Establish fresh console return from the observed depth-texture LOD and inspect the display-list continuation.
+- [x] Transfer NRO `596ba38a...` with exit 0 at 20:49:11 UTC; accept observed depth LOD return from fresh `lod-pass` and coherent later execution.
+- [x] Capture GXBeginDisplayList `0x80172E00`, buffer `0x80394F00`, 16 KiB, dispatch 609010 / 108.440 seconds; user confirms black screen then error.
+- [ ] Audit/port coordinated display-list begin/end, FIFO recording and GX context effects; establish fresh console continuation.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The latest accepted reports are the [Fog/ZCompLoc-to-depth-LOD result](docs/HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md). They establish both new bridge returns, the intervening disabled FogRangeAdj and existing pixel setup. The next stop is the structural validation of a 4×4 depth texture in GXInitTexObjLOD, not another unsupported Fog call. Its format 22 is a valid pinned `GX_TF_Z24X8` enum missing from our layout table. Native initialization passed; LOD forwarding and later depth drawing remain unproven.
+The latest accepted reports are the [depth-LOD-to-display-list result](docs/HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md). They establish the corrected LOD returned on the observed object, with `lod-pass` and mode word `0x105`, followed by coherent execution of the next constructor. The next DIRECT stop is GXBeginDisplayList, with a 32-byte-aligned 16 KiB buffer. This arrival agrees with the earlier static forecast; its stateful recording has not begun.
 
-The changed post-main snapshot after pixel setup records 1558 guest FIFO writes and the same preceding 99 successful presents / zero failures. No recognizable image follows from those counters. The watchdog records 98 ACTIVE and four recovered STALE samples; the current screen observation is pending. Alternate inputs and negative branches retain host evidence only.
+The changed post-main snapshot before the texture constructor records 1558 guest FIFO writes and the same preceding 99 successful presents / zero failures. These counters do not prove pixels after LOD. The watchdog records 102 ACTIVE and one recovered STALE sample. The user confirms a black screen followed by an error; exact wording is unavailable. Alternate inputs and negative branches retain host evidence only.
 
-After correcting this observed validation boundary, later texture loading, drawing and GX state still need validation, followed by sustained execution without an error, input/audio correctness and performance. Static forecasts do not establish a finite number of fixes or an ETA before the first image.
+The display-list port needs native FIFO redirection, bounded buffer ownership, GX state and paired end/length handling. Later replay, texture loading and drawing still require validation, followed by sustained execution, input/audio correctness and performance. Static forecasts do not establish a finite number of fixes or an ETA before the first image.
 
 The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
 

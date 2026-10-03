@@ -241,8 +241,9 @@ The user again saw black. The [six-setter TEV candidate](GX_TEV_SCALAR_BATCH_202
 must pass its recorded gates and fresh hardware proof before acceptance.
 
 The separate [audit candidate](PORT_AUDIT_2026-10-03.md), code `b3484117`,
-NRO `7ecbc8a9...`, passed local gates and its private build but has never run
-on Switch. Its runtime fixes require attributable hardware evidence of their own.
+NRO `7ecbc8a9...`, passed local gates, its private build and the attributable
+normal-path console run above. Its corrected failure branches retain their
+separate host/static evidence and were not exercised by that console run.
 
 ## Governance note
 

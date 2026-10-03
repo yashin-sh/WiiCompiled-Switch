@@ -24,8 +24,9 @@ f64 representations:
 | nearZ / f3 | `3FB99999A0000000` | `3DCCCCCD` |
 | farZ / f4 | `3FF0000000000000` | `3F800000` |
 
-It checks the raw type and all f64 bits before narrowing, resolving memory or
-calling native graphics. Different types or floating representations report
+It checks the raw type and all f64 bits before narrowing, the bridge's color
+lookup or native graphics. The durable diagnostic may independently take a
+checked color snapshot when reporting a refusal. Different types or floating representations report
 `GX_SET_FOG_UNPROVEN_ARGS` and abort without continuing. This includes signed
 zero, non-finite values and f64 deviations that would disappear on narrowing.
 These refusals bound the initial implementation; they do not claim that every
@@ -92,7 +93,31 @@ The new host contracts, rendered AArch64 syntax, new-script ShellCheck,
 actionlint and new/changed C++ formatting pass locally. CI executes this
 **twelfth** host script and retains both bridge symbols through a synthetic
 link probe. Synthetic startup does not execute fabricated game arguments.
-Exact-code remote workflows and the private Rendered Discovery NRO are the
-next build gates. Console acceptance still requires an exact NRO transfer,
+All five workflows and six jobs passed on exact bridge code `c329b6d0`.
+Actual CI logs confirm both bridge modes and the pinned native fixture. The
+private Rendered Discovery build passed at **2026-10-03 18:55:08 UTC**, with
+**31 required strong text symbols**. Its NRO is **73,396,280 bytes**, SHA-256
+`652afed471c2fc8ba9aa6735612fbe1ac69295aecf7b9a0dbfd6505dfb1024fb`.
+A fresh scan of **225 explicit host inputs, nineteen Rust archives and seven
+named image libraries** found exactly one Aurora `GXPixel.o` provider for
+each of `GXSetFog` and `GXSetZCompLoc`. New bridge objects define their
+Switch entry and reference the native symbol; they do not replace it. This is
+a scoped ownership check, not a general duplicate-definition guarantee.
+Dependency pins, the nine-file user integration patch bytes/mtimes and all
+preceding hardware NROs are preserved.
+
+Four temporary incorrect variants were rejected: narrowed type guard, wrong
+FPR index, reversed RGBA and u8 narrowing before ZCompLoc bool conversion.
+
+The initial GitHub host-contract job took **19 min 03 sec** against a 20-minute
+limit. The subsequent host-test-only change disables core dumps with
+`PR_SET_DUMPABLE=0` in each expected-abort child: pipe-based core collectors
+can ignore `RLIMIT_CORE=0`. The test still requires a diagnosed real SIGABRT,
+checks shared CPU/memory afterwards and leaves parent LeakSanitizer active.
+The local rendered probe completed all 66,601 valid calls and 312 refusals in
+about two seconds of execution. Remote validation of this optimization is
+tracked separately; the Switch bridge code is unchanged.
+
+Console acceptance still requires an exact NRO transfer,
 fresh attributable reports and later coherent execution beyond these calls.
 Recognizable pixels and sustained playability remain unproven.

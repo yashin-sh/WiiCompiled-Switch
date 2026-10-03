@@ -25,7 +25,8 @@
 - [x] Transfer the exact AlphaCompare NRO with exit 0 at 17:50:16 UTC and accept the observed tuple return through existing ZMode to [Fog](docs/HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md).
 - [x] Capture Fog type 0, pointer `0x80398FD0`, four exact f64 parameter bits and readable RGBA 255,255,255,255 at dispatch 603961 / 99.156 seconds.
 - [x] Implement the [bounded Fog/ZCompLoc candidate](docs/GX_FOG_Z_COMP_2026-10-03.md), including exact f64 guards, complete color range and full-word bool semantics; pass host/native contracts and rendered syntax.
-- [ ] Pass exact-candidate remote workflows and private NRO build for Fog/ZCompLoc.
+- [x] Pass all five exact-bridge-code workflows and the private Fog/ZCompLoc NRO build, with 31 symbols and unique scoped native providers.
+- [ ] Validate the host-test-only core-dump optimization remotely; preserve real SIGABRT and sanitizer coverage.
 - [ ] Establish fresh console progression beyond Fog and prepared ZCompLoc.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 

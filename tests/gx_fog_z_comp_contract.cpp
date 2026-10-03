@@ -13,6 +13,7 @@
 #include <new>
 #include <sys/mman.h>
 #include <sys/resource.h>
+#include <sys/prctl.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
@@ -143,6 +144,10 @@ void ExpectAbort(const Args& args, bool memoryFailure = false, int changedFpr = 
     const auto child = fork();
     assert(child >= 0);
     if (child == 0) {
+        // Pipe-based system core collectors can ignore RLIMIT_CORE=0. Keep
+        // the real SIGABRT contract without invoking the collector hundreds
+        // of times. Only this child becomes nondumpable; parent LSan stays on.
+        assert(prctl(PR_SET_DUMPABLE, 0) == 0);
         close(descriptors[0]);
         reportPipe = descriptors[1];
         expectedReason = memoryFailure ? For(op).memoryReason : For(op).reason;

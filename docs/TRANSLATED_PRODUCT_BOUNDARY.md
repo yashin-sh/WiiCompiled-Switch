@@ -62,8 +62,11 @@ That path is now hardware-validated far beyond metadata inspection:
   hardware-proven;
 - real RMCP01 FIFO work reaches Aurora/Dawn/NVK;
 - repeated `GXCopyDisp` / successful presents are hardware-proven;
-- current blocker tracking has moved into exact Home Button texture-object and
-  KD/NWC24 sequences.
+- the latest accepted Discovery path crosses texture-matrix setup and all
+  eight disabled coordinate triples and six TEV setters on stages 0..15, then
+  stops at KColor ID 0 / guest pointer `0x80398FCC`;
+  older texture/KD/audio branches remain
+  recorded in dated reports.
 
 The translated-product seam itself is therefore no longer an active blocker. Current work is post-main runtime/game initialization and first-frame preparation.
 
@@ -84,34 +87,52 @@ real RMCP01 FIFO work                      ✅ hardware validated
   ↓
 GXCopyDisp / GPU present                   ✅ hardware validated
   ↓
-Home Button texture-object initialization  ✅ four LOD / three wrap tuples crossed
+exact IA8 loads on maps 0..7                ✅ hardware crossed
   ↓
-RVL OS alarm initialization                 ✅ OSSetPeriodicAlarm crossed
+ten type-0 texture matrices                ✅ hardware crossed
   ↓
-NW4R sound-player initialization             ✅ SoundPlayer::SetVolume crossed
+Gen2/disabled Scale/Bias triples, c0..7     ✅ hardware crossed
   ↓
-GX texture-object initialization              🟡 ninth+twelfth LOD / sixth+eighth+tenth+eleventh wrap gates
+six TEV scalar setters, stages 0..15       ✅ default tuples returned
+  ↓
+GXSetTevKColor 0x80171ED4, ID 0             🟡 arrived; not returned
+  ↓
+recognizable Mario Kart Wii image          ❌ not proven
 ```
 
-As of 2026-09-29, the KD path is hardware-crossed through fd 2003 close;
-PAL `AIInit (0x801240B0)`, `__AXOutInitDSP (0x801269BC)`,
-`AIRegisterDMACallback (0x80123F88)`, `AIInitDMA (0x80123FCC)` and
-`AIStartDMA (0x80124048)` are hardware-crossed. Eleven exact `GXInitTexObjLOD` descriptors and seven exact
-`GXInitTexObjWrapMode` tuples are hardware-crossed. `OSSetPeriodicAlarm
-(0x801A08E0)` and `nw4r::snd::SoundPlayer::SetVolume (0x800A35E0)` are also
-hardware-crossed. The fifth, sixth and seventh `GXInitTexObjLOD` descriptors on
-`obj=0x908FA4E0` / `obj=0x908FA5C0` / `obj=0x907938A0` and the fourth/fifth
-`GXInitTexObjWrapMode` tuples on `obj=0x908FA4E0` / `obj=0x907938A0` are
-hardware-crossed. The seventh `GXInitTexObjWrapMode` tuple on
-`obj=0x908FA820` is also hardware-crossed. The tenth and eleventh `GXInitTexObjLOD` descriptors on `obj=0x909019C0`
-/ `obj=0x908FA840` are also hardware-crossed. Scheduler-dependent current
-gates are the ninth `GXInitTexObjLOD` descriptor on `obj=0x90793BE0`,
-the twelfth exact format-2 `GXInitTexObjLOD` descriptor on
-`obj=0x9018E480`, plus the sixth/eighth/tenth/eleventh
-`GXInitTexObjWrapMode` tuples on `obj=0x908FA5C0` /
-`obj=0x909019C0` / `obj=0x9018E480` / `obj=0x908FAE00`, while
-real `revo_kart.brsar` and Home Button resources remain healthy. The
-visually correct Mario Kart Wii image is still unproven.
+The earlier coordinate
+[Discovery result](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md)
+accepts `Gen2(c,1,4,60,0,125)`, `Scale(c,0,0,0)` and `Bias(c,0,0)` for c=0..7.
+Restored caller `0x80241380` at dispatch 605620 retains final coordinate 7
+and the Bias stage; verified control flow and the later DIRECT frontier
+establish the loop returns. GXSetTevDirect stage 0 is observed at dispatch
+605633, LR `0x80240F98`, 100.205 seconds from the first translated dispatch,
+but has not returned. The other TEV neighbors remain static forecasts.
+Enabled Scale/Bias branches and arbitrary Scale sizes remain host-tested only.
+
+Coordinate code candidate `91a4a01`, NRO `64ba8377...`, transferred with nxlink
+exit 0 at 2026-10-02 23:09:38 UTC. Its 28 reports, 526,932 bytes, include
+12 changed files retrieved on October 3; the user confirmed a black screen.
+The snapshot at dispatch 605367 records 1556 FIFO writes and 99 successful
+presents / 0 failures before the loop. It does not measure those later native
+emissions or establish recognizable pixels. See the
+[bounded contract and validation record](GX_TEX_COORD_BATCH_2026-10-03.md).
+Older exact LOD/wrap, KD and audio crossings remain in dated hardware reports.
+They do not accept broader coordinate arguments or unreturned TEV calls.
+The subsequent [audit hardware run](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md),
+`b3484117` / `7ecbc8a9...`, preserves that normal path, reaching the same
+Direct stage-0 frontier at dispatch 608381. The user again saw black. That
+run establishes normal-path non-regression, with negative failure branches
+remaining host/static evidence. The [six-setter TEV batch](GX_TEV_SCALAR_BATCH_2026-10-03.md)
+passed local gates, all five GitHub workflows on integrated code `e76e8f38`,
+its private build and [fresh hardware progression](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md).
+The coherent later KColor boundary establishes return of all sixteen
+default iterations: 96 new setter calls plus 16 existing Order calls.
+KColor ID 0, pointer `0x80398FCC`, blocks at dispatch 605056 / 98.265 seconds.
+The user reported a black screen and an error at exit. Alternate TEV inputs
+retain host contracts only; KColor bytes and native decoding/pixels remain
+unproven. Snapshot 604804 precedes all three loops and retains 1556 FIFO
+writes / 99 successful presents / 0 failures, without measuring later emissions.
 
 ## Important boundary lessons from hardware
 
@@ -156,7 +177,7 @@ These files distinguish:
 
 `fast-track-main-reached.txt` is the durable proof marker for PAL `main` at `0x8000B6B0`.
 
-For the current sustained-black-screen frontier, `fast-track-heartbeat-history.txt` is the primary diagnostic. `ACTIVE` means the translated heartbeat changed between watchdog samples; consecutive `STALE` samples mean the watchdog thread remains alive while translated execution stopped advancing.
+For a sustained black screen with no new blocker, `fast-track-heartbeat-history.txt` is the primary liveness diagnostic. For an exit, inspect the attributable dispatch-blocker or native-exception report first. `ACTIVE` means the translated heartbeat changed between watchdog samples; consecutive `STALE` samples mean the watchdog thread remains alive while translated execution stopped advancing.
 
 ## Hardware history summary
 
@@ -210,11 +231,52 @@ Only Nintendo-data-free runtime/platform code, documentation and synthetic probe
 
 ## Next boundary
 
-The meaningful boundary is now post-main liveness rather than translated-product linkage:
+The translated-product link seam, bounded disabled coordinate loop and
+default six-setter TEV loop are crossed. KColor ID 0 / pointer `0x80398FCC`
+was that scalar run's arrival boundary.
+The [TEV color/table batch](GX_TEV_COLOR_BATCH_2026-10-03.md) passed all five
+GitHub workflows and its exact private build (code `1333b0e2`, NRO `a56be881...`).
+Its [fresh console result](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md)
+now establishes all twelve calls returned, with AlphaCompare `0x80172088`
+as that run's arrival boundary. The separate
+[AlphaCompare candidate](GX_ALPHA_COMPARE_2026-10-03.md) preserves the pinned
+native forwarding and existing host validity flag. Its local contracts, all
+five exact-code GitHub workflows and private Rendered Discovery build pass;
+its subsequent [console run](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md)
+accepts AlphaCompare returned on (7,0,0,7,0), through existing ZMode to Fog.
+Fog type 0, four f64 parameters and readable RGBA 255,255,255,255 are captured.
+Fog has not returned. The user confirms a black screen followed by an error;
+the exact on-screen wording is unavailable.
+The next console test must establish progression beyond the observed Fog
+boundary before accepting its return. Fog RGBA and float bits are captured;
+recognizable game pixels remain unproven.
 
-1. run the current local fast-track on real hardware;
-2. if the display remains black, leave it running long enough to collect the independent watchdog history;
-3. inspect `fast-track-heartbeat-history.txt` to classify ACTIVE vs STALE behavior;
-4. if a new unsupported dispatch or exception appears, attribute that exact boundary against the pinned WiiCompiled revision;
-5. use the already-published user-owned FST and installed #185 DVD bridge without extending them unless hardware reaches a new resource boundary;
-6. use `fast-track-thread-events.txt` to identify later OSThread `0x90112660` before changing scheduler or renderer behavior.
+1. bind the copied reports to the exact candidate/NRO and retain their hashes;
+2. inspect a new blocker or exception before diagnosing a timing/scheduler issue;
+3. if no blocker appears, classify ACTIVE versus STALE watchdog history;
+4. preserve the accepted coordinate/TEV default-loop scope and require later
+   progression before accepting KColor return; arrival alone is insufficient;
+5. retain the headless control target and the hardware-driven FST/DVD/input/audio
+   scopes; do not extend unrelated behavior from a static forecast.
+
+
+## Earlier console result — TEV colors crossed (2026-10-03)
+
+The [fresh color/table hardware result](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md)
+supersedes the earlier pending color/table status. All twelve executed calls
+returned through the coherent later caller; AlphaCompare `0x80172088`,
+(7,0,0,7,0), is the new DIRECT hard stop. Black output and a crash persist.
+Actual RGBA bytes and recognizable game pixels remain unproven. The elapsed
+time includes an unexplained watchdog sampling gap, so it is not a performance
+measurement. Prior dated results above retain their original scope.
+
+
+## Latest console result — AlphaCompare crossed (2026-10-03)
+
+The [fresh AlphaCompare hardware result](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md)
+establishes its observed tuple returned. Fog `0x801722CC` is the new DIRECT
+hard stop at dispatch 603961 / 99.156 seconds, with actual float parameter bits
+and readable color captured. All 96 watchdog samples are ACTIVE. Preceding
+present counters do not prove visible pixels. The user confirms a black screen
+followed by an error; the exact on-screen wording is unavailable. Earlier dated
+sections retain their original scope.

@@ -2,9 +2,101 @@
 
 Tracking: #117, #162, #154, #4
 
-Status: **real RMCP01 FIFO/Aurora work and repeated GPU presents are hardware-proven. Real English.szs, StaticR.rel and Home Button/UI resources load successfully. Eleven exact GXInitTexObjLOD descriptors are hardware-crossed; the ninth descriptor on obj 0x90793BE0 and a twelfth exact format-2 descriptor on the already-known obj 0x9018E480 remain captured. Seven exact GXInitTexObjWrapMode tuples are hardware-crossed, including obj 0x908FA820 and obj 0x908FA840; sixth, eighth, tenth and eleventh exact tuples on obj 0x908FA5C0 / 0x909019C0 / 0x9018E480 / 0x908FAE00 remain captured after hardware-proven LOD passes. The KD/NWC24 path is hardware-crossed through fd 2003 close; PAL AIInit (0x801240B0) and __AXOutInitDSP (0x801269BC) are hardware-crossed, AIInitDMA (0x80123FCC) and AIStartDMA (0x80124048) are hardware-crossed. SoundPlayer::SetVolume (0x800A35E0) and OSSetPeriodicAlarm (0x801A08E0) are hardware-crossed. The fifth, sixth and seventh GXInitTexObjLOD tuples on obj 0x908FA4E0 / 0x908FA5C0 / 0x907938A0 and the fourth/fifth GXInitTexObjWrapMode tuples on obj 0x908FA4E0 / 0x907938A0 are hardware-crossed. Current exact GX gates are scheduler-dependent: ninth GXInitTexObjLOD on obj 0x90793BE0, twelfth exact GXInitTexObjLOD descriptor on obj 0x9018E480 (format 2), plus sixth/eighth/tenth/eleventh GXInitTexObjWrapMode on obj 0x908FA5C0 / 0x909019C0 / 0x9018E480 / 0x908FAE00. Strongest graphics-path evidence remains 1,450 RMCP01 FIFO writes and 94 successful presents / 0 failures. No visually correct Mario Kart Wii image is proven yet.**
+Status: **real RMCP01 FIFO/Aurora work and repeated GPU presents are
+hardware-proven; a recognizable Mario Kart Wii image remains unproven.**
+The latest accepted TEV run preserves the eight disabled coordinate triples
+and crosses six scalar setters on stages 0..15, then stops at KColor
+`0x80171ED4`, ID 0 / guest pointer `0x80398FCC`. The user reported a black
+screen and an error at exit; recognizable pixels remain unproven.
 
-## Current accepted frontier — 2026-09-29
+## Current accepted frontier — 2026-10-03
+
+The [latest TEV result](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md), integrated code `e76e8f38`,
+NRO `cc88a78c...`, transferred with exit 0 at 11:39:21 UTC. Retrieval at
+11:42:57 UTC preserved 28 reports, 528,821 bytes, eleven changed files and
+verified hashes/ZIP CRC. Six first-hit setters, coherent caller/stack/fiber,
+checked loop control flow and the later KColor boundary establish return
+from 96 new setter calls plus 16 existing Order calls on default tuples.
+KColor ID 0 / pointer `0x80398FCC` is reached at dispatch 605056,
+elapsed_ms 98265, stage SwapMode; it remains an unsupported hard stop.
+Direct-to-KColor is +129 versus callback-free +111, compatible with VI polling
+without exact callback attribution. All 95 watchdog samples are ACTIVE.
+The changed snapshot at 604804 precedes the matrix/coordinate/TEV loops and
+retains 1556 guest FIFO writes / 99 successful presents / 0 failures; it does
+not measure later native commands or prove pixels. The user reported black
+output and an error at exit. Alternate scalar inputs and enabled coordinate
+branches remain host-only; KColor bytes and return are unproven.
+
+The [TEV color/table batch](GX_TEV_COLOR_BATCH_2026-10-03.md) passed all five
+GitHub workflows and its exact private build (code `1333b0e2`, NRO `a56be881...`).
+Its [fresh console result](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md)
+now establishes all twelve calls returned, with AlphaCompare `0x80172088`
+as that run's arrival boundary. The separate
+[AlphaCompare candidate](GX_ALPHA_COMPARE_2026-10-03.md) preserves the pinned
+native forwarding and existing host validity flag. Its local contracts, all
+five exact-code GitHub workflows and private Rendered Discovery build pass;
+its subsequent [console run](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md)
+accepts AlphaCompare returned on (7,0,0,7,0), through existing ZMode to Fog.
+Fog type 0, four f64 parameters and readable RGBA 255,255,255,255 are captured.
+Fog has not returned. The user confirms a black screen followed by an error;
+the exact on-screen wording is unavailable.
+
+## Earlier coordinate and audit baselines
+
+The [2026-10-03 audit result](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md)
+preserves, for every c=0..7, `Gen2(c,1,4,60,0,125)`, `Scale(c,0,0,0)` and
+`Bias(c,0,0)`. The later caller `0x80241380`, dispatch 608374, retains final
+coordinate r3=7, r8=125, the restored stack and stage
+`RMCP01_GX_SET_TEX_COORD_BIAS`. Verified loop control flow and that later
+coherent state establish returns without 24 individual return records.
+Enabled Scale/Bias branches and arbitrary Scale sizes remain host-tested only;
+the run does not independently establish every best-effort guest-mirror write.
+
+The audit baseline durable DIRECT blocker is GXSetTevDirect `0x80171B58`, stage ID 0,
+LR `0x80240F98`, dispatch 608381, 107.925 seconds after the first dispatch.
+Arrival is observed; return and the remaining
+[TEV neighbors](GX_TEV_NEIGHBORS_2026-10-03.md) remain unproven. Scale-to-later-caller
+is +41 rather than the callback-free forecast +23; later-caller-to-frontier
+is +7 rather than +1. The deltas are compatible with VI callback polling,
+but first-hit tracing does not establish an exact callback count. The exit
+remains an intentional unsupported-call abort, not evidence of a timer.
+
+The snapshot at dispatch 608109 precedes this loop and records 1556 FIFO writes,
+99 successful presents / 0 failures, valid FST and coherent scheduler identities.
+It does not independently measure the later native FIFO emissions or establish
+visible game content. Watchdog history has 101 ACTIVE samples and one one-second
+STALE interval at 31,615 ms, followed by ACTIVE at 34,134 ms and later progression.
+
+The accepted [coordinate candidate](GX_TEX_COORD_BATCH_2026-10-03.md) is code
+`91a4a01`, NRO `64ba8377...`, transferred with nxlink exit 0 at 2026-10-02
+23:09:38 UTC. Retrieval at 2026-10-03 09:03:40 UTC preserved 28 reports,
+526,932 bytes, with 12 changed from the matrix baseline; hashes and ZIP CRC
+were checked. **The user confirmed a black screen.** The preceding
+[matrix-to-Scale result](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md)
+remains the dated baseline for the ten type-0 matrix loads, IDs 30,33,...,57.
+
+The [audit candidate](PORT_AUDIT_2026-10-03.md), code `b3484117`, NRO
+`7ecbc8a9...`, transferred with nxlink exit 0 at 2026-10-03 09:25:19 UTC.
+Retrieval at 09:32:30 UTC preserved 28 reports, 528,058 bytes, with 12 changed
+from the coordinate baseline and verified hashes/ZIP CRC. The user again
+confirmed a black screen. This accepts normal-path non-regression only:
+SIZE_MAX rejection, Present(false), teardown exceptions and shutdown recovery
+were not exercised by the console run.
+
+The subsequent [bounded TEV scalar batch](GX_TEV_SCALAR_BATCH_2026-10-03.md)
+passed local gates, remote workflows, private build and the default-loop
+hardware scope described above. KColor guest-pointer handling remains outside
+that lot and is the current hard stop.
+
+The [validation policy](FAST_TRACK_VALIDATION_POLICY.md) permits bounded
+audited GX families with wrapper/Aurora, guard and required guest-mirror
+contracts. A first-hit record or transfer alone is insufficient; each member
+still requires attributable progression beyond its executed scope.
+
+## Earlier scheduler-dependent gates — through 2026-10-01
+
+This earlier texture/KD/audio summary is retained for historical branch
+coverage. It is not the latest accepted Discovery frontier.
 
 There is no single deterministic next boundary because guest scheduling can
 reach the GX texture path or the audio path first.
@@ -49,9 +141,9 @@ KD / audio path
   AIStartDMA 0x80124048                        ✅ crossed
 ```
 
-Whichever merged gate is crossed first defines the next durable blocker.
-Static forecasting may be used to prepare attribution, but no neighboring
-boundary is implemented without real-Switch evidence.
+These earlier branches can still affect scheduler-dependent progression.
+The current checkpoint and separate unrun audit candidate are recorded above;
+static forecasts and host validation must remain distinct from hardware acceptance.
 
 ## Purpose
 
@@ -202,7 +294,36 @@ It records:
 
 No guest scheduler, DVD, REL or renderer behavior is changed by this diagnostic.
 
-## Hardware result after #184 — DVD retry frontier\n\nThe scheduler-focused hardware run closes the earlier ambiguity:\n\n- the default/main thread (`0x80347498`) is still present and becomes `READY`\n  at priority 16 on run queue `0x80347830`;\n- guest thread `0x90112660` remains `RUNNING` at priority 6;\n- `VIWaitForRetrace`, `PostRetraceCallback`, and `OSWakeupThread` then advance\n  together at the sustained retrace cadence while `SelectThread` barely advances;\n- `RKSystem::run` and StaticR remain at zero;\n- the graphics path still contains only the eight `Video::configure` BP writes.\n\nThis disproves the idea that the default thread was simply lost. The higher-\npriority worker remains active while the default thread is runnable.\n\nSource attribution provides the next concrete gate: in pinned RMCP01,\n`EGG::DvdRipper::loadToMainRAM` is the explicit non-video path that retries a\nnegative `DVDRead` by calling `VIWaitForRetrace()` and trying again. Pinned\nWiiCompiled therefore native-overrides `DVDReadPrio` (`0x8015E834`) and the\ninternal `DVDReadAsyncPrio` (`0x8015E74C`) against the user-owned extracted\n`DATA/files` source.\n\nThe Switch port already publishes the local FST but did not yet provide those\nread overrides. The next hardware slice adds only that missing read contract:\nresolve `DVDFileInfo::startAddr` through the published FST, read the matching\n`DATA/files` payload into guest RAM, publish DVD completion state, and notify\nthe existing guest-RAM DMA seam. A bounded `dvd-read-status.txt` records the\nfirst 32 attempts for hardware attribution.\n\n## Hardware result after #185 — later prio-6 guest thread frontier
+## Hardware result after #184 — DVD retry frontier
+
+The scheduler-focused hardware run closes the earlier ambiguity:
+
+- the default/main thread (`0x80347498`) is still present and becomes `READY`
+  at priority 16 on run queue `0x80347830`;
+- guest thread `0x90112660` remains `RUNNING` at priority 6;
+- `VIWaitForRetrace`, `PostRetraceCallback`, and `OSWakeupThread` then advance
+  together at the sustained retrace cadence while `SelectThread` barely advances;
+- `RKSystem::run` and StaticR remain at zero;
+- the graphics path still contains only the eight `Video::configure` BP writes.
+
+This disproves the idea that the default thread was simply lost. The higher-
+priority worker remains active while the default thread is runnable.
+
+Source attribution provides the next concrete gate: in pinned RMCP01,
+`EGG::DvdRipper::loadToMainRAM` is the explicit non-video path that retries a
+negative `DVDRead` by calling `VIWaitForRetrace()` and trying again. Pinned
+WiiCompiled therefore native-overrides `DVDReadPrio` (`0x8015E834`) and the
+internal `DVDReadAsyncPrio` (`0x8015E74C`) against the user-owned extracted
+`DATA/files` source.
+
+The Switch port already publishes the local FST but did not yet provide those
+read overrides. The next hardware slice adds only that missing read contract:
+resolve `DVDFileInfo::startAddr` through the published FST, read the matching
+`DATA/files` payload into guest RAM, publish DVD completion state, and notify
+the existing guest-RAM DMA seam. A bounded `dvd-read-status.txt` records the
+first 32 attempts for hardware attribution.
+
+## Hardware result after #185 — later prio-6 guest thread frontier
 
 The first hardware run with the local DVD-read bridge disproves the previous
 DVD-retry attribution for the current startup path:
@@ -1756,3 +1877,25 @@ Pinned guest bookkeeping changes word0 to `0x00000195` and leaves word1 at
 zero. The exact candidate applies only that tuple to the same Aurora GXTexObj
 constructed by the immediately preceding GXInitTexObj call. Any variation
 remains unsupported.
+
+
+## Earlier console result — TEV colors crossed (2026-10-03)
+
+The [fresh color/table hardware result](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md)
+supersedes the earlier pending color/table status. All twelve executed calls
+returned through the coherent later caller; AlphaCompare `0x80172088`,
+(7,0,0,7,0), is the new DIRECT hard stop. Black output and a crash persist.
+Actual RGBA bytes and recognizable game pixels remain unproven. The elapsed
+time includes an unexplained watchdog sampling gap, so it is not a performance
+measurement. Prior dated results above retain their original scope.
+
+
+## Latest console result — AlphaCompare crossed (2026-10-03)
+
+The [fresh AlphaCompare hardware result](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md)
+establishes its observed tuple returned. Fog `0x801722CC` is the new DIRECT
+hard stop at dispatch 603961 / 99.156 seconds, with actual float parameter bits
+and readable color captured. All 96 watchdog samples are ACTIVE. Preceding
+present counters do not prove visible pixels. The user confirms a black screen
+followed by an error; the exact on-screen wording is unavailable. Earlier dated
+sections retain their original scope.

@@ -1,5 +1,48 @@
 # Roadmap
 
+## Current checkpoint — 2026-10-03
+
+- [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
+
+- [x] Hardware-cross GXSetCoPlanar, GXSetClipMode, indirect texture matrix/scale and ambient channel color on the documented Discovery path.
+- [x] Hardware-cross the exact IA8 descriptor loads on maps 0..7.
+- [x] Hardware-cross the ten type-0 GXLoadTexMtxImm loop calls (IDs 30,33,...,57), followed by return from Gen2 coord 0.
+- [x] Capture the preceding DIRECT frontier: GXSetTexCoordScaleManually `0x80171180`, `(0,0,0,0)`, dispatch 605350, 99.513 seconds from the first dispatch.
+- [x] Build and locally validate bounded coordinate candidate `91a4a01b8e316f9010e9d31754e279065772f9f3`; transfer its exact Rendered Discovery NRO with nxlink exit 0.
+- [x] Retrieve fresh reports for NRO SHA-256 `64ba837720f4e37cbd127c37a0e9bde6dc146ed229a92c8697b9c531a8984d08`, transferred at 2026-10-02 23:09:38 UTC; the user confirms a black screen.
+- [x] Hardware-accept the eight Gen2(c,1,4,60,0,125) / disabled Scale(c,0,0,0) / disabled Bias(c,0,0) triples on coords 0..7 by return to caller `0x80241380` and a later distinct frontier.
+- [x] Record the new DIRECT frontier: GXSetTevDirect `0x80171B58`, stage 0, LR `0x80240F98`, dispatch 605633, 100.205 seconds from the first dispatch.
+- [x] Launch audit NRO SHA-256 `7ecbc8a9fe1efb31697c2ee36d0b0b648a8e87d3fa7dda1fb9d262d6de5b7d09`, transfer exit 0 at 2026-10-03 09:25:19 UTC, and accept normal-path non-regression through TEV Direct stage 0 at dispatch 608381 / 107.925 seconds. Error-path fixes remain outside this hardware acceptance.
+- [x] Pass the six-setter [TEV scalar candidate](docs/GX_TEV_SCALAR_BATCH_2026-10-03.md) local workflow/host-contract gates and exact private Rendered Discovery build.
+- [x] Pass all five GitHub workflows on integrated code `e76e8f38`; transfer NRO `cc88a78c...` with exit 0 and hardware-accept the six TEV setters on default tuples across stages 0..15 (96 new calls plus 16 existing Order calls).
+- [x] Capture the [KColor frontier](docs/HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md): ID 0, pointer `0x80398FCC`, dispatch 605056 / 98.265 seconds; user reports black screen and error at exit.
+- [x] Implement the [bounded TEV color/table candidate](docs/GX_TEV_COLOR_BATCH_2026-10-03.md): KColor and adjacent Color/SwapModeTable, with ID-before-memory guards and passing executable host contracts.
+- [x] Pass all five GitHub workflows and the exact private Rendered Discovery build for color/table code `1333b0e2`, NRO SHA-256 `a56be88113ff7c2cc20808111cf7d6c0e947b0c8955b2252737b974b28a9e0ad`, with 25 retained symbols and the three unique Aurora providers checked.
+- [x] Transfer the color/table NRO with exit 0 at 13:43:58 UTC and establish fresh console return from all twelve calls through the restored later caller.
+- [x] Capture [AlphaCompare](docs/HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md) `0x80172088`, (7,0,0,7,0), dispatch 700091, stage BlendMode; user still reports black output and a crash.
+- [x] Implement the [separate AlphaCompare candidate](docs/GX_ALPHA_COMPARE_2026-10-03.md), including the existing host validity flag; pass both host-contract modes and four mutation checks.
+- [x] Pass AlphaCompare rendered syntax, all five exact-code GitHub workflows and the private NRO build: SHA-256 `7032c756f4f0872334aea0a4421a8633e8d76d9ed1c004cf2d59fafa87b5b310`, 27 strong symbols, unique native and existing flag providers.
+- [x] Transfer the exact AlphaCompare NRO with exit 0 at 17:50:16 UTC and accept the observed tuple return through existing ZMode to [Fog](docs/HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md).
+- [x] Capture Fog type 0, pointer `0x80398FD0`, four exact f64 parameter bits and readable RGBA 255,255,255,255 at dispatch 603961 / 99.156 seconds.
+- [x] Implement the [bounded Fog/ZCompLoc candidate](docs/GX_FOG_Z_COMP_2026-10-03.md), including exact f64 guards, complete color range and full-word bool semantics; pass host/native contracts and rendered syntax.
+- [x] Pass all five exact-bridge-code workflows and the private Fog/ZCompLoc NRO build, with 31 symbols and unique scoped native providers.
+- [ ] Validate the host-test-only core-dump optimization remotely; preserve real SIGABRT and sanitizer coverage.
+- [ ] Establish fresh console progression beyond Fog and prepared ZCompLoc.
+- [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
+
+The latest accepted reports are the [AlphaCompare-to-Fog result](docs/HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md). They establish AlphaCompare returned on the observed tuple and preserve the prior color/scalar/coordinate path. Fog is reached with captured f64 arguments and four readable color bytes, but has not returned. The preceding heartbeat at 603545 records 1556 guest FIFO writes, 99 successful presents and zero failures; it does not prove later native commands or pixels. All 96 watchdog samples are ACTIVE, with no long sampling gap. Alternate inputs and runtime negative branches retain host evidence only. The user confirms a black screen followed by an error; exact on-screen wording is unavailable.
+
+The checked caller forecasts existing translated `GXSetFogRangeAdj`
+(`0x80172658`, disabled arguments), then prepared `GXSetZCompLoc`
+(`0x80172858`, argument 1), then the existing `GXSetDstAlpha` bridge
+(`0x8017295C`, arguments 0,0). These successors have not been reached in the
+latest console run. They guide preparation, but do not establish a finite
+number of fixes before the first image. After passing the executed setup path,
+visible drawing, textures and GX state still need validation, followed by a
+sustained scene without an error, input/audio correctness and performance.
+
+The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
+
 ## M0 — libnx bootstrap
 - [x] Minimal AArch64 `.nro` target
 - [x] Atmosphère/hbmenu launch loop
@@ -124,9 +167,16 @@ Hardware evidence is recorded in:
 - `docs/HARDWARE_RESULTS_2026-09-18_M3_HLE_FIFO_AURORA.md`
 - `docs/HARDWARE_RESULTS_2026-09-19_RMCP01_RESOURCE_THREAD_FRONTIER.md`
 
-The current hardware-driven method remains deliberate after `main`: execute the broadest safe translated path, stop on the first unsupported native/translated boundary or attributable exception, and when no blocker appears use the independent heartbeat watchdog to distinguish sustained execution from a real stall. New runtime behavior is still added only from hardware evidence and pinned WiiCompiled semantics. Post-main bring-up remains tracked in #117.
+The current hardware-driven method remains deliberate after `main`: execute the broadest safe translated path, stop on the first unsupported native/translated boundary or attributable exception, and when no blocker appears use the independent heartbeat watchdog to distinguish sustained execution from a real stall. The default remains hardware evidence plus pinned WiiCompiled semantics; the user-authorized exception is a documented bounded GX batch with wrapper/Aurora audits and executable contracts. Each member still needs its own hardware progression proof. Post-main bring-up remains tracked in #117.
 
-Validation policy after the 2026-09-20 audit: the five public CI workflows remain mandatory, but rendered RMCP01 changes additionally require a successful private `build-local-rendered-fast-track.sh` build before hardware testing. A dispatch hit counter is telemetry, not a standalone PASS; a boundary is hardware-crossed only when execution durably progresses beyond the tested target. See `docs/FAST_TRACK_VALIDATION_POLICY.md`.
+Validation policy after the 2026-09-20 audit: the five public CI workflows remain
+mandatory under the project validation policy. The main-branch rules do not yet
+require their job contexts; see [the audit](docs/PORT_AUDIT_2026-10-03.md).
+Rendered RMCP01 changes additionally require a successful private
+`build-local-rendered-fast-track.sh` build before hardware testing. A dispatch
+hit counter is telemetry, not a standalone PASS; a boundary is hardware-crossed
+only when execution durably progresses beyond the tested target. See
+`docs/FAST_TRACK_VALIDATION_POLICY.md`.
 
 ## M3 — graphics / first frame
 - [ ] Resolve shared upstream GX safety blockers before attributing failures to a Switch backend:
@@ -160,8 +210,10 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 > AIInit (0x801240B0), __AXOutInitDSP (0x801269BC), AIRegisterDMACallback (0x80123F88), AIInitDMA (0x80123FCC), and AIStartDMA (0x80124048) are hardware-crossed.
 > The third wrap tuple on obj 0x9018E140 and fourth LOD tuple on obj 0x9018E480
 > are hardware-crossed. OSSetPeriodicAlarm (0x801A08E0) is also hardware-crossed.
-> SoundPlayer::SetVolume (0x800A35E0), the fifth GXInitTexObjLOD tuple on obj 0x908FA4E0, the fourth GXInitTexObjWrapMode tuple on obj 0x908FA4E0, the sixth GXInitTexObjLOD tuple on obj 0x908FA5C0, the seventh GXInitTexObjLOD tuple on obj 0x907938A0, and the fifth GXInitTexObjWrapMode tuple on obj 0x907938A0 are hardware-crossed. The eighth GXInitTexObjLOD tuple and seventh GXInitTexObjWrapMode tuple on obj 0x908FA820, the tenth GXInitTexObjLOD tuple on obj 0x909019C0, and the eleventh GXInitTexObjLOD tuple on obj 0x908FA840 are hardware-crossed. The ninth GXInitTexObjWrapMode tuple on obj 0x908FA840 is now also hardware-crossed. The thirteenth GXInitTexObjLOD descriptor on obj 0x908FAE00 is now also hardware-crossed. Scheduler-dependent current gates are the ninth GXInitTexObjLOD tuple on obj 0x90793BE0, the twelfth exact GXInitTexObjLOD descriptor on obj 0x9018E480 (format 2), plus the sixth/eighth/tenth/eleventh GXInitTexObjWrapMode tuples on obj 0x908FA5C0 / 0x909019C0 / 0x9018E480 / 0x908FAE00. Visual Mario
-> Kart Wii pixels remain unproven.
+> Earlier scheduler-dependent texture-object, KD and audio gates are retained
+> in the dated hardware reports. The current accepted Discovery frontier and
+> the coordinate candidate awaiting reports are listed in the checkpoint above.
+> A recognizable Mario Kart Wii image remains unproven.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input

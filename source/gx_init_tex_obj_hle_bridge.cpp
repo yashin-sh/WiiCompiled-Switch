@@ -48,6 +48,12 @@ constexpr std::uint16_t kObservedHeight = 456u;
 constexpr std::uint32_t kObservedFormat = 4u;
 constexpr std::uint32_t kObservedTextureSize = 0x000B9400u;
 
+// Later hardware load after GXSetChanAmbColor: one 4x4 IA8 tile.
+// Only the captured descriptor is accepted; no texture payload is embedded.
+constexpr std::uint32_t kObservedIa8LoadObj = 0x80384500u;
+constexpr std::uint32_t kObservedIa8Data = 0x00384540u;
+constexpr std::uint32_t kObservedIa8TextureSize = 32u;
+
 constexpr std::uint32_t kObservedLodObj = 0x9018E120u;
 constexpr std::uint32_t kObservedLodMinFilter = 1u;
 constexpr std::uint32_t kObservedLodMagFilter = 1u;
@@ -1760,7 +1766,7 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
     const std::uint32_t wrapT = (word0 >> 2u) & 0x3u;
     const std::uint32_t mipmap = word7 & 0x1u;
 
-    const bool exactObservedDescriptor =
+    const bool exactOriginalDescriptor =
         obj == kObservedLoadObj &&
         tid == kObservedLoadTid &&
         word0 == kObservedWord0 &&
@@ -1780,7 +1786,29 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
         wrapT == 0u &&
         mipmap == 0u;
 
-    if (!exactObservedDescriptor) {
+    // Pinned GXLoadTexObj guards eight binding slots, and Aurora indexes
+    // eight-entry register tables. Forward each legal slot for this exact
+    // observed IA8 descriptor; null/disable/out-of-range IDs still abort.
+    const bool exactIa8Descriptor =
+        obj == kObservedIa8LoadObj &&
+        tid < 8u &&
+        word0 == 0x00000190u &&
+        word1 == 0x00000000u &&
+        word2 == 0x00300C03u &&
+        word3 == 0x0001C22Au &&
+        word4 == 0x00000000u &&
+        word5 == 0x00000003u &&
+        word6 == 0x00000000u &&
+        word7 == 0x00010202u &&
+        data == kObservedIa8Data &&
+        width == 4u && height == 4u &&
+        format == 3u && formatWord2 == 3u &&
+        wrapS == 0u && wrapT == 0u && mipmap == 0u;
+
+    // Report no proven size for an unknown descriptor. The original RGB565
+    // size must never be presented as this IA8 tile's range requirement.
+    const std::uint32_t textureSize = exactOriginalDescriptor ? kObservedTextureSize : (exactIa8Descriptor ? kObservedIa8TextureSize : 0u);
+    if (!exactOriginalDescriptor && !exactIa8Descriptor) {
         AbortLoadBoundary(
             "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR",
             cpu,
@@ -1793,10 +1821,10 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
             wrapS,
             wrapT,
             mipmap,
-            kObservedTextureSize);
+            textureSize);
     }
 
-    if (!Memory::Contains(data, kObservedTextureSize)) {
+    if (!Memory::Contains(data, textureSize)) {
         AbortLoadBoundary(
             "GX_LOAD_TEX_OBJ_DATA_UNMAPPED",
             cpu,
@@ -1809,7 +1837,7 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
             wrapS,
             wrapT,
             mipmap,
-            kObservedTextureSize);
+            textureSize);
     }
 
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
@@ -1817,7 +1845,7 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
         std::scoped_lock lock(gTexObjMutex);
         GXTexObj* hostObj = GetOrCreateHostTexObj(obj);
         const void* hostData =
-            GuestToHostPtr(data, kObservedTextureSize);
+            GuestToHostPtr(data, textureSize);
         if (!hostData) {
             AbortLoadBoundary(
                 "GX_LOAD_TEX_OBJ_DATA_POINTER_NULL",
@@ -1831,15 +1859,15 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
                 wrapS,
                 wrapT,
                 mipmap,
-                kObservedTextureSize);
+                textureSize);
         }
 
         GXInitTexObj(
             hostObj,
             hostData,
-            kObservedWidth,
-            kObservedHeight,
-            GX_TF_RGB565,
+            static_cast<std::uint16_t>(width),
+            static_cast<std::uint16_t>(height),
+            static_cast<GXTexFmt>(format),
             GX_CLAMP,
             GX_CLAMP,
             GX_FALSE);
@@ -1851,10 +1879,10 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
             0.0f,
             0.0f,
             GX_FALSE,
-            GX_TRUE,
+            ((word0 >> 8u) & 1u) == 0u ? GX_TRUE : GX_FALSE,
             GX_ANISO_1);
         GXInitTexObjUserData(hostObj, nullptr);
-        GXLoadTexObj(hostObj, GX_TEXMAP0);
+        GXLoadTexObj(hostObj, static_cast<GXTexMapID>(tid));
     } catch (...) {
         AbortLoadBoundary(
             "GX_LOAD_TEX_OBJ_HOST_EXCEPTION",
@@ -1868,7 +1896,7 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
             wrapS,
             wrapT,
             mipmap,
-            kObservedTextureSize);
+            textureSize);
     }
 #endif
 
@@ -1884,7 +1912,7 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
         wrapS,
         wrapT,
         mipmap,
-        kObservedTextureSize);
+        textureSize);
 }
 
 #endif

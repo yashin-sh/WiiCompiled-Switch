@@ -10,8 +10,14 @@ readonly DAWN_DIR="${MKW_M3_DAWN_ROOT:-$DEPS_DIR/dawn-switch}"
 readonly DAWN_BUILD_DIR="${MKW_M3_HLE_FIFO_BUILD_ROOT:-$DEPS_DIR/dawn-switch-hle-fifo-aurora-build}"
 readonly WII_DIR="$ROOT_DIR/third_party/WiiCompiled"
 readonly MESA_IMAGE="${MKW_M3_MESA_IMAGE:-wiicompiled-m3-mesa-b297e230-v3}"
-readonly DISCOVERY_MODE="${MKW_DISCOVERY_SCAN_MODE:-OFF}"
-if [[ "$DISCOVERY_MODE" == "ON" || "$DISCOVERY_MODE" == "1" ]]; then
+DISCOVERY_MODE="${MKW_DISCOVERY_SCAN_MODE:-OFF}"
+case "${DISCOVERY_MODE^^}" in
+    ON|1) DISCOVERY_MODE=ON ;;
+    OFF|0) DISCOVERY_MODE=OFF ;;
+    *) echo "error: MKW_DISCOVERY_SCAN_MODE must be ON/OFF or 1/0" >&2; exit 2 ;;
+esac
+readonly DISCOVERY_MODE
+if [[ "$DISCOVERY_MODE" == "ON" ]]; then
     readonly OUTPUT_BASENAME="WiiCompiled-Switch-local-rendered-discovery-scan.nro"
 else
     readonly OUTPUT_BASENAME="WiiCompiled-Switch-local-rendered-fast-track.nro"
@@ -61,7 +67,9 @@ echo "[1/4] Normalizing translated shards for devkitA64 GCC..."
 python3 "$ROOT_DIR/scripts/normalize-gcc-statefree-returns.py" "${normalize_paths[@]}"
 
 echo "[2/4] Preparing the hardware-proven Dawn/Aurora/NVK build environment..."
-MKW_JOBS="$JOBS" bash "$ROOT_DIR/scripts/build-m3-hle-fifo-aurora-probe.sh"
+MKW_JOBS="$JOBS" MKW_M3_BUILD_RENDERED_FAST_TRACK=ON \
+    MKW_DISCOVERY_SCAN_MODE="$DISCOVERY_MODE" \
+    bash "$ROOT_DIR/scripts/build-m3-hle-fifo-aurora-probe.sh"
 
 DOCKER_SECURITY_ARGS=()
 if command -v getenforce >/dev/null 2>&1 && [[ "$(getenforce)" == "Enforcing" ]]; then
@@ -72,6 +80,7 @@ echo "[3/4] Reconfiguring the proven build tree for the local RMCP01 rendered ta
 docker run --rm \
     "${DOCKER_SECURITY_ARGS[@]}" \
     -e MKW_M3_JOBS="$JOBS" \
+    -e MKW_DISCOVERY_SCAN_MODE="$DISCOVERY_MODE" \
     -v "$MESA_DIR:/mesa:ro" \
     -v "$DAWN_DIR:/dawn" \
     -v "$DAWN_BUILD_DIR:/build" \
@@ -85,20 +94,22 @@ docker run --rm \
         export DEVKITPRO=/opt/devkitpro
         cmake -S /dawn -B /build \
             -DM3_BUILD_RENDERED_FAST_TRACK=ON \
-            -DMKW_DISCOVERY_SCAN_MODE="'"$DISCOVERY_MODE"'"
+            -DMKW_DISCOVERY_SCAN_MODE="$MKW_DISCOVERY_SCAN_MODE"
         cmake --build /build --target mkw_switch_rendered_fast_track_nro -j"$MKW_M3_JOBS"
     '
 
 echo "[4/4] Collecting local game-containing NRO..."
-built_nro="$(find "$DAWN_BUILD_DIR" -type f -name "$OUTPUT_BASENAME" -print -quit)"
-if [[ -z "$built_nro" || ! -f "$built_nro" ]]; then
-    echo "error: rendered fast-track NRO was not produced" >&2
+built_nro_listing="$(find "$DAWN_BUILD_DIR" -type f -name "$OUTPUT_BASENAME" -print)"
+mapfile -t built_nros <<< "$built_nro_listing"
+if (( ${#built_nros[@]} != 1 )) || [[ ! -f "${built_nros[0]}" ]]; then
+    echo "error: expected exactly one rendered fast-track NRO" >&2
     exit 1
 fi
+built_nro="${built_nros[0]}"
 cp -f "$built_nro" "$OUTPUT"
 
 echo
-if [[ "$DISCOVERY_MODE" == "ON" || "$DISCOVERY_MODE" == "1" ]]; then
+if [[ "$DISCOVERY_MODE" == "ON" ]]; then
     echo "RMCP01 rendered Discovery Scan ready:"
 else
     echo "RMCP01 rendered fast-track ready:"

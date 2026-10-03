@@ -15,7 +15,6 @@ extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
 namespace {
 
 constexpr std::uint32_t kGxSetTexCoordGen2Address = 0x8016E37Cu;
-constexpr std::uint32_t kObservedDst = 0u;
 constexpr std::uint32_t kObservedType = 1u;
 constexpr std::uint32_t kObservedSrc = 4u;
 constexpr std::uint32_t kObservedMtx = 60u;
@@ -46,7 +45,7 @@ extern "C" void mkw_switch_hle_gx_set_tex_coord_gen2(CpuContext* cpu) noexcept {
 
     mkw_switch_set_fast_track_stage("RMCP01_GX_SET_TEX_COORD_GEN2");
 
-    if (dst != kObservedDst ||
+    if (dst >= 8u ||
         type != kObservedType ||
         src != kObservedSrc ||
         mtx != kObservedMtx ||
@@ -57,7 +56,7 @@ extern "C" void mkw_switch_hle_gx_set_tex_coord_gen2(CpuContext* cpu) noexcept {
 
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
     GXSetTexCoordGen2(
-        GX_TEXCOORD0,
+        static_cast<GXTexCoordID>(dst),
         GX_TG_MTX2x4,
         GX_TG_TEX0,
         GX_IDENTITY,

@@ -40,17 +40,39 @@ patched_paths=(
     runtime/src/hle/gx/gx_dl.cpp
 )
 
+patch_applied=0
 restore_wiicompiled() {
-    git -C "$WII_DIR" restore --source="$WII_PIN" -- "${patched_paths[@]}" >/dev/null 2>&1 || true
+    local exit_status=$?
+    trap - EXIT
+    if ((patch_applied != 0)); then
+        if ! git -C "$WII_DIR" apply --reverse "$WII_RENDERED_PATCH"; then
+            echo "error: could not undo the rendered syntax gate's own patch; existing edits were preserved" >&2
+            if ((exit_status == 0)); then
+                exit_status=2
+            fi
+        fi
+    fi
+    exit "$exit_status"
 }
 trap restore_wiicompiled EXIT
 
-git -C "$WII_DIR" restore --source="$WII_PIN" -- "${patched_paths[@]}"
-if ! git -C "$WII_DIR" apply --check "$WII_RENDERED_PATCH"; then
-    echo "error: rendered WiiCompiled patch no longer applies to $WII_PIN" >&2
-    exit 2
+# Reuse the configured patch without rewriting headers or removing local
+# changes. A clean checkout receives a temporary patch owned by this gate.
+if git -C "$WII_DIR" apply --reverse --check "$WII_RENDERED_PATCH" >/dev/null 2>&1; then
+    echo "Reusing the existing rendered WiiCompiled patch"
+else
+    if ! git -C "$WII_DIR" diff --quiet -- "${patched_paths[@]}" ||
+       ! git -C "$WII_DIR" diff --cached --quiet -- "${patched_paths[@]}"; then
+        echo "error: rendered header paths have local changes; refusing to overwrite them" >&2
+        exit 2
+    fi
+    if ! git -C "$WII_DIR" apply --check "$WII_RENDERED_PATCH"; then
+        echo "error: rendered WiiCompiled patch no longer applies to $WII_PIN" >&2
+        exit 2
+    fi
+    git -C "$WII_DIR" apply "$WII_RENDERED_PATCH"
+    patch_applied=1
 fi
-git -C "$WII_DIR" apply "$WII_RENDERED_PATCH"
 
 for required in \
     "$RUNTIME_DIR/include/host_context.h" \

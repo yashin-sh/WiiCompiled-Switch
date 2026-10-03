@@ -84,7 +84,9 @@ The forecast answers a different question:
 > understand?
 
 That lets us pre-read decomp/WiiCompiled semantics and identify likely missing
-coverage without pre-porting anything.
+coverage. Implementing a forecast requires either an observed boundary or the
+documented, user-authorized bounded GX batch exception in
+[the validation policy](FAST_TRACK_VALIDATION_POLICY.md).
 
 ## Limits
 
@@ -99,8 +101,8 @@ Static callsite adjacency cannot reliably predict:
 - which thread reaches a candidate first.
 
 DTK can provide deeper binary-level control-flow information when the user's
-local RMCP01 files are available, but the same policy applies: prediction is
-analysis only.
+local RMCP01 files are available. Prediction remains analysis; it does not
+establish runtime order, grant batch scope, or count as hardware acceptance.
 
 ## Decision rule
 
@@ -116,4 +118,13 @@ durable exact blocker
 minimal patch
 ```
 
-Never reverse the final two steps.
+This is the default for unknown and stateful behavior. For a user-authorized
+bounded GX batch, an audited neighboring setter may be implemented before its
+first hardware occurrence. Each member must still preserve the pinned wrapper
+and real Aurora semantics, have its own diagnostic stage and executable host
+contracts, and remain marked unreached until a later attributable hardware
+dispatch proves progression. Static adjacency alone is insufficient.
+
+Apply the complete validation ladder: five workflows at the exact candidate
+revision, the private rendered-build gate, and new reports bound to the exact
+NRO. A forecast or mapped-native label does not replace any of these gates.

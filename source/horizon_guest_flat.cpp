@@ -200,12 +200,13 @@ bool initialize(const RegionRequest* regions, std::size_t count, InitReport* rep
         if (request.size == 0) {
             continue;
         }
-        if (static_cast<std::uint64_t>(request.base) + request.size > kGuestSpaceSize) {
+        if (request.size > kGuestSpaceSize - request.base) {
             return fail_init(report, kErrorInvalidInput, request.base);
         }
 
         std::uint64_t offset = 0;
-        if (!backing_offset(request, offset) || offset + request.size > kGuestSpaceSize) {
+        if (!backing_offset(request, offset) || offset > kGuestSpaceSize ||
+            request.size > kGuestSpaceSize - offset) {
             return fail_init(report, kErrorInvalidInput, request.base);
         }
 

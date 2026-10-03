@@ -22,6 +22,62 @@ need() {
     fi
 }
 
+
+# Leave an already configured dependency untouched, including its mtimes.
+# Refuse other local edits rather than restoring a dependency over them.
+apply_pinned_patch() {
+    local checkout="$1" patch="$2" predecessor=""
+    shift 2
+    if [[ "${1:-}" == "--after-patch" ]]; then
+        predecessor="$2"
+        shift 2
+    fi
+    if git -C "$checkout" apply --reverse --check "$patch" >/dev/null 2>&1; then
+        return 0
+    fi
+    if ! git -C "$checkout" diff --cached --quiet -- "$@"; then
+        echo "error: staged patch paths have local changes in $checkout" >&2
+        return 1
+    fi
+    if ! git -C "$checkout" diff --quiet -- "$@"; then
+        if [[ -z "$predecessor" ]]; then
+            echo "error: patch paths have local changes in $checkout; refusing to overwrite them" >&2
+            return 1
+        fi
+        # Dawn's second patch touches the first patch's file. Accept exactly
+        # HEAD plus that explicit predecessor, using only temporary storage.
+        local expected_dir file matches=1
+        expected_dir="$(mktemp -d)"
+        for file in "$@"; do
+            mkdir -p "$(dirname "$expected_dir/$file")"
+            if ! git -C "$checkout" show "HEAD:$file" >"$expected_dir/$file"; then
+                matches=0
+                break
+            fi
+        done
+        if ((matches != 0)) && git -C "$expected_dir" apply "$predecessor"; then
+            for file in "$@"; do
+                if ! cmp -s "$expected_dir/$file" "$checkout/$file"; then
+                    matches=0
+                    break
+                fi
+            done
+        else
+            matches=0
+        fi
+        rm -rf -- "$expected_dir"
+        if ((matches == 0)); then
+            echo "error: patch paths differ from the authorized predecessor in $checkout" >&2
+            return 1
+        fi
+    fi
+    if ! git -C "$checkout" apply --check "$patch"; then
+        echo "error: integration patch no longer applies: $patch" >&2
+        return 1
+    fi
+    git -C "$checkout" apply "$patch"
+}
+
 need git
 need docker
 
@@ -41,15 +97,19 @@ fi
 
 mkdir -p "$DEPS_DIR"
 
-if [[ ! -d "$MESA_DIR/.git" ]]; then
+if [[ ! -e "$MESA_DIR/.git" ]]; then
     echo "[1/5] Cloning pinned mesa-switch dependency..."
     git clone --filter=blob:none "$MESA_REPO" "$MESA_DIR"
 else
     echo "[1/5] Reusing mesa-switch checkout..."
 fi
 
-git -C "$MESA_DIR" fetch --quiet origin "$MESA_PIN"
-git -C "$MESA_DIR" checkout --quiet --detach "$MESA_PIN"
+if ! git -C "$MESA_DIR" cat-file -e "${MESA_PIN}^{commit}" 2>/dev/null; then
+    git -C "$MESA_DIR" fetch --quiet origin "$MESA_PIN"
+fi
+if [[ "$(git -C "$MESA_DIR" rev-parse HEAD)" != "$MESA_PIN" ]]; then
+    git -C "$MESA_DIR" checkout --quiet --detach "$MESA_PIN"
+fi
 
 actual_pin="$(git -C "$MESA_DIR" rev-parse HEAD)"
 if [[ "$actual_pin" != "$MESA_PIN" ]]; then
@@ -58,14 +118,11 @@ if [[ "$actual_pin" != "$MESA_PIN" ]]; then
 fi
 echo "      mesa-switch: $actual_pin"
 
-# Keep the upstream pin exact and re-apply only our auditable build-integration
-# delta. Build directories and other untracked local output are preserved.
-git -C "$MESA_DIR" restore --source="$MESA_PIN" -- Docker.rust build-switch.sh
-if ! git -C "$MESA_DIR" apply --check "$MESA_PATCH"; then
-    echo "error: local mesa-switch integration patch no longer applies to $MESA_PIN" >&2
-    exit 1
-fi
-git -C "$MESA_DIR" apply "$MESA_PATCH"
+# Keep the upstream pin exact and reuse or apply our build-integration delta.
+# Refuse conflicting local edits; preserve build directories and other output.
+apply_pinned_patch "$MESA_DIR" "$MESA_PATCH" \
+    Docker.rust \
+    build-switch.sh
 echo "[2/5] Applied pinned Linux/Rust/SELinux integration patch."
 
 need_mesa_build=0

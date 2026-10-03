@@ -73,8 +73,8 @@ class Memory {
 
     // Mirrors the valid-path behavior of upstream Memory::Init: classify the
     // region backing, initialize GuestFlat, then bind each region to its
-    // always-accessible host view. Invalid accesses abort loudly in this first
-    // no-exceptions slice instead of silently returning bogus data.
+    // always-accessible host view. Read/Write operations throw AccessViolation
+    // for invalid backing; GetPointer/Contains return nullptr/false instead.
     static void Init(const Config& config);
     static void Reset() noexcept;
     static bool IsInitialized() noexcept;

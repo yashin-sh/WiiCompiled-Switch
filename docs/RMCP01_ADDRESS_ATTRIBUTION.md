@@ -34,7 +34,9 @@ The helper answers those questions before any HLE/runtime implementation is
 attempted.
 
 Hardware evidence and the pinned WiiCompiled revision remain authoritative for
-deciding what behavior may be implemented.
+runtime claims. The user-authorized bounded GX batch exception is defined in
+[the validation policy](FAST_TRACK_VALIDATION_POLICY.md); attribution output
+alone does not expand implementation scope.
 
 ## First use
 
@@ -172,15 +174,21 @@ Use the helper in this order for every ambiguous blocker:
 3. inspect the exact pinned WiiCompiled semantics;
 4. use DTK locally only when binary/module details remain ambiguous;
 5. optionally use decomp.me manually for a difficult PPC function;
-6. implement only the exact hardware-proven boundary;
-7. require the normal five-workflow CI gate before merge.
+6. implement the observed boundary, or a documented bounded GX batch whose
+   wrapper, Aurora behavior, argument guards and guest mirrors have been audited;
+7. require the five workflows on the exact candidate revision and the private
+   rendered-build gate described in the validation policy;
+8. bind the new hardware reports to the exact candidate NRO and establish
+   progression beyond each boundary before calling it hardware-crossed.
 
-The helper improves attribution speed. It does not authorize pre-porting
-neighboring functions.
+The helper improves attribution speed. It does not itself authorize pre-porting
+neighboring functions. A bounded GX batch may include audited neighbors under
+the documented exception; their local validation remains separate from
+hardware acceptance.
 
 For a static look-ahead from the attributed symbol, use
 `scripts/forecast-rmcp01-frontier.py`. See
-`docs/RMCP01_FRONTIER_FORECAST.md`.
+[RMCP01_FRONTIER_FORECAST.md](RMCP01_FRONTIER_FORECAST.md).
 
 ## Self-test
 

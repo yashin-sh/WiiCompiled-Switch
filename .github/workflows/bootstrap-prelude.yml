@@ -2,17 +2,25 @@ name: bootstrap-register-prelude
 
 on:
   push:
-    branches-ignore:
-      - main
   pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}-${{ github.ref_type }}
+  cancel-in-progress: true
 
 jobs:
   synthetic-bootstrap-prelude:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     container: devkitpro/devkita64:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
           submodules: recursive
 
       - name: Verify WiiCompiled pin
@@ -55,7 +63,7 @@ jobs:
           grep -E ' T mkw_switch_get_translated_execution_handoff_api$' /tmp/bootstrap-prelude.nm
           grep -E ' T synthetic_translated_bootstrap_registers$' /tmp/bootstrap-prelude.nm
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: WiiCompiled-Switch-synthetic-bootstrap-prelude-nro
           path: WiiCompiled-Switch-synthetic-bootstrap-prelude.nro

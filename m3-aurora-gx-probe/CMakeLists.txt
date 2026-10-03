@@ -43,7 +43,26 @@ if(NOT TARGET TracyClient)
     FetchContent_MakeAvailable(tracy)
 endif()
 
-set(A "${M3_AURORA_ROOT}")
+# Native GX and translated FIFO must share a bounded recording buffer. Build
+# a private source mirror so the pinned checkout and its user patch stay intact.
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(A "${CMAKE_CURRENT_BINARY_DIR}/checked-aurora")
+execute_process(
+    COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/prepare-checked-aurora-fifo.py"
+        "${M3_AURORA_ROOT}" "${A}"
+    RESULT_VARIABLE M3_CHECKED_FIFO_RESULT
+)
+if(NOT M3_CHECKED_FIFO_RESULT EQUAL 0)
+    message(FATAL_ERROR "Could not prepare the checked Aurora FIFO source mirror")
+endif()
+# Reconfigure when any mirrored upstream input changes; unchanged files keep
+# their timestamps and do not trigger another full Aurora compilation.
+file(GLOB_RECURSE M3_AURORA_MIRROR_INPUTS CONFIGURE_DEPENDS "${M3_AURORA_ROOT}/lib/*")
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+    ${M3_AURORA_MIRROR_INPUTS}
+    "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/prepare-checked-aurora-fifo.py"
+)
 
 add_library(m3_aurora_gx STATIC
     "${A}/lib/gfx/clear.cpp"
@@ -81,17 +100,24 @@ add_library(m3_aurora_gx STATIC
     "${A}/lib/dolphin/gx/GXVert.cpp"
     "${A}/lib/dolphin/gx/GXAurora.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/aurora_switch_shim.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/display_list_overflow.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/display_list_transport.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/probe_pipeline_cache.cpp"
 )
 
 target_include_directories(m3_aurora_gx PUBLIC
-    "${A}/include"
-    "${A}/lib"
+    "${M3_AURORA_ROOT}/include"
+    "${M3_AURORA_ROOT}/lib"
     "${CMAKE_CURRENT_SOURCE_DIR}/source"
     # Minimal local SDL3 *type* shims (compat/SDL3): Aurora headers name a
     # few SDL types but no compiled probe TU calls SDL, and no SDL library
     # is linked. Must come before any other path that could provide SDL.
     "${CMAKE_CURRENT_SOURCE_DIR}/compat"
+)
+
+target_include_directories(m3_aurora_gx BEFORE PRIVATE
+    "${A}/lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../include"
 )
 
 target_compile_features(m3_aurora_gx PUBLIC cxx_std_20)

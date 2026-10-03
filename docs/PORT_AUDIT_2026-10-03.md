@@ -183,7 +183,9 @@ because the structural layout table lacks it in that preceding candidate.
 The subsequent [depth-LOD hardware result](HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md)
 accepts the corrected LOD return and identifies GXBeginDisplayList as the new
 DIRECT boundary. The user confirms black output followed by an error;
-recognizable game pixels remain unproven.
+recognizable game pixels remain unproven. The [coordinated display-list candidate](GX_DISPLAY_LIST_2026-10-03.md)
+now implements a shared bounded native/guest recording transport and context
+restoration; this implementation still needs console acceptance.
 Input mapping, audio output, remaining Wii services, pixel correctness and
 representative-scene profiling are still open. See the updated
 [`ARCHITECTURE.md`](ARCHITECTURE.md) and

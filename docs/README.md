@@ -46,6 +46,8 @@
 - [RMCP01_ADDRESS_ATTRIBUTION.md](RMCP01_ADDRESS_ATTRIBUTION.md) — public address metadata, pinned semantics and local DTK follow-up
 - [RMCP01_FRONTIER_FORECAST.md](RMCP01_FRONTIER_FORECAST.md) — static look-ahead and its limits
 
+- [GX display-list candidate](GX_DISPLAY_LIST_2026-10-03.md) — coordinated Begin/End, bounded native/guest FIFO and context restoration; hardware pending
+
 ## Hardware evidence
 
 - [TEV scalar hardware result](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md) — six setters return on stages 0..15; KColor pointer frontier, black screen and error at exit

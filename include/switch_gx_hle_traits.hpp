@@ -50,6 +50,8 @@ extern "C" void mkw_switch_hle_gx_set_clip_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_dither(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_dst_alpha(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_begin(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_begin_display_list(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_end_display_list(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_amb_color(CpuContext* cpu) noexcept;
@@ -579,6 +581,23 @@ struct KnownNativeCpuCall<0x8016F0F0u> {
     }
 };
 
+// GX display-list recording pair. Begin has reached hardware at 0x80172E00;
+// End is prepared from pinned semantics, without claiming a console return.
+template <>
+struct KnownNativeCpuCall<0x80172E00u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_begin_display_list(cpu);
+    }
+};
+template <>
+struct KnownNativeCpuCall<0x80172EB4u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_end_display_list(cpu);
+    }
+};
+
 // GXInitTexObj (PAL 0x801707F8). Pinned WiiCompiled consumes
 // r3..r10 = guest GXTexObj / image data / width / height / format / wrapS /
 // wrapT / mipmap, constructs the Aurora host texture object, and mirrors the
@@ -604,12 +623,9 @@ struct KnownNativeCpuCall<0x8017039Cu> {
     }
 };
 
-// GXInitTexObjLOD (PAL 0x80170A4C). Hardware has now captured thirteen exact
-// descriptors, all with min/mag=GX_LINEAR/GX_LINEAR,
-// minLod=maxLod=lodBias=+0.0f, biasClamp=false, edgeLod=false and GX_ANISO_1.
-// Twelve object addresses are represented: obj=0x9018E480 has both the earlier
-// format-0 descriptor and a later exact format-2 descriptor. The bridge accepts
-// only those exact descriptors and their separately proven pre-LOD state.
+// GXInitTexObjLOD (PAL 0x80170A4C). The normal rendered build validates
+// the complete tiled descriptor, including the hardware-observed Z24X8 layout.
+// An optional legacy strict mode retains its earlier exact tuple allowlist.
 template <>
 struct KnownNativeCpuCall<0x80170A4Cu> {
     static constexpr bool kAvailable = true;

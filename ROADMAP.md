@@ -2,6 +2,9 @@
 
 ## Current checkpoint — 2026-10-03
 
+- [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
+- [ ] Accept this candidate on the console, resolve any pending-state/indexed-layout or later native boundary and establish recognizable game pixels.
+
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
 
 - [x] Hardware-cross GXSetCoPlanar, GXSetClipMode, indirect texture matrix/scale and ambient channel color on the documented Discovery path.
@@ -33,10 +36,10 @@
 - [x] Pass all five workflows / six jobs on depth-LOD code `b5f0a2b0`, with actual new contract/native-fixture logs; build NRO `596ba38a...` with 35 strong symbols and unique scoped native Init/LOD providers.
 - [x] Transfer NRO `596ba38a...` with exit 0 at 20:49:11 UTC; accept observed depth LOD return from fresh `lod-pass` and coherent later execution.
 - [x] Capture GXBeginDisplayList `0x80172E00`, buffer `0x80394F00`, 16 KiB, dispatch 609010 / 108.440 seconds; user confirms black screen then error.
-- [ ] Audit/port coordinated display-list begin/end, FIFO recording and GX context effects; establish fresh console continuation.
+- [ ] Hardware-accept the coordinated Begin/End implementation and establish fresh console continuation.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The latest accepted reports are the [depth-LOD-to-display-list result](docs/HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md). They establish the corrected LOD returned on the observed object, with `lod-pass` and mode word `0x105`, followed by coherent execution of the next constructor. The next DIRECT stop is GXBeginDisplayList, with a 32-byte-aligned 16 KiB buffer. This arrival agrees with the earlier static forecast; its stateful recording has not begun.
+The latest accepted reports are the [depth-LOD-to-display-list result](docs/HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md). They establish the corrected LOD returned on the observed object, with `lod-pass` and mode word `0x105`, followed by coherent execution of the next constructor. The next DIRECT stop is GXBeginDisplayList, with a 32-byte-aligned 16 KiB buffer. This arrival agrees with the earlier static forecast; its stateful recording had not begun on that tested NRO. The coordinated implementation is now a candidate awaiting a new console run.
 
 The changed post-main snapshot before the texture constructor records 1558 guest FIFO writes and the same preceding 99 successful presents / zero failures. These counters do not prove pixels after LOD. The watchdog records 102 ACTIVE and one recovered STALE sample. The user confirms a black screen followed by an error; exact wording is unavailable. Alternate inputs and negative branches retain host evidence only.
 

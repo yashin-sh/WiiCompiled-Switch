@@ -15,7 +15,7 @@
 
 #include "dolphin/gx.h"
 #include "gfx/common.hpp"
-#include "gx/fifo.hpp"
+#include "aurora_fifo_transport.hpp"
 #include "internal.hpp"
 #include "webgpu/gpu.hpp"
 

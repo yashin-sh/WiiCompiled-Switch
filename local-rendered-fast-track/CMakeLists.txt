@@ -60,6 +60,11 @@ add_executable(mkw_switch_rendered_fast_track
     "${M3_WIICOMPILED_ROOT}/runtime/src/hle/gx/gx_fifo.cpp"
 )
 
+# Keep the pinned decoder outside recording; the Switch burst entry point
+# records directly through the same checked Aurora writer as scalar writes.
+set_source_files_properties("${M3_WIICOMPILED_ROOT}/runtime/src/hle/gx/gx_fifo.cpp"
+    PROPERTIES COMPILE_DEFINITIONS "GX_HLE_FIFO_WriteBurst=mkw_switch_pinned_fifo_write_burst")
+
 target_include_directories(mkw_switch_rendered_fast_track PRIVATE
     # Probe-style seams first: hle_stubs.h here shadows the desktop
     # runtime's parallel ABI world (see seams/hle_stubs.h).

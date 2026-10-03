@@ -36,9 +36,13 @@ The latest [accepted Discovery run](docs/HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_D
 returns from the corrected depth-texture LOD on the observed 4×4 Z24X8 object.
 The fresh report records `lod-pass`, zero/nearest arguments and guest word0
 `0x105`; later coherent execution reaches **GXBeginDisplayList (`0x80172E00`)**.
-That unbridged call intentionally aborts at dispatch 609010 / 108.440 seconds,
+The tested NRO had no bridge for that call and intentionally aborts at
+dispatch 609010 / 108.440 seconds,
 with a 32-byte-aligned buffer `0x80394F00` and 16 KiB capacity. Its stateful
-FIFO recording and GX context effects are the next porting boundary.
+FIFO recording and GX context effects are the next hardware boundary.
+A [coordinated Begin/End candidate](docs/GX_DISPLAY_LIST_2026-10-03.md) now
+implements bounded mixed native/guest recording and context restoration;
+its console return remains unaccepted.
 The user confirms **a black screen followed by an error**; recognizable game
 pixels remain unproven.
 

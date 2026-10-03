@@ -31,6 +31,9 @@ extern "C" void mkw_switch_hle_gx_set_tev_color_op(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_alpha_in(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_alpha_op(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_swap_mode(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_k_color(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_color(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_swap_mode_table(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_op(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_order(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_blend_mode(CpuContext* cpu) noexcept;
@@ -327,6 +330,38 @@ struct KnownNativeCpuCall<0x80171FD0u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_tev_swap_mode(cpu);
+    }
+};
+
+// Bounded TEV color family. Pointer setters validate raw ID 0..3 before
+// resolving all four RGBA bytes. No CPU/guest writes or frame helpers.
+// GXSetTevKColor: r3 ID 0..3, r4 readable four-byte guest RGBA pointer.
+template <>
+struct KnownNativeCpuCall<0x80171ED4u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_k_color(cpu);
+    }
+};
+
+// GXSetTevColor: r3 register ID 0..3, r4 guest RGBA pointer.
+template <>
+struct KnownNativeCpuCall<0x80171E10u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_color(cpu);
+    }
+};
+
+// GXSetTevSwapModeTable: r3 ID and r4..r7 channel enums, all 0..3.
+template <>
+struct KnownNativeCpuCall<0x8017200Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_swap_mode_table(cpu);
     }
 };
 

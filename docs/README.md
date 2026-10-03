@@ -163,6 +163,8 @@
 
 ## Blocker notes
 
+- [Pending TEV color/table batch](GX_TEV_COLOR_BATCH_2026-10-03.md) — KColor pointer fix, pre-ported Color/SwapModeTable and executable memory/CPU contracts
+
 - [TEV scalar batch](GX_TEV_SCALAR_BATCH_2026-10-03.md) — six setters, legal SDK domains, completed gates and default-tuple hardware acceptance
 - [Coordinate batch hardware scope](GX_TEX_COORD_BATCH_2026-10-03.md) — eight exact triples accepted; enabled branches remain host-only
 - [Coordinate neighbor audit](GX_TEX_COORD_NEIGHBORS_2026-10-02.md) — pinned wrapper/Aurora semantics and static caller

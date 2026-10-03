@@ -115,8 +115,15 @@ limit. The subsequent host-test-only change disables core dumps with
 can ignore `RLIMIT_CORE=0`. The test still requires a diagnosed real SIGABRT,
 checks shared CPU/memory afterwards and leaves parent LeakSanitizer active.
 The local rendered probe completed all 66,601 valid calls and 312 refusals in
-about two seconds of execution. Remote validation of this optimization is
-tracked separately; the Switch bridge code is unchanged.
+about two seconds of execution. All five workflows and six jobs also pass on the optimized-test revision
+`e24480511513899e7ae242343f16cccfebfa244e`, with the same twelve contracts.
+Actual CI logs confirm 66,601 valid calls / 312 refusals in both modes and
+the 1,024 native fixture cases. The host-contract job took **10 min 39 sec**
+in that run, compared with 19 min 03 sec in the initial run. These are two
+observed CI durations, not a guaranteed runner performance bound.
+The fresh private build at **19:00:14 UTC** performed no compilation and
+produced the exact same NRO digest as `c329b6d0`; the Switch sources and
+binary are unchanged by the host-test optimization.
 
 Console acceptance still requires an exact NRO transfer,
 fresh attributable reports and later coherent execution beyond these calls.

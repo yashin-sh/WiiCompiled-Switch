@@ -26,7 +26,7 @@
 - [x] Capture Fog type 0, pointer `0x80398FD0`, four exact f64 parameter bits and readable RGBA 255,255,255,255 at dispatch 603961 / 99.156 seconds.
 - [x] Implement the [bounded Fog/ZCompLoc candidate](docs/GX_FOG_Z_COMP_2026-10-03.md), including exact f64 guards, complete color range and full-word bool semantics; pass host/native contracts and rendered syntax.
 - [x] Pass all five exact-bridge-code workflows and the private Fog/ZCompLoc NRO build, with 31 symbols and unique scoped native providers.
-- [ ] Validate the host-test-only core-dump optimization remotely; preserve real SIGABRT and sanitizer coverage.
+- [x] Validate the host-test-only core-dump optimization on all five workflows; preserve real SIGABRT and sanitizers, with byte-identical NRO. The observed host job is 10 min 39 sec versus 19 min 03 sec initially.
 - [ ] Establish fresh console progression beyond Fog and prepared ZCompLoc.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 

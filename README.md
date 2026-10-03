@@ -47,8 +47,9 @@ on-screen error wording is unavailable; recognizable game pixels remain unproven
 The [next Fog/ZCompLoc candidate](docs/GX_FOG_Z_COMP_2026-10-03.md) implements
 the captured Fog tuple and prepares the following missing ZCompLoc call. Its
 host/native contracts, rendered syntax, all five bridge-code workflows and
-private NRO build pass. A host-test-only core-dump optimization is validated
-separately. It has not yet crossed Fog on hardware.
+private NRO build pass. All five workflows also pass with the host-test-only
+core-dump optimization; its NRO is byte-identical. It has not yet crossed
+Fog on hardware.
 
 The latest preceding durable heartbeat, at dispatch 603,545, records:
 

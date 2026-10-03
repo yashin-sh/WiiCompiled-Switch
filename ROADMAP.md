@@ -13,7 +13,8 @@
 - [x] Hardware-accept the eight Gen2(c,1,4,60,0,125) / disabled Scale(c,0,0,0) / disabled Bias(c,0,0) triples on coords 0..7 by return to caller `0x80241380` and a later distinct frontier.
 - [x] Record the new DIRECT frontier: GXSetTevDirect `0x80171B58`, stage 0, LR `0x80240F98`, dispatch 605633, 100.205 seconds from the first dispatch.
 - [x] Launch audit NRO SHA-256 `7ecbc8a9fe1efb31697c2ee36d0b0b648a8e87d3fa7dda1fb9d262d6de5b7d09`, transfer exit 0 at 2026-10-03 09:25:19 UTC, and accept normal-path non-regression through TEV Direct stage 0 at dispatch 608381 / 107.925 seconds. Error-path fixes remain outside this hardware acceptance.
-- [ ] Validate/build/run the six-setter [TEV scalar candidate](docs/GX_TEV_SCALAR_BATCH_2026-10-03.md) on stages 0..15 and capture progression beyond Direct; KColor pointer handling is outside the lot.
+- [x] Pass the six-setter [TEV scalar candidate](docs/GX_TEV_SCALAR_BATCH_2026-10-03.md) local workflow/host-contract gates and exact private Rendered Discovery build.
+- [ ] Launch the exact TEV NRO and capture progression beyond Direct on stages 0..15; KColor pointer handling is outside the lot.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
 The latest accepted reports are the [audit non-regression result](docs/HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md), preserving the [coordinate-to-TEV baseline](docs/HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md). The eight exact disabled coordinate triples remain accepted; enabled branches retain host contracts only. Snapshot 608109 records 1556 FIFO writes and 99 successful presents / 0 failures before the matrix/coordinate loops. SIZE_MAX, Present(false), teardown/shutdown recovery and new TEV setters were not exercised. The user confirmed a black screen.

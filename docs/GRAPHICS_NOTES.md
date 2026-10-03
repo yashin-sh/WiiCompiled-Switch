@@ -44,7 +44,7 @@ The subsequent [audit hardware run](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIR
 Direct stage-0 frontier at dispatch 608381. Its preceding snapshot remains
 1556 FIFO writes and 99 successful presents / 0 failures; the user again
 saw black. Negative failure branches remain host/static evidence. The
-[next six-setter TEV candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md) is being validated.
+[next six-setter TEV candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md) has passed local gates and its private build; console progression remains pending.
 
 ## Fallback — Deko3D native Aurora backend
 

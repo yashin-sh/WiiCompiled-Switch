@@ -190,7 +190,8 @@ Current accepted state as of 2026-10-03:
   no recognizable Mario Kart Wii image is proven;
 - audit NRO `7ecbc8a9...` is accepted for normal-path non-regression only;
   SIZE_MAX, Present(false), teardown/shutdown error paths were not exercised;
-- the six-setter TEV scalar candidate remains pending gates/build/console proof.
+- the six-setter TEV scalar candidate passed local gates and its private
+  build; console progression remains pending.
 
 See [the latest accepted hardware report](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md),
 [the coordinate candidate](GX_TEX_COORD_BATCH_2026-10-03.md), and

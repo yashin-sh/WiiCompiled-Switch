@@ -128,22 +128,42 @@ hardware-validate alternate inputs, comparison operations, noncanonical clamp
 values or every native BP/display-list effect. KColor must remain an explicit
 guest-pointer boundary and hard stop until separately audited and implemented.
 
-## Required validation — pending
+## Completed local validation and pending hardware
 
-- [ ] Execute Nintendo-data-free contracts for all six bridges in headless
-  and rendered modes: legal stages/enums, edge values, every argument refusal,
-  full-u32 clamp conversion, CPU preservation and null-CPU behavior.
-- [ ] Retain each actual bridge/direct trait and native setter through the
-  synthetic link and rendered AArch64 syntax gates.
-- [ ] Pass all five workflows at the exact candidate revision with recorded
-  local or remote provenance.
-- [ ] Pass the exact private Rendered Discovery build and record its revision,
-  source hashes, dependency pins and NRO size/SHA-256.
-- [ ] Transfer that exact NRO and retrieve fresh attributable console reports.
+Code candidate `549ef801e1948b65c0ce47d9dbd6417c85d1f69d` passed:
+
+- all 10 lint steps and 28 build/verification steps replayed locally from the
+  five workflow definitions; GitHub Actions itself was not started;
+- all nine executable host contracts, with ASan/UBSan fatal and LSan active;
+- the new TEV contract in rendered=0/1: 55,568 valid calls and 246 diagnosed
+  SIGABRT refusals per mode, including CPU bytes checked after termination;
+- synthetic link retention of all six bridges and direct traits;
+- the Nintendo-data-free AArch64 rendered HLE/Discovery syntax gate;
+- the exact private Rendered Discovery build, flags ON/ON, network disabled,
+  three jobs, immutable image `sha256:b79d1d41459f5596427bff78007bcd61a5b398ac0def8e623798335dc124712f`.
+
+The new local NRO is
+`.deps/network-tests/gx-tev-scalar-batch/WiiCompiled-Switch-tev-scalar-rendered-discovery.nro`,
+73,310,264 bytes, SHA-256
+`cc88a78caf2583332f277f3544bdc3013d45e8572630850a8b16dde57e701ffb`.
+The new ELF retains 19 checked strong text symbols: six TEV bridges, six
+TEV native setters, the six existing coordinate bridge/native symbols and
+libnx exception handler. All tracked source hashes remained unchanged during
+this build. WiiCompiled, Dawn and Mesa pins, and the existing WiiCompiled
+integration patch bytes/modification times were preserved. Previous hardware
+NROs remain intact. Detailed validation, source hashes and logs remain local
+beside this artifact.
+
+A targeted provider audit of the preceding link graph found exactly one
+external provider per native TEV name: Direct from Aurora GXBump.o, the other
+five from GXTev.o, in libm3_aurora_gx.a. The six new bridges only define
+mkw_switch_hle_* exports. This does not establish general ownership of other
+symbols under the private link's broad allow-multiple-definition option.
+
+- [ ] Transfer this exact NRO and retrieve fresh attributable console reports.
 - [ ] Establish return beyond each executed setter family and record the actual
   new frontier and screen observation.
 
-No completed gates, private build or console crossing are claimed by this
-candidate record. Host tests with native spies verify forwarding, not real
-Aurora register correctness or console pixels. The inspected pinned native
-implementation and private rendered link remain separate evidence requirements.
+No TEV hardware crossing is accepted yet. Host forwarding sinks do not verify
+Aurora BP decoding or console pixels. The following KColor pointer boundary
+remains an explicit hard stop.

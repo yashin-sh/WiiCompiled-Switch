@@ -79,8 +79,8 @@ teardown exceptions and shutdown recovery were not exercised on this run.
 See [the audit record](docs/PORT_AUDIT_2026-10-03.md).
 
 The next [bounded TEV scalar candidate](docs/GX_TEV_SCALAR_BATCH_2026-10-03.md)
-covers six setters on legal SDK domains and stages 0..15. Its validation
-gates, private build and console progression remain pending. The following
+covers six setters on legal SDK domains and stages 0..15. It passed the local workflow and host-contract gates and its exact private
+Rendered Discovery build. Console progression remains pending. The following
 KColor guest-pointer boundary stays outside that lot.
 
 The method now permits bounded GX batches after auditing the pinned wrapper,

@@ -176,5 +176,5 @@ failures; it does not measure the later native work. The separate audit NRO
 `b3484117` / `7ecbc8a9...` subsequently preserved this normal path on
 hardware; see [the audit report](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md).
 The six-setter implementation is now a [separate bounded candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md)
-with pending validation and a fresh hardware run. This neighbor audit itself provides static readiness evidence; the separate
+with completed local gates/private build and a pending fresh hardware run. This neighbor audit itself provides static readiness evidence; the separate
 candidate record owns implementation, build, test and hardware claims.

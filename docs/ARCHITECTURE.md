@@ -83,7 +83,8 @@ branches retain host contracts only. The user confirmed a black screen.
 The audit NRO `7ecbc8a9...` is accepted only for normal-path non-regression.
 SIZE_MAX rejection, Present(false), teardown exceptions and shutdown recovery
 were not exercised by this console run. The next six-setter TEV scalar
-candidate remains pending gates, private build and hardware progression.
+candidate passed its local gates and private build; hardware progression
+remains pending.
 KColor guest-pointer handling stays outside that candidate. See
 [`HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md`](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md),
 [`HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md`](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md),

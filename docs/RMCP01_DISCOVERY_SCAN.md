@@ -143,4 +143,4 @@ bytes and 12 changed files. It preserves the accepted normal path to Direct
 stage 0 at dispatch 608381, elapsed 107,925 ms; the user again saw black.
 This accepts normal-path non-regression, while the negative failure branches
 remain host/static evidence. The [six-setter TEV candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md)
-has separate pending validation and hardware requirements.
+passed its separate local gates and private build; hardware requirements remain pending.

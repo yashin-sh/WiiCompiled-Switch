@@ -52,7 +52,8 @@ were not exercised by the console run.
 
 The next [bounded TEV scalar candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md)
 implements six per-stage setters on legal SDK domains, stages 0..15. Its
-validation gates, private build and fresh console progression remain pending.
+local validation gates and exact private build have passed; fresh console
+progression remains pending.
 KColor guest-pointer handling is outside this lot; the current Direct stage-0
 entry still has no hardware return.
 

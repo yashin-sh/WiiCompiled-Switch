@@ -121,7 +121,8 @@ The subsequent [audit hardware run](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIR
 Direct stage-0 frontier at dispatch 608381. The user again saw black. That
 run establishes normal-path non-regression, with negative failure branches
 remaining host/static evidence. The [six-setter TEV batch](GX_TEV_SCALAR_BATCH_2026-10-03.md)
-is a separate candidate awaiting validation and a new console run.
+is a separate candidate with local gates and private build passed, awaiting
+a new console run.
 
 ## Important boundary lessons from hardware
 

@@ -81,9 +81,36 @@ ZMode, but that path has not been accepted on console.
 - [x] AlphaCompare host contract and four temporary mutation checks.
 - [x] New shell script syntax/ShellCheck and workflow actionlint.
 - [x] Complete candidate rendered AArch64 syntax gate, including Fog diagnostics.
-- [ ] Exact candidate public GitHub workflows and synthetic symbol checks.
-- [ ] Private Rendered Discovery build and native provider/flag ownership check.
+- [x] Exact candidate public GitHub workflows and synthetic symbol checks.
+- [x] Private Rendered Discovery build and native provider/flag ownership check.
 - [ ] Exact NRO transfer and fresh attributable progression beyond AlphaCompare.
 
 The latest hardware-accepted boundary remains AlphaCompare arrival. This
 candidate does not establish its return or recognizable game pixels.
+
+## Completed build evidence
+
+Integrated code `1a8c092fbc7f1b6c4f9f0562a5b5d9a295f406eb` passed all five
+GitHub workflows and six jobs, including all eleven host contracts. Actual CI
+logs confirm the AlphaCompare valid/refusal counts in both rendered modes.
+The private Rendered Discovery build completed with exit 0 at
+2026-10-03 14:42:13 UTC (16:42:13 Europe/Paris), after 29 minutes 52 seconds.
+It uses Rendered/Discovery ON, three jobs, network disabled and immutable image
+`sha256:b79d1d41459f5596427bff78007bcd61a5b398ac0def8e623798335dc124712f`.
+
+The NRO is **73,355,320 bytes**, SHA-256
+`7032c756f4f0872334aea0a4421a8633e8d76d9ed1c004cf2d59fafa87b5b310`.
+All 27 required strong text symbols are present. Source hashes stayed unchanged
+during compilation; dependency pins, existing WiiCompiled patch bytes/mtimes
+and the preceding coordinate, audit, scalar and color/table NROs are preserved.
+Artifact, complete logs and detailed metadata remain local under
+`.deps/network-tests/gx-alpha-compare/`.
+
+A fresh scan of 223 explicit host link inputs, nineteen Rust archives and seven
+named libraries in the same image verifies the new bridge's native and flag
+references. `GXSetAlphaCompare` has exactly one strong provider, Aurora
+`libm3_aurora_gx.a:GXTev.o`. `g_alphaCompareValid` has exactly one owner, the
+existing `rendered_fast_track_graphics.o`. The bridge defines neither a native
+replacement nor another flag. This proves ownership of these two symbols, not
+general duplicate-definition freedom under the private link's broad policy,
+native BP decoding or visible pixels. Console acceptance remains pending.

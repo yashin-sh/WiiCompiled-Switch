@@ -95,7 +95,9 @@ exact private build pass on code `1333b0e2`. NRO `a56be881...` transferred
 with exit 0 at 13:43:58 UTC; fresh reports now accept all twelve executed calls.
 The next [AlphaCompare candidate](docs/GX_ALPHA_COMPARE_2026-10-03.md) implements
 the observed hard stop and preserves the existing native validity flag.
-Its host contracts and rendered syntax gate pass; its console return remains pending.
+Its eleven host contracts, rendered syntax, all five GitHub workflows and
+exact private build pass on code `1a8c092f`. NRO `7032c756...` is ready with
+27 checked symbols and unique native/flag providers; console return remains pending.
 
 The method now permits bounded GX batches after auditing the pinned wrapper,
 Aurora effects, argument guards and relevant guest-memory mirrors. Every

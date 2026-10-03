@@ -170,7 +170,9 @@ Its [fresh console result](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_F
 now establishes all twelve calls returned, with AlphaCompare `0x80172088`
 as the latest arrival boundary. The separate
 [AlphaCompare candidate](GX_ALPHA_COMPARE_2026-10-03.md) preserves the pinned
-native forwarding and existing host validity flag; its console return is pending.
+native forwarding and existing host validity flag. Its local contracts, all
+five exact-code GitHub workflows and private Rendered Discovery build pass;
+its console return remains pending.
 Input mapping, audio output, remaining Wii services, pixel correctness and
 representative-scene profiling are still open. See the updated
 [`ARCHITECTURE.md`](ARCHITECTURE.md) and

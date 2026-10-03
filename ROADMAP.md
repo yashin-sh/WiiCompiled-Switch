@@ -22,10 +22,12 @@
 - [x] Capture [AlphaCompare](docs/HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md) `0x80172088`, (7,0,0,7,0), dispatch 700091, stage BlendMode; user still reports black output and a crash.
 - [x] Implement the [separate AlphaCompare candidate](docs/GX_ALPHA_COMPARE_2026-10-03.md), including the existing host validity flag; pass both host-contract modes and four mutation checks.
 - [x] Pass AlphaCompare rendered syntax, all five exact-code GitHub workflows and the private NRO build: SHA-256 `7032c756f4f0872334aea0a4421a8633e8d76d9ed1c004cf2d59fafa87b5b310`, 27 strong symbols, unique native and existing flag providers.
-- [ ] Transfer this exact NRO and establish fresh console return beyond AlphaCompare.
+- [x] Transfer the exact AlphaCompare NRO with exit 0 at 17:50:16 UTC and accept the observed tuple return through existing ZMode to [Fog](docs/HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md).
+- [x] Capture Fog type 0, pointer `0x80398FD0`, four exact f64 parameter bits and readable RGBA 255,255,255,255 at dispatch 603961 / 99.156 seconds.
+- [ ] Audit and validate the next bounded Fog bridge from the captured arguments.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The latest accepted reports are the [TEV-color-to-AlphaCompare result](docs/HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md). They establish twelve new color/table returns and preserve the prior scalar/coordinate path. Actual RGBA bytes and alternate tuples remain unproven. The preceding snapshot 699651 records 1555 guest FIFO writes, 99 successful presents and zero failures; it does not prove later native commands or pixels. The elapsed time includes a 256.581-second watchdog sampling gap of unknown cause and is not a performance measurement. Runtime negative branches remain host-only.
+The latest accepted reports are the [AlphaCompare-to-Fog result](docs/HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md). They establish AlphaCompare returned on the observed tuple and preserve the prior color/scalar/coordinate path. Fog is reached with captured f64 arguments and four readable color bytes, but has not returned. The preceding heartbeat at 603545 records 1556 guest FIFO writes, 99 successful presents and zero failures; it does not prove later native commands or pixels. All 96 watchdog samples are ACTIVE, with no long sampling gap. Alternate inputs and runtime negative branches retain host evidence only. Visual confirmation for this run is pending.
 
 The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
 

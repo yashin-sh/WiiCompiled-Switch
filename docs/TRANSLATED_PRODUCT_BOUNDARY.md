@@ -238,13 +238,17 @@ The [TEV color/table batch](GX_TEV_COLOR_BATCH_2026-10-03.md) passed all five
 GitHub workflows and its exact private build (code `1333b0e2`, NRO `a56be881...`).
 Its [fresh console result](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md)
 now establishes all twelve calls returned, with AlphaCompare `0x80172088`
-as the latest arrival boundary. The separate
+as that run's arrival boundary. The separate
 [AlphaCompare candidate](GX_ALPHA_COMPARE_2026-10-03.md) preserves the pinned
 native forwarding and existing host validity flag. Its local contracts, all
 five exact-code GitHub workflows and private Rendered Discovery build pass;
-its console return remains pending.
-The next console test must establish progression beyond AlphaCompare before
-accepting its return. Actual RGBA bytes and recognizable game pixels remain unproven.
+its subsequent [console run](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md)
+accepts AlphaCompare returned on (7,0,0,7,0), through existing ZMode to Fog.
+Fog type 0, four f64 parameters and readable RGBA 255,255,255,255 are captured.
+Fog has not returned, and visual output for this run remains unconfirmed.
+The next console test must establish progression beyond the observed Fog
+boundary before accepting its return. Fog RGBA and float bits are captured;
+recognizable game pixels remain unproven.
 
 1. bind the copied reports to the exact candidate/NRO and retain their hashes;
 2. inspect a new blocker or exception before diagnosing a timing/scheduler issue;
@@ -255,7 +259,7 @@ accepting its return. Actual RGBA bytes and recognizable game pixels remain unpr
    scopes; do not extend unrelated behavior from a static forecast.
 
 
-## Latest console result — TEV colors crossed (2026-10-03)
+## Earlier console result — TEV colors crossed (2026-10-03)
 
 The [fresh color/table hardware result](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md)
 supersedes the earlier pending color/table status. All twelve executed calls
@@ -264,3 +268,13 @@ returned through the coherent later caller; AlphaCompare `0x80172088`,
 Actual RGBA bytes and recognizable game pixels remain unproven. The elapsed
 time includes an unexplained watchdog sampling gap, so it is not a performance
 measurement. Prior dated results above retain their original scope.
+
+
+## Latest console result — AlphaCompare crossed (2026-10-03)
+
+The [fresh AlphaCompare hardware result](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md)
+establishes its observed tuple returned. Fog `0x801722CC` is the new DIRECT
+hard stop at dispatch 603961 / 99.156 seconds, with actual float parameter bits
+and readable color captured. All 96 watchdog samples are ACTIVE. Preceding
+present counters do not prove visible pixels; this run's screen observation
+is still pending. Earlier dated sections retain their original scope.

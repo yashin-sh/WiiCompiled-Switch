@@ -32,22 +32,22 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest accepted TEV Discovery reports were retrieved on 2026-10-03. They
+The latest accepted Discovery reports were retrieved on 2026-10-03. They
 preserve the exact IA8 loads on maps 0..7, ten type-0 matrix loads, eight
-Gen2/disabled-Scale/disabled-Bias triples and six scalar TEV setters across
-stages 0..15. The new color/table run also establishes return from four KColor,
-four Color and four SwapModeTable calls. Execution now stops at **DIRECT
-GXSetAlphaCompare (`0x80172088`), `(7,0,0,7,0)`**, with LR `0x80240F9C`,
-dispatch 700091 and BlendMode stage, followed by an intentional unsupported-call
-abort. The user still reports a black screen and a crash. See the
-[latest hardware report](docs/HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md).
-Its 362.297-second elapsed value includes an unexplained 256.581-second watchdog
-sampling gap; it does not measure uninterrupted execution time.
+disabled coordinate triples, the sixteen-stage scalar loop and twelve TEV
+color/table calls. AlphaCompare now returns on `(7,0,0,7,0)`, followed by
+existing ZMode. Execution stops at **DIRECT GXSetFog (`0x801722CC`)**, type 0,
+color pointer `0x80398FD0`, LR `0x80240F9C`, dispatch 603961 and ZMode stage.
+The durable report records an intentional unsupported-call abort at 99.156
+seconds. Exact Fog parameter bits and RGBA 255,255,255,255 are captured.
+See the [latest hardware report](docs/HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md).
+Visual output for this run has not yet been confirmed; recognizable game pixels
+remain unproven. Previous runs were reported black.
 
-The latest preceding durable heartbeat, at dispatch 699,651, records:
+The latest preceding durable heartbeat, at dispatch 603,545, records:
 
 ```text
-RMCP01 FIFO writes    : 1555
+RMCP01 FIFO writes    : 1556
 GXCopyDisp calls      : 99
 present successes     : 99
 present failures      : 0
@@ -97,7 +97,9 @@ The next [AlphaCompare candidate](docs/GX_ALPHA_COMPARE_2026-10-03.md) implement
 the observed hard stop and preserves the existing native validity flag.
 Its eleven host contracts, rendered syntax, all five GitHub workflows and
 exact private build pass on code `1a8c092f`. NRO `7032c756...` is ready with
-27 checked symbols and unique native/flag providers; console return remains pending.
+27 checked symbols and unique native/flag providers. Nxlink transferred it
+with exit 0 at 17:50:16 UTC; fresh reports accept the observed AlphaCompare
+return and identify Fog as the next hard stop.
 
 The method now permits bounded GX batches after auditing the pinned wrapper,
 Aurora effects, argument guards and relevant guest-memory mirrors. Every

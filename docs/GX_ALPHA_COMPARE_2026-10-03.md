@@ -75,18 +75,22 @@ captures actual f1..f4 **f64 bits** and a checked complete four-byte color
 range on arrival at `0x801722CC`. Unreadable color is explicitly marked NO;
 zero byte placeholders then do not establish guest data. No float narrowing,
 guessed constants, Fog implementation or continuation past its hard stop is
-introduced. The checked caller forecasts Fog after AlphaCompare and existing
-ZMode, but that path has not been accepted on console.
+introduced. The checked caller forecast Fog after AlphaCompare and existing
+ZMode; the later console run now reaches that boundary and captures its data,
+while Fog itself remains unsupported.
 
 - [x] AlphaCompare host contract and four temporary mutation checks.
 - [x] New shell script syntax/ShellCheck and workflow actionlint.
 - [x] Complete candidate rendered AArch64 syntax gate, including Fog diagnostics.
 - [x] Exact candidate public GitHub workflows and synthetic symbol checks.
 - [x] Private Rendered Discovery build and native provider/flag ownership check.
-- [ ] Exact NRO transfer and fresh attributable progression beyond AlphaCompare.
+- [x] Exact NRO transfer and fresh attributable progression beyond AlphaCompare.
 
-The latest hardware-accepted boundary remains AlphaCompare arrival. This
-candidate does not establish its return or recognizable game pixels.
+The [later console result](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md)
+now establishes AlphaCompare returned on (7,0,0,7,0), followed by existing ZMode
+and the missing Fog boundary. Fog type 0, exact f64 parameter bits and readable
+RGBA 255,255,255,255 are captured. Other inputs and recognizable game pixels
+remain unproven; visual observation for this run is still pending.
 
 ## Completed build evidence
 
@@ -113,4 +117,5 @@ references. `GXSetAlphaCompare` has exactly one strong provider, Aurora
 existing `rendered_fast_track_graphics.o`. The bridge defines neither a native
 replacement nor another flag. This proves ownership of these two symbols, not
 general duplicate-definition freedom under the private link's broad policy,
-native BP decoding or visible pixels. Console acceptance remains pending.
+native BP decoding or visible pixels. The later console run accepts the
+observed AlphaCompare return, with the scope and limits documented above.

@@ -25,7 +25,8 @@ two providers of the public burst entry point.
 End runs the native dirty-state flush and zero padding, returns the actual
 32-byte-rounded count in guest r3 and publishes the guest FIFO cursor/count.
 When requested, it restores native GX shadow registers, the guest 0x600-byte
-GX context and the HLE vertex/parser state. Guest GXData+8 retains the SDK's
+GX context, the HLE vertex/parser state and the producer’s AlphaCompare-valid
+flag. Guest GXData+8 retains the SDK's
 restoration exception; the recording flag is cleared. Other CPU fields remain
 unchanged. Native FIFO-object hardware redirection is not emulated: Aurora's
 actual recording transport owns redirection on Switch.
@@ -46,13 +47,14 @@ original submodule and its nine-file local integration patch are preserved.
 
 The [host contract](../scripts/test-gx-display-list.sh) executes the actual
 Switch memory implementation and bridge/transport sources, plus extracted
-pinned native Begin/End and FIFO recording/padding bodies. Only allocation,
+pinned native Begin/End, AlphaCompare, Flush and FIFO recording/padding bodies. Only allocation,
 normal decoder transport and native dirty-register emission are host seams.
 ASan, fatal UBSan and LeakSanitizer remain enabled. The final local run passes
-331 rendered cases and 30 diagnosed refusals; non-rendered builds pass both
+335 rendered cases and 30 diagnosed refusals; non-rendered builds pass both
 explicit recording refusals. It covers mixed native and
 guest writes, empty and full buffers, all padding residues, repeated recording,
-both save flags, the observed 16 KiB capacity and diagnosed refusals. Expected
+both save flags and both initial AlphaCompare validity values, the observed
+16 KiB capacity and diagnosed refusals. Expected
 abort children disable core dumps and prove rejection before memory, CPU,
 recording cursor or native/HLE context mutation. Mirror reuse and changed-input
 rejection are also exercised. This is transport/state proof, not rendered-image

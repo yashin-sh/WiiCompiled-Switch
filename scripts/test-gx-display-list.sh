@@ -50,11 +50,13 @@ native = (gx / "dolphin/gx/GXDispList.cpp").read_text()
 body = native.split('void GXBeginDisplayList(', 1)[1].split('\nvoid GXCallDisplayList(', 1)[0]
 fifo = (gx / "gx/fifo.cpp").read_text()
 flush = (gx / "dolphin/gx/GXManage.cpp").read_text().split("void GXFlush() {", 1)[1].split("\nvoid GXPixModeSync", 1)[0]
+alpha = (gx / "dolphin/gx/GXTev.cpp").read_text().split("void GXSetAlphaCompare(", 1)[1].split("\nvoid GXSetTevOrder(", 1)[0]
 record = fifo.split('void begin_display_list(', 1)[1].split('// How much', 1)[0]
 (test / "pinned-display-list.inc").write_text(
     'static __GXData_struct sSavedGXData;\nextern "C" {\nvoid GXBeginDisplayList(' + body + '}\n'
     + 'namespace aurora::gx::fifo {\nvoid begin_display_list(' + record + '}\n'
-    + 'extern \"C\" void GXFlush() {' + flush)
+    + 'extern \"C\" void GXFlush() {' + flush
+    + 'extern \"C\" void GXSetAlphaCompare(' + alpha)
 PY
 for rendered in 0 1; do
     "$HOST_CXX" -std=c++20 -O2 -Wall -Wextra -Werror \
@@ -71,6 +73,7 @@ for rendered in 0 1; do
         "$ROOT_DIR/tests/gx_display_list_contract.cpp" \
         "$ROOT_DIR/source/memory_switch_slice.cpp" \
         "$ROOT_DIR/source/gx_display_list_hle_bridge.cpp" \
+        "$ROOT_DIR/source/gx_set_alpha_compare_hle_bridge.cpp" \
         "$ROOT_DIR/m3-aurora-gx-probe/source/display_list_overflow.cpp" \
         "$ROOT_DIR/m3-aurora-gx-probe/source/display_list_transport.cpp" \
         -o "$TEST_DIR/contract-$rendered"

@@ -33,6 +33,7 @@ void write_data_grow(const void*, std::uint32_t) {
 __GXData_struct nativeState{};
 __GXData_struct* __gx = &nativeState;
 HleGxState g_hleGxState{};
+bool g_alphaCompareValid = false;
 GxDisplayListState g_dlRecordState{};
 extern "C" void __GXSetDirtyState() {
     aurora::gx::fifo::write_u8(0x61);
@@ -55,6 +56,7 @@ __GXData_struct frozenNative{};
 GxDisplayListState frozenDl{};
 HleGxState frozenHle{};
 std::uint32_t frozenCursor = 0;
+bool frozenAlphaCompareValid = false;
 CpuContext* activeCpu = nullptr;
 CpuContext frozenCpu{};
 const char* stage = nullptr;
@@ -70,6 +72,7 @@ void Reset(std::uint32_t listSize = 16416) {
     Memory::Write32(kGXDataPtrAddr, gd);
     Memory::Write8(gd + 0x5F9u, 1);
     nativeState = {};
+    g_alphaCompareValid = false;
     nativeState.dlSaveContext = 1;
     g_hleGxState = {};
     g_dlRecordState = {};
@@ -108,6 +111,7 @@ void Refusal(const std::function<void()>& f, const char* reason = nullptr) {
     std::memcpy(&frozenDl, &g_dlRecordState, sizeof(g_dlRecordState));
     std::memcpy(&frozenHle, &g_hleGxState, sizeof(g_hleGxState));
     frozenCursor = aurora::gx::fifo::detail::sDlWritePos;
+    frozenAlphaCompareValid = g_alphaCompareValid;
     int p[2]{};
     assert(pipe(p) == 0);
     const auto child = fork();
@@ -159,7 +163,7 @@ extern "C" [[noreturn]] void __wrap_abort() {
             std::memcmp(&nativeState, &frozenNative, sizeof(nativeState)) != 0 ||
             std::memcmp(&g_dlRecordState, &frozenDl, sizeof(g_dlRecordState)) != 0 ||
             std::memcmp(&g_hleGxState, &frozenHle, sizeof(g_hleGxState)) != 0 ||
-            aurora::gx::fifo::detail::sDlWritePos != frozenCursor)
+            aurora::gx::fifo::detail::sDlWritePos != frozenCursor || g_alphaCompareValid != frozenAlphaCompareValid)
             _exit(94);
         for (std::size_t i = 0; i < regions.size(); ++i)
             if (regions[i].bytes != frozenRegions[i])
@@ -228,6 +232,30 @@ int main() {
     GX_HLE_FIFO_WriteBurst(burst, sizeof(burst));
     assert(liveBursts == 1); // Decoder remains selected after End.
     ++cases;
+
+    // Real AlphaCompare bridge and pinned native BP emission: the producer's
+    // validity flag follows the same save policy as its restored GX shadow.
+    for (const unsigned save : {0u, 1u}) {
+        for (const bool initial : {false, true}) {
+            Reset();
+            c = Cpu(32);
+            Memory::Write8(gd + 0x5F9u, save);
+            g_alphaCompareValid = initial;
+            Begin(c);
+            auto alphaCpu = Cpu();
+            alphaCpu.gpr[3] = alphaCpu.gpr[6] = GX_ALWAYS;
+            alphaCpu.gpr[4] = alphaCpu.gpr[5] = alphaCpu.gpr[7] = 0;
+            const auto alphaBefore = alphaCpu;
+            KnownNativeCpuCall<0x80172088u>::Invoke(&alphaCpu);
+            assert(std::memcmp(&alphaCpu, &alphaBefore, sizeof(alphaCpu)) == 0);
+            assert(g_alphaCompareValid);
+            assert(Memory::Read8(list) == 0x61 && Memory::Read32(list + 1u) == 0xF33F0000u);
+            End(c);
+            assert(c.gpr[3] == 32);
+            assert(g_alphaCompareValid == (save ? initial : true));
+            ++cases;
+        }
+    }
 
     // Exhaustive padding residues, empty lists, exact capacity, repeated lists,
     // both save flags and the hardware-observed 16 KiB stack buffer.

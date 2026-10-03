@@ -22,6 +22,7 @@ std::uint32_t sGxData = 0;
 std::uint8_t sSaveContext = 0;
 std::uint8_t* sListHost = nullptr;
 HleGxState sSavedHleState{};
+bool sSavedAlphaCompareValid = false;
 } // namespace
 #endif
 
@@ -141,6 +142,7 @@ extern "C" void mkw_switch_hle_gx_begin_display_list(CpuContext* cpu) noexcept {
     if (save) {
         std::memcpy(Memory::GetPointer(kSavedGxData, kGxDataSize), Memory::GetPointer(gd, kGxDataSize), kGxDataSize);
         sSavedHleState = g_hleGxState;
+        sSavedAlphaCompareValid = g_alphaCompareValid;
     }
     for (std::uint32_t offset = 0; offset < 0x24u; offset += 4u) {
         Memory::Write32(kDlFifoAddr + offset, 0);
@@ -180,6 +182,7 @@ extern "C" void mkw_switch_hle_gx_end_display_list(CpuContext* cpu) noexcept {
         std::memcpy(Memory::GetPointer(sGxData, kGxDataSize), Memory::GetPointer(kSavedGxData, kGxDataSize), kGxDataSize);
         Memory::Write32(sGxData + 8u, word8); // Pinned SDK restoration exception.
         g_hleGxState = sSavedHleState;
+        g_alphaCompareValid = sSavedAlphaCompareValid;
     }
     Memory::Write8(sGxData + 0x5F8u, 0);
     EndDisplayListRecording();

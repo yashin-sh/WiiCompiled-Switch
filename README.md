@@ -41,8 +41,8 @@ color pointer `0x80398FD0`, LR `0x80240F9C`, dispatch 603961 and ZMode stage.
 The durable report records an intentional unsupported-call abort at 99.156
 seconds. Exact Fog parameter bits and RGBA 255,255,255,255 are captured.
 See the [latest hardware report](docs/HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md).
-Visual output for this run has not yet been confirmed; recognizable game pixels
-remain unproven. Previous runs were reported black.
+The user confirms a black screen followed by an error for this run. The exact
+on-screen error wording is unavailable; recognizable game pixels remain unproven.
 
 The latest preceding durable heartbeat, at dispatch 603,545, records:
 

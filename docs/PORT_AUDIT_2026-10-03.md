@@ -175,7 +175,8 @@ five exact-code GitHub workflows and private Rendered Discovery build pass;
 its subsequent [console run](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md)
 accepts AlphaCompare returned on (7,0,0,7,0), through existing ZMode to Fog.
 Fog type 0, four f64 parameters and readable RGBA 255,255,255,255 are captured.
-Fog has not returned, and visual output for this run remains unconfirmed.
+Fog has not returned. The user confirms a black screen followed by an error;
+the exact on-screen wording is unavailable.
 Input mapping, audio output, remaining Wii services, pixel correctness and
 representative-scene profiling are still open. See the updated
 [`ARCHITECTURE.md`](ARCHITECTURE.md) and
@@ -199,5 +200,6 @@ The [fresh AlphaCompare hardware result](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPA
 establishes its observed tuple returned. Fog `0x801722CC` is the new DIRECT
 hard stop at dispatch 603961 / 99.156 seconds, with actual float parameter bits
 and readable color captured. All 96 watchdog samples are ACTIVE. Preceding
-present counters do not prove visible pixels; this run's screen observation
-is still pending. Earlier dated sections retain their original scope.
+present counters do not prove visible pixels. The user confirms a black screen
+followed by an error; the exact on-screen wording is unavailable. Earlier dated
+sections retain their original scope.

@@ -27,7 +27,16 @@
 - [ ] Audit and validate the next bounded Fog bridge from the captured arguments.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The latest accepted reports are the [AlphaCompare-to-Fog result](docs/HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md). They establish AlphaCompare returned on the observed tuple and preserve the prior color/scalar/coordinate path. Fog is reached with captured f64 arguments and four readable color bytes, but has not returned. The preceding heartbeat at 603545 records 1556 guest FIFO writes, 99 successful presents and zero failures; it does not prove later native commands or pixels. All 96 watchdog samples are ACTIVE, with no long sampling gap. Alternate inputs and runtime negative branches retain host evidence only. Visual confirmation for this run is pending.
+The latest accepted reports are the [AlphaCompare-to-Fog result](docs/HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md). They establish AlphaCompare returned on the observed tuple and preserve the prior color/scalar/coordinate path. Fog is reached with captured f64 arguments and four readable color bytes, but has not returned. The preceding heartbeat at 603545 records 1556 guest FIFO writes, 99 successful presents and zero failures; it does not prove later native commands or pixels. All 96 watchdog samples are ACTIVE, with no long sampling gap. Alternate inputs and runtime negative branches retain host evidence only. The user confirms a black screen followed by an error; exact on-screen wording is unavailable.
+
+The checked caller forecasts existing translated `GXSetFogRangeAdj`
+(`0x80172658`, disabled arguments), then missing `GXSetZCompLoc`
+(`0x80172858`, argument 1), then the existing `GXSetDstAlpha` bridge
+(`0x8017295C`, arguments 0,0). These successors have not been reached in the
+latest console run. They guide preparation, but do not establish a finite
+number of fixes before the first image. After passing the executed setup path,
+visible drawing, textures and GX state still need validation, followed by a
+sustained scene without an error, input/audio correctness and performance.
 
 The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
 

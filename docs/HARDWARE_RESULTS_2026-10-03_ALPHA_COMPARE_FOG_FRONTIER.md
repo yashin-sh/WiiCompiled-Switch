@@ -23,10 +23,11 @@ manifest and checked analysis remain local under
 The changed discovery/blocker/heartbeat cohort and the newly implemented Fog
 diagnostic attribute this progression to the successfully transferred NRO.
 
-**Visual output and exact on-screen error wording have not yet been confirmed
-by the user for this run.** Previous black-screen observations are historical;
-they do not establish this run's output. The durable report records an
-intentional unsupported-DIRECT abort. Recognizable game pixels remain unproven.
+**The user confirms a black screen followed by an error for this run.** The
+exact on-screen error wording was not supplied. Independently, the durable
+report records an intentional unsupported-DIRECT abort at Fog. It does not
+establish the text or code displayed by the console. Recognizable game pixels
+remain unproven.
 
 ## Fresh entries and accepted return
 

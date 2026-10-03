@@ -90,7 +90,8 @@ The [later console result](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIE
 now establishes AlphaCompare returned on (7,0,0,7,0), followed by existing ZMode
 and the missing Fog boundary. Fog type 0, exact f64 parameter bits and readable
 RGBA 255,255,255,255 are captured. Other inputs and recognizable game pixels
-remain unproven; visual observation for this run is still pending.
+remain unproven. The user confirms a black screen followed by an error; exact
+on-screen wording is unavailable.
 
 ## Completed build evidence
 

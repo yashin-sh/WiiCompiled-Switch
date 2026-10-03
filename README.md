@@ -32,16 +32,17 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest accepted audit Discovery reports were retrieved on 2026-10-03. They
-establish return from all eight coordinate triples: Gen2(c,1,4,60,0,125),
+The latest accepted TEV Discovery reports were retrieved on 2026-10-03. They
+preserve return from all eight coordinate triples: Gen2(c,1,4,60,0,125),
 Scale(c,0,0,0) and Bias(c,0,0), c=0..7. The exact IA8 loads on maps 0..7
-and ten type-0 matrix loads remain crossed. Execution now stops at **DIRECT
-GXSetTevDirect (`0x80171B58`), TEV stage 0**, with LR `0x80240F98`.
-The durable blocker records 608,381 dispatches and 107.925 seconds from the
+and ten type-0 matrix loads remain crossed. All six new TEV setters return
+on stages 0..15: 96 calls, plus 16 existing Order calls. Execution now stops at **DIRECT GXSetTevKColor (`0x80171ED4`),
+ID 0, guest pointer `0x80398FCC`**, with LR `0x80240F98`.
+The durable blocker records 605,056 dispatches and 98.265 seconds from the
 first translated dispatch, followed by an intentional unsupported-call abort.
-See the [accepted audit hardware report](docs/HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md).
+See the [accepted TEV hardware report](docs/HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md).
 
-The preceding durable graphics snapshot, at dispatch 608,109, records:
+The preceding durable graphics snapshot, at dispatch 604,804, records:
 
 ```text
 RMCP01 FIFO writes    : 1556
@@ -53,7 +54,7 @@ FST structurally valid: YES
 renderer frame active: YES
 ```
 
-That snapshot precedes the matrix and coordinate loops; these counters do not
+That snapshot precedes the matrix, coordinate and TEV loops; these counters do not
 independently measure their native FIFO emissions or establish recognizable
 game pixels. Discovery records the first occurrence of each target. The eight
 triples are established by the executed caller path, coherent context and the
@@ -67,8 +68,8 @@ SHA-256 `64ba837720f4e37cbd127c37a0e9bde6dc146ed229a92c8697b9c531a8984d08`.
 Nxlink transferred it with exit 0 at 2026-10-02 23:09:38 UTC (01:09:38 on
 October 3, Europe/Paris). Fresh reports now accept the eight exact triples;
 enabled Scale/Bias branches still have host contracts only. The user confirmed
-a black screen for this run. GXSetTevDirect is observed but has not returned;
-the later TEV calls remain static forecasts.
+a black screen for that coordinate run. Its Direct stage-0 arrival remained
+unreturned until the later TEV run described below.
 
 The separate audit NRO has SHA-256
 `7ecbc8a9fe1efb31697c2ee36d0b0b648a8e87d3fa7dda1fb9d262d6de5b7d09`.
@@ -78,10 +79,13 @@ the user again confirmed a black screen. SIZE_MAX rejection, Present(false),
 teardown exceptions and shutdown recovery were not exercised on this run.
 See [the audit record](docs/PORT_AUDIT_2026-10-03.md).
 
-The next [bounded TEV scalar candidate](docs/GX_TEV_SCALAR_BATCH_2026-10-03.md)
-covers six setters on legal SDK domains and stages 0..15. It passed the local
-workflow and host-contract gates and its exact private Rendered Discovery build. Console progression remains pending. The following
-KColor guest-pointer boundary stays outside that lot.
+The [bounded TEV scalar batch](docs/GX_TEV_SCALAR_BATCH_2026-10-03.md) passed
+local contracts, all five GitHub workflows on integrated code `e76e8f38`, and
+its exact private Rendered Discovery build. NRO SHA-256 `cc88a78c...` transferred
+with exit 0 at 2026-10-03 11:39:21 UTC. Fresh reports accept all sixteen
+iterations on the caller default tuples; alternate arguments retain host
+contracts only. The user saw a black screen and an error at the end. The
+following KColor guest-pointer boundary stays outside this accepted lot.
 
 The method now permits bounded GX batches after auditing the pinned wrapper,
 Aurora effects, argument guards and relevant guest-memory mirrors. Every
@@ -89,7 +93,7 @@ member still requires its own progression proof; unknown/stateful calls
 remain hard stops. Older texture-object, KD and audio results are dated
 historical evidence, and different scheduler paths can expose different gates.
 A visually correct Mario Kart Wii image is still unproven. The preceding
-IA8, coordinate and audit runs were observed black.
+IA8, coordinate, audit and TEV runs were observed black.
 
 The complete blocker-by-blocker history and current checklist live in
 [`ROADMAP.md`](ROADMAP.md). Hardware evidence is recorded in dated files under
@@ -266,8 +270,9 @@ playability are not yet proven.
 
 Start with:
 
-- [Latest accepted audit result](docs/HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md) — normal-path non-regression at TEV Direct stage 0, with black screen;
-- [Pending TEV scalar candidate](docs/GX_TEV_SCALAR_BATCH_2026-10-03.md) — six setters, legal SDK domains and explicit validation requirements;
+- [Latest accepted TEV result](docs/HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md) — six setters on stages 0..15 return; KColor pointer frontier, black screen and error at exit;
+- [TEV scalar batch](docs/GX_TEV_SCALAR_BATCH_2026-10-03.md) — legal SDK domains, host/private-build validation and bounded hardware scope;
+- [Earlier audit result](docs/HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md) — normal-path non-regression at the preceding Direct frontier;
 - [Accepted coordinate batch](docs/GX_TEX_COORD_BATCH_2026-10-03.md) — eight exact triples, host/private-build validation, exact NRO and enabled-branch limits;
 - [`ROADMAP.md`](ROADMAP.md) — authoritative current milestone/frontier checklist;
 - [`docs/FAST_TRACK_VALIDATION_POLICY.md`](docs/FAST_TRACK_VALIDATION_POLICY.md) — required validation ladder, strict hardware-cross definition, invariant checklist, and private rendered-build gate;

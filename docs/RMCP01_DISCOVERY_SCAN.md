@@ -73,7 +73,7 @@ control flow can establish repeated returns without logging every iteration.
 This method accepted ten texture-matrix returns in the
 [dated matrix baseline](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md)
 and the eight disabled coordinate triples in the
-[latest accepted report](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md).
+[coordinate report](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md).
 The latter has +35 Scale-to-later-caller dispatches rather than the callback-free
 forecast +23, then +13 to the TEV frontier rather than +1. VI polling is
 compatible with these deltas; first-hit records do not count every callback.
@@ -143,4 +143,15 @@ bytes and 12 changed files. It preserves the accepted normal path to Direct
 stage 0 at dispatch 608381, elapsed 107,925 ms; the user again saw black.
 This accepts normal-path non-regression, while the negative failure branches
 remain host/static evidence. The [six-setter TEV candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md)
-passed its separate local gates and private build; hardware requirements remain pending.
+passed local gates, all five GitHub workflows on code `e76e8f38`, its private
+build and [bounded hardware progression](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md).
+The 28 reports, 528,821 bytes, include eleven changed files and verified
+hashes/ZIP CRC. Six first-hit setters plus the checked executed loop and
+later KColor boundary establish all sixteen default iterations returned.
+Direct-to-KColor is +129 rather than callback-free +111; that delta alone
+does not establish exact callback counts or 96 individual returns. KColor
+ID 0 / pointer `0x80398FCC` blocks at 605056, 98,265 ms, stage SwapMode.
+The user saw black and an error at exit. Snapshot 604804 precedes the loop;
+its 1556 FIFO writes / 99 successful presents / 0 failures do not prove
+later native emissions or pixels. KColor bytes and later setters remain
+unproven, and alternate scalar arguments retain host evidence only.

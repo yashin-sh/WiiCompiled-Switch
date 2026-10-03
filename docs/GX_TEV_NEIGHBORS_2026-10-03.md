@@ -1,12 +1,13 @@
 # TEV neighbors: static contract audit (2026-10-03)
 
 This audit prepares nine entries called by `func_80241380`. It adds no HLE
-implementation. The [latest retrieved coordinate run](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md)
-now reaches `0x80241380` at dispatch 605620, after all eight Gen2/Scale/Bias
+implementation. The [preceding coordinate run](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md)
+reached `0x80241380` at dispatch 605620, after all eight Gen2/Scale/Bias
 triples with Scale/Bias disabled return. It stops at **GXSetTevDirect (`0x80171B58`),
 stage 0**, dispatch 605633, after 100205 host milliseconds, LR `0x80240F98`.
-That arrival is observed; Direct has not returned. The other eight audited
-entries and the rest of the stage loop remain static forecasts. The earlier
+At that baseline, arrival was observed without Direct return. The other
+eight entries and the stage loop were static forecasts; the subsequent scalar
+implementation and its hardware result are recorded at the end of this audit. The earlier
 matrix-to-Scale reports remain historical evidence, not the current frontier.
 
 The runtime and bundled Aurora pin is
@@ -166,8 +167,8 @@ two pointer entries need a separate guest-memory boundary review, ID-first
 ordering and independent synthetic RGBA cases. Their full legal ID sets are
 0..3, not an active-count restriction or a single forecast ID.
 
-This audit remains readiness work. Direct stage 0 is now the actual frontier,
-but needs an attributable later return before acceptance. Static call order
+This audit remains readiness work. Direct stage 0 was the baseline frontier
+and required an attributable later return before acceptance. Static call order
 does not establish which other entry will block next, that its whole loop
 already executes, or that adding the bridges will produce recognizable game
 images. The user confirmed a black screen. Snapshot 605367, before the
@@ -176,5 +177,9 @@ failures; it does not measure the later native work. The separate audit NRO
 `b3484117` / `7ecbc8a9...` subsequently preserved this normal path on
 hardware; see [the audit report](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md).
 The six-setter implementation is now a [separate bounded candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md)
-with completed local gates/private build and a pending fresh hardware run. This neighbor audit itself provides static readiness evidence; the separate
+with completed local gates, remote workflows, private build and
+[bounded hardware acceptance](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md) for the default loop
+on stages 0..15. KColor ID 0 / pointer `0x80398FCC` is the new observed
+hard stop; its RGBA bytes and later pointer calls remain unproven.
+This neighbor audit itself provides static readiness evidence; the separate
 candidate record owns implementation, build, test and hardware claims.

@@ -34,7 +34,8 @@ The six implementations are in
 [`gx_set_tev_alpha_in_hle_bridge.cpp`](../source/gx_set_tev_alpha_in_hle_bridge.cpp),
 [`gx_set_tev_alpha_op_hle_bridge.cpp`](../source/gx_set_tev_alpha_op_hle_bridge.cpp) and
 [`gx_set_tev_swap_mode_hle_bridge.cpp`](../source/gx_set_tev_swap_mode_hle_bridge.cpp).
-Their presence is implementation evidence, not completed validation.
+Their presence is implementation evidence; validation and bounded hardware
+acceptance are recorded below.
 
 | Setter / PAL address | Register arguments | Bounded legal domain |
 | --- | --- | --- |
@@ -92,11 +93,11 @@ guest GX_HLE_FIFO_Write counter. An unchanged guest FIFO count is not proof
 that these native commands did not execute. A new independent bridge cache or
 reconstructed register word would lose this shared-state contract.
 
-## Static caller and future hardware proof
+## Static caller and hardware acceptance basis
 
 After GXSetNumTevStages(1), `func_80241380` loops over all s=0..15:
 
-| Order | Forecast call / arguments |
+| Order | Caller call / arguments |
 | --- | --- |
 | 1 | Direct(s) |
 | 2 | Existing Order(s,255,255,255) |
@@ -106,13 +107,13 @@ After GXSetNumTevStages(1), `func_80241380` loops over all s=0..15:
 | 6 | AlphaOp(s,0,0,0,1,0) |
 | 7 | SwapMode(s,0,0) |
 
-This is 96 new-setter calls plus 16 existing Order calls, not hardware
-acceptance of that loop. After it, the forecast first missing boundary is
-GXSetTevKColor `0x80171ED4`, with ID 0 and pointer r1+20, LR
-`0x80240F98`, on the same guest fiber and nested stack. With the previously
-observed r1 `0x80398FB8`, the pointer expression would be `0x80398FCC`;
-it is a forecast, not a captured future pointer. Its four RGBA bytes come
-from guest small-data memory and are neither assumed nor fabricated here.
+This is 96 new-setter calls plus 16 existing Order calls. Static call order
+alone did not accept the loop; the fresh hardware result below adds the
+required later frontier. The forecast first missing boundary, KColor
+`0x80171ED4`, is now captured with ID 0, pointer r1+20 = `0x80398FCC`,
+LR `0x80240F98`, on the same guest fiber and nested stack. Its four RGBA
+bytes come from guest small-data memory and remain unknown; none are
+assumed or fabricated here.
 
 Without callback dispatches, a first mapped Direct entry at count D would
 be followed by the KColor unknown-DIRECT record at D+111. Known calls count
@@ -121,19 +122,20 @@ can add callbacks and change diagnostic stages. Assess actual arguments,
 LR/stack/fiber, executed control flow and later durable state together,
 rather than treating an exact counter delta as unconditional.
 
-A later fresh KColor boundary matching this path could establish return of
-all 16 iterations and the six new setters on these forecast tuples. First-hit
-tracing would still not contain 96 individual return records. It would not
+The fresh KColor boundary matching this path establishes return of all
+16 iterations and the six setters on these caller tuples. First-hit tracing
+still does not contain 96 individual return records. It does not
 hardware-validate alternate inputs, comparison operations, noncanonical clamp
 values or every native BP/display-list effect. KColor must remain an explicit
 guest-pointer boundary and hard stop until separately audited and implemented.
 
-## Completed local validation and pending hardware
+## Completed validation and bounded hardware acceptance
 
 Code candidate `549ef801e1948b65c0ce47d9dbd6417c85d1f69d` passed:
 
 - all 10 lint steps and 28 build/verification steps replayed locally from the
-  five workflow definitions; GitHub Actions itself was not started;
+  five workflow definitions; remote validation was completed later on the
+  integrated revision recorded below;
 - all nine executable host contracts, with ASan/UBSan fatal and LSan active;
 - the new TEV contract in rendered=0/1: 55,568 valid calls and 246 diagnosed
   SIGABRT refusals per mode, including CPU bytes checked after termination;
@@ -165,10 +167,25 @@ The ignored audit JSON distinguishes these evidence phases and verifies the
 candidate source hashes and NRO. This does not establish general ownership
 of other symbols under the private link's broad allow-multiple-definition option.
 
-- [ ] Transfer this exact NRO and retrieve fresh attributable console reports.
-- [ ] Establish return beyond each executed setter family and record the actual
+- [x] All five GitHub workflows passed on integrated revision `e76e8f38`,
+  including both build jobs; the private build reproduced the same NRO digest.
+- [x] Transfer this exact NRO and retrieve fresh attributable console reports.
+- [x] Establish return beyond each executed setter family and record the actual
   new frontier and screen observation.
 
-No TEV hardware crossing is accepted yet. Host forwarding sinks do not verify
-Aurora BP decoding or console pixels. The following KColor pointer boundary
-remains an explicit hard stop.
+The [accepted hardware run](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md) transferred with exit 0 at
+2026-10-03 11:39:21 UTC. Its 28 verified reports, 528,821 bytes, include
+eleven changed files against the audit baseline. All six first-hit tuples,
+coherent caller/stack/fiber and the later KColor boundary establish return
+from all sixteen iterations: 96 new setter calls plus 16 existing Order calls.
+Direct first hit is 604927; KColor ID 0, pointer `0x80398FCC`, is reached at
+605056 / 98.265 seconds, stage SwapMode. The +129 delta exceeds the
+callback-free +111 and does not independently count callback events.
+
+The user reported a black screen and an error at the end. All 95 watchdog
+samples are ACTIVE. The changed snapshot at 604804 still precedes the loop
+and retains 1556 guest FIFO writes / 99 successful presents / 0 failures.
+It does not measure native TEV commands or prove pixels. Alternate legal
+inputs and malformed-input refusals retain host evidence only. Host forwarding
+sinks do not verify Aurora BP decoding or console pixels. KColor is arrived
+at, not returned; its RGBA bytes are unknown and it remains a hard stop.

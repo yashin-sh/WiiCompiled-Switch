@@ -5,12 +5,12 @@
 The architecture and evidence-driven bring-up method are coherent, but this
 is an incomplete experimental port. Neither passing CI nor this audit proves
 bug-free code, full Wii compatibility, recognizable game pixels or playable
-performance. The [latest audit hardware result](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md)
+performance. The [audit hardware result](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md)
 for code `b3484117` / NRO `7ecbc8a9…` preserves the eight exact disabled
 coordinate triples and reaches the same GXSetTevDirect `0x80171B58`, stage 0.
-It accepts normal-path non-regression only. Direct has not returned, and the
-user again saw black output. SIZE_MAX, Present(false), teardown exceptions
-and shutdown recovery were not exercised by this console run.
+It accepts normal-path non-regression only. Direct had not returned in that
+audit run, and the user again saw black output. SIZE_MAX, Present(false),
+teardown exceptions and shutdown recovery were not exercised by this console run.
 
 The audit reviewed all five workflow definitions, the 31 existing shell/Python
 scripts and the current documentation. Manual runtime review focused on memory,
@@ -36,7 +36,7 @@ proof of every translated game function or every native subsystem.
 | Build preparation | Already present pins/patches and identical probe source are reused; rendered preparation carries its intended mode instead of toggling OFF then ON and building an unrelated triangle probe. Cleanup and ambiguous output selection have explicit failure boundaries. |
 | CI | Main pushes were excluded; permissions, timeouts and concurrency were incomplete; action tags floated; PR checkout differed from the exact-HEAD policy. All five workflows now check the candidate HEAD, include main, use read-only tokens and immutable action revisions, and bound/cancel overlapping work. Actionlint's archive is checksum-verified before extraction. |
 | Formatting gate | Failure to resolve a diff base could become an empty-file PASS. The base is checked and the merge-base used before selecting candidate changes. |
-| Documentation | September snapshots/frontiers were presented as current. README, roadmap, index and current guides now distinguish the accepted coordinate baseline, audit normal-path non-regression, pending TEV scalar batch and evidence limits. |
+| Documentation | September snapshots/frontiers were presented as current. README, roadmap, index and current guides now distinguish the accepted coordinate baseline, audit normal-path non-regression, bounded TEV scalar batch and evidence limits. |
 
 The runtime fixes do not expand guest dispatch coverage or claim a new
 hardware crossing. The presentation-failure path has been attributed to the
@@ -156,11 +156,14 @@ The user confirmed black output. This accepts the audit binary's ordinary
 executed path; SIZE_MAX rejection, Present(false), teardown exceptions and
 shutdown/error-recovery paths remain unexercised on hardware.
 
-The next [TEV scalar candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md) covers
-six per-stage setters on legal SDK domains. It adds a new contract beyond the
-eight contracts recorded above for `b3484117`; its revision, gates, private
-build and console progression are pending. KColor guest-pointer handling
-stays outside the lot.
+The subsequent [TEV scalar batch](GX_TEV_SCALAR_BATCH_2026-10-03.md) adds
+a ninth executable contract beyond the eight audited above. Its local gates,
+all five GitHub workflows on integrated code `e76e8f38`, private build and
+[fresh console result](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md) passed. NRO `cc88a78c...`
+returns from six setters on default tuples across stages 0..15, then stops at
+KColor ID 0, pointer `0x80398FCC`, dispatch 605056 / 98.265 seconds. The
+user reported black output and an error at exit. Alternate scalar arguments
+retain host contracts only; KColor guest-pointer handling remains a hard stop.
 Input mapping, audio output, remaining Wii services, pixel correctness and
 representative-scene profiling are still open. See the updated
 [`ARCHITECTURE.md`](ARCHITECTURE.md) and

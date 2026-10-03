@@ -4,11 +4,30 @@ Tracking: #117, #162, #154, #4
 
 Status: **real RMCP01 FIFO/Aurora work and repeated GPU presents are
 hardware-proven; a recognizable Mario Kart Wii image remains unproven.**
-The latest accepted audit run preserves the eight Gen2/Scale/Bias coordinate
-triples with Scale/Bias disabled and reaches GXSetTevDirect `0x80171B58`, stage 0. That
-unsupported call has not returned; the user observed a black screen.
+The latest accepted TEV run preserves the eight disabled coordinate triples
+and crosses six scalar setters on stages 0..15, then stops at KColor
+`0x80171ED4`, ID 0 / guest pointer `0x80398FCC`. The user reported a black
+screen and an error at exit; recognizable pixels remain unproven.
 
 ## Current accepted frontier — 2026-10-03
+
+The [latest TEV result](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md), integrated code `e76e8f38`,
+NRO `cc88a78c...`, transferred with exit 0 at 11:39:21 UTC. Retrieval at
+11:42:57 UTC preserved 28 reports, 528,821 bytes, eleven changed files and
+verified hashes/ZIP CRC. Six first-hit setters, coherent caller/stack/fiber,
+checked loop control flow and the later KColor boundary establish return
+from 96 new setter calls plus 16 existing Order calls on default tuples.
+KColor ID 0 / pointer `0x80398FCC` is reached at dispatch 605056,
+elapsed_ms 98265, stage SwapMode; it remains an unsupported hard stop.
+Direct-to-KColor is +129 versus callback-free +111, compatible with VI polling
+without exact callback attribution. All 95 watchdog samples are ACTIVE.
+The changed snapshot at 604804 precedes the matrix/coordinate/TEV loops and
+retains 1556 guest FIFO writes / 99 successful presents / 0 failures; it does
+not measure later native commands or prove pixels. The user reported black
+output and an error at exit. Alternate scalar inputs and enabled coordinate
+branches remain host-only; KColor bytes and return are unproven.
+
+## Earlier coordinate and audit baselines
 
 The [2026-10-03 audit result](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md)
 preserves, for every c=0..7, `Gen2(c,1,4,60,0,125)`, `Scale(c,0,0,0)` and
@@ -19,7 +38,7 @@ coherent state establish returns without 24 individual return records.
 Enabled Scale/Bias branches and arbitrary Scale sizes remain host-tested only;
 the run does not independently establish every best-effort guest-mirror write.
 
-The new durable DIRECT blocker is GXSetTevDirect `0x80171B58`, stage ID 0,
+The audit baseline durable DIRECT blocker is GXSetTevDirect `0x80171B58`, stage ID 0,
 LR `0x80240F98`, dispatch 608381, 107.925 seconds after the first dispatch.
 Arrival is observed; return and the remaining
 [TEV neighbors](GX_TEV_NEIGHBORS_2026-10-03.md) remain unproven. Scale-to-later-caller
@@ -50,12 +69,10 @@ confirmed a black screen. This accepts normal-path non-regression only:
 SIZE_MAX rejection, Present(false), teardown exceptions and shutdown recovery
 were not exercised by the console run.
 
-The next [bounded TEV scalar candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md)
-implements six per-stage setters on legal SDK domains, stages 0..15. Its
-local validation gates and exact private build have passed; fresh console
-progression remains pending.
-KColor guest-pointer handling is outside this lot; the current Direct stage-0
-entry still has no hardware return.
+The subsequent [bounded TEV scalar batch](GX_TEV_SCALAR_BATCH_2026-10-03.md)
+passed local gates, remote workflows, private build and the default-loop
+hardware scope described above. KColor guest-pointer handling remains outside
+that lot and is the current hard stop.
 
 The [validation policy](FAST_TRACK_VALIDATION_POLICY.md) permits bounded
 audited GX families with wrapper/Aurora, guard and required guest-mirror

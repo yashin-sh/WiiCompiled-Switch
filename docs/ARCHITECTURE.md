@@ -76,16 +76,15 @@ pinned wrapper requires it. Frame activation and presentation are explicit
 contracts, not operations to add to every new setter by analogy.
 
 Hardware has established real FIFO work and repeated successful presents.
-The latest accepted audit run preserves ten type-0 texture-matrix
-loads and all eight exact Gen2/disabled-Scale/disabled-Bias triples. It returns
-to `0x80241380` and stops at GXSetTevDirect, TEV stage 0. Enabled Scale/Bias
-branches retain host contracts only. The user confirmed a black screen.
-The audit NRO `7ecbc8a9...` is accepted only for normal-path non-regression.
-SIZE_MAX rejection, Present(false), teardown exceptions and shutdown recovery
-were not exercised by this console run. The next six-setter TEV scalar
-candidate passed its local gates and private build; hardware progression
-remains pending.
-KColor guest-pointer handling stays outside that candidate. See
+The latest accepted TEV run preserves ten type-0 texture-matrix loads and
+all eight exact Gen2/disabled-Scale/disabled-Bias triples, then returns from
+six scalar setters across stages 0..15 on caller default tuples. The new
+frontier is KColor ID 0, guest pointer `0x80398FCC`, dispatch 605056.
+Enabled Scale/Bias and alternate TEV inputs retain host contracts only.
+The user reported black output and an error at exit. KColor pointer handling
+remains a hard stop. SIZE_MAX rejection, Present(false), teardown exceptions
+and shutdown recovery were not exercised on hardware. See
+[`HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md`](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md),
 [`HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md`](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md),
 [`HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md`](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md),
 [`FAST_TRACK_VALIDATION_POLICY.md`](FAST_TRACK_VALIDATION_POLICY.md) and

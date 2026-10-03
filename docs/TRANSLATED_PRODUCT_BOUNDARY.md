@@ -63,7 +63,8 @@ That path is now hardware-validated far beyond metadata inspection:
 - real RMCP01 FIFO work reaches Aurora/Dawn/NVK;
 - repeated `GXCopyDisp` / successful presents are hardware-proven;
 - the latest accepted Discovery path crosses texture-matrix setup and all
-  eight disabled coordinate triples, then stops at GXSetTevDirect stage 0;
+  eight disabled coordinate triples and six TEV setters on stages 0..15, then
+  stops at KColor ID 0 / guest pointer `0x80398FCC`;
   older texture/KD/audio branches remain
   recorded in dated reports.
 
@@ -92,12 +93,14 @@ ten type-0 texture matrices                ✅ hardware crossed
   ↓
 Gen2/disabled Scale/Bias triples, c0..7     ✅ hardware crossed
   ↓
-GXSetTevDirect 0x80171B58, stage 0          🟡 arrived; not returned
+six TEV scalar setters, stages 0..15       ✅ default tuples returned
+  ↓
+GXSetTevKColor 0x80171ED4, ID 0             🟡 arrived; not returned
   ↓
 recognizable Mario Kart Wii image          ❌ not proven
 ```
 
-As of 2026-10-03, the latest accepted
+The earlier coordinate
 [Discovery result](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md)
 accepts `Gen2(c,1,4,60,0,125)`, `Scale(c,0,0,0)` and `Bias(c,0,0)` for c=0..7.
 Restored caller `0x80241380` at dispatch 605620 retains final coordinate 7
@@ -121,8 +124,15 @@ The subsequent [audit hardware run](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIR
 Direct stage-0 frontier at dispatch 608381. The user again saw black. That
 run establishes normal-path non-regression, with negative failure branches
 remaining host/static evidence. The [six-setter TEV batch](GX_TEV_SCALAR_BATCH_2026-10-03.md)
-is a separate candidate with local gates and private build passed, awaiting
-a new console run.
+passed local gates, all five GitHub workflows on integrated code `e76e8f38`,
+its private build and [fresh hardware progression](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md).
+The coherent later KColor boundary establishes return of all sixteen
+default iterations: 96 new setter calls plus 16 existing Order calls.
+KColor ID 0, pointer `0x80398FCC`, blocks at dispatch 605056 / 98.265 seconds.
+The user reported a black screen and an error at exit. Alternate TEV inputs
+retain host contracts only; KColor bytes and native decoding/pixels remain
+unproven. Snapshot 604804 precedes all three loops and retains 1556 FIFO
+writes / 99 successful presents / 0 failures, without measuring later emissions.
 
 ## Important boundary lessons from hardware
 
@@ -221,14 +231,16 @@ Only Nintendo-data-free runtime/platform code, documentation and synthetic probe
 
 ## Next boundary
 
-The translated-product link seam and bounded disabled coordinate loop are
-crossed. The next hardware action is the separate compiled audit candidate,
-with fresh attribution and comparison against the coordinate-to-TEV baseline.
+The translated-product link seam, bounded disabled coordinate loop and
+default six-setter TEV loop are crossed. The next implementation boundary is
+KColor ID 0 / guest pointer `0x80398FCC`, requiring ID-before-memory guards,
+a complete readable four-byte range, exact RGBA copying and native forwarding.
+Color and SwapModeTable remain static later forecasts.
 
 1. bind the copied reports to the exact candidate/NRO and retain their hashes;
 2. inspect a new blocker or exception before diagnosing a timing/scheduler issue;
 3. if no blocker appears, classify ACTIVE versus STALE watchdog history;
-4. preserve the accepted coordinate-loop scope and require later progression
-   before accepting a TEV return; arrival at stage 0 alone is insufficient;
+4. preserve the accepted coordinate/TEV default-loop scope and require later
+   progression before accepting KColor return; arrival alone is insufficient;
 5. retain the headless control target and the hardware-driven FST/DVD/input/audio
    scopes; do not extend unrelated behavior from a static forecast.

@@ -237,8 +237,15 @@ The subsequent [audit run](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONT
 `b3484117` / `7ecbc8a9...`, preserves this normal path and reaches Direct
 stage 0 at dispatch 608381, elapsed 107,925 ms. It establishes normal-path
 non-regression, while negative failure branches remain host/static evidence.
-The user again saw black. The [six-setter TEV candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md)
-must pass its recorded gates and fresh hardware proof before acceptance.
+The user again saw black. The subsequent [six-setter TEV batch](GX_TEV_SCALAR_BATCH_2026-10-03.md)
+passed local contracts, all five GitHub workflows on code `e76e8f38` and the
+private build. Its [fresh hardware result](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md)
+accepts the caller default tuples on stages 0..15 by six first hits, checked
+loop control flow, coherent state and the later KColor frontier at 605056.
+This is 96 new calls plus 16 existing Order calls, not individual return
+tracing or hardware proof of alternate inputs. The user reported black output
+and an error at exit. KColor ID 0 / pointer `0x80398FCC` is arrived at, not
+returned; unknown RGBA bytes and guest-pointer handling remain a hard stop.
 
 The separate [audit candidate](PORT_AUDIT_2026-10-03.md), code `b3484117`,
 NRO `7ecbc8a9...`, passed local gates, its private build and the attributable

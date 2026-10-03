@@ -38,7 +38,8 @@
 
 ## Hardware evidence
 
-- [Latest accepted audit result](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md) — normal-path non-regression at TEV Direct stage 0; error-path limits and black screen
+- [Latest accepted TEV result](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md) — six setters return on stages 0..15; KColor pointer frontier, black screen and error at exit
+- [Earlier audit result](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md) — normal-path non-regression at the preceding Direct frontier; error-path limits
 - [Coordinate-to-TEV result](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md) — all eight coordinate triples return; TEV Direct stage-0 frontier, timing and confirmed black screen
 - [Matrix-to-Scale result](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_TEX_COORD_SCALE_FRONTIER.md) — ten texture-matrix returns; preceding Scale frontier and freshness limits
 - [IA8 maps 0..7 result](HARDWARE_RESULTS_2026-10-02_DISCOVERY_GX_LOAD_TEX_MTX_IMM_FRONTIER.md) — all eight exact texture bindings return before the matrix frontier
@@ -162,10 +163,10 @@
 
 ## Blocker notes
 
-- [Pending TEV scalar batch](GX_TEV_SCALAR_BATCH_2026-10-03.md) — six setters, legal SDK domains and required gates; no batch hardware acceptance yet
+- [TEV scalar batch](GX_TEV_SCALAR_BATCH_2026-10-03.md) — six setters, legal SDK domains, completed gates and default-tuple hardware acceptance
 - [Coordinate batch hardware scope](GX_TEX_COORD_BATCH_2026-10-03.md) — eight exact triples accepted; enabled branches remain host-only
 - [Coordinate neighbor audit](GX_TEX_COORD_NEIGHBORS_2026-10-02.md) — pinned wrapper/Aurora semantics and static caller
-- [TEV neighbor audit](GX_TEV_NEIGHBORS_2026-10-03.md) — pinned contracts and static look-ahead; Direct is now observed, with no TEV return accepted
+- [TEV neighbor audit](GX_TEV_NEIGHBORS_2026-10-03.md) — pinned contracts and static look-ahead; the separate scalar result accepts only the executed default loop
 
 - [fast-track-blockers/](fast-track-blockers/) — blocker-specific mapping, pinned semantics and fix notes
 
@@ -183,17 +184,20 @@ Current accepted state as of 2026-10-03:
   calls remain crossed;
 - all eight Gen2(c,1,4,60,0,125), disabled Scale(c,0,0,0) and disabled
   Bias(c,0,0) triples are accepted for c=0..7; enabled branches remain host-only;
-- the durable frontier is TEV Direct `0x80171B58`, stage 0, LR `0x80240F98`,
-  dispatch 608381, 107.925 seconds from the first dispatch;
+- all six scalar TEV setters return on default tuples for stages 0..15:
+  96 new calls and 16 existing Order calls;
+- the durable frontier is KColor `0x80171ED4`, ID 0, pointer `0x80398FCC`,
+  LR `0x80240F98`, dispatch 605056 / 98.265 seconds;
 - the user confirmed black screens for coordinate NRO `64ba8377...` and
-  audit NRO `7ecbc8a9...`;
-  no recognizable Mario Kart Wii image is proven;
+  audit NRO `7ecbc8a9...`, and black output plus an error at exit for TEV
+  NRO `cc88a78c...`; no recognizable Mario Kart Wii image is proven;
 - audit NRO `7ecbc8a9...` is accepted for normal-path non-regression only;
   SIZE_MAX, Present(false), teardown/shutdown error paths were not exercised;
-- the six-setter TEV scalar candidate passed local gates and its private
-  build; console progression remains pending.
+- the TEV batch passed local gates, all five GitHub workflows on code
+  `e76e8f38`, its private build and bounded console progression;
+  alternate tuples remain host-only, KColor remains unreturned.
 
-See [the latest accepted hardware report](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md),
+See [the latest accepted hardware report](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md),
 [the coordinate candidate](GX_TEX_COORD_BATCH_2026-10-03.md), and
 [the static TEV audit](GX_TEV_NEIGHBORS_2026-10-03.md).
 

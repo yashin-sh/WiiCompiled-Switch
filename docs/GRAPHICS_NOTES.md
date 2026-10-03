@@ -30,7 +30,7 @@ Minimum progression:
 8. measure CPU frame overhead, memory use and presentation stability on Tegra X1.
 
 The direct-Vulkan clear/triangle probes, Dawn clear/present, Dawn WGSL triangle, Aurora GX triangle and pinned `HleFifoWrite` synthetic FIFO path have now all passed on hardware. The FIFO run remained active for 1,435 frames and exited cleanly. That graphics chain is established for local RMCP01 FIFO work and GPU presents.
-The latest accepted Discovery run crosses all eight
+The earlier coordinate Discovery run crosses all eight
 `Gen2(c,1,4,60,0,125)`, `Scale(c,0,0,0)` and `Bias(c,0,0)` triples for c=0..7,
 then reaches GXSetTevDirect `0x80171B58`, stage 0, without return. Enabled
 Scale/Bias branches remain host-tested only, and other TEV neighbors remain
@@ -44,7 +44,14 @@ The subsequent [audit hardware run](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIR
 Direct stage-0 frontier at dispatch 608381. Its preceding snapshot remains
 1556 FIFO writes and 99 successful presents / 0 failures; the user again
 saw black. Negative failure branches remain host/static evidence. The
-[next six-setter TEV candidate](GX_TEV_SCALAR_BATCH_2026-10-03.md) has passed local gates and its private build; console progression remains pending.
+[six-setter TEV batch](GX_TEV_SCALAR_BATCH_2026-10-03.md) subsequently passed
+all five GitHub workflows and hardware-crossed its 96 default-tuple calls
+across stages 0..15. The [latest result](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md) stops at
+KColor ID 0, pointer `0x80398FCC`, dispatch 605056 / 98.265 seconds. The
+user saw black and an error at exit. Its changed snapshot 604804 precedes
+the loop, retaining 1556 FIFO writes and 99 successful presents / 0 failures;
+it does not measure later native emissions or prove pixels. Alternate TEV
+inputs retain host contracts, and KColor pointer handling remains a hard stop.
 
 ## Fallback — Deko3D native Aurora backend
 

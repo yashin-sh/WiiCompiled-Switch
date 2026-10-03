@@ -5,7 +5,8 @@
 The [accepted scalar run](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md)
 reaches KColor `0x80171ED4`, ID 0, guest pointer `0x80398FCC`, dispatch
 605056, elapsed_ms 98265, LR `0x80240F98`, r1 `0x80398FB8`, stage SwapMode.
-The user reported black output and an error at exit. KColor has not returned.
+The user reported black output and an error at exit. In that scalar run KColor
+had not returned; the later color/table run described below now crosses it.
 The four RGBA bytes are not present in the reports and are not assumed here.
 
 This separate bounded candidate implements KColor and pre-ports the adjacent
@@ -113,8 +114,8 @@ Neither the exact dispatch delta nor a future image is assumed.
 - [x] AArch64 rendered syntax gate, all current bridges and Discovery diagnostics.
 - [x] Exact candidate lint, synthetic link and all five GitHub workflows.
 - [x] Private Rendered Discovery build, unchanged pins/patch and native provider check.
-- [ ] Successful exact-NRO transfer and fresh attributable console reports.
-- [ ] Later coherent progression establishes each executed member's return.
+- [x] Successful exact-NRO transfer and fresh attributable console reports.
+- [x] Later coherent progression establishes each executed member's return.
 
 Integrated candidate `1333b0e2c5b6695a2d8512ee1080041792308718` passed
 all five GitHub workflows and both build jobs, including all ten host contracts.
@@ -143,5 +144,12 @@ This covers those three names, not every symbol under the private link's broad
 allow-multiple-definition option, nor BP decoding/pixels. Detailed source,
 object, graph and artifact hashes remain local.
 
-The latest accepted frontier remains KColor arrival. This new batch is a
-candidate; no pointer-setter return or recognizable game image is accepted yet.
+The [later console result](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md)
+accepts all twelve executed calls: four KColor, four Color and four SwapModeTable
+calls, through the restored later caller and AlphaCompare boundary. Nxlink
+completed at 13:43:58 UTC; fresh reports were retrieved at 13:53:12 UTC.
+The latest accepted frontier is now AlphaCompare `0x80172088`, tuple
+(7,0,0,7,0), dispatch 700091. The user still reports black output and a crash.
+Actual RGBA bytes, alternate tuples and recognizable game images remain unproven.
+The 362.297-second elapsed value includes an unexplained 256.581-second watchdog
+sampling gap and is not an uninterrupted execution-time measurement.

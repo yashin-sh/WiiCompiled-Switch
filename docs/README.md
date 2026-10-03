@@ -2,6 +2,8 @@
 
 ## Architecture / runtime
 
+- [HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md) — latest accepted twelve color/table calls; AlphaCompare boundary, black output and crash
+
 - [PORT_AUDIT_2026-10-03.md](PORT_AUDIT_2026-10-03.md) — CI/scripts/runtime audit, corrections and remaining validation limits
 - [ARCHITECTURE.md](ARCHITECTURE.md) — implemented architecture, hardware proof and remaining risks
 - [M1_PORTABILITY_AUDIT.md](M1_PORTABILITY_AUDIT.md) — WiiCompiled -> Horizon/libnx audit

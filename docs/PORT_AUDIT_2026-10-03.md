@@ -172,3 +172,14 @@ Input mapping, audio output, remaining Wii services, pixel correctness and
 representative-scene profiling are still open. See the updated
 [`ARCHITECTURE.md`](ARCHITECTURE.md) and
 [`FAST_TRACK_VALIDATION_POLICY.md`](FAST_TRACK_VALIDATION_POLICY.md).
+
+
+## Latest console result — TEV colors crossed (2026-10-03)
+
+The [fresh color/table hardware result](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md)
+supersedes the earlier pending color/table status. All twelve executed calls
+returned through the coherent later caller; AlphaCompare `0x80172088`,
+(7,0,0,7,0), is the new DIRECT hard stop. Black output and a crash persist.
+Actual RGBA bytes and recognizable game pixels remain unproven. The elapsed
+time includes an unexplained watchdog sampling gap, so it is not a performance
+measurement. Prior dated results above retain their original scope.

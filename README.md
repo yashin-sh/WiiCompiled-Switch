@@ -33,19 +33,21 @@ TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
 The latest accepted TEV Discovery reports were retrieved on 2026-10-03. They
-preserve return from all eight coordinate triples: Gen2(c,1,4,60,0,125),
-Scale(c,0,0,0) and Bias(c,0,0), c=0..7. The exact IA8 loads on maps 0..7
-and ten type-0 matrix loads remain crossed. All six new TEV setters return
-on stages 0..15: 96 calls, plus 16 existing Order calls. Execution now stops at **DIRECT GXSetTevKColor (`0x80171ED4`),
-ID 0, guest pointer `0x80398FCC`**, with LR `0x80240F98`.
-The durable blocker records 605,056 dispatches and 98.265 seconds from the
-first translated dispatch, followed by an intentional unsupported-call abort.
-See the [accepted TEV hardware report](docs/HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md).
+preserve the exact IA8 loads on maps 0..7, ten type-0 matrix loads, eight
+Gen2/disabled-Scale/disabled-Bias triples and six scalar TEV setters across
+stages 0..15. The new color/table run also establishes return from four KColor,
+four Color and four SwapModeTable calls. Execution now stops at **DIRECT
+GXSetAlphaCompare (`0x80172088`), `(7,0,0,7,0)`**, with LR `0x80240F9C`,
+dispatch 700091 and BlendMode stage, followed by an intentional unsupported-call
+abort. The user still reports a black screen and a crash. See the
+[latest hardware report](docs/HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md).
+Its 362.297-second elapsed value includes an unexplained 256.581-second watchdog
+sampling gap; it does not measure uninterrupted execution time.
 
-The preceding durable graphics snapshot, at dispatch 604,804, records:
+The latest preceding durable heartbeat, at dispatch 699,651, records:
 
 ```text
-RMCP01 FIFO writes    : 1556
+RMCP01 FIFO writes    : 1555
 GXCopyDisp calls      : 99
 present successes     : 99
 present failures      : 0
@@ -86,11 +88,11 @@ with exit 0 at 2026-10-03 11:39:21 UTC. Fresh reports accept all sixteen
 iterations on the caller default tuples; alternate arguments retain host
 contracts only. The user saw a black screen and an error at the end. The
 following KColor guest-pointer boundary stays outside this accepted lot.
-The next [TEV color/table candidate](docs/GX_TEV_COLOR_BATCH_2026-10-03.md)
+The [TEV color/table batch](docs/GX_TEV_COLOR_BATCH_2026-10-03.md)
 implements KColor plus the audited adjacent Color and SwapModeTable setters.
 All five GitHub workflows, its ten host contracts, rendered syntax gate and
-exact private build pass on code `1333b0e2`. NRO `a56be881...` is ready;
-console return remains pending.
+exact private build pass on code `1333b0e2`. NRO `a56be881...` transferred
+with exit 0 at 13:43:58 UTC; fresh reports now accept all twelve executed calls.
 
 The method now permits bounded GX batches after auditing the pinned wrapper,
 Aurora effects, argument guards and relevant guest-memory mirrors. Every

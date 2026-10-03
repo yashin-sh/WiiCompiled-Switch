@@ -1868,3 +1868,14 @@ Pinned guest bookkeeping changes word0 to `0x00000195` and leaves word1 at
 zero. The exact candidate applies only that tuple to the same Aurora GXTexObj
 constructed by the immediately preceding GXInitTexObj call. Any variation
 remains unsupported.
+
+
+## Latest console result — TEV colors crossed (2026-10-03)
+
+The [fresh color/table hardware result](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md)
+supersedes the earlier pending color/table status. All twelve executed calls
+returned through the coherent later caller; AlphaCompare `0x80172088`,
+(7,0,0,7,0), is the new DIRECT hard stop. Black output and a crash persist.
+Actual RGBA bytes and recognizable game pixels remain unproven. The elapsed
+time includes an unexplained watchdog sampling gap, so it is not a performance
+measurement. Prior dated results above retain their original scope.

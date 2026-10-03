@@ -18,10 +18,12 @@
 - [x] Capture the [KColor frontier](docs/HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md): ID 0, pointer `0x80398FCC`, dispatch 605056 / 98.265 seconds; user reports black screen and error at exit.
 - [x] Implement the [bounded TEV color/table candidate](docs/GX_TEV_COLOR_BATCH_2026-10-03.md): KColor and adjacent Color/SwapModeTable, with ID-before-memory guards and passing executable host contracts.
 - [x] Pass all five GitHub workflows and the exact private Rendered Discovery build for color/table code `1333b0e2`, NRO SHA-256 `a56be88113ff7c2cc20808111cf7d6c0e947b0c8955b2252737b974b28a9e0ad`, with 25 retained symbols and the three unique Aurora providers checked.
-- [ ] Transfer the color/table NRO and establish fresh console return beyond the twelve calls.
+- [x] Transfer the color/table NRO with exit 0 at 13:43:58 UTC and establish fresh console return from all twelve calls through the restored later caller.
+- [x] Capture [AlphaCompare](docs/HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md) `0x80172088`, (7,0,0,7,0), dispatch 700091, stage BlendMode; user still reports black output and a crash.
+- [ ] Implement and validate the separate AlphaCompare boundary, including the existing host validity flag.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The latest accepted reports are the [TEV-to-KColor result](docs/HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md), preserving the coordinate path and audit normal-path scope. Six TEV setters return on default tuples across stages 0..15; alternate tuples and enabled coordinate branches remain host-only. Snapshot 604804 records 1556 FIFO writes and 99 successful presents / 0 failures before the matrix/coordinate/TEV loops. It does not prove later native emissions or pixels. SIZE_MAX, Present(false) and teardown/shutdown recovery remain unexercised on hardware. The user reported black output and an error at exit.
+The latest accepted reports are the [TEV-color-to-AlphaCompare result](docs/HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md). They establish twelve new color/table returns and preserve the prior scalar/coordinate path. Actual RGBA bytes and alternate tuples remain unproven. The preceding snapshot 699651 records 1555 guest FIFO writes, 99 successful presents and zero failures; it does not prove later native commands or pixels. The elapsed time includes a 256.581-second watchdog sampling gap of unknown cause and is not a performance measurement. Runtime negative branches remain host-only.
 
 The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
 

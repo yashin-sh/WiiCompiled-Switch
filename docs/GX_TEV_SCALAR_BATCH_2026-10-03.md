@@ -154,11 +154,16 @@ integration patch bytes/modification times were preserved. Previous hardware
 NROs remain intact. Detailed validation, source hashes and logs remain local
 beside this artifact.
 
-A targeted provider audit of the preceding link graph found exactly one
-external provider per native TEV name: Direct from Aurora GXBump.o, the other
-five from GXTev.o, in libm3_aurora_gx.a. The six new bridges only define
-mkw_switch_hle_* exports. This does not establish general ownership of other
-symbols under the private link's broad allow-multiple-definition option.
+The targeted post-build provider audit checked 219 actual host link inputs
+and all six new objects: each object defines its mkw_switch_hle_* bridge
+and references the expected GX native symbol. There is exactly one expected
+Aurora provider per native TEV name: Direct from GXBump.o, the other five
+from GXTev.o, in libm3_aurora_gx.a. The earlier scan of 19 Rust archives and
+seven container -l libraries was explicitly reused after matching input
+paths/names and the immutable build image; it is not a fresh container nm run.
+The ignored audit JSON distinguishes these evidence phases and verifies the
+candidate source hashes and NRO. This does not establish general ownership
+of other symbols under the private link's broad allow-multiple-definition option.
 
 - [ ] Transfer this exact NRO and retrieve fresh attributable console reports.
 - [ ] Establish return beyond each executed setter family and record the actual

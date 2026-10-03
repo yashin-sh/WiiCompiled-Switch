@@ -37,6 +37,7 @@ extern "C" void mkw_switch_hle_gx_set_tev_swap_mode_table(CpuContext* cpu) noexc
 extern "C" void mkw_switch_hle_gx_set_tev_op(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_order(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_blend_mode(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_alpha_compare(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_color_update(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_alpha_update(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_z_mode(CpuContext* cpu) noexcept;
@@ -362,6 +363,18 @@ struct KnownNativeCpuCall<0x8017200Cu> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_tev_swap_mode_table(cpu);
+    }
+};
+
+// GXSetAlphaCompare: r3/r6 compare enums 0..7, r5 operator 0..3;
+// r4/r7 references use the pinned u8 conversion. Rendered mode publishes
+// the existing alpha-compare validity flag before native forwarding.
+template <>
+struct KnownNativeCpuCall<0x80172088u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_alpha_compare(cpu);
     }
 };
 

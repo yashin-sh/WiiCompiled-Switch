@@ -27,10 +27,13 @@ not measure later native commands or prove pixels. The user reported black
 output and an error at exit. Alternate scalar inputs and enabled coordinate
 branches remain host-only; KColor bytes and return are unproven.
 
-The separate [TEV color/table candidate](GX_TEV_COLOR_BATCH_2026-10-03.md)
-now passes all five GitHub workflows and its exact private build (code
-`1333b0e2`, NRO `a56be881...`). KColor and adjacent Color/SwapModeTable are
-implemented with bounded memory/enum guards; fresh console return remains pending.
+The [TEV color/table batch](GX_TEV_COLOR_BATCH_2026-10-03.md) passed all five
+GitHub workflows and its exact private build (code `1333b0e2`, NRO `a56be881...`).
+Its [fresh console result](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md)
+now establishes all twelve calls returned, with AlphaCompare `0x80172088`
+as the latest arrival boundary. The separate
+[AlphaCompare candidate](GX_ALPHA_COMPARE_2026-10-03.md) preserves the pinned
+native forwarding and existing host validity flag; its console return is pending.
 
 ## Earlier coordinate and audit baselines
 

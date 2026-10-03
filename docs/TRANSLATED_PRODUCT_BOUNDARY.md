@@ -233,14 +233,16 @@ Only Nintendo-data-free runtime/platform code, documentation and synthetic probe
 
 The translated-product link seam, bounded disabled coordinate loop and
 default six-setter TEV loop are crossed. KColor ID 0 / pointer `0x80398FCC`
-is the latest accepted arrival boundary.
-The separate [TEV color/table candidate](GX_TEV_COLOR_BATCH_2026-10-03.md)
-now passes all five GitHub workflows and its exact private build (code
-`1333b0e2`, NRO `a56be881...`). KColor and adjacent Color/SwapModeTable are
-implemented with bounded memory/enum guards; fresh console return remains pending.
-The next console test must establish later coherent progression beyond the
-twelve color/table calls before accepting their return. Actual RGBA bytes
-and recognizable game pixels remain unproven.
+was that scalar run's arrival boundary.
+The [TEV color/table batch](GX_TEV_COLOR_BATCH_2026-10-03.md) passed all five
+GitHub workflows and its exact private build (code `1333b0e2`, NRO `a56be881...`).
+Its [fresh console result](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md)
+now establishes all twelve calls returned, with AlphaCompare `0x80172088`
+as the latest arrival boundary. The separate
+[AlphaCompare candidate](GX_ALPHA_COMPARE_2026-10-03.md) preserves the pinned
+native forwarding and existing host validity flag; its console return is pending.
+The next console test must establish progression beyond AlphaCompare before
+accepting its return. Actual RGBA bytes and recognizable game pixels remain unproven.
 
 1. bind the copied reports to the exact candidate/NRO and retain their hashes;
 2. inspect a new blocker or exception before diagnosing a timing/scheduler issue;

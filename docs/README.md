@@ -2,6 +2,8 @@
 
 ## Architecture / runtime
 
+- [GX_ALPHA_COMPARE_2026-10-03.md](GX_ALPHA_COMPARE_2026-10-03.md) — next bounded bridge, host validity-flag semantics and Fog diagnostics
+
 - [HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md) — latest accepted twelve color/table calls; AlphaCompare boundary, black output and crash
 
 - [PORT_AUDIT_2026-10-03.md](PORT_AUDIT_2026-10-03.md) — CI/scripts/runtime audit, corrections and remaining validation limits

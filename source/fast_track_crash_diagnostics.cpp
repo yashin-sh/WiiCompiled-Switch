@@ -1483,9 +1483,40 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         osCancelOsCurrent,
         osCancelOsRunning);
     if (n > 0) {
-        const std::size_t size = static_cast<std::size_t>(n) < sizeof(buffer)
-            ? static_cast<std::size_t>(n)
-            : sizeof(buffer) - 1;
+        std::size_t size = static_cast<std::size_t>(n) < sizeof(buffer)
+                               ? static_cast<std::size_t>(n)
+                               : sizeof(buffer) - 1;
+        // The next forecast Fog boundary carries f1..f4 and a guest color.
+        // Capture their actual bits on arrival without executing that setter,
+        // narrowing floats, guessing constants or changing translated state.
+        if (target == 0x801722CCu && cpu && size < sizeof(buffer) - 1u) {
+            std::uint64_t fogBits[4]{};
+            for (std::size_t i = 0; i < 4u; ++i) {
+                static_assert(sizeof(cpu->fpr[1].d) == sizeof(fogBits[0]));
+                std::memcpy(&fogBits[i], &cpu->fpr[i + 1u].d, sizeof(fogBits[i]));
+            }
+            const auto* color = Memory::GetPointer(r4, 4u);
+            const int appended = std::snprintf(
+                buffer + size, sizeof(buffer) - size,
+                "gx fog f64 bits      : 0x%016llx / 0x%016llx / 0x%016llx / 0x%016llx\n"
+                "gx fog color readable: %s\n"
+                "gx fog rgba bytes    : %02x / %02x / %02x / %02x\n",
+                static_cast<unsigned long long>(fogBits[0]),
+                static_cast<unsigned long long>(fogBits[1]),
+                static_cast<unsigned long long>(fogBits[2]),
+                static_cast<unsigned long long>(fogBits[3]),
+                color ? "YES" : "NO",
+                color ? static_cast<unsigned>(color[0]) : 0u,
+                color ? static_cast<unsigned>(color[1]) : 0u,
+                color ? static_cast<unsigned>(color[2]) : 0u,
+                color ? static_cast<unsigned>(color[3]) : 0u);
+            if (appended > 0) {
+                const auto remaining = sizeof(buffer) - size - 1u;
+                size += static_cast<std::size_t>(appended) < remaining
+                            ? static_cast<std::size_t>(appended)
+                            : remaining;
+            }
+        }
         write_atomicish(kDispatchPath, buffer, size);
     }
 #else

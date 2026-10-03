@@ -163,11 +163,14 @@ all five GitHub workflows on integrated code `e76e8f38`, private build and
 returns from six setters on default tuples across stages 0..15, then stops at
 KColor ID 0, pointer `0x80398FCC`, dispatch 605056 / 98.265 seconds. The
 user reported black output and an error at exit. Alternate scalar arguments
-retain host contracts only; KColor is the latest accepted arrival boundary.
-The separate [TEV color/table candidate](GX_TEV_COLOR_BATCH_2026-10-03.md)
-now passes all five GitHub workflows and its exact private build (code
-`1333b0e2`, NRO `a56be881...`). KColor and adjacent Color/SwapModeTable are
-implemented with bounded memory/enum guards; fresh console return remains pending.
+retain host contracts only; KColor was that scalar run's arrival boundary.
+The [TEV color/table batch](GX_TEV_COLOR_BATCH_2026-10-03.md) passed all five
+GitHub workflows and its exact private build (code `1333b0e2`, NRO `a56be881...`).
+Its [fresh console result](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md)
+now establishes all twelve calls returned, with AlphaCompare `0x80172088`
+as the latest arrival boundary. The separate
+[AlphaCompare candidate](GX_ALPHA_COMPARE_2026-10-03.md) preserves the pinned
+native forwarding and existing host validity flag; its console return is pending.
 Input mapping, audio output, remaining Wii services, pixel correctness and
 representative-scene profiling are still open. See the updated
 [`ARCHITECTURE.md`](ARCHITECTURE.md) and

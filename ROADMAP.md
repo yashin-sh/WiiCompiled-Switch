@@ -20,7 +20,8 @@
 - [x] Pass all five GitHub workflows and the exact private Rendered Discovery build for color/table code `1333b0e2`, NRO SHA-256 `a56be88113ff7c2cc20808111cf7d6c0e947b0c8955b2252737b974b28a9e0ad`, with 25 retained symbols and the three unique Aurora providers checked.
 - [x] Transfer the color/table NRO with exit 0 at 13:43:58 UTC and establish fresh console return from all twelve calls through the restored later caller.
 - [x] Capture [AlphaCompare](docs/HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md) `0x80172088`, (7,0,0,7,0), dispatch 700091, stage BlendMode; user still reports black output and a crash.
-- [ ] Implement and validate the separate AlphaCompare boundary, including the existing host validity flag.
+- [x] Implement the [separate AlphaCompare candidate](docs/GX_ALPHA_COMPARE_2026-10-03.md), including the existing host validity flag; pass both host-contract modes and four mutation checks.
+- [ ] Complete its rendered syntax, exact GitHub workflows, private NRO build and fresh console test.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
 The latest accepted reports are the [TEV-color-to-AlphaCompare result](docs/HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md). They establish twelve new color/table returns and preserve the prior scalar/coordinate path. Actual RGBA bytes and alternate tuples remain unproven. The preceding snapshot 699651 records 1555 guest FIFO writes, 99 successful presents and zero failures; it does not prove later native commands or pixels. The elapsed time includes a 256.581-second watchdog sampling gap of unknown cause and is not a performance measurement. Runtime negative branches remain host-only.

@@ -2,6 +2,7 @@
 
 ## Architecture / runtime
 
+- [GX_FOG_Z_COMP_2026-10-03.md](GX_FOG_Z_COMP_2026-10-03.md) — next bounded Fog bridge and prepared ZCompLoc, passing host/native contracts; console acceptance pending
 - [HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md) — latest accepted AlphaCompare return and captured Fog arguments; user-confirmed black screen and error at exit
 
 - [GX_ALPHA_COMPARE_2026-10-03.md](GX_ALPHA_COMPARE_2026-10-03.md) — next bounded bridge, host validity-flag semantics and Fog diagnostics

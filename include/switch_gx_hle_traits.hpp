@@ -38,6 +38,8 @@ extern "C" void mkw_switch_hle_gx_set_tev_op(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_order(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_blend_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_alpha_compare(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_fog(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_z_comp_loc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_color_update(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_alpha_update(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_z_mode(CpuContext* cpu) noexcept;
@@ -375,6 +377,28 @@ struct KnownNativeCpuCall<0x80172088u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_alpha_compare(cpu);
+    }
+};
+
+// GXSetFog: exact captured type-0 f64 tuple in f1..f4; complete color at r4.
+// Other tuples abort before narrowing, memory lookup or native forwarding.
+template <>
+struct KnownNativeCpuCall<0x801722CCu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_fog(cpu);
+    }
+};
+
+// GXSetZCompLoc: r3 uses the pinned TARGET_PC full-word GXBool conversion.
+// Prepared from the checked caller; console return is not yet established.
+template <>
+struct KnownNativeCpuCall<0x80172858u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_z_comp_loc(cpu);
     }
 };
 

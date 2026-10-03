@@ -24,13 +24,15 @@
 - [x] Pass AlphaCompare rendered syntax, all five exact-code GitHub workflows and the private NRO build: SHA-256 `7032c756f4f0872334aea0a4421a8633e8d76d9ed1c004cf2d59fafa87b5b310`, 27 strong symbols, unique native and existing flag providers.
 - [x] Transfer the exact AlphaCompare NRO with exit 0 at 17:50:16 UTC and accept the observed tuple return through existing ZMode to [Fog](docs/HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md).
 - [x] Capture Fog type 0, pointer `0x80398FD0`, four exact f64 parameter bits and readable RGBA 255,255,255,255 at dispatch 603961 / 99.156 seconds.
-- [ ] Audit and validate the next bounded Fog bridge from the captured arguments.
+- [x] Implement the [bounded Fog/ZCompLoc candidate](docs/GX_FOG_Z_COMP_2026-10-03.md), including exact f64 guards, complete color range and full-word bool semantics; pass host/native contracts and rendered syntax.
+- [ ] Pass exact-candidate remote workflows and private NRO build for Fog/ZCompLoc.
+- [ ] Establish fresh console progression beyond Fog and prepared ZCompLoc.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
 The latest accepted reports are the [AlphaCompare-to-Fog result](docs/HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md). They establish AlphaCompare returned on the observed tuple and preserve the prior color/scalar/coordinate path. Fog is reached with captured f64 arguments and four readable color bytes, but has not returned. The preceding heartbeat at 603545 records 1556 guest FIFO writes, 99 successful presents and zero failures; it does not prove later native commands or pixels. All 96 watchdog samples are ACTIVE, with no long sampling gap. Alternate inputs and runtime negative branches retain host evidence only. The user confirms a black screen followed by an error; exact on-screen wording is unavailable.
 
 The checked caller forecasts existing translated `GXSetFogRangeAdj`
-(`0x80172658`, disabled arguments), then missing `GXSetZCompLoc`
+(`0x80172658`, disabled arguments), then prepared `GXSetZCompLoc`
 (`0x80172858`, argument 1), then the existing `GXSetDstAlpha` bridge
 (`0x8017295C`, arguments 0,0). These successors have not been reached in the
 latest console run. They guide preparation, but do not establish a finite

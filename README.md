@@ -44,6 +44,11 @@ See the [latest hardware report](docs/HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_
 The user confirms a black screen followed by an error for this run. The exact
 on-screen error wording is unavailable; recognizable game pixels remain unproven.
 
+The [next Fog/ZCompLoc candidate](docs/GX_FOG_Z_COMP_2026-10-03.md) implements
+the captured Fog tuple and prepares the following missing ZCompLoc call. Its
+host contracts and rendered syntax pass; private build, remote CI and console
+acceptance are tracked separately. It has not yet crossed Fog on hardware.
+
 The latest preceding durable heartbeat, at dispatch 603,545, records:
 
 ```text

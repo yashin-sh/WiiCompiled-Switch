@@ -2,6 +2,8 @@
 
 ## Architecture / runtime
 
+- [WPAD_PROBE_2026-10-04.md](WPAD_PROBE_2026-10-04.md) — current absent-Wiimote candidate, 544 host contract cases; integration and hardware validation pending
+
 - [HARDWARE_RESULTS_2026-10-04_PAD_READ_WPAD_PROBE_FRONTIER.md](HARDWARE_RESULTS_2026-10-04_PAD_READ_WPAD_PROBE_FRONTIER.md) — latest console result: PADRead returned, connected port 0, translated clamping and WPADProbe frontier
 
 - [PAD_READ_2026-10-04.md](PAD_READ_2026-10-04.md) — real Switch single-controller PADRead candidate, four-slot encoding, 65,563 host cases and passing workflows/private build; console PADRead return accepted; per-button hardware tests open

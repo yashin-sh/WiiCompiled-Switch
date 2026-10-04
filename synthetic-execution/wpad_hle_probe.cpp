@@ -79,3 +79,10 @@ static_assert(KnownNativeCpuCall<0x801AF44Cu>::kAvailable);
 extern "C" __attribute__((used)) void synthetic_pad_read_hle_probe(CpuContext* cpu) {
     InvokeDirectCpu<0x801AF44Cu>(cpu);
 }
+
+static_assert(KnownNativeCpuCall<0x801C0990u>::kAvailable);
+
+// Retention only. Do not probe a fabricated guest output pointer at startup.
+extern "C" __attribute__((used)) void synthetic_wpad_probe_hle_probe(CpuContext* cpu) {
+    InvokeDirectCpu<0x801C0990u>(cpu);
+}

@@ -21,7 +21,8 @@
 - [x] Implement the [KPAD unified status candidate](docs/KPAD_UNIFIED_STATUS_2026-10-04.md): complete absent samples and count limit 16; 8,987 host cases pass.
 - [x] Pass KPAD unified local validation: sixteen suites, eight mutants, both AArch64 modes, full synthetic build and script/workflow lint.
 - [x] Pass all five exact-code KPAD workflows / six jobs and the private rendered NRO build; verify 48 retained symbols and nineteen scoped providers.
-- [ ] Transfer the KPAD unified NRO and hardware-accept its return.
+- [x] Transfer the exact KPAD unified NRO with exit 0 at 21:42:13 UTC (26,743,208 compressed bytes / 2,247 blocks).
+- [ ] Retrieve fresh KPAD-run reports and hardware-accept its return.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

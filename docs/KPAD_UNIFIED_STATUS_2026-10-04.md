@@ -83,6 +83,11 @@ validation artifacts are excluded from the public repository.
 At 2026-10-04 20:32:15 UTC, UDP netloader discovery received no reply. The
 direct nxlink attempt started at 20:32:48 UTC and exited 1 at 20:32:51 UTC
 with a connection failure before transfer. No TCP preflight was used. This
-is a transport result; this KPAD candidate has not run on the console. The
-latest observed black output/error still belongs to the preceding WPADProbe
-run. Restart hbmenu netloader in application mode for the next transfer.
+was a transport result before launch, separate from console execution.
+
+The same validated NRO was subsequently sent successfully: direct nxlink
+started at **21:41:58 UTC** and exited **0 at 21:42:13 UTC**, transferring
+26,743,208 compressed bytes / 2,247 blocks (36.39%). Launch revision
+`6a43ec8` differs from the validated code revision only in Markdown. No TCP
+preflight was used. Fresh console reports and visual observations have not
+yet been retrieved; KPAD return and game pixels remain unaccepted.

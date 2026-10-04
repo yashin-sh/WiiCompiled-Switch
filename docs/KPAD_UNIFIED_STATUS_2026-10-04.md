@@ -52,11 +52,37 @@ wrong error byte, wrong format byte, missing count cap, partial-buffer
 preflight, invalid-channel writes, caller count clobber and repeated SD opens.
 The complete synthetic NRO build and both AArch64 configurations pass, with
 all three input bridges and their probes retained in the ELF. Script/workflow
-lint and 471 local documentation links pass.
+lint and 472 local documentation links pass.
 
 Build-switch includes the sixteenth executable suite. AArch64 syntax covers
 rendered and synthetic configurations; the synthetic probe and production
-bridge are explicitly retained and checked in fast-track CI. All sixteen local suites pass. Exact-code GitHub workflows and the private
-rendered NRO are being validated. Console return, other input paths, game pixels, replay and
-sustained gameplay remain open. Pins, existing upstream patch and private-data
-exclusions are preserved.
+bridge are explicitly retained and checked in fast-track CI. All sixteen
+local suites pass.
+
+Code revision `aa73a0c51a42496a01b476a9921697ea53dde1da` passes all five
+exact-code pull-request workflows / six jobs. The
+[actual build-switch run](https://github.com/yashin-sh/WiiCompiled-Switch/actions/runs/37230889090)
+confirms 8,987 KPAD cases, 556 WPADProbe cases, 65,563 PADRead cases and the
+synthetic compile without desktop defines.
+
+The private Rendered Discovery build exits 0. Its NRO is **73,494,584 bytes**,
+SHA-256 `fa05c8703c38ab2361e61562b8e8203e9fe99becfd3ea8510706a57435db0645`.
+All 48 required strong symbols are retained; 19 scoped symbols have unique
+expected providers across 229 host inputs, 19 container Rust archives and
+seven named libraries. Checked FIFO/vertex mirrors match their preparation
+contract. This provider audit excludes broader symbols and compiler-injected
+implicit libraries.
+
+Console return, other input paths, game pixels, replay and sustained gameplay
+remain open. Pins, the original nine-file upstream patch and its modification
+times, and private-data exclusions are preserved. The private NRO and raw
+validation artifacts are excluded from the public repository.
+
+## Launch attempt
+
+At 2026-10-04 20:32:15 UTC, UDP netloader discovery received no reply. The
+direct nxlink attempt started at 20:32:48 UTC and exited 1 at 20:32:51 UTC
+with a connection failure before transfer. No TCP preflight was used. This
+is a transport result; this KPAD candidate has not run on the console. The
+latest observed black output/error still belongs to the preceding WPADProbe
+run. Restart hbmenu netloader in application mode for the next transfer.

@@ -315,7 +315,9 @@ pixels remain unaccepted.
 The [candidate](KPAD_UNIFIED_STATUS_2026-10-04.md) writes the pinned 56-byte
 absent-remote union, with a sixteen-entry cap and whole-buffer preflight.
 All 8,987 CPU/memory/state cases, eight mutation checks and sixteen local
-suites pass. Both AArch64 modes, the full synthetic build and lint pass;
-exact-code workflows, private rendered NRO and hardware return are pending.
+suites pass. Both AArch64 modes, the full synthetic build and lint pass.
+Five exact-code workflows / six jobs and the private rendered NRO pass;
+48 strong symbols and nineteen unique scoped providers are verified.
+Hardware return remains pending.
 Invalid-buffer handling diagnoses before writes; the scope does not include
 a Bluetooth backend, connected sample synthesis or full KPADRead.

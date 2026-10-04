@@ -38,8 +38,9 @@ accepts WPADProbe returning on channel 0, then stops at
 107.369 seconds. All 33 reports / 542,797 bytes are verified. The user
 confirms black output followed by an error; recognizable game pixels remain
 unproven. The [KPAD unified status candidate](docs/KPAD_UNIFIED_STATUS_2026-10-04.md)
-passes 8,987 host cases, eight mutation checks and sixteen local suites;
-GitHub Actions and its private build are next.
+passes 8,987 host cases, eight mutation checks, sixteen local suites and
+five exact-code GitHub workflows / six jobs. Its private NRO build passes;
+console return remains unaccepted.
 
 The [WPADProbe bridge](docs/WPAD_PROBE_2026-10-04.md) passes 556 host cases,
 six mutations, five exact-code workflows / six jobs and its private NRO build.

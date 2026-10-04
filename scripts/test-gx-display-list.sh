@@ -40,6 +40,17 @@ mirror = test / "mirror/lib/gx/fifo.hpp"
 mtime = mirror.stat().st_mtime_ns
 module.prepare(gx.parent, test / "mirror")
 assert mirror.stat().st_mtime_ns == mtime
+vert_mirror = test / "mirror/lib/dolphin/gx/GXVert.cpp"
+vert_mtime = vert_mirror.stat().st_mtime_ns
+module.prepare(gx.parent, test / "mirror")
+assert vert_mirror.stat().st_mtime_ns == vert_mtime
+assert vert_mirror.read_text() == module.checked_vert((gx / "dolphin/gx/GXVert.cpp").read_text())
+try:
+    module.checked_vert((gx / "dolphin/gx/GXVert.cpp").read_text() + "\n")
+except ValueError:
+    pass
+else:
+    raise AssertionError("changed vertex writer accepted")
 try:
     module.checked_fifo((gx / "gx/fifo.hpp").read_text() + "\n")
 except ValueError:
@@ -55,6 +66,25 @@ manage = (gx / "dolphin/gx/GXManage.cpp").read_text()
 dirty = manage.split("void __GXSetDirtyState() {", 1)[1].split("\nvoid __GXSendFlushPrim", 1)[0]
 su = manage.split("static void __SetSURegs(", 1)[1].split("\nvoid __GXUpdateBPMask", 1)[0]
 record = fifo.split('void begin_display_list(', 1)[1].split('// How much', 1)[0]
+# Sphere tests execute pinned getters, setters, VCD/VAT emission and the
+# complete vertex writer. Only the renderer cache and logging are host seams.
+geometry = (gx / "dolphin/gx/GXGeometry.cpp").read_text()
+getters = (gx / "dolphin/gx/GXGet.cpp").read_text()
+draw = (gx / "dolphin/gx/GXDraw.cpp").read_text()
+vert = module.checked_vert((gx / "dolphin/gx/GXVert.cpp").read_text())
+def section(text, start, end):
+    return start + text.split(start, 1)[1].split(end, 1)[0]
+
+(test / "pinned-sphere.inc").write_text(
+    section(geometry, "static inline void SETVCDATTR", "void GXSetArray") + '}\n'
+    + 'extern "C" {\n' + section(getters, "static inline u8 GetFracForNrm", "void GXGetLineWidth") + '}\n'
+    + 'extern "C" {\n' + section(manage, "void __GXSendFlushPrim()", "static void __SetSURegs") + '}\n'
+    # Clang warns about one upstream enum OR; retain the native statement.
+    + '#pragma clang diagnostic push\n#pragma clang diagnostic ignored "-Wdeprecated-enum-enum-conversion"\n'
+    + '// Track vertex count' + vert.split("// Track vertex count", 1)[1]
+    + '#pragma clang diagnostic pop\n'
+    + 'extern "C" {\n' + section(draw, "static GXVtxDescList", "static void vsub")
+    + section(draw, "void GXDrawSphere(", "static void GXDrawCubeFace") + '}\n')
 (test / "pinned-display-list.inc").write_text(
     'static __GXData_struct sSavedGXData;\nextern "C" {\nvoid GXBeginDisplayList(' + body + '}\n'
     + 'namespace aurora::gx::fifo {\nvoid begin_display_list(' + record + '}\n'
@@ -65,7 +95,7 @@ record = fifo.split('void begin_display_list(', 1)[1].split('// How much', 1)[0]
 PY
 for rendered in 0 1; do
     "$HOST_CXX" -std=c++20 -O2 -Wall -Wextra -Werror \
-        -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer \
+        -fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=all -fno-omit-frame-pointer \
         -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--wrap=abort \
         -DTARGET_PC -DAURORA -DMKW_LOCAL_FUNCTION_EXECUTION=1 \
         -DMKW_LOCAL_RENDERED_FAST_TRACK="$rendered" \

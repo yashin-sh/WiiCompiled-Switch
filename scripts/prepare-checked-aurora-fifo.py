@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare a build-only Aurora source mirror with bounded display-list writes."""
+"""Prepare checked display-list writes and float scalars in a build-only mirror."""
 
 import argparse
 import hashlib
@@ -7,6 +7,19 @@ import shutil
 from pathlib import Path
 
 FIFO_SHA256 = "6070d40ebda0c909cc5356eaa241e42f2980069c294b41bcf8d1f4c74c5dd17c"
+
+VERT_SHA256 = "0f1f91b132507547a65a34c6acc7b4425748ca5ea5542360270e8908ea6eaecc"
+
+
+def checked_vert(text: str) -> str:
+    if hashlib.sha256(text.encode()).hexdigest() != VERT_SHA256:
+        raise ValueError("pinned Aurora vertex writer changed; re-audit required")
+    # Float-kind consumers use only f. Eager signed/unsigned casts are unused
+    # and undefined for coordinates outside the corresponding integer range.
+    return text.replace(
+        "Scalar{.kind = ScalarKind::Float, .f = value, .s = static_cast<int32_t>(value), .u = static_cast<uint32_t>(value)}",
+        "Scalar{.kind = ScalarKind::Float, .f = value, .s = 0, .u = 0}",
+    )
 
 
 def checked_fifo(text: str) -> str:
@@ -46,19 +59,22 @@ def prepare(source: Path, destination: Path) -> None:
         or destination in source.parents
     ):
         raise ValueError("the build mirror must be outside the original Aurora tree")
-    header = checked_fifo((source / "lib/gx/fifo.hpp").read_text())
+    replacements = {
+        source / "lib/gx/fifo.hpp": checked_fifo(
+            (source / "lib/gx/fifo.hpp").read_text()
+        ).encode(),
+        source / "lib/dolphin/gx/GXVert.cpp": checked_vert(
+            (source / "lib/dolphin/gx/GXVert.cpp").read_text()
+        ).encode(),
+    }
     for original in sorted((source / "lib").rglob("*")):
         if not original.is_file():
             continue
         target = destination / original.relative_to(source)
-        content = (
-            header.encode()
-            if original == source / "lib/gx/fifo.hpp"
-            else original.read_bytes()
-        )
+        content = replacements.get(original, original.read_bytes())
         if not target.exists() or target.read_bytes() != content:
             target.parent.mkdir(parents=True, exist_ok=True)
-            if original == source / "lib/gx/fifo.hpp":
+            if original in replacements:
                 target.write_bytes(content)
             else:
                 shutil.copy2(original, target)

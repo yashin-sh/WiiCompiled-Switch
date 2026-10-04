@@ -50,6 +50,7 @@ extern "C" void mkw_switch_hle_gx_set_clip_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_dither(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_dst_alpha(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_begin(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_draw_sphere(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_begin_display_list(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_end_display_list(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
@@ -581,8 +582,15 @@ struct KnownNativeCpuCall<0x8016F0F0u> {
     }
 };
 
-// GX display-list recording pair. Begin has reached hardware at 0x80172E00;
-// End is prepared from pinned semantics, without claiming a console return.
+// GX display-list recording pair. Hardware has returned from Begin and End.
+// Sphere is bounded to the two audited constructor variants while recording.
+template <>
+struct KnownNativeCpuCall<0x80172A30u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_draw_sphere(cpu);
+    }
+};
 template <>
 struct KnownNativeCpuCall<0x80172E00u> {
     static constexpr bool kAvailable = true;

@@ -39,8 +39,10 @@ The pending SU marker is handled through the native empty-update branch
 (`updated_mask=0`). Nonempty SU emissions retain host proof.
 
 The new DIRECT stop is **GXDrawSphere (`0x80172A30`), parameters `(4,8)`**,
-dispatch 607503 / 104.178 seconds. Its native bridge and recording dependencies
-are the next work. Sphere return and display-list replay remain unaccepted.
+dispatch 607503 / 104.178 seconds. The [bounded sphere candidate](docs/GX_DRAW_SPHERE_2026-10-04.md)
+now passes its native recording contract, including a regression fix for
+negative float coordinates. Its CI/private build are pending; sphere return
+and display-list replay remain unaccepted.
 The current visual observation is pending; earlier runs were user-confirmed
 black with an error. Recognizable game pixels remain unproven.
 

@@ -9,7 +9,8 @@
 - [x] Pass SU correction `4a7e48b5` local contracts, six mutations, five exact-code GitHub workflows / six jobs and private NRO build; thirteen scoped providers verified.
 - [x] Transfer the SU NRO with exit 0 at 10:01:32 UTC, verify 30 reports / 535,712 bytes and accept native empty-update SU processing plus Begin/End return and a later 64-byte allocation length.
 - [x] Capture GXDrawSphere `0x80172A30`, `(4,8)`, dispatch 607503 / 104.178 seconds.
-- [ ] Bridge and validate the sphere/recording path, resolve further boundaries and establish recognizable game pixels.
+- [x] Implement the [bounded sphere bridge](docs/GX_DRAW_SPHERE_2026-10-04.md), execute its native recording dependencies and fix the demonstrated float conversion bug; 648 cases / 48 refusals pass.
+- [ ] Pass exact-code workflows/private build, hardware-validate sphere recording, resolve further boundaries and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
 

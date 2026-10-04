@@ -44,7 +44,9 @@
 
 ## Validation / analysis method
 
-- [GX_SU_STATE_2026-10-04.md](GX_SU_STATE_2026-10-04.md) — handles observed guest SU dirty bit with actual native emission and selective guest shadow publication; hardware acceptance pending
+- [GX_DRAW_SPHERE_2026-10-04.md](GX_DRAW_SPHERE_2026-10-04.md) — bounded recording bridge, native geometry/state tests and verified float conversion correction; CI/private build pending
+
+- [GX_SU_STATE_2026-10-04.md](GX_SU_STATE_2026-10-04.md) — handles observed guest SU dirty bit with actual native emission and selective guest shadow publication; console accepts the empty-update branch and Begin/End return
 
 - [FAST_TRACK_VALIDATION_POLICY.md](FAST_TRACK_VALIDATION_POLICY.md) — exact-candidate CI, private rendered gate, audited GX batches and hardware acceptance
 - [RMCP01_DISCOVERY_SCAN.md](RMCP01_DISCOVERY_SCAN.md) — whole-product direct-call coverage and first-hit runtime evidence
@@ -52,7 +54,7 @@
 - [RMCP01_ADDRESS_ATTRIBUTION.md](RMCP01_ADDRESS_ATTRIBUTION.md) — public address metadata, pinned semantics and local DTK follow-up
 - [RMCP01_FRONTIER_FORECAST.md](RMCP01_FRONTIER_FORECAST.md) — static look-ahead and its limits
 
-- [GX display-list candidate](GX_DISPLAY_LIST_2026-10-03.md) — coordinated Begin/End, bounded native/guest FIFO and context restoration; actual pending-SU-state guard captured, recording returns pending
+- [GX display-list candidate](GX_DISPLAY_LIST_2026-10-03.md) — coordinated Begin/End, bounded native/guest FIFO and context restoration; SU-corrected console run accepts Begin and at least one End; replay pending
 
 ## Hardware evidence
 

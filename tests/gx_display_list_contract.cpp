@@ -8,6 +8,10 @@
 #include <algorithm>
 #include <cassert>
 #include <csignal>
+#include <cmath>
+#include <array>
+#include <limits>
+#include <type_traits>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -35,16 +39,42 @@ __GXData_struct* __gx = &nativeState;
 HleGxState g_hleGxState{};
 bool g_alphaCompareValid = false;
 GxDisplayListState g_dlRecordState{};
-// Dirty-state branches outside SU/gen mode are not exercised by this contract.
-extern "C" void __GXSetVCD() {
-    assert(false);
+// Cache comparisons only: recording always emits VCD/VAT regardless of cache.
+struct HostAttr {
+    GXCompCnt cnt{};
+    GXCompType type{};
+    u8 frac{};
+};
+struct HostFormat {
+    HostAttr attrs[GX_VA_MAX_ATTR]{};
+};
+struct HostCache {
+    GXAttrType sourceVtxDesc[GX_VA_MAX_ATTR]{};
+    GXAttrType vtxDesc[GX_VA_MAX_ATTR]{};
+    HostFormat vtxFmts[8]{};
+} g_gxState;
+template <class T>
+constexpr auto underlying(T value) {
+    return static_cast<std::underlying_type_t<T>>(value);
 }
-extern "C" void __GXSetVAT() {
+struct HostLog {
+    template <class... T>
+    void warn(T...) {
+        assert(false);
+    }
+} Log;
+namespace aurora::gx::fifo {
+u32 get_buffer_size() {
+    return detail::sBufferSize;
+} // Actual live-only pinned accessor.
+void drain() {
     assert(false);
-}
+} // This contract only draws into display lists.
+} // namespace aurora::gx::fifo
 extern "C" void __GXUpdateBPMask() {
     assert(false);
 }
+#include "pinned-sphere.inc"
 #include "pinned-display-list.inc"
 namespace {
 constexpr std::uint32_t list = 0x80394F00u;
@@ -600,6 +630,125 @@ int main() {
 #else
     Refusal([&] { Begin(c); }, "GX_DISPLAY_LIST_REQUIRES_RENDERER");
     Refusal([&] { End(c); }, "GX_DISPLAY_LIST_REQUIRES_RENDERER");
+#endif
+#if MKW_LOCAL_RENDERED_FAST_TRACK
+    for (unsigned major : {4u, 8u}) {
+        const unsigned minor = 2u * major;
+        for (unsigned texture : {0u, 1u, 2u, 3u}) {
+            for (unsigned save : {0u, 1u}) {
+                Reset();
+                Memory::Write8(gd + 0x5F9u, save);
+                GXSetVtxDesc(GX_VA_POS, GX_INDEX16);
+                GXSetVtxDesc(GX_VA_NRM, GX_INDEX8);
+                GXSetVtxDesc(GX_VA_TEX0, static_cast<GXAttrType>(texture));
+                GXSetVtxDesc(GX_VA_CLR0, GX_DIRECT);
+                GXSetVtxDesc(GX_VA_TEX7MTXIDX, GX_DIRECT);
+                GXSetVtxAttrFmt(GX_VTXFMT3, GX_VA_POS, GX_POS_XY, GX_S16, 7);
+                GXSetVtxAttrFmt(GX_VTXFMT3, GX_VA_NRM, GX_NRM_NBT3, GX_S8, 6);
+                GXSetVtxAttrFmt(GX_VTXFMT3, GX_VA_TEX0, GX_TEX_S, GX_U16, 4);
+                const auto savedNative = nativeState;
+                c = Cpu();
+                Begin(c);
+                std::vector<u8> guestBefore(Memory::GetPointer(gd, 0x600), Memory::GetPointer(gd, 0x600) + 0x600);
+                const auto hleBefore = g_hleGxState;
+                c.gpr[3] = major;
+                c.gpr[4] = minor;
+                const auto sphereCpu = c;
+                KnownNativeCpuCall<0x80172A30u>::Invoke(&c);
+                assert(std::memcmp(&c, &sphereCpu, sizeof(c)) == 0);
+                assert(std::memcmp(&g_hleGxState, &hleBefore, sizeof(hleBefore)) == 0);
+                assert(std::equal(guestBefore.begin(), guestBefore.end(), Memory::GetPointer(gd, 0x600)));
+                assert(nativeState.vcdLo == savedNative.vcdLo && nativeState.vcdHi == savedNative.vcdHi);
+                assert(nativeState.vatA[3] == savedNative.vatA[3]);
+                assert(nativeState.vatB[3] == savedNative.vatB[3] && nativeState.vatC[3] == savedNative.vatC[3]);
+                assert(nativeState.hasNrms == savedNative.hasNrms && nativeState.hasBiNrms == savedNative.hasBiNrms);
+                const auto written = g_dlRecordState.count;
+                assert(written == aurora::gx::fifo::detail::sDlWritePos);
+                const auto* bytes = Memory::GetPointer(list, 16384);
+                // Parse independently: actual CP/XF state, strip headers, all
+                // positions/normals/UVs, closure and restored-state commands.
+                unsigned offset = 0, strips = 0;
+                auto word = [&](unsigned at) { return (u32(bytes[at]) << 24) | (u32(bytes[at + 1]) << 16) | (u32(bytes[at + 2]) << 8) | bytes[at + 3]; };
+                auto value = [&](unsigned at) { return std::bit_cast<float>(word(at)); };
+                while (offset < written) {
+                    const auto op = bytes[offset++];
+                    if (op == 8) {
+                        offset += 5;
+                        continue;
+                    }
+                    if (op == 0x10) {
+                        const auto header = word(offset);
+                        offset += 4 + 4 * ((header >> 16) + 1u);
+                        continue;
+                    }
+                    assert(op == (unsigned(GX_TRIANGLESTRIP) | unsigned(GX_VTXFMT3)));
+                    const auto vertices = (unsigned(bytes[offset]) << 8) | bytes[offset + 1];
+                    offset += 2;
+                    assert(vertices == 2 * (minor + 1));
+                    for (unsigned v = 0; v < vertices; ++v) {
+                        const auto latitude = strips + ((v & 1) ? 0 : 1);
+                        const float a = strips * (3.1415927f / major);
+                        const float theta = (v & 1) ? a : a + 3.1415927f / major;
+                        const float longitude = (v / 2) * (6.2831855f / minor);
+                        const float expected[3] = {std::cos(longitude) * std::sin(theta), std::sin(longitude) * std::sin(theta), std::cos(theta)};
+                        float length = 0;
+                        for (unsigned k = 0; k < 3; ++k) {
+                            assert(std::abs(value(offset + 4 * k) - expected[k]) < 0.000002f);
+                            assert(word(offset + 4 * k) == word(offset + 12 + 4 * k));
+                            length += value(offset + 4 * k) * value(offset + 4 * k);
+                        }
+                        assert(std::abs(length - 1.0f) < 0.000002f);
+                        offset += 24;
+                        if (texture) {
+                            assert(std::abs(value(offset) - float(v / 2) / minor) < 0.000001f);
+                            assert(std::abs(value(offset + 4) - float(latitude) / major) < 0.000001f);
+                            offset += 8;
+                        }
+                    }
+                    ++strips;
+                }
+                assert(offset == written && strips == major);
+                assert(written == 39 + major * (3 + 2 * (minor + 1) * (texture ? 32 : 24)));
+                assert(Report("fast-track-gx-sphere.txt").find("status=sphere-pass") != std::string::npos);
+                End(c);
+                assert(c.gpr[3] == ((written + 39 + 31) & ~31u));
+                assert(bytes[written] == 8 && bytes[written + 1] == 0x50 && word(written + 2) == savedNative.vcdLo);
+                for (unsigned i = written + 39; i < c.gpr[3]; ++i)
+                    assert(bytes[i] == 0);
+                assert(bytes[c.gpr[3]] == 0xa5 && bytes[16384] == 0xa5);
+                ++cases;
+            }
+        }
+    }
+    Reset();
+    c = Cpu();
+    Begin(c);
+    c.gpr[3] = 4;
+    c.gpr[4] = 8;
+    for (const auto args : {std::pair{0u, 8u}, std::pair{4u, 0u}, std::pair{260u, 8u}, std::pair{4u, 264u}, std::pair{4u, 16u}}) {
+        c.gpr[3] = args.first;
+        c.gpr[4] = args.second;
+        Refusal([&] { KnownNativeCpuCall<0x80172A30u>::Invoke(&c); }, "GX_SPHERE_DOMAIN_OR_CAPACITY");
+    }
+    c.gpr[3] = 4;
+    c.gpr[4] = 8;
+    nativeState.dirtyState = 1;
+    Refusal([&] { KnownNativeCpuCall<0x80172A30u>::Invoke(&c); }, "GX_SPHERE_DOMAIN_OR_CAPACITY");
+    nativeState.dirtyState = 0;
+    Memory::Write32(gd + 0x5FCu, 1);
+    Refusal([&] { KnownNativeCpuCall<0x80172A30u>::Invoke(&c); }, "GX_SPHERE_CONTEXT");
+    Memory::Write32(gd + 0x5FCu, 0);
+    End(c);
+    Refusal([&] { KnownNativeCpuCall<0x80172A30u>::Invoke(&c); }, "GX_DISPLAY_LIST_STATE");
+    Reset();
+    c = Cpu(32);
+    Begin(c);
+    c.gpr[3] = 4;
+    c.gpr[4] = 8;
+    Refusal([&] { KnownNativeCpuCall<0x80172A30u>::Invoke(&c); }, "GX_SPHERE_DOMAIN_OR_CAPACITY");
+    End(c);
+#else
+    Refusal([&] { KnownNativeCpuCall<0x80172A30u>::Invoke(&c); }, "GX_SPHERE_REQUIRES_RENDERER");
 #endif
     Memory::Reset();
     std::printf("PASS: GX display list rendered=%d cases=%u refusals=%u\n", MKW_LOCAL_RENDERED_FAST_TRACK, cases, refusals);

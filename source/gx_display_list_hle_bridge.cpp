@@ -198,6 +198,35 @@ extern "C" void mkw_switch_hle_gx_begin_display_list(CpuContext* cpu) noexcept {
 #endif
 }
 
+extern "C" void mkw_switch_hle_gx_draw_sphere(CpuContext* cpu) noexcept {
+    if (!cpu) {
+        return;
+    }
+    mkw_switch_set_fast_track_stage("RMCP01_GX_DRAW_SPHERE");
+#if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+    CheckActive(cpu, 0x80172A30u);
+    if (Memory::Read32(kGXDataPtrAddr) != sGxData ||
+        Memory::Read8(sGxData + 0x5F9u) != sSaveContext ||
+        mkw_switch_gx_display_list_cursor().save_context != sSaveContext ||
+        Memory::Read32(sGxData + 0x5FCu) != 0 || g_hleGxState.inBegin ||
+        g_hleGxState.fifoByteCount != 0) {
+        Refuse("GX_SPHERE_CONTEXT", cpu, 0x80172A30u);
+    }
+    const auto before = mkw_switch_gx_display_list_cursor().written;
+    if (!mkw_switch_gx_native_draw_sphere(cpu->gpr[3], cpu->gpr[4])) {
+        Refuse("GX_SPHERE_DOMAIN_OR_CAPACITY", cpu, 0x80172A30u);
+    }
+    SyncCursor();
+    if (FILE* out = std::fopen("sdmc:/switch/WiiCompiled-Switch/fast-track-gx-sphere.txt", "w")) {
+        std::fprintf(out, "status=sphere-pass\nmajor=%u\nminor=%u\nbytes=%u\ncursor=%u\n",
+                     cpu->gpr[3], cpu->gpr[4], g_dlRecordState.count - before, g_dlRecordState.count);
+        std::fclose(out);
+    }
+#else
+    Refuse("GX_SPHERE_REQUIRES_RENDERER", cpu, 0x80172A30u);
+#endif
+}
+
 extern "C" void mkw_switch_hle_gx_end_display_list(CpuContext* cpu) noexcept {
     if (!cpu) {
         return;

@@ -24,3 +24,6 @@ void mkw_switch_gx_native_begin_display_list(void* list, std::uint32_t size, std
 std::uint32_t mkw_switch_gx_native_end_display_list();
 void mkw_switch_gx_record_scalar(std::uint32_t value, std::uint32_t size);
 void mkw_switch_gx_record_burst(const void* data, std::uint32_t size);
+
+// Bounded recording-only SDK sphere adapter; false leaves state untouched.
+extern "C" bool mkw_switch_gx_native_draw_sphere(std::uint32_t major, std::uint32_t minor);

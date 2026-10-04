@@ -1,10 +1,12 @@
 # GX display-list recording candidate — 2026-10-03
 
-The [latest accepted console run](HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md)
+The [preceding accepted depth-LOD run](HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md)
 returned from the corrected Z24X8 texture LOD, then stopped at
 `GXBeginDisplayList` (`0x80172E00`), buffer `0x80394F00`, capacity 16384 bytes.
 The user saw a black screen followed by an error. This candidate prepares
-Begin and End together; neither return has yet been accepted on hardware.
+Begin and End together. Its [console test](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md)
+refuses guest SU dirty bit 0 before recording; neither return has yet been
+accepted on hardware.
 
 ## Implementation
 
@@ -107,6 +109,7 @@ source mirror. This is a scoped ownership check, not a complete audit of the
 broader multiple-definition link policy or proof of game pixels.
 
 Dependency pins and the original nine-file integration patch's bytes and
-modification timestamps remain preserved. This candidate has not yet been
-launched on the Switch; Begin/End returns and recognizable images still need
-fresh hardware evidence.
+modification timestamps remain preserved. The candidate was subsequently
+[transferred and tested on the Switch](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md)
+on October 4: its pending-state guard captures guest dirty word `1` before
+recording. Begin/End returns and recognizable images remain unproven.

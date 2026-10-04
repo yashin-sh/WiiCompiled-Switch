@@ -2,7 +2,9 @@
 
 ## Architecture / runtime
 
-- [HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md](HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md) — latest accepted depth LOD return; GXBeginDisplayList 16 KiB buffer frontier, user-confirmed black screen and error
+- [HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md) — latest console result: Begin refuses guest SU dirty bit 0 before recording; native list inactive
+
+- [HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md](HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md) — preceding accepted depth LOD return; GXBeginDisplayList 16 KiB buffer frontier, user-confirmed black screen and error
 - [GX_DEPTH_LOD_2026-10-03.md](GX_DEPTH_LOD_2026-10-03.md) — fixes the missing full Z24X8 format in LOD validation; local/native contracts, all workflows and private build pass; observed LOD console return accepted
 - [HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md](HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md) — preceding accepted Fog/ZCompLoc and pixel-setup returns; native depth-texture init passes, LOD validation is the next stop; that run’s visual observation was not supplied
 - [GX_FOG_Z_COMP_2026-10-03.md](GX_FOG_Z_COMP_2026-10-03.md) — bounded Fog/ZCompLoc, passing host/native contracts, workflows and private build; observed console returns accepted
@@ -46,7 +48,7 @@
 - [RMCP01_ADDRESS_ATTRIBUTION.md](RMCP01_ADDRESS_ATTRIBUTION.md) — public address metadata, pinned semantics and local DTK follow-up
 - [RMCP01_FRONTIER_FORECAST.md](RMCP01_FRONTIER_FORECAST.md) — static look-ahead and its limits
 
-- [GX display-list candidate](GX_DISPLAY_LIST_2026-10-03.md) — coordinated Begin/End, bounded native/guest FIFO and context restoration; hardware pending
+- [GX display-list candidate](GX_DISPLAY_LIST_2026-10-03.md) — coordinated Begin/End, bounded native/guest FIFO and context restoration; actual pending-SU-state guard captured, recording returns pending
 
 ## Hardware evidence
 

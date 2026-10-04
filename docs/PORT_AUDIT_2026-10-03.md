@@ -226,7 +226,7 @@ successful presents; those counters do not establish a visible frame. Current
 screen observation is pending. Earlier dated sections retain their scope.
 
 
-## Latest console result — depth LOD crossed (2026-10-03)
+## Earlier console result — depth LOD crossed (2026-10-03)
 
 The [fresh hardware result](HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md)
 establishes LOD returned on the observed depth object with `lod-pass` and guest
@@ -236,3 +236,14 @@ not returned; recording/replay require coordinated FIFO/context/buffer work.
 The user confirms black output and an error. The snapshot before the texture
 constructor retains 99 successful presents, without proof of visible pixels.
 Earlier dated records retain their scope.
+
+## Latest console result — pending SU texture state (2026-10-04)
+
+The [display-list hardware result](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md)
+records an exact validated NRO transfer with exit 0, 29 verified reports and
+`GX_DISPLAY_LIST_PENDING_STATE` at Begin (606826 / 102.408 seconds). Guest
+dirty word `1` is pending SU texture size/bias state; native recording is
+inactive. Begin did not return and End was not reached. The next implementation
+must reconcile native flushing and guest texture shadow/context semantics.
+The guard is diagnosed, not hardware acceptance of recording. Screen
+observation is pending; recognizable game pixels remain unproven.

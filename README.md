@@ -32,20 +32,22 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest [accepted Discovery run](docs/HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md)
-returns from the corrected depth-texture LOD on the observed 4×4 Z24X8 object.
-The fresh report records `lod-pass`, zero/nearest arguments and guest word0
-`0x105`; later coherent execution reaches **GXBeginDisplayList (`0x80172E00`)**.
-The tested NRO had no bridge for that call and intentionally aborts at
-dispatch 609010 / 108.440 seconds,
-with a 32-byte-aligned buffer `0x80394F00` and 16 KiB capacity. Its stateful
-FIFO recording and GX context effects are the next hardware boundary.
-A [coordinated Begin/End candidate](docs/GX_DISPLAY_LIST_2026-10-03.md) now
-implements bounded mixed native/guest recording and context restoration. Its
-335 rendered cases / 30 diagnosed refusals, five exact-code GitHub workflows /
-six jobs and private NRO build pass; its console return remains unaccepted.
-The user confirms **a black screen followed by an error**; recognizable game
-pixels remain unproven.
+The latest [display-list console run](docs/HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md)
+reaches **GXBeginDisplayList (`0x80172E00`)** with a 32-byte-aligned 16 KiB
+buffer, then intentionally stops at `GX_DISPLAY_LIST_PENDING_STATE`.
+The new diagnostic captures guest dirty state **`1`**, corresponding to
+pending SU texture size/bias state, with native recording still inactive.
+Begin has not returned and End has not been reached. The next implementation
+must synchronize this pending texture state before recording.
+
+The [coordinated Begin/End implementation](docs/GX_DISPLAY_LIST_2026-10-03.md)
+has 335 passing rendered cases / 30 diagnosed refusals, five exact-code GitHub
+workflows / six jobs and a passing private NRO build. This run confirms the
+guard on the actual console state; recording/replay effects still await
+hardware acceptance. Its screen observation is pending. The preceding
+[depth-LOD run](docs/HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md)
+accepted the corrected depth-texture LOD and the user confirmed a black
+screen followed by an error. Recognizable game pixels remain unproven.
 
 The [depth-LOD fix](docs/GX_DEPTH_LOD_2026-10-03.md) passes local/native
 contracts, all five exact-code workflows / six jobs and its private NRO build.

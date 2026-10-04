@@ -4,7 +4,8 @@
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.
-- [ ] Accept this candidate on the console, resolve any pending-state/indexed-layout or later native boundary and establish recognizable game pixels.
+- [x] Transfer the exact display-list NRO with exit 0 at 2026-10-04 09:19:26 UTC; verify 29 reports / 534,803 bytes and the pending guest SU-state guard.
+- [ ] Synchronize observed guest dirty bit 0 before recording, accept Begin/End on the console, resolve further layouts/native boundaries and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
 
@@ -40,11 +41,22 @@
 - [ ] Hardware-accept the coordinated Begin/End implementation and establish fresh console continuation.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The latest accepted reports are the [depth-LOD-to-display-list result](docs/HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md). They establish the corrected LOD returned on the observed object, with `lod-pass` and mode word `0x105`, followed by coherent execution of the next constructor. The next DIRECT stop is GXBeginDisplayList, with a 32-byte-aligned 16 KiB buffer. This arrival agrees with the earlier static forecast; its stateful recording had not begun on that tested NRO. The coordinated implementation is now a candidate awaiting a new console run.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md)
+captures `GX_DISPLAY_LIST_PENDING_STATE` at Begin, dispatch 606826 / 102.408
+seconds: guest dirty word `1`, save-context flag `1`, no unfinished HLE packet
+or primitive and native recording inactive. Begin/End returns remain unaccepted.
+The observed bit is SU texture size/bias state; the next implementation must
+reconcile texture-load publication, native flushing and guest shadow effects.
 
-The changed post-main snapshot before the texture constructor records 1558 guest FIFO writes and the same preceding 99 successful presents / zero failures. These counters do not prove pixels after LOD. The watchdog records 102 ACTIVE and one recovered STALE sample. The user confirms a black screen followed by an error; exact wording is unavailable. Alternate inputs and negative branches retain host evidence only.
+The preceding snapshots retain 1558 guest FIFO writes and 99 successful
+presents / zero failures. They do not prove visible pixels. The watchdog has
+97 ACTIVE and two recovered STALE samples. The latest visual observation is
+pending; the earlier depth-LOD run remains user-confirmed black with an error.
 
-The display-list port needs native FIFO redirection, bounded buffer ownership, GX state and paired end/length handling. Later replay, texture loading and drawing still require validation, followed by sustained execution, input/audio correctness and performance. Static forecasts do not establish a finite number of fixes or an ETA before the first image.
+Later recording, replay, texture loading and drawing require validation,
+followed by sustained execution, input/audio correctness and performance.
+Static forecasts do not establish a finite number of fixes or an ETA before
+the first image.
 
 The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
 

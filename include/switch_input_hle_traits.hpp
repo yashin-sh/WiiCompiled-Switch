@@ -141,3 +141,15 @@ struct KnownNativeCpuCall<0x801C0990u> {
         mkw_switch_hle_wpad_probe(cpu);
     }
 };
+
+// KPADGetUnifiedWpadStatus (PAL 0x8019812C), reached after WPADProbe.
+// Preserve the pinned raw absent-remote samples, including count clamping.
+extern "C" void mkw_switch_hle_kpad_unified_status(CpuContext* cpu) noexcept;
+
+template <>
+struct KnownNativeCpuCall<0x8019812Cu> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_kpad_unified_status(cpu);
+    }
+};

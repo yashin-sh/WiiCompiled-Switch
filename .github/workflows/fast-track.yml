@@ -128,7 +128,7 @@ jobs:
             TARGET=WiiCompiled-Switch-synthetic-fast-track \
             BUILD=build-synthetic-fast-track \
             APP_VERSION=0.0.17-synthetic-fast-track-os-init-hle \
-            TRANSLATED_RETAIN_SYMBOL='synthetic_ppc_helper_link_probe synthetic_gx_set_co_planar_hle_probe synthetic_gx_scalar_batch_hle_probe synthetic_gx_indirect_batch_hle_probe synthetic_gx_set_chan_amb_color_hle_probe synthetic_gx_texture_load_hle_probe synthetic_gx_tex_mtx_hle_probe synthetic_gx_tex_coord_batch_hle_probe synthetic_gx_tev_scalar_batch_hle_probe synthetic_gx_tev_color_batch_hle_probe synthetic_gx_alpha_compare_hle_probe synthetic_gx_fog_z_comp_hle_probe synthetic_gx_display_list_hle_probe synthetic_pad_read_hle_probe synthetic_wpad_probe_hle_probe' \
+            TRANSLATED_RETAIN_SYMBOL='synthetic_ppc_helper_link_probe synthetic_gx_set_co_planar_hle_probe synthetic_gx_scalar_batch_hle_probe synthetic_gx_indirect_batch_hle_probe synthetic_gx_set_chan_amb_color_hle_probe synthetic_gx_texture_load_hle_probe synthetic_gx_tex_mtx_hle_probe synthetic_gx_tex_coord_batch_hle_probe synthetic_gx_tev_scalar_batch_hle_probe synthetic_gx_tev_color_batch_hle_probe synthetic_gx_alpha_compare_hle_probe synthetic_gx_fog_z_comp_hle_probe synthetic_gx_display_list_hle_probe synthetic_pad_read_hle_probe synthetic_wpad_probe_hle_probe synthetic_kpad_unified_status_hle_probe' \
             DEFINES='-DMKW_SYNTHETIC_EXECUTION=1 -DMKW_SYNTHETIC_FAST_TRACK=1 -DMKW_ENABLE_DATA_INIT_HANDOFF=1 -DMKW_ENABLE_TRANSLATED_EXECUTION_HANDOFF=1'
 
       - name: Verify fast-track execution seam and PPC runtime helpers
@@ -181,6 +181,8 @@ jobs:
           grep -E ' T mkw_switch_hle_pad_read$' /tmp/fast-track.nm
           grep -E ' T synthetic_wpad_probe_hle_probe$' /tmp/fast-track.nm
           grep -E ' T mkw_switch_hle_wpad_probe$' /tmp/fast-track.nm
+          grep -E ' T synthetic_kpad_unified_status_hle_probe$' /tmp/fast-track.nm
+          grep -E ' T mkw_switch_hle_kpad_unified_status$' /tmp/fast-track.nm
           grep -E ' T mkw_switch_hle_gx_set_fog$' /tmp/fast-track.nm
           grep -E ' T mkw_switch_hle_gx_set_z_comp_loc$' /tmp/fast-track.nm
           grep -E ' T synthetic_translated_fast_track_start$' /tmp/fast-track.nm

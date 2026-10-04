@@ -18,7 +18,9 @@
 - [x] Implement the [WPADProbe absent-remote candidate](docs/WPAD_PROBE_2026-10-04.md); 556 host cases pass with preserved CPU, memory and library state.
 - [x] Validate WPADProbe code `2941f1d`: fifteen local suites, six rejected mutants, five exact-code workflows / six jobs, full synthetic and private NRO builds; 47 retained symbols / 18 scoped providers.
 - [x] Transfer WPADProbe with exit 0 at 19:44:01 UTC; independently verify 33 reports / 542,797 bytes and accept channel 0 return before KPADGetUnifiedWpadStatus `0x8019812C`, count 1.
-- [ ] Bridge the observed KPAD unified status boundary and hardware-accept its return.
+- [x] Implement the [KPAD unified status candidate](docs/KPAD_UNIFIED_STATUS_2026-10-04.md): complete absent samples and count limit 16; 8,987 host cases pass.
+- [x] Pass KPAD unified local validation: sixteen suites, eight mutants, both AArch64 modes, full synthetic build and script/workflow lint.
+- [ ] Pass exact-code GitHub workflows and private KPAD NRO build; hardware-accept its return.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

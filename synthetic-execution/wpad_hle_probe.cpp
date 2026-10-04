@@ -86,3 +86,8 @@ static_assert(KnownNativeCpuCall<0x801C0990u>::kAvailable);
 extern "C" __attribute__((used)) void synthetic_wpad_probe_hle_probe(CpuContext* cpu) {
     InvokeDirectCpu<0x801C0990u>(cpu);
 }
+
+static_assert(KnownNativeCpuCall<0x8019812Cu>::kAvailable);
+extern "C" __attribute__((used)) void synthetic_kpad_unified_status_hle_probe(CpuContext* cpu) {
+    InvokeDirectCpu<0x8019812Cu>(cpu);
+}

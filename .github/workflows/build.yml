@@ -44,6 +44,7 @@ jobs:
           bash scripts/test-gx-display-list.sh
           bash scripts/test-pad-read.sh
           bash scripts/test-wpad-probe.sh
+          bash scripts/test-kpad-unified-status.sh
           bash scripts/test-memory-slice.sh
           bash scripts/test-host-context.sh
 

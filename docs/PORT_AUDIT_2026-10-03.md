@@ -309,3 +309,13 @@ boundary follows with count 1. Black then error is user-confirmed. The same
 native-call dispatch count does not invalidate the ordered return evidence.
 Other channels, captured output bytes, button interaction, replay and game
 pixels remain unaccepted.
+
+## KPAD unified status candidate (2026-10-04)
+
+The [candidate](KPAD_UNIFIED_STATUS_2026-10-04.md) writes the pinned 56-byte
+absent-remote union, with a sixteen-entry cap and whole-buffer preflight.
+All 8,987 CPU/memory/state cases, eight mutation checks and sixteen local
+suites pass. Both AArch64 modes, the full synthetic build and lint pass;
+exact-code workflows, private rendered NRO and hardware return are pending.
+Invalid-buffer handling diagnoses before writes; the scope does not include
+a Bluetooth backend, connected sample synthesis or full KPADRead.

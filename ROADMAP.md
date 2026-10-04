@@ -15,7 +15,7 @@
 - [x] Implement the [PADRead candidate](docs/PAD_READ_2026-10-04.md) using the existing Switch input service; 65,563 host cases pass.
 - [x] Pass PADRead code `7ca14a76` on fourteen local suites, five rejected mutants, five exact-code workflows / six jobs, the full local synthetic build and private rendered NRO build; seventeen scoped providers verified.
 - [x] Transfer PADRead with exit 0 at 14:44:46 UTC; verify 32 reports / 541,985 bytes, connected port 0 and PADRead return through PADClampCircle2.
-- [x] Implement the [WPADProbe absent-remote candidate](docs/WPAD_PROBE_2026-10-04.md); 544 host cases pass with preserved CPU, memory and library state.
+- [x] Implement the [WPADProbe absent-remote candidate](docs/WPAD_PROBE_2026-10-04.md); 556 host cases pass with preserved CPU, memory and library state.
 - [ ] Validate WPADProbe integration, exact-code GitHub workflows and private NRO build; hardware-accept its return.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 

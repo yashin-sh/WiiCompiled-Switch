@@ -10,7 +10,7 @@ mkdir -p "$TEST_DIR/sdmc:/switch/WiiCompiled-Switch"
 test "$(git -C "$ROOT_DIR/third_party/WiiCompiled" rev-parse HEAD)" = a135beb201042b20f390c6695ca6b26768820fb4
 "$HOST_CXX" -std=c++20 -O2 -Wall -Wextra -Werror \
     -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer \
-    -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--wrap=abort \
+    -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--wrap=abort -Wl,--wrap=fopen \
     -DMKW_LOCAL_FUNCTION_EXECUTION=1 \
     -include "$ROOT_DIR/include/devkita64_gcc_compat.hpp" \
     -I"$ROOT_DIR/local-rendered-fast-track/seams" -I"$ROOT_DIR/include" \

@@ -39,7 +39,7 @@ reaches the translated PADClampCircle2. The new DIRECT stop is **WPADProbe
 reports / 541,985 bytes are verified. Per-button hardware tests remain open.
 
 The [WPADProbe candidate](docs/WPAD_PROBE_2026-10-04.md) preserves the pinned
-absent-Wiimote contract and passes 544 host cases. Integration, GitHub Actions
+absent-Wiimote contract and passes 556 host cases. Integration, GitHub Actions
 and its private rendered build are being validated before the next launch.
 
 The [PADRead bridge](docs/PAD_READ_2026-10-04.md) passes 65,563 host cases,

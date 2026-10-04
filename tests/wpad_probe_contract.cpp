@@ -24,6 +24,7 @@ std::array<std::uint8_t, 64> backing;
 bool active = false;
 unsigned stages = 0;
 unsigned cases = 0;
+unsigned reportOpens = 0;
 CpuContext* refusedCpu = nullptr;
 CpuContext refusedExpected;
 bool reported = false;
@@ -129,6 +130,14 @@ extern "C" [[noreturn]] void __wrap_abort() noexcept {
     _exit(77);
 }
 
+extern "C" FILE* __real_fopen(const char*, const char*);
+extern "C" FILE* __wrap_fopen(const char* path, const char* mode) {
+    assert(std::strcmp(path, "sdmc:/switch/WiiCompiled-Switch/fast-track-wpad-probe.txt") == 0);
+    assert(std::strcmp(mode, "w") == 0);
+    ++reportOpens;
+    return __real_fopen(path, mode);
+}
+
 int main() {
     const auto previousStages = stages;
     KnownNativeCpuCall<0x801C0990u>::Invoke(nullptr);
@@ -156,6 +165,11 @@ int main() {
     }
     for (auto output : {base - 1, base + 61, base + 62, base + 63, base + 64, 0xfffffffeu, 0xffffffffu})
         Refuse(output);
+    const auto previousOpens = reportOpens;
+    for (bool initialized : {false, false, true})
+        for (unsigned channel = 0; channel < 4; ++channel)
+            Invoke(channel, base + 1 + 4 * channel, initialized);
+    assert(reportOpens == previousOpens + 4); // Repeated polling still writes guest output, without SD churn.
     Memory::Reset();
     Invoke(0, 0, false);
     Refuse(base + 1);

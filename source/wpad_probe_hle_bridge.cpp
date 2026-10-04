@@ -5,6 +5,7 @@
 #include "hle/controller_status_contract.h"
 #include "memory.h"
 
+#include <array>
 #include <cstdio>
 #include <cstdlib>
 
@@ -12,19 +13,18 @@ extern "C" void mkw_switch_set_fast_track_stage(const char*) noexcept;
 
 namespace {
 void Report(const char* status, std::uint32_t channel, std::uint32_t address, std::int32_t result) {
-    static const char* previousStatus = nullptr;
-    static std::uint32_t previousChannel = 0;
-    static std::uint32_t previousAddress = 0;
-    if (previousStatus == status && previousChannel == channel && previousAddress == address) {
+    // A four-channel polling cycle must not reopen the SD report every frame.
+    static std::array<const char*, WpadContract::kChannelCount> previousStatus{};
+    static std::array<std::uint32_t, WpadContract::kChannelCount> previousAddress{};
+    if (previousStatus[channel] == status && previousAddress[channel] == address) {
         return;
     }
     if (FILE* out = std::fopen("sdmc:/switch/WiiCompiled-Switch/fast-track-wpad-probe.txt", "w")) {
         std::fprintf(out, "status=%s\nchannel=%u\ntype_buffer=0x%08x\nresult=%d\nextension_type=0\nremote_backend=absent\n",
                      status, channel, address, result);
         std::fclose(out);
-        previousStatus = status;
-        previousChannel = channel;
-        previousAddress = address;
+        previousStatus[channel] = status;
+        previousAddress[channel] = address;
     }
 }
 } // namespace

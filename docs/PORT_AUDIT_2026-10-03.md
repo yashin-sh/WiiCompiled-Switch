@@ -292,7 +292,7 @@ replay and recognizable game images remain unaccepted.
 
 The [absent-remote bridge](WPAD_PROBE_2026-10-04.md) follows the pinned WPADProbe
 contract for the observed channel 0 call; the existing Switch controller remains
-on PADRead. All 544 CPU/memory/state cases and five mutation checks pass. The
+on PADRead. All 556 CPU/memory/state cases and six mutation checks pass. The
 fifteenth host suite, retained synthetic probe and both AArch64 configurations
 are included in CI. Integration, exact-code workflows, the private NRO and
 console return are pending; the hardware frontier remains WPADProbe.

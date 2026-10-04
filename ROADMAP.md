@@ -14,7 +14,8 @@
 - [x] Hardware-accept both sphere variants returning; verify 31 reports / 541,214 bytes and the PADRead frontier.
 - [x] Implement the [PADRead candidate](docs/PAD_READ_2026-10-04.md) using the existing Switch input service; 65,563 host cases pass.
 - [x] Pass PADRead code `7ca14a76` on fourteen local suites, five rejected mutants, five exact-code workflows / six jobs, the full local synthetic build and private rendered NRO build; seventeen scoped providers verified.
-- [ ] Transfer the PADRead candidate, validate console return, resolve subsequent boundaries and establish recognizable game pixels.
+- [x] Transfer PADRead with exit 0 at 14:44:46 UTC; verify 32 reports / 541,985 bytes, connected port 0 and PADRead return through PADClampCircle2.
+- [ ] Bridge the observed WPADProbe boundary, resolve subsequent calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
 
@@ -50,16 +51,15 @@
 - [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The [latest console result](docs/HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md)
-accepts both sphere variants returning and reaches PADRead `0x801AF44C`,
-dispatch 617831 / 110.266 seconds. The later snapshot records 3,937 guest FIFO
-writes, 168 GXBegin hits, 99 preceding successful presents / zero failures and
-zero list replay calls. The user confirms black output then an error.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-04_PAD_READ_WPAD_PROBE_FRONTIER.md)
+accepts PADRead return and reaches the translated PADClampCircle2. The new
+DIRECT stop is WPADProbe `0x801C0990`, channel 0, 617055 / 108.377 seconds.
+The earlier snapshot retains 3,937 guest FIFO writes, 99 successful presents
+and zero replay calls; current visual observation is pending.
 
-Actual input, subsequent SDK calls, replay, recognizable pixels, sustained
-execution, audio correctness and performance remain to validate. Static
-forecasts do not establish a finite number of fixes or an ETA before the first
-image.
+Further SDK calls, replay, recognizable pixels, sustained execution, full
+input, audio and performance remain to validate. No fixed count of remaining
+corrections or image ETA is established by these traces.
 
 The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
 

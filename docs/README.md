@@ -2,9 +2,11 @@
 
 ## Architecture / runtime
 
-- [PAD_READ_2026-10-04.md](PAD_READ_2026-10-04.md) — real Switch single-controller PADRead candidate, four-slot encoding, 65,563 host cases and passing workflows/private build; transfer and console return pending
+- [HARDWARE_RESULTS_2026-10-04_PAD_READ_WPAD_PROBE_FRONTIER.md](HARDWARE_RESULTS_2026-10-04_PAD_READ_WPAD_PROBE_FRONTIER.md) — latest console result: PADRead returned, connected port 0, translated clamping and WPADProbe frontier
 
-- [HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md](HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md) — latest console result: both sphere variants returned; PADRead frontier, black then error
+- [PAD_READ_2026-10-04.md](PAD_READ_2026-10-04.md) — real Switch single-controller PADRead candidate, four-slot encoding, 65,563 host cases and passing workflows/private build; console PADRead return accepted; per-button hardware tests open
+
+- [HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md](HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md) — preceding console result: both sphere variants returned; PADRead frontier, black then error
 - [HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md) — preceding console result: empty-update SU processing, Begin/End returned, later 64-byte length; GXDrawSphere `(4,8)` frontier
 
 - [HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md) — preceding console result: Begin refuses guest SU dirty bit 0 before recording; native list inactive

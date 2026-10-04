@@ -32,20 +32,18 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest [sphere console run](docs/HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md)
-accepts both GXDrawSphere variants `(4,8)` and `(8,16)` returning. The new
-DIRECT stop is **PADRead (`0x801AF44C`)**, dispatch 617831 / 110.266 seconds.
-Thirty-one reports are verified. The [sphere bridge](docs/GX_DRAW_SPHERE_2026-10-04.md)
-passes all five exact-code workflows / six jobs and its private NRO build.
+The latest [PADRead console run](docs/HARDWARE_RESULTS_2026-10-04_PAD_READ_WPAD_PROBE_FRONTIER.md)
+accepts PADRead returning, with a real connected controller on port 0, and
+reaches the translated PADClampCircle2. The new DIRECT stop is **WPADProbe
+(`0x801C0990`)**, channel 0, dispatch 617055 / 108.377 seconds. Thirty-two
+reports / 541,985 bytes are verified. Per-button hardware tests remain open.
 
-The later snapshot records 3,937 guest FIFO writes, 99 preceding successful
-presents / zero failures and zero list replay calls. The user confirms black
-output followed by an error. These counters do not establish visible geometry;
-recognizable game pixels and broader display-list replay remain unaccepted.
-The [PADRead candidate](docs/PAD_READ_2026-10-04.md) connects to the existing
-Switch input service; 65,563 host cases, all five exact-code workflows / six
-jobs and the private NRO build pass. Seventeen scoped providers are verified.
-The candidate has not yet transferred; console PADRead return remains pending.
+The [PADRead bridge](docs/PAD_READ_2026-10-04.md) passes 65,563 host cases,
+five exact-code workflows / six jobs and its private build. Both sphere
+variants were crossed in the [preceding run](docs/HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md).
+The snapshot retains 3,937 guest FIFO writes, 99 preceding successful presents
+and zero list replay calls. Current visual observation is pending; earlier
+runs were black then an error. Recognizable game pixels remain unproven.
 
 The [SU-state correction](docs/GX_SU_STATE_2026-10-04.md) passes 632 host cases /
 39 refusals, all five exact-code GitHub workflows / six jobs and its private

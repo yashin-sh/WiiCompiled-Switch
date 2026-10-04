@@ -257,7 +257,7 @@ is the new DIRECT stop, 607503 / 104.178 seconds. Thirty reports are verified;
 nonempty SU emissions, broader recording/replay effects, sphere return and
 recognizable game pixels remain unaccepted. Visual observation is pending.
 
-## Latest console result — sphere return, PADRead boundary (2026-10-04)
+## Earlier console result — sphere return, PADRead boundary (2026-10-04)
 
 The [verified sphere result](HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md)
 accepts both `(4,8)` and `(8,16)` returning. Thirty-one reports / 541,214 bytes
@@ -277,3 +277,13 @@ pass. All five exact-code workflows / six jobs and the private NRO build pass
 on `7ca14a76`; seventeen scoped providers are unique across 227 host inputs.
 The netloader gave no UDP reply at 12:14:22 UTC, so no transfer was attempted.
 Console input return and recognizable game pixels remain unaccepted.
+
+## Latest console result — PADRead return, WPADProbe boundary (2026-10-04)
+
+The [fresh input result](HARDWARE_RESULTS_2026-10-04_PAD_READ_WPAD_PROBE_FRONTIER.md)
+verifies 32 reports / 541,985 bytes. PADRead reports connected port 0 and returns
+through the translated PADClampCircle2; WPADProbe `0x801C0990` is the new DIRECT
+stop at 617055 / 108.377 seconds. Current visual observation is pending.
+The earlier 99 successful presents and zero list replay calls do not establish
+visible pixels after PADRead. Wiimote probing, further calls, per-button input,
+replay and recognizable game images remain unaccepted.

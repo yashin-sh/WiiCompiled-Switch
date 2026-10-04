@@ -32,24 +32,22 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest [display-list console run](docs/HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md)
-reaches **GXBeginDisplayList (`0x80172E00`)** with a 32-byte-aligned 16 KiB
-buffer, then intentionally stops at `GX_DISPLAY_LIST_PENDING_STATE`.
-The new diagnostic captures guest dirty state **`1`**, corresponding to
-pending SU texture size/bias state, with native recording still inactive.
-Begin has not returned and End has not been reached. The [SU-state correction](docs/GX_SU_STATE_2026-10-04.md) now emits the native
-texture registers and publishes their guest shadow before recording, with
-632 passing host cases / 39 refusals, all five exact-code GitHub workflows /
-six jobs and a passing private NRO build. Its console acceptance is pending.
+The latest [display-list console run](docs/HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md)
+accepts Begin and at least one End returned: a later End caller passes a
+64-byte length to allocation, then another recording starts successfully.
+The pending SU marker is handled through the native empty-update branch
+(`updated_mask=0`). Nonempty SU emissions retain host proof.
 
-The [coordinated Begin/End implementation](docs/GX_DISPLAY_LIST_2026-10-03.md)
-has 335 passing rendered cases / 30 diagnosed refusals, five exact-code GitHub
-workflows / six jobs and a passing private NRO build. This run confirms the
-guard on the actual console state; recording/replay effects still await
-hardware acceptance. Its screen observation is pending. The preceding
-[depth-LOD run](docs/HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md)
-accepted the corrected depth-texture LOD and the user confirmed a black
-screen followed by an error. Recognizable game pixels remain unproven.
+The new DIRECT stop is **GXDrawSphere (`0x80172A30`), parameters `(4,8)`**,
+dispatch 607503 / 104.178 seconds. Its native bridge and recording dependencies
+are the next work. Sphere return and display-list replay remain unaccepted.
+The current visual observation is pending; earlier runs were user-confirmed
+black with an error. Recognizable game pixels remain unproven.
+
+The [SU-state correction](docs/GX_SU_STATE_2026-10-04.md) passes 632 host cases /
+39 refusals, all five exact-code GitHub workflows / six jobs and its private
+NRO build. The [earlier pending-state refusal](docs/HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md)
+remains the diagnostic baseline, not the current frontier.
 
 The [depth-LOD fix](docs/GX_DEPTH_LOD_2026-10-03.md) passes local/native
 contracts, all five exact-code workflows / six jobs and its private NRO build.

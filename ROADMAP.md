@@ -7,7 +7,9 @@
 - [x] Transfer the exact display-list NRO with exit 0 at 2026-10-04 09:19:26 UTC; verify 29 reports / 534,803 bytes and the pending guest SU-state guard.
 - [x] Implement the [bounded SU-state correction](docs/GX_SU_STATE_2026-10-04.md): actual native texture register emission, selective guest shadow publication and Begin/End ordering; 632 host cases / 39 refusals pass.
 - [x] Pass SU correction `4a7e48b5` local contracts, six mutations, five exact-code GitHub workflows / six jobs and private NRO build; thirteen scoped providers verified.
-- [ ] Accept corrected Begin/End on the console, resolve further layouts/native boundaries and establish recognizable game pixels.
+- [x] Transfer the SU NRO with exit 0 at 10:01:32 UTC, verify 30 reports / 535,712 bytes and accept native empty-update SU processing plus Begin/End return and a later 64-byte allocation length.
+- [x] Capture GXDrawSphere `0x80172A30`, `(4,8)`, dispatch 607503 / 104.178 seconds.
+- [ ] Bridge and validate the sphere/recording path, resolve further boundaries and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
 
@@ -40,25 +42,24 @@
 - [x] Pass all five workflows / six jobs on depth-LOD code `b5f0a2b0`, with actual new contract/native-fixture logs; build NRO `596ba38a...` with 35 strong symbols and unique scoped native Init/LOD providers.
 - [x] Transfer NRO `596ba38a...` with exit 0 at 20:49:11 UTC; accept observed depth LOD return from fresh `lod-pass` and coherent later execution.
 - [x] Capture GXBeginDisplayList `0x80172E00`, buffer `0x80394F00`, 16 KiB, dispatch 609010 / 108.440 seconds; user confirms black screen then error.
-- [ ] Hardware-accept the coordinated Begin/End implementation and establish fresh console continuation.
+- [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The [latest console result](docs/HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md)
-captures `GX_DISPLAY_LIST_PENDING_STATE` at Begin, dispatch 606826 / 102.408
-seconds: guest dirty word `1`, save-context flag `1`, no unfinished HLE packet
-or primitive and native recording inactive. Begin/End returns remain unaccepted.
-The observed bit is SU texture size/bias state; the next implementation must
-reconcile texture-load publication, native flushing and guest shadow effects.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md)
+accepts Begin and at least one End return. The new SU report has dirty word
+1 → 0 with updated mask 0; nonempty emission/mirror effects retain host proof.
+A later End caller allocates 64 bytes, then a new list starts. Sphere `(4,8)`
+is the DIRECT stop at dispatch 607503 / 104.178 seconds.
 
-The preceding snapshots retain 1558 guest FIFO writes and 99 successful
-presents / zero failures. They do not prove visible pixels. The watchdog has
-97 ACTIVE and two recovered STALE samples. The latest visual observation is
-pending; the earlier depth-LOD run remains user-confirmed black with an error.
+The later snapshot has 1576 guest FIFO writes and 149 GXBegin hits, with
+99 preceding successful presents / zero failures and zero list replay calls.
+The watchdog has 101 ACTIVE and one recovered STALE sample. These counters do
+not prove visible pixels; the current visual observation is pending.
 
-Later recording, replay, texture loading and drawing require validation,
-followed by sustained execution, input/audio correctness and performance.
-Static forecasts do not establish a finite number of fixes or an ETA before
-the first image.
+Sphere geometry/state restoration, later replay, additional layouts and SDK
+calls need validation, followed by sustained execution, input/audio correctness
+and performance. Static forecasts do not establish a finite number of fixes
+or an ETA before the first image.
 
 The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
 

@@ -5,7 +5,9 @@ arrived at BeginDisplayList with guest GXData dirty word `1`, then refused
 before recording. The [display-list implementation](GX_DISPLAY_LIST_2026-10-03.md)
 now handles that bit through pinned native SU texture size/bias emission and
 guest shadow publication. Other guest dirty bits remain diagnosed refusals.
-This change has not yet been accepted on the console.
+Its [subsequent console run](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md)
+accepts the empty-update SU branch and Begin/End return. Nonempty SU emissions
+and guest mirror effects retain host proof.
 
 ## State ownership and ordering
 
@@ -100,8 +102,9 @@ and recognizable game pixels require fresh hardware evidence.
 
 All five actual GitHub workflows / six jobs pass on this exact runtime code.
 The [build-switch log](https://github.com/yashin-sh/WiiCompiled-Switch/actions/runs/37192872894)
-confirms 632 rendered cases / 39 refusals and both headless refusals. No
-console return or recognizable game image is attributed to this correction yet.
+confirms 632 rendered cases / 39 refusals and both headless refusals. A subsequent [console result](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md)
+accepts the empty-update branch and Begin/End return, then reaches Sphere.
+Recognizable game images remain unproven.
 
 ## Console connection attempt
 
@@ -109,6 +112,5 @@ After final CI validation, nxlink attempted the exact NRO at `2026-10-04T09:56:3
 It returned exit 1 (`Connection to 192.168.1.194 failed`) at
 `2026-10-04T09:56:36.383785+00:00`. UDP discovery had no netloader reply.
 This is a connection failure, not a run of the corrected program, and adds
-no Begin/End, image or crash result. The latest accepted console diagnostic
-remains the preceding pending-SU-state refusal. A fresh netloader connection
-is required for the corrected NRO's hardware test.
+no Begin/End, image or crash result. The later successful connection and console progression are recorded in
+the [Begin/End-to-Sphere result](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md).

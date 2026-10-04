@@ -5,8 +5,10 @@ returned from the corrected Z24X8 texture LOD, then stopped at
 `GXBeginDisplayList` (`0x80172E00`), buffer `0x80394F00`, capacity 16384 bytes.
 The user saw a black screen followed by an error. This candidate prepares
 Begin and End together. Its [console test](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md)
-refuses guest SU dirty bit 0 before recording; neither return has yet been
-accepted on hardware.
+initially refused guest SU dirty bit 0 before recording. The
+[SU-corrected run](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md)
+subsequently accepts Begin and at least one End return, with broader recording
+and replay effects still unaccepted.
 
 ## Implementation
 

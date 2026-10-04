@@ -2,7 +2,9 @@
 
 ## Architecture / runtime
 
-- [HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md) — latest console result: Begin refuses guest SU dirty bit 0 before recording; native list inactive
+- [HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md) — latest console result: empty-update SU processing, Begin/End returned, later 64-byte length; GXDrawSphere `(4,8)` frontier
+
+- [HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md) — preceding console result: Begin refuses guest SU dirty bit 0 before recording; native list inactive
 
 - [HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md](HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md) — preceding accepted depth LOD return; GXBeginDisplayList 16 KiB buffer frontier, user-confirmed black screen and error
 - [GX_DEPTH_LOD_2026-10-03.md](GX_DEPTH_LOD_2026-10-03.md) — fixes the missing full Z24X8 format in LOD validation; local/native contracts, all workflows and private build pass; observed LOD console return accepted

@@ -237,7 +237,7 @@ The user confirms black output and an error. The snapshot before the texture
 constructor retains 99 successful presents, without proof of visible pixels.
 Earlier dated records retain their scope.
 
-## Latest console result — pending SU texture state (2026-10-04)
+## Earlier console result — pending SU texture state (2026-10-04)
 
 The [display-list hardware result](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md)
 records an exact validated NRO transfer with exit 0, 29 verified reports and
@@ -247,3 +247,12 @@ inactive. Begin did not return and End was not reached. The next implementation
 must reconcile native flushing and guest texture shadow/context semantics.
 The guard is diagnosed, not hardware acceptance of recording. Screen
 observation is pending; recognizable game pixels remain unproven.
+
+## Latest console result — Begin/End return, Sphere boundary (2026-10-04)
+
+The [verified display-list result](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md)
+accepts native empty-update SU processing and Begin/End return. A later End
+caller allocates 64 bytes and another recording begins. GXDrawSphere `(4,8)`
+is the new DIRECT stop, 607503 / 104.178 seconds. Thirty reports are verified;
+nonempty SU emissions, broader recording/replay effects, sphere return and
+recognizable game pixels remain unaccepted. Visual observation is pending.

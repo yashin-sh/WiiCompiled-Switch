@@ -17,7 +17,8 @@
 - [x] Transfer PADRead with exit 0 at 14:44:46 UTC; verify 32 reports / 541,985 bytes, connected port 0 and PADRead return through PADClampCircle2.
 - [x] Implement the [WPADProbe absent-remote candidate](docs/WPAD_PROBE_2026-10-04.md); 556 host cases pass with preserved CPU, memory and library state.
 - [x] Validate WPADProbe code `2941f1d`: fifteen local suites, six rejected mutants, five exact-code workflows / six jobs, full synthetic and private NRO builds; 47 retained symbols / 18 scoped providers.
-- [ ] Transfer the WPADProbe NRO and hardware-accept its return; the 15:53:06 UTC attempt failed to connect, with USB/MTP detected.
+- [x] Transfer WPADProbe with exit 0 at 19:44:01 UTC; independently verify 33 reports / 542,797 bytes and accept channel 0 return before KPADGetUnifiedWpadStatus `0x8019812C`, count 1.
+- [ ] Bridge the observed KPAD unified status boundary and hardware-accept its return.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
@@ -54,11 +55,11 @@
 - [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The [latest console result](docs/HARDWARE_RESULTS_2026-10-04_PAD_READ_WPAD_PROBE_FRONTIER.md)
-accepts PADRead return and reaches the translated PADClampCircle2. The new
-DIRECT stop is WPADProbe `0x801C0990`, channel 0, 617055 / 108.377 seconds.
-The earlier snapshot retains 3,937 guest FIFO writes, 99 successful presents
-and zero replay calls; current visual observation is pending.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-04_WPAD_PROBE_KPAD_UNIFIED_FRONTIER.md)
+accepts WPADProbe return on channel 0. The new DIRECT stop is
+KPADGetUnifiedWpadStatus `0x8019812C`, count 1, 617560 / 107.369 seconds.
+The earlier snapshot retains 3,937 FIFO writes, 99 successful presents and
+zero replay calls. The user confirms black output followed by an error.
 
 Further SDK calls, replay, recognizable pixels, sustained execution, full
 input, audio and performance remain to validate. No fixed count of remaining

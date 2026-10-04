@@ -299,3 +299,13 @@ exact-code workflows / six jobs and both full NRO builds. Forty-seven retained
 symbols and eighteen scoped providers are checked. The transfer attempt failed
 before sending while USB/MTP is detected; console return is pending and the
 hardware frontier remains WPADProbe.
+
+## Latest hardware result — WPADProbe return (2026-10-04)
+
+The [verified run](HARDWARE_RESULTS_2026-10-04_WPAD_PROBE_KPAD_UNIFIED_FRONTIER.md)
+transferred at 19:44:01 UTC and verifies 33 reports / 542,797 bytes. WPADProbe
+returned on channel 0; the distinct KPADGetUnifiedWpadStatus `0x8019812C`
+boundary follows with count 1. Black then error is user-confirmed. The same
+native-call dispatch count does not invalidate the ordered return evidence.
+Other channels, captured output bytes, button interaction, replay and game
+pixels remain unaccepted.

@@ -32,24 +32,19 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest [PADRead console run](docs/HARDWARE_RESULTS_2026-10-04_PAD_READ_WPAD_PROBE_FRONTIER.md)
-accepts PADRead returning, with a real connected controller on port 0, and
-reaches the translated PADClampCircle2. The new DIRECT stop is **WPADProbe
-(`0x801C0990`)**, channel 0, dispatch 617055 / 108.377 seconds. Thirty-two
-reports / 541,985 bytes are verified. Per-button hardware tests remain open.
+The latest [WPADProbe console run](docs/HARDWARE_RESULTS_2026-10-04_WPAD_PROBE_KPAD_UNIFIED_FRONTIER.md)
+accepts WPADProbe returning on channel 0, then stops at
+**KPADGetUnifiedWpadStatus (`0x8019812C`)**, count 1, dispatch 617560 /
+107.369 seconds. All 33 reports / 542,797 bytes are verified. The user
+confirms black output followed by an error; recognizable game pixels remain
+unproven.
 
-The [WPADProbe candidate](docs/WPAD_PROBE_2026-10-04.md) preserves the pinned
-absent-Wiimote contract and passes 556 host cases, six mutations and all five
-exact-code workflows / six jobs. Its private NRO build passes with 47 retained
-symbols and 18 scoped providers. The connection attempt failed before transfer;
-USB/MTP is detected. Console WPADProbe return remains pending.
-
-The [PADRead bridge](docs/PAD_READ_2026-10-04.md) passes 65,563 host cases,
-five exact-code workflows / six jobs and its private build. Both sphere
-variants were crossed in the [preceding run](docs/HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md).
-The snapshot retains 3,937 guest FIFO writes, 99 preceding successful presents
-and zero list replay calls. Current visual observation is pending; earlier
-runs were black then an error. Recognizable game pixels remain unproven.
+The [WPADProbe bridge](docs/WPAD_PROBE_2026-10-04.md) passes 556 host cases,
+six mutations, five exact-code workflows / six jobs and its private NRO build.
+Its exact NRO transferred successfully at 19:44:01 UTC. The preceding
+[PADRead bridge](docs/PAD_READ_2026-10-04.md) remains crossed through translated
+PADClampCircle2. The earlier snapshot retains 3,937 FIFO writes, 99 preceding
+successful presents and zero replay calls. Per-button input remains open.
 
 The [SU-state correction](docs/GX_SU_STATE_2026-10-04.md) passes 632 host cases /
 39 refusals, all five exact-code GitHub workflows / six jobs and its private

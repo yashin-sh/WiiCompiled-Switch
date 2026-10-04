@@ -3,7 +3,7 @@
 The [latest verified console run](HARDWARE_RESULTS_2026-10-04_PAD_READ_WPAD_PROBE_FRONTIER.md)
 accepts PADRead returning and reaches PAL WPADProbe `0x801C0990`, channel 0,
 type pointer `0x80398F40`, LR `0x8051EEC0`, dispatch 617055. This candidate
-implements that observed boundary. Its hardware return is not yet accepted.
+implements that observed boundary. Its channel 0 hardware return is now accepted.
 
 ## Contract and scope
 
@@ -78,12 +78,15 @@ The initial `96ea759` candidate also passed its five workflows, but its private
 build was deliberately stopped (exit 137) for per-channel report deduplication.
 No artifact from that attempt was launched; completed objects were reused.
 
-The final candidate's nxlink attempt at **2026-10-04 15:53:06 UTC** exited 1
+The earlier final-candidate nxlink attempt at **2026-10-04 15:53:06 UTC** exited 1
 with a connection failure before transfer. The known IP responds to ICMP,
 USB/MTP is detected and UDP discovery has no netloader reply. This is not a
-new game crash or evidence of WPADProbe return. The console must return from
-USB/MTP to hbmenu application-mode netloader before the next attempt.
+new game crash or evidence of WPADProbe return. That attempt occurred before the user returned to the netloader; a later
+transfer succeeded as recorded below.
 
-Console return, per-button PAD behavior and recognizable game pixels remain
-open. The latest accepted hardware frontier remains WPADProbe. Private game
+The [fresh hardware result](HARDWARE_RESULTS_2026-10-04_WPAD_PROBE_KPAD_UNIFIED_FRONTIER.md)
+records transfer exit 0 at 19:44:01 UTC, 33 verified reports / 542,797 bytes
+and channel 0 return before KPADGetUnifiedWpadStatus `0x8019812C`. The user
+confirms black output followed by an error. Other WPAD channels, raw type-word
+capture, per-button PAD behavior and recognizable game pixels remain open. Private game
 data, NROs and raw diagnostic archives remain excluded from publication.

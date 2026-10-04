@@ -2,9 +2,11 @@
 
 ## Architecture / runtime
 
-- [WPAD_PROBE_2026-10-04.md](WPAD_PROBE_2026-10-04.md) — current absent-Wiimote candidate, 556 cases, six mutations, five workflows / six jobs and private build passed; transfer/hardware return pending
+- [HARDWARE_RESULTS_2026-10-04_WPAD_PROBE_KPAD_UNIFIED_FRONTIER.md](HARDWARE_RESULTS_2026-10-04_WPAD_PROBE_KPAD_UNIFIED_FRONTIER.md) — latest console result: WPADProbe returned on channel 0; KPAD unified status frontier, black then error
 
-- [HARDWARE_RESULTS_2026-10-04_PAD_READ_WPAD_PROBE_FRONTIER.md](HARDWARE_RESULTS_2026-10-04_PAD_READ_WPAD_PROBE_FRONTIER.md) — latest console result: PADRead returned, connected port 0, translated clamping and WPADProbe frontier
+- [WPAD_PROBE_2026-10-04.md](WPAD_PROBE_2026-10-04.md) — current absent-Wiimote candidate, 556 cases, six mutations, five workflows / six jobs and private build passed; channel 0 hardware return accepted; KPAD unified status is next
+
+- [HARDWARE_RESULTS_2026-10-04_PAD_READ_WPAD_PROBE_FRONTIER.md](HARDWARE_RESULTS_2026-10-04_PAD_READ_WPAD_PROBE_FRONTIER.md) — preceding console result: PADRead returned, connected port 0, translated clamping and WPADProbe frontier
 
 - [PAD_READ_2026-10-04.md](PAD_READ_2026-10-04.md) — real Switch single-controller PADRead candidate, four-slot encoding, 65,563 host cases and passing workflows/private build; console PADRead return accepted; per-button hardware tests open
 

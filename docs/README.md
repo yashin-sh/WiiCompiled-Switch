@@ -2,7 +2,8 @@
 
 ## Architecture / runtime
 
-- [HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md) — latest console result: empty-update SU processing, Begin/End returned, later 64-byte length; GXDrawSphere `(4,8)` frontier
+- [HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md](HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md) — latest console result: both sphere variants returned; PADRead frontier, black then error
+- [HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md) — preceding console result: empty-update SU processing, Begin/End returned, later 64-byte length; GXDrawSphere `(4,8)` frontier
 
 - [HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md) — preceding console result: Begin refuses guest SU dirty bit 0 before recording; native list inactive
 
@@ -44,7 +45,7 @@
 
 ## Validation / analysis method
 
-- [GX_DRAW_SPHERE_2026-10-04.md](GX_DRAW_SPHERE_2026-10-04.md) — bounded recording bridge, native geometry/state tests and verified float conversion correction; all workflows/private build pass, console return pending
+- [GX_DRAW_SPHERE_2026-10-04.md](GX_DRAW_SPHERE_2026-10-04.md) — bounded recording bridge, native geometry/state tests and verified float conversion correction; all workflows/private build pass; both variants return on console
 
 - [GX_SU_STATE_2026-10-04.md](GX_SU_STATE_2026-10-04.md) — handles observed guest SU dirty bit with actual native emission and selective guest shadow publication; console accepts the empty-update branch and Begin/End return
 

@@ -1,10 +1,11 @@
 # Bounded GXDrawSphere recording bridge — 2026-10-04
 
-The [latest console run](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md)
+The [preceding console run](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md)
 returned from Begin and at least one End, then stopped at GXDrawSphere
 `0x80172A30`, parameters `(4,8)`. This candidate connects that call to the
 existing pinned Aurora SDK routine. The second audited constructor variant
-`(8,16)` is included; its console execution remains unaccepted.
+`(8,16)` is included. A [fresh console run](HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md)
+now accepts both variants returning and reaches PADRead.
 
 ## Implementation
 
@@ -65,7 +66,7 @@ The NRO is **73,478,200 bytes**, SHA-256
 without network access. An initial three-task build was intentionally
 interrupted and resumed at six tasks after resource measurement; completed
 objects were retained. Pins and the original submodule patch/mtimes remain
-unchanged. The NRO and raw build/diagnostic files stay private. Sphere return, display-list replay and
-recognizable game pixels require fresh console evidence. Native GXEnd's pinned
+unchanged. The NRO and raw build/diagnostic files stay private. Both sphere variants now return on console; display-list replay and
+recognizable game pixels remain unaccepted. Native GXEnd's pinned
 size accessor measures the live FIFO only; the independent parser above checks
 recorded vertex payload rather than relying on that native size check.

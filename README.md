@@ -32,19 +32,17 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest [display-list console run](docs/HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md)
-accepts Begin and at least one End returned: a later End caller passes a
-64-byte length to allocation, then another recording starts successfully.
-The pending SU marker is handled through the native empty-update branch
-(`updated_mask=0`). Nonempty SU emissions retain host proof.
+The latest [sphere console run](docs/HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md)
+accepts both GXDrawSphere variants `(4,8)` and `(8,16)` returning. The new
+DIRECT stop is **PADRead (`0x801AF44C`)**, dispatch 617831 / 110.266 seconds.
+Thirty-one reports are verified. The [sphere bridge](docs/GX_DRAW_SPHERE_2026-10-04.md)
+passes all five exact-code workflows / six jobs and its private NRO build.
 
-The new DIRECT stop is **GXDrawSphere (`0x80172A30`), parameters `(4,8)`**,
-dispatch 607503 / 104.178 seconds. The [bounded sphere candidate](docs/GX_DRAW_SPHERE_2026-10-04.md)
-now passes its native recording contract, including a regression fix for
-negative float coordinates. All five exact-code workflows / six jobs and its
-private NRO build pass; sphere return and display-list replay remain unaccepted.
-The current visual observation is pending; earlier runs were user-confirmed
-black with an error. Recognizable game pixels remain unproven.
+The later snapshot records 3,937 guest FIFO writes, 99 preceding successful
+presents / zero failures and zero list replay calls. The user confirms black
+output followed by an error. These counters do not establish visible geometry;
+recognizable game pixels and broader display-list replay remain unaccepted.
+The next correction connects PADRead to the existing Switch input service.
 
 The [SU-state correction](docs/GX_SU_STATE_2026-10-04.md) passes 632 host cases /
 39 refusals, all five exact-code GitHub workflows / six jobs and its private

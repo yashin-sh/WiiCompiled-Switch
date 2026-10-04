@@ -248,7 +248,7 @@ must reconcile native flushing and guest texture shadow/context semantics.
 The guard is diagnosed, not hardware acceptance of recording. Screen
 observation is pending; recognizable game pixels remain unproven.
 
-## Latest console result — Begin/End return, Sphere boundary (2026-10-04)
+## Earlier console result — Begin/End return, Sphere boundary (2026-10-04)
 
 The [verified display-list result](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md)
 accepts native empty-update SU processing and Begin/End return. A later End
@@ -256,3 +256,13 @@ caller allocates 64 bytes and another recording begins. GXDrawSphere `(4,8)`
 is the new DIRECT stop, 607503 / 104.178 seconds. Thirty reports are verified;
 nonempty SU emissions, broader recording/replay effects, sphere return and
 recognizable game pixels remain unaccepted. Visual observation is pending.
+
+## Latest console result — sphere return, PADRead boundary (2026-10-04)
+
+The [verified sphere result](HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md)
+accepts both `(4,8)` and `(8,16)` returning. Thirty-one reports / 541,214 bytes
+are checked against their baseline and archive. PADRead `0x801AF44C` is the
+DIRECT boundary at dispatch 617831 / 110.266 seconds. The user confirms black
+output followed by an error. The snapshot advances to 3,937 guest FIFO writes
+and retains 99 preceding successful presents, with zero list replay calls.
+Input bridging, actual replay and recognizable game pixels remain open.

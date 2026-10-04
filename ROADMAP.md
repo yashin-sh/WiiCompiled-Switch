@@ -11,7 +11,8 @@
 - [x] Capture GXDrawSphere `0x80172A30`, `(4,8)`, dispatch 607503 / 104.178 seconds.
 - [x] Implement the [bounded sphere bridge](docs/GX_DRAW_SPHERE_2026-10-04.md), execute its native recording dependencies and fix the demonstrated float conversion bug; 648 cases / 48 refusals pass.
 - [x] Pass sphere code `e7dd6806` on thirteen local suites, four rejected mutants, five exact-code workflows / six jobs and the private NRO build; sixteen scoped providers verified.
-- [ ] Hardware-validate sphere recording, resolve further boundaries and establish recognizable game pixels.
+- [x] Hardware-accept both sphere variants returning; verify 31 reports / 541,214 bytes and the PADRead frontier.
+- [ ] Bridge PADRead to actual Switch input, resolve subsequent boundaries and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
 
@@ -47,21 +48,16 @@
 - [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The [latest console result](docs/HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md)
-accepts Begin and at least one End return. The new SU report has dirty word
-1 → 0 with updated mask 0; nonempty emission/mirror effects retain host proof.
-A later End caller allocates 64 bytes, then a new list starts. Sphere `(4,8)`
-is the DIRECT stop at dispatch 607503 / 104.178 seconds.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md)
+accepts both sphere variants returning and reaches PADRead `0x801AF44C`,
+dispatch 617831 / 110.266 seconds. The later snapshot records 3,937 guest FIFO
+writes, 168 GXBegin hits, 99 preceding successful presents / zero failures and
+zero list replay calls. The user confirms black output then an error.
 
-The later snapshot has 1576 guest FIFO writes and 149 GXBegin hits, with
-99 preceding successful presents / zero failures and zero list replay calls.
-The watchdog has 101 ACTIVE and one recovered STALE sample. These counters do
-not prove visible pixels; the current visual observation is pending.
-
-Sphere geometry/state restoration, later replay, additional layouts and SDK
-calls need validation, followed by sustained execution, input/audio correctness
-and performance. Static forecasts do not establish a finite number of fixes
-or an ETA before the first image.
+Actual input, subsequent SDK calls, replay, recognizable pixels, sustained
+execution, audio correctness and performance remain to validate. Static
+forecasts do not establish a finite number of fixes or an ETA before the first
+image.
 
 The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
 

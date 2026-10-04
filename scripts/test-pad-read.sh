@@ -15,6 +15,7 @@ test "$(git -C "$ROOT_DIR/third_party/WiiCompiled" rev-parse HEAD)" = a135beb201
     -include "$ROOT_DIR/include/devkita64_gcc_compat.hpp" \
     -I"$ROOT_DIR/local-rendered-fast-track/seams" -I"$ROOT_DIR/include" \
     -isystem "$ROOT_DIR/third_party/WiiCompiled/runtime/include" \
+    -isystem "$ROOT_DIR/third_party/WiiCompiled/aurora-main/include" \
     "$ROOT_DIR/tests/pad_read_contract.cpp" "$ROOT_DIR/source/memory_switch_slice.cpp" \
     "$ROOT_DIR/source/pad_read_hle_bridge.cpp" -o "$TEST_DIR/pad-contract"
 (cd "$TEST_DIR" && ./pad-contract)

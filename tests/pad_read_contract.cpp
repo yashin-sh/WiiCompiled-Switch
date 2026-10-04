@@ -3,6 +3,7 @@
 #include "horizon_runtime_services.hpp"
 #include "memory_switch_slice.hpp"
 #include "switch_input_hle_traits.hpp"
+#include <dolphin/pad.h>
 
 #include <array>
 #include <cassert>
@@ -12,6 +13,12 @@
 #include <limits>
 #include <vector>
 
+// Independent packed expectations below are anchored to the pinned SDK.
+static_assert(PAD_TRIGGER_L == 0x40 && PAD_TRIGGER_R == 0x20 && PAD_TRIGGER_Z == 0x10);
+static_assert(PAD_BUTTON_A == 0x100 && PAD_BUTTON_B == 0x200);
+static_assert(PAD_BUTTON_X == 0x400 && PAD_BUTTON_Y == 0x800 && PAD_BUTTON_START == 0x1000);
+static_assert(PAD_BUTTON_LEFT == 1 && PAD_BUTTON_RIGHT == 2 && PAD_BUTTON_DOWN == 4 && PAD_BUTTON_UP == 8);
+static_assert(PAD_CHANMAX == 4 && PAD_ERR_NO_CONTROLLER == -1);
 static_assert(KnownNativeCpuCall<0x801AF44Cu>::kAvailable);
 namespace {
 constexpr std::uint32_t base = 0x70000000u;
@@ -118,8 +125,8 @@ int main() {
         {1, 0x200},
         {2, 0x400},
         {3, 0x800},
-        {6, 0x20},
-        {7, 0x40},
+        {6, 0x40},
+        {7, 0x20},
         {8, 0x10},
         {9, 0x10},
         {10, 0x1000},

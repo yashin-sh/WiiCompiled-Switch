@@ -43,8 +43,9 @@ presents / zero failures and zero list replay calls. The user confirms black
 output followed by an error. These counters do not establish visible geometry;
 recognizable game pixels and broader display-list replay remain unaccepted.
 The [PADRead candidate](docs/PAD_READ_2026-10-04.md) connects to the existing
-Switch input service; 65,563 host cases pass. Full CI/build and console return
-validation are pending.
+Switch input service; 65,563 host cases, all five exact-code workflows / six
+jobs and the private NRO build pass. Seventeen scoped providers are verified.
+The candidate has not yet transferred; console PADRead return remains pending.
 
 The [SU-state correction](docs/GX_SU_STATE_2026-10-04.md) passes 632 host cases /
 39 refusals, all five exact-code GitHub workflows / six jobs and its private

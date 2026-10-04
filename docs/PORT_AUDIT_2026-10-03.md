@@ -266,3 +266,14 @@ DIRECT boundary at dispatch 617831 / 110.266 seconds. The user confirms black
 output followed by an error. The snapshot advances to 3,937 guest FIFO writes
 and retains 99 preceding successful presents, with zero list replay calls.
 Input bridging, actual replay and recognizable game pixels remain open.
+
+## PADRead candidate validation (2026-10-04)
+
+The [PADRead bridge](PAD_READ_2026-10-04.md) uses the existing Horizon input
+service, the pinned four-slot encoder and a small GC button contract asserted
+against the SDK. Fourteen local suites, five rejected PADRead mutations,
+rendered/synthetic AArch64 compilation and the complete local synthetic build
+pass. All five exact-code workflows / six jobs and the private NRO build pass
+on `7ca14a76`; seventeen scoped providers are unique across 227 host inputs.
+The netloader gave no UDP reply at 12:14:22 UTC, so no transfer was attempted.
+Console input return and recognizable game pixels remain unaccepted.

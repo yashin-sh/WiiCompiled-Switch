@@ -2,7 +2,7 @@
 
 ## Architecture / runtime
 
-- [PAD_READ_2026-10-04.md](PAD_READ_2026-10-04.md) — real Switch single-controller PADRead candidate, four-slot encoding and 65,563 host cases; full CI/build and console validation pending
+- [PAD_READ_2026-10-04.md](PAD_READ_2026-10-04.md) — real Switch single-controller PADRead candidate, four-slot encoding, 65,563 host cases and passing workflows/private build; transfer and console return pending
 
 - [HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md](HARDWARE_RESULTS_2026-10-04_SPHERE_PAD_READ_FRONTIER.md) — latest console result: both sphere variants returned; PADRead frontier, black then error
 - [HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md](HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_SPHERE_FRONTIER.md) — preceding console result: empty-update SU processing, Begin/End returned, later 64-byte length; GXDrawSphere `(4,8)` frontier

@@ -6,7 +6,8 @@
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.
 - [x] Transfer the exact display-list NRO with exit 0 at 2026-10-04 09:19:26 UTC; verify 29 reports / 534,803 bytes and the pending guest SU-state guard.
 - [x] Implement the [bounded SU-state correction](docs/GX_SU_STATE_2026-10-04.md): actual native texture register emission, selective guest shadow publication and Begin/End ordering; 632 host cases / 39 refusals pass.
-- [ ] Complete exact-code CI/private NRO validation, accept Begin/End on the console, resolve further layouts/native boundaries and establish recognizable game pixels.
+- [x] Pass SU correction `4a7e48b5` local contracts, six mutations, five exact-code GitHub workflows / six jobs and private NRO build; thirteen scoped providers verified.
+- [ ] Accept corrected Begin/End on the console, resolve further layouts/native boundaries and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
 

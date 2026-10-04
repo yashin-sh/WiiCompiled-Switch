@@ -64,8 +64,51 @@ coordinates, manual/null/disabled paths and preservation of other native dirty
 work. Validation refusals also check the live FIFO's bytes and cursor remain
 unchanged, in addition to the existing memory/context checks.
 
-CI, private NRO construction and fresh provider checks are being completed.
+All five exact-code GitHub workflows / six jobs, private NRO construction
+and fresh provider checks pass as recorded below.
 Hardware must still confirm Begin returned and establish the next executed
 boundary. End, recording/replay correctness, indexed/matrix-index layouts,
 later SDK calls and recognizable game pixels remain unaccepted. Earlier
 dated hardware evidence retains its original scope.
+
+## Completed validation — 2026-10-04
+
+Runtime code: `4a7e48b5214f6abd0e15b5b75d62572ecec6bc8d`. All thirteen local workflow contracts
+pass; the changed display-list contract passes 632 rendered cases / 39
+refusals and both headless refusals. Six compiled mutants are rejected:
+omitted SU emission, omitted guest S-shadow publication, omitted HLE or
+AlphaCompare restoration, wrong return count and omitted matrix-index guard.
+Rendered AArch64 syntax, formatting, ShellCheck, Actionlint and Ruff pass.
+
+The exact private Rendered Discovery NRO built at `2026-10-04T09:44:29.954210+00:00`
+in five incremental tasks, using the immutable image
+`sha256:b79d1d41459f5596427bff78007bcd61a5b398ac0def8e623798335dc124712f`,
+without network access, at `-j3`. It contains 73,470,008 bytes, SHA-256
+`9bdc32fcd7a6e85a5b4fdbff0037afc807a344a486114652d542bfcdf8362088`. The previously tested NRO and
+its hardware diagnostics remain preserved privately.
+
+Fresh final link-graph ownership checks cover thirteen scoped names, including
+the SU adapter and actual `__GXSetSUTexRegs`, across 226 host inputs, 19 Rust
+archives and seven named image libraries. Each has one strong provider; the
+SU adapter is in `display_list_transport.o` and native SU in `GXManage.o`. The
+checked FIFO header is present in the actual native source mirror. This is a
+scoped provider audit, not exhaustive ownership or rendered-image proof.
+
+Dependency pins and the original nine-file integration patch's bytes and
+modification timestamps remain preserved. Console return from this correction
+and recognizable game pixels require fresh hardware evidence.
+
+All five actual GitHub workflows / six jobs pass on this exact runtime code.
+The [build-switch log](https://github.com/yashin-sh/WiiCompiled-Switch/actions/runs/37192872894)
+confirms 632 rendered cases / 39 refusals and both headless refusals. No
+console return or recognizable game image is attributed to this correction yet.
+
+## Console connection attempt
+
+After final CI validation, nxlink attempted the exact NRO at `2026-10-04T09:56:36.310605+00:00`.
+It returned exit 1 (`Connection to 192.168.1.194 failed`) at
+`2026-10-04T09:56:36.383785+00:00`. UDP discovery had no netloader reply.
+This is a connection failure, not a run of the corrected program, and adds
+no Begin/End, image or crash result. The latest accepted console diagnostic
+remains the preceding pending-SU-state refusal. A fresh netloader connection
+is required for the corrected NRO's hardware test.

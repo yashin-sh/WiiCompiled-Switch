@@ -37,8 +37,9 @@ reaches **GXBeginDisplayList (`0x80172E00`)** with a 32-byte-aligned 16 KiB
 buffer, then intentionally stops at `GX_DISPLAY_LIST_PENDING_STATE`.
 The new diagnostic captures guest dirty state **`1`**, corresponding to
 pending SU texture size/bias state, with native recording still inactive.
-Begin has not returned and End has not been reached. The next implementation
-must synchronize this pending texture state before recording.
+Begin has not returned and End has not been reached. The [SU-state correction](docs/GX_SU_STATE_2026-10-04.md) now emits the native
+texture registers and publishes their guest shadow before recording, with
+632 passing host cases / 39 refusals. Its console acceptance is pending.
 
 The [coordinated Begin/End implementation](docs/GX_DISPLAY_LIST_2026-10-03.md)
 has 335 passing rendered cases / 30 diagnosed refusals, five exact-code GitHub

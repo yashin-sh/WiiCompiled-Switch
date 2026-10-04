@@ -10,6 +10,15 @@ struct MkwGxDisplayListCursor {
     bool active;
     std::uint8_t save_context;
 };
+struct MkwGxSuState {
+    std::uint32_t s[8];
+    std::uint32_t t[8];
+    std::uint8_t updated_mask;
+};
+// Validate native references before any writes, then emit pending SU state to
+// the current FIFO (live before Begin, recorded before End). Only updated
+// coordinates are authoritative for guest mirroring.
+extern "C" bool mkw_switch_gx_native_flush_su_state(std::uint32_t manual, MkwGxSuState& state);
 MkwGxDisplayListCursor mkw_switch_gx_display_list_cursor();
 void mkw_switch_gx_native_begin_display_list(void* list, std::uint32_t size, std::uint8_t save);
 std::uint32_t mkw_switch_gx_native_end_display_list();

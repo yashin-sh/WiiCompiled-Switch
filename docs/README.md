@@ -42,6 +42,8 @@
 
 ## Validation / analysis method
 
+- [GX_SU_STATE_2026-10-04.md](GX_SU_STATE_2026-10-04.md) — handles observed guest SU dirty bit with actual native emission and selective guest shadow publication; hardware acceptance pending
+
 - [FAST_TRACK_VALIDATION_POLICY.md](FAST_TRACK_VALIDATION_POLICY.md) — exact-candidate CI, private rendered gate, audited GX batches and hardware acceptance
 - [RMCP01_DISCOVERY_SCAN.md](RMCP01_DISCOVERY_SCAN.md) — whole-product direct-call coverage and first-hit runtime evidence
 - [FAST_TRACK_LOG_BUNDLES.md](FAST_TRACK_LOG_BUNDLES.md) — compact/full bundles, manifests, run identity and stale-report limits

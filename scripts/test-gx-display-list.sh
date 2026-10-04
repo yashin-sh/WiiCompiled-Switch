@@ -51,12 +51,17 @@ body = native.split('void GXBeginDisplayList(', 1)[1].split('\nvoid GXCallDispla
 fifo = (gx / "gx/fifo.cpp").read_text()
 flush = (gx / "dolphin/gx/GXManage.cpp").read_text().split("void GXFlush() {", 1)[1].split("\nvoid GXPixModeSync", 1)[0]
 alpha = (gx / "dolphin/gx/GXTev.cpp").read_text().split("void GXSetAlphaCompare(", 1)[1].split("\nvoid GXSetTevOrder(", 1)[0]
+manage = (gx / "dolphin/gx/GXManage.cpp").read_text()
+dirty = manage.split("void __GXSetDirtyState() {", 1)[1].split("\nvoid __GXSendFlushPrim", 1)[0]
+su = manage.split("static void __SetSURegs(", 1)[1].split("\nvoid __GXUpdateBPMask", 1)[0]
 record = fifo.split('void begin_display_list(', 1)[1].split('// How much', 1)[0]
 (test / "pinned-display-list.inc").write_text(
     'static __GXData_struct sSavedGXData;\nextern "C" {\nvoid GXBeginDisplayList(' + body + '}\n'
     + 'namespace aurora::gx::fifo {\nvoid begin_display_list(' + record + '}\n'
     + 'extern \"C\" void GXFlush() {' + flush
-    + 'extern \"C\" void GXSetAlphaCompare(' + alpha)
+    + 'extern \"C\" void GXSetAlphaCompare(' + alpha
+    + 'extern \"C\" {\nvoid __GXSetDirtyState() {' + dirty
+    + 'static void __SetSURegs(' + su + '}\n')
 PY
 for rendered in 0 1; do
     "$HOST_CXX" -std=c++20 -O2 -Wall -Wextra -Werror \

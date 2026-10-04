@@ -35,10 +35,15 @@ __GXData_struct* __gx = &nativeState;
 HleGxState g_hleGxState{};
 bool g_alphaCompareValid = false;
 GxDisplayListState g_dlRecordState{};
-extern "C" void __GXSetDirtyState() {
-    aurora::gx::fifo::write_u8(0x61);
-    aurora::gx::fifo::write_u32(0x12345678);
-    __gx->dirtyState = 0;
+// Dirty-state branches outside SU/gen mode are not exercised by this contract.
+extern "C" void __GXSetVCD() {
+    assert(false);
+}
+extern "C" void __GXSetVAT() {
+    assert(false);
+}
+extern "C" void __GXUpdateBPMask() {
+    assert(false);
 }
 #include "pinned-display-list.inc"
 namespace {
@@ -60,7 +65,9 @@ bool frozenAlphaCompareValid = false;
 CpuContext* activeCpu = nullptr;
 CpuContext frozenCpu{};
 const char* stage = nullptr;
-std::uint8_t mainFifo[256]{};
+std::uint8_t mainFifo[1024]{};
+std::vector<std::uint8_t> frozenMainFifo;
+std::uint32_t frozenMainSize = 0;
 
 void Reset(std::uint32_t listSize = 16416) {
     Memory::Config c;
@@ -74,6 +81,11 @@ void Reset(std::uint32_t listSize = 16416) {
     nativeState = {};
     g_alphaCompareValid = false;
     nativeState.dlSaveContext = 1;
+    std::fill(std::begin(nativeState.texmapId), std::end(nativeState.texmapId), 0xFFu);
+    for (unsigned i = 0; i < 8; ++i) {
+        nativeState.suTs0[i] = (0x30u + i * 2u) << 24u;
+        nativeState.suTs1[i] = (0x31u + i * 2u) << 24u;
+    }
     g_hleGxState = {};
     g_dlRecordState = {};
     using namespace aurora::gx::fifo::detail;
@@ -112,6 +124,8 @@ void Refusal(const std::function<void()>& f, const char* reason = nullptr) {
     std::memcpy(&frozenHle, &g_hleGxState, sizeof(g_hleGxState));
     frozenCursor = aurora::gx::fifo::detail::sDlWritePos;
     frozenAlphaCompareValid = g_alphaCompareValid;
+    frozenMainSize = aurora::gx::fifo::detail::sBufferSize;
+    frozenMainFifo.assign(std::begin(mainFifo), std::end(mainFifo));
     int p[2]{};
     assert(pipe(p) == 0);
     const auto child = fork();
@@ -165,6 +179,9 @@ extern "C" [[noreturn]] void __wrap_abort() {
             std::memcmp(&g_hleGxState, &frozenHle, sizeof(g_hleGxState)) != 0 ||
             aurora::gx::fifo::detail::sDlWritePos != frozenCursor || g_alphaCompareValid != frozenAlphaCompareValid)
             _exit(94);
+        if (frozenMainSize != aurora::gx::fifo::detail::sBufferSize ||
+            !std::equal(frozenMainFifo.begin(), frozenMainFifo.end(), std::begin(mainFifo)))
+            _exit(98);
         for (std::size_t i = 0; i < regions.size(); ++i)
             if (regions[i].bytes != frozenRegions[i])
                 _exit(95);
@@ -193,7 +210,7 @@ int main() {
     activeCpu = &c;
 #if MKW_LOCAL_RENDERED_FAST_TRACK
     const auto before = c;
-    nativeState.dirtyState = 1;
+    nativeState.dirtyState = 4;
     Begin(c);
     assert(std::memcmp(&c, &before, sizeof(c)) == 0);
     assert(aurora::gx::fifo::detail::sBufferSize == 5);
@@ -256,6 +273,189 @@ int main() {
             ++cases;
         }
     }
+
+    // Actual pinned SU size/bias emission, before Begin and within End, on every
+    // coordinate, legal wrap mode and save policy. Native GX is authoritative;
+    // only coordinates emitted by its active TEV/indirect references are mirrored.
+    for (const bool atEnd : {false, true}) {
+        for (unsigned coord = 0; coord < 8; ++coord) {
+            for (unsigned sw = 0; sw < 3; ++sw) {
+                for (unsigned tw = 0; tw < 3; ++tw) {
+                    for (unsigned save = 0; save < 2; ++save) {
+                        Reset();
+                        c = Cpu();
+                        Memory::Write8(gd + 0x5F9u, save);
+                        Memory::Write16(gd + 2u, 0x7e7e);
+                        nativeState.texmapId[0] = (7u - coord) | 0x100u;
+                        nativeState.texmapValid = 1;
+                        nativeState.tref[0] = coord << 3u;
+                        const auto map = 7u - coord;
+                        const unsigned widthMinus1 = (coord & 1u) ? 1023u : 0u;
+                        const unsigned heightMinus1 = (coord & 2u) ? 1023u : coord;
+                        nativeState.tImage0[map] = widthMinus1 | (heightMinus1 << 10u);
+                        nativeState.tMode0[map] = sw | (tw << 2u);
+                        nativeState.suTs0[coord] |= 0x700ffu;
+                        nativeState.suTs1[coord] |= 0x7aaffu;
+                        for (unsigned i = 0; i < 8; ++i) {
+                            Memory::Write32(gd + 0x108u + 4u * i, 0xDEAD0000u + i);
+                            Memory::Write32(gd + 0x128u + 4u * i, 0xBEEF0000u + i);
+                        }
+                        const auto cpuBefore = c;
+                        std::vector<std::uint8_t> guestBefore(Memory::GetPointer(gd, 0x600),
+                                                              Memory::GetPointer(gd, 0x600) + 0x600);
+                        if (!atEnd) {
+                            Memory::Write32(gd + 0x5FCu, 1);
+                        }
+                        Begin(c);
+                        assert(std::memcmp(&c, &cpuBefore, sizeof(c)) == 0);
+                        if (atEnd) {
+                            Memory::Write32(gd + 0x5FCu, 1);
+                        }
+                        const auto sWord = ((0x30u + coord * 2u) << 24u) | 0x60000u |
+                                           ((sw == 1u) ? 0x10000u : 0u) | widthMinus1;
+                        const auto tWord = ((0x31u + coord * 2u) << 24u) | 0x60000u |
+                                           ((tw == 1u) ? 0x10000u : 0u) | heightMinus1;
+                        if (!atEnd) {
+                            assert(Memory::Read32(gd + 0x108u + 4u * coord) == sWord);
+                            assert(Memory::Read32(gd + 0x128u + 4u * coord) == tWord);
+                            assert(Memory::Read16(gd + 2u) == 0);
+                            assert(Memory::Read32(gd + 0x5FCu) == 0);
+                            guestBefore.assign(Memory::GetPointer(gd, 0x600),
+                                               Memory::GetPointer(gd, 0x600) + 0x600);
+                            guestBefore[0x5F8] = 0;
+                        }
+                        End(c);
+                        auto cpuAfter = cpuBefore;
+                        cpuAfter.gpr[3] = atEnd ? 32u : 0u;
+                        assert(std::memcmp(&c, &cpuAfter, sizeof(c)) == 0);
+                        if (atEnd && !save) {
+                            assert(Memory::Read32(gd + 0x108u + 4u * coord) == sWord);
+                            assert(Memory::Read32(gd + 0x128u + 4u * coord) == tWord);
+                            assert(Memory::Read16(gd + 2u) == 0);
+                            assert(Memory::Read32(gd + 0x5FCu) == 0);
+                            const auto beWrite = [&](unsigned offset, unsigned value) {
+                                for (unsigned i = 0; i < 4; ++i)
+                                    guestBefore[offset + i] = value >> (24u - 8u * i);
+                            };
+                            beWrite(0x108u + 4u * coord, sWord);
+                            beWrite(0x128u + 4u * coord, tWord);
+                            beWrite(0x5FCu, 0);
+                            guestBefore[2] = guestBefore[3] = 0;
+                            assert(std::memcmp(Memory::GetPointer(gd, 0x600), guestBefore.data(), 0x600) == 0);
+                        } else {
+                            assert(std::memcmp(Memory::GetPointer(gd, 0x600), guestBefore.data(), 0x600) == 0);
+                        }
+                        for (unsigned i = 0; i < 8; ++i) {
+                            if (i != coord) {
+                                assert(Memory::Read32(gd + 0x108u + 4u * i) == 0xDEAD0000u + i);
+                                assert(Memory::Read32(gd + 0x128u + 4u * i) == 0xBEEF0000u + i);
+                            }
+                        }
+                        auto* packetData = atEnd ? Memory::GetPointer(list, 32) : mainFifo;
+                        assert(packetData[0] == 0x61 && packetData[5] == 0x61);
+                        const auto readBe = [](const std::uint8_t* bytes) {
+                            return (std::uint32_t(bytes[0]) << 24u) | (std::uint32_t(bytes[1]) << 16u) |
+                                   (std::uint32_t(bytes[2]) << 8u) | bytes[3];
+                        };
+                        assert(readBe(packetData + 1) == sWord && readBe(packetData + 6) == tWord);
+                        assert(aurora::gx::fifo::detail::sBufferSize == (atEnd ? 0u : 10u));
+                        assert(Memory::Read8(list + (atEnd ? 32u : 0u)) == 0xa5);
+                        assert(Report("fast-track-gx-su-flush.txt").find(atEnd ? "phase=end" : "phase=begin") != std::string::npos);
+                        ++cases;
+                    }
+                }
+            }
+        }
+    }
+
+    // Four indirect layouts plus direct odd/even stages; repeated coordinates
+    // preserve native ordering and publish the final shadow value once.
+    for (unsigned indirect = 0; indirect <= 4; ++indirect) {
+        Reset();
+        c = Cpu();
+        nativeState.genMode = (indirect << 16u) | (1u << 10u);
+        nativeState.texmapValid = 3;
+        nativeState.texmapId[0] = 4;
+        nativeState.texmapId[1] = 5;
+        nativeState.tref[0] = (0u << 3u) | (7u << 15u);
+        for (unsigned i = 0; i < 8; ++i) {
+            nativeState.tImage0[i] = (i + 10u) | ((i + 20u) << 10u);
+            nativeState.tMode0[i] = 1u | (2u << 2u);
+        }
+        for (unsigned i = 0; i < indirect; ++i)
+            nativeState.iref |= i << (6u * i) | i << (6u * i + 3u);
+        Memory::Write32(gd + 0x5FCu, 1);
+        Begin(c);
+        assert(aurora::gx::fifo::detail::sBufferSize == 10u * (indirect + 2u));
+        assert(Memory::Read32(gd + 0x108u) == 0x3001000Eu); // Direct map 4 wins over indirect map 0.
+        assert(Memory::Read32(gd + 0x108u + 4u * 7u) == 0x3E01000Fu);
+        End(c);
+        assert(c.gpr[3] == 0);
+        ++cases;
+    }
+
+    // Manual, null-map and disabled-coordinate paths emit nothing and preserve
+    // guest SU/BP fields, while consuming only the handled dirty marker.
+    for (const unsigned kind : {0u, 1u, 2u}) {
+        Reset();
+        c = Cpu();
+        nativeState.texmapId[0] = kind == 1u ? 0xFFu : 0u;
+        nativeState.texmapValid = kind == 2u ? 0u : 1u;
+        if (kind == 0u) {
+            nativeState.tcsManEnab = 0xFF;
+            Memory::Write32(gd + 0x5E4u, 0xFF);
+        }
+        Memory::Write16(gd + 2u, 0x2345);
+        Memory::Write32(gd + 0x108u, 0x11223344);
+        Memory::Write32(gd + 0x5FCu, 1);
+        Begin(c);
+        assert(aurora::gx::fifo::detail::sBufferSize == 0);
+        assert(Memory::Read32(gd + 0x108u) == 0x11223344 && Memory::Read16(gd + 2u) == 0x2345);
+        assert(Memory::Read32(gd + 0x5FCu) == 0);
+        End(c);
+        ++cases;
+    }
+    Reset();
+    c = Cpu();
+    Memory::Write32(gd + 0x5FCu, 1);
+    nativeState.texmapId[0] = 0;
+    nativeState.texmapValid = 1;
+    nativeState.dirtyState = 5; // SU handled separately; gen mode remains for native Begin.
+    Begin(c);
+    assert(aurora::gx::fifo::detail::sBufferSize == 15 && mainFifo[10] == 0x61);
+    assert(nativeState.dirtyState == 0);
+    End(c);
+    ++cases;
+
+    // Validation failures must happen before SU emission or guest mutation.
+    Reset();
+    c = Cpu();
+    Memory::Write32(gd + 0x5FCu, 1);
+    Memory::Write32(gd + 0x5E4u, 1);
+    Refusal([&] { Begin(c); }, "GX_DISPLAY_LIST_NATIVE_SU_STATE");
+    Memory::Write32(gd + 0x5E4u, 256);
+    Refusal([&] { Begin(c); }, "GX_DISPLAY_LIST_NATIVE_SU_STATE");
+    Memory::Write32(gd + 0x5E4u, 0);
+    nativeState.texmapValid = 1;
+    nativeState.texmapId[0] = 8;
+    Refusal([&] { Begin(c); }, "GX_DISPLAY_LIST_NATIVE_SU_STATE");
+    nativeState.texmapId[0] = 0;
+    nativeState.genMode = 5u << 16u;
+    Refusal([&] { Begin(c); }, "GX_DISPLAY_LIST_NATIVE_SU_STATE");
+    nativeState.genMode = 0;
+    for (const unsigned dirty : {2u, 3u, 0xFFFFFFFFu}) {
+        Memory::Write32(gd + 0x5FCu, dirty);
+        Refusal([&] { Begin(c); }, "GX_DISPLAY_LIST_PENDING_STATE");
+    }
+    Memory::Write32(gd + 0x5FCu, 0);
+    Begin(c);
+    Memory::Write32(gd + 0x5FCu, 2);
+    Refusal([&] { End(c); }, "GX_DISPLAY_LIST_PENDING_STATE");
+    Memory::Write32(gd + 0x5FCu, 1);
+    nativeState.texmapId[0] = 8;
+    Refusal([&] { End(c); }, "GX_DISPLAY_LIST_NATIVE_SU_STATE");
+    nativeState.texmapId[0] = 0;
+    End(c);
 
     // Exhaustive padding residues, empty lists, exact capacity, repeated lists,
     // both save flags and the hardware-observed 16 KiB stack buffer.
@@ -327,7 +527,7 @@ int main() {
     primitiveCpu.gpr[4] = 0;
     primitiveCpu.gpr[5] = 1;
     activeCpu = &primitiveCpu;
-    nativeState.dirtyState = 1;
+    nativeState.dirtyState = 4;
     mkw_switch_gx_record_begin(&primitiveCpu);
     assert(Memory::Read8(list) == 0x61 && Memory::Read8(list + 5) == GX_TRIANGLES);
     assert(Memory::Read16(list + 6) == 1);
@@ -377,7 +577,7 @@ int main() {
     Memory::Write32(kGXDataPtrAddr, 0x80344110u);
     Refusal([&] { Begin(c); }, "GX_DISPLAY_LIST_GX_DATA_OVERLAP");
     Memory::Write32(kGXDataPtrAddr, gd);
-    Memory::Write32(gd + 0x5FCu, 1);
+    Memory::Write32(gd + 0x5FCu, 2);
     Refusal([&] { Begin(c); }, "GX_DISPLAY_LIST_PENDING_STATE");
     Memory::Write32(gd + 0x5FCu, 0);
     g_hleGxState.inBegin = true;

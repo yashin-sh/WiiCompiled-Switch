@@ -13,7 +13,9 @@ accepted on hardware.
 The rendered bridges register Begin (`0x80172E00`) and End (`0x80172EB4`).
 Begin requires a complete mapped, nonzero, 32-byte-aligned buffer and capacity,
 valid non-overlapping GX metadata, a boolean save flag and no unfinished
-primitive, buffered parser packet or unhandled guest dirty state. Host ranges
+primitive, buffered parser packet or unhandled guest dirty state. The
+[subsequent SU-state correction](GX_SU_STATE_2026-10-04.md) handles guest bit 0
+through real native emission and selective shadow publication before snapshots. Host ranges
 are compared to reject metadata aliasing through different guest addresses.
 Nested recording and End without Begin stop with diagnostics.
 
@@ -51,7 +53,7 @@ The [host contract](../scripts/test-gx-display-list.sh) executes the actual
 Switch memory implementation and bridge/transport sources, plus extracted
 pinned native Begin/End, AlphaCompare, Flush and FIFO recording/padding bodies. Only allocation,
 normal decoder transport and native dirty-register emission are host seams.
-ASan, fatal UBSan and LeakSanitizer remain enabled. The final local run passes
+ASan, fatal UBSan and LeakSanitizer remain enabled. The original coordinated candidate run passes
 335 rendered cases and 30 diagnosed refusals; non-rendered builds pass both
 explicit recording refusals. It covers mixed native and
 guest writes, empty and full buffers, all padding residues, repeated recording,

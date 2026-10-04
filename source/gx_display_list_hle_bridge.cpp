@@ -83,6 +83,42 @@ void SyncCursor() {
     g_dlRecordState.count = mkw_switch_gx_display_list_cursor().written;
     g_dlRecordState.writePtr = g_dlRecordState.base + g_dlRecordState.count;
 }
+
+void FlushGuestSu(std::uint32_t gd, CpuContext* cpu, std::uint32_t target, const char* phase) {
+    const auto dirty = Memory::Read32(gd + 0x5FCu);
+    if (dirty & ~1u) {
+        Refuse("GX_DISPLAY_LIST_PENDING_STATE", cpu, target);
+    }
+    if (!(dirty & 1u)) {
+        return;
+    }
+    MkwGxSuState su{};
+    if (!mkw_switch_gx_native_flush_su_state(Memory::Read32(gd + 0x5E4u), su)) {
+        Refuse("GX_DISPLAY_LIST_NATIVE_SU_STATE", cpu, target);
+    }
+    for (unsigned i = 0; i < 8; ++i) {
+        if (su.updated_mask & (1u << i)) {
+            Memory::Write32(gd + 0x108u + 4u * i, su.s[i]);
+            Memory::Write32(gd + 0x128u + 4u * i, su.t[i]);
+        }
+    }
+    if (su.updated_mask) {
+        Memory::Write16(gd + 2u, 0u); // Guest SDK BP bookkeeping, unlike Aurora's bpSent=1.
+    }
+    Memory::Write32(gd + 0x5FCu, 0u);
+    if (FILE* out = std::fopen("sdmc:/switch/WiiCompiled-Switch/fast-track-gx-su-flush.txt", "w")) {
+        std::fprintf(out, "status=su-flush-pass\ngx_data=0x%08x\nguest_dirty_before=1\n"
+                          "guest_dirty_after=0\nupdated_mask=0x%02x\nphase=%s\n",
+                     gd, static_cast<unsigned>(su.updated_mask), phase);
+        for (unsigned i = 0; i < 8; ++i) {
+            if (su.updated_mask & (1u << i)) {
+                std::fprintf(out, "coord%u_s=0x%08x\ncoord%u_t=0x%08x\n", i, su.s[i], i, su.t[i]);
+            }
+        }
+        std::fclose(out);
+    }
+}
+
 #endif
 } // namespace
 
@@ -115,9 +151,10 @@ extern "C" void mkw_switch_hle_gx_begin_display_list(CpuContext* cpu) noexcept {
         Overlaps(gxHost, kGxDataSize, Memory::GetPointer(kGXDataPtrAddr, 4u), 4u)) {
         Refuse("GX_DISPLAY_LIST_GX_DATA_OVERLAP", cpu);
     }
-    // The Switch closure has no guest __GXSetDirtyState decoder. Never silently
-    // clear unhandled guest state or capture an unfinished immediate primitive.
-    if (Memory::Read32(gd + 0x5FCu) != 0 || Memory::Read8(gd + 0x5F8u) != 0 ||
+    // Only the observed SU bit has a native-emission/guest-shadow handshake.
+    // Never clear other dirty bits or capture an unfinished immediate primitive.
+    const auto dirty = Memory::Read32(gd + 0x5FCu);
+    if ((dirty & ~1u) != 0 || Memory::Read8(gd + 0x5F8u) != 0 ||
         g_hleGxState.inBegin || g_hleGxState.fifoByteCount != 0) {
         Refuse("GX_DISPLAY_LIST_PENDING_STATE", cpu);
     }
@@ -135,6 +172,7 @@ extern "C" void mkw_switch_hle_gx_begin_display_list(CpuContext* cpu) noexcept {
         overlaps(kDlFifoAddr, 0x24u) || overlaps(kGXDataPtrAddr, 4u)) {
         Refuse("GX_DISPLAY_LIST_METADATA_OVERLAP", cpu);
     }
+    FlushGuestSu(gd, cpu, 0x80172E00u, "begin");
     mkw_switch_gx_native_begin_display_list(list, size, save); // Flush dirty native state before redirection.
     sGxData = gd;
     sSaveContext = save;
@@ -171,6 +209,7 @@ extern "C" void mkw_switch_hle_gx_end_display_list(CpuContext* cpu) noexcept {
         mkw_switch_gx_display_list_cursor().save_context != sSaveContext) {
         Refuse("GX_DISPLAY_LIST_CONTEXT_CHANGED", cpu, 0x80172EB4u);
     }
+    FlushGuestSu(sGxData, cpu, 0x80172EB4u, "end");
     const auto bytes = mkw_switch_gx_native_end_display_list(); // Includes native dirty writes and zero padding.
     if (bytes > g_dlRecordState.size || (bytes & 31u) != 0) {
         Refuse("GX_DISPLAY_LIST_END_COUNT", cpu, 0x80172EB4u);

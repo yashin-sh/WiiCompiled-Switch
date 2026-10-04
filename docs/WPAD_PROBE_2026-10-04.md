@@ -49,7 +49,7 @@ CPU preservation. Forked refusal cases verify diagnostics and unchanged
 CPU/memory before aborting.
 
 Six independently compiled mutations are rejected: fabricated connection,
-wrong extension type, partial-range validation, invalid-channel writes and
+wrong extension type, partial-range validation, invalid-channel writes,
 clobbered CPU registers and repeated SD report opens.
 
 Build-switch includes this fifteenth host contract. The actual AArch64 syntax
@@ -62,10 +62,28 @@ configurations and script/workflow lint pass. Only WPADProbe source/test/script
 changed for report deduplication; the other fourteen suites have unchanged
 runtime, header and test inputs. Six mutation checks are rejected.
 
-The initial code `96ea759` passed all five GitHub workflows / six jobs, including
-the [actual build-switch run](https://github.com/yashin-sh/WiiCompiled-Switch/actions/runs/37212211362). Its private build was deliberately
-stopped (exit 137) to avoid repeated SD report writes; no NRO from that attempt
-was launched. Completed objects are reused. Final-code GitHub Actions and the
-private Rendered Discovery NRO are being validated. Console return, per-button PAD behavior and
-recognizable game pixels remain open. Dependency pins, the existing upstream
-patch and private-data exclusions are preserved.
+Final code `2941f1de49e9d5442251347c53cc5e3bc921cf72` passes all five
+GitHub workflows / six jobs. The [actual build-switch log](https://github.com/yashin-sh/WiiCompiled-Switch/actions/runs/37213631951)
+confirms 556 WPADProbe cases, 65,563 PADRead cases and synthetic-mode compilation.
+The private Rendered Discovery NRO build passes with **47 retained strong
+symbols** and **18 scoped unique providers**, checked across 228 host inputs,
+19 Rust archives and seven named image libraries. Checked FIFO/vertex mirrors,
+source hashes, dependency pins and all original upstream patch bytes and nine
+nanosecond mtimes are verified. The immutable local image ran with network
+disabled and six compiler tasks. Broader provider ownership remains unaudited.
+
+The NRO is **73,490,488 bytes**, SHA-256
+`82685e875a2a7dfcdb76ebe627e2dd82da8bac46fe79a0643f572e9fd660f712`.
+The initial `96ea759` candidate also passed its five workflows, but its private
+build was deliberately stopped (exit 137) for per-channel report deduplication.
+No artifact from that attempt was launched; completed objects were reused.
+
+The final candidate's nxlink attempt at **2026-10-04 15:53:06 UTC** exited 1
+with a connection failure before transfer. The known IP responds to ICMP,
+USB/MTP is detected and UDP discovery has no netloader reply. This is not a
+new game crash or evidence of WPADProbe return. The console must return from
+USB/MTP to hbmenu application-mode netloader before the next attempt.
+
+Console return, per-button PAD behavior and recognizable game pixels remain
+open. The latest accepted hardware frontier remains WPADProbe. Private game
+data, NROs and raw diagnostic archives remain excluded from publication.

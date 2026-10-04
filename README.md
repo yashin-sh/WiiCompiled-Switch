@@ -39,8 +39,10 @@ reaches the translated PADClampCircle2. The new DIRECT stop is **WPADProbe
 reports / 541,985 bytes are verified. Per-button hardware tests remain open.
 
 The [WPADProbe candidate](docs/WPAD_PROBE_2026-10-04.md) preserves the pinned
-absent-Wiimote contract and passes 556 host cases. Integration, GitHub Actions
-and its private rendered build are being validated before the next launch.
+absent-Wiimote contract and passes 556 host cases, six mutations and all five
+exact-code workflows / six jobs. Its private NRO build passes with 47 retained
+symbols and 18 scoped providers. The connection attempt failed before transfer;
+USB/MTP is detected. Console WPADProbe return remains pending.
 
 The [PADRead bridge](docs/PAD_READ_2026-10-04.md) passes 65,563 host cases,
 five exact-code workflows / six jobs and its private build. Both sphere

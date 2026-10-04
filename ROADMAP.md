@@ -16,7 +16,8 @@
 - [x] Pass PADRead code `7ca14a76` on fourteen local suites, five rejected mutants, five exact-code workflows / six jobs, the full local synthetic build and private rendered NRO build; seventeen scoped providers verified.
 - [x] Transfer PADRead with exit 0 at 14:44:46 UTC; verify 32 reports / 541,985 bytes, connected port 0 and PADRead return through PADClampCircle2.
 - [x] Implement the [WPADProbe absent-remote candidate](docs/WPAD_PROBE_2026-10-04.md); 556 host cases pass with preserved CPU, memory and library state.
-- [ ] Validate WPADProbe integration, exact-code GitHub workflows and private NRO build; hardware-accept its return.
+- [x] Validate WPADProbe code `2941f1d`: fifteen local suites, six rejected mutants, five exact-code workflows / six jobs, full synthetic and private NRO builds; 47 retained symbols / 18 scoped providers.
+- [ ] Transfer the WPADProbe NRO and hardware-accept its return; the 15:53:06 UTC attempt failed to connect, with USB/MTP detected.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

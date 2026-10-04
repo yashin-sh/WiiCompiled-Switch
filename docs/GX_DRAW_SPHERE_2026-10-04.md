@@ -51,8 +51,21 @@ capacity; refusal must leave CPU, guest, native/HLE and FIFO state untouched.
 The same suite with the original float constructor fails at the real writer's
 negative-to-unsigned conversion, establishing a regression check.
 
-GitHub workflows, the private Rendered Discovery NRO build and provider audit
-are still pending for this candidate. Sphere return, display-list replay and
+All thirteen local workflow contract scripts, rendered AArch64 syntax, lint
+and 440 local Markdown links pass. Four compiled sphere mutants are rejected.
+All five exact-code GitHub workflows / six jobs pass on
+`e7dd680603ba4c9d00fc673c12307ef099f3e0c0`; the [actual build-switch log](https://github.com/yashin-sh/WiiCompiled-Switch/actions/runs/37195265760)
+confirms both new contract counts. The private Rendered Discovery build also
+passes, with 45 retained strong symbols and sixteen scoped unique providers
+across 226 host inputs, 19 Rust archives and seven named image libraries.
+The mirrored FIFO and corrected vertex writer were independently verified.
+
+The NRO is **73,478,200 bytes**, SHA-256
+`e2b0c3f283a0cf2e6e0b2c6bc15a6d431d0010ece269e1abcdb5ee09ead3ea50`. The immutable local image ran
+without network access. An initial three-task build was intentionally
+interrupted and resumed at six tasks after resource measurement; completed
+objects were retained. Pins and the original submodule patch/mtimes remain
+unchanged. The NRO and raw build/diagnostic files stay private. Sphere return, display-list replay and
 recognizable game pixels require fresh console evidence. Native GXEnd's pinned
 size accessor measures the live FIFO only; the independent parser above checks
 recorded vertex payload rather than relying on that native size check.

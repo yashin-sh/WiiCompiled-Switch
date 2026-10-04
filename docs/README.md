@@ -44,7 +44,7 @@
 
 ## Validation / analysis method
 
-- [GX_DRAW_SPHERE_2026-10-04.md](GX_DRAW_SPHERE_2026-10-04.md) — bounded recording bridge, native geometry/state tests and verified float conversion correction; CI/private build pending
+- [GX_DRAW_SPHERE_2026-10-04.md](GX_DRAW_SPHERE_2026-10-04.md) — bounded recording bridge, native geometry/state tests and verified float conversion correction; all workflows/private build pass, console return pending
 
 - [GX_SU_STATE_2026-10-04.md](GX_SU_STATE_2026-10-04.md) — handles observed guest SU dirty bit with actual native emission and selective guest shadow publication; console accepts the empty-update branch and Begin/End return
 

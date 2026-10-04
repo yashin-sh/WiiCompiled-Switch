@@ -41,8 +41,8 @@ The pending SU marker is handled through the native empty-update branch
 The new DIRECT stop is **GXDrawSphere (`0x80172A30`), parameters `(4,8)`**,
 dispatch 607503 / 104.178 seconds. The [bounded sphere candidate](docs/GX_DRAW_SPHERE_2026-10-04.md)
 now passes its native recording contract, including a regression fix for
-negative float coordinates. Its CI/private build are pending; sphere return
-and display-list replay remain unaccepted.
+negative float coordinates. All five exact-code workflows / six jobs and its
+private NRO build pass; sphere return and display-list replay remain unaccepted.
 The current visual observation is pending; earlier runs were user-confirmed
 black with an error. Recognizable game pixels remain unproven.
 

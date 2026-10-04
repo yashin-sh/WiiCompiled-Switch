@@ -2,6 +2,7 @@
 #include "guest_flat_memory.h"
 #include "horizon_runtime_services.hpp"
 #include "memory_switch_slice.hpp"
+#include "pad_button_contract.hpp"
 #include "switch_input_hle_traits.hpp"
 #include <dolphin/pad.h>
 
@@ -13,6 +14,18 @@
 #include <limits>
 #include <vector>
 
+static_assert(mkw::pad_buttons::L == PAD_TRIGGER_L);
+static_assert(mkw::pad_buttons::R == PAD_TRIGGER_R);
+static_assert(mkw::pad_buttons::Z == PAD_TRIGGER_Z);
+static_assert(mkw::pad_buttons::A == PAD_BUTTON_A);
+static_assert(mkw::pad_buttons::B == PAD_BUTTON_B);
+static_assert(mkw::pad_buttons::X == PAD_BUTTON_X);
+static_assert(mkw::pad_buttons::Y == PAD_BUTTON_Y);
+static_assert(mkw::pad_buttons::Start == PAD_BUTTON_START);
+static_assert(mkw::pad_buttons::Left == PAD_BUTTON_LEFT);
+static_assert(mkw::pad_buttons::Right == PAD_BUTTON_RIGHT);
+static_assert(mkw::pad_buttons::Down == PAD_BUTTON_DOWN);
+static_assert(mkw::pad_buttons::Up == PAD_BUTTON_UP);
 // Independent packed expectations below are anchored to the pinned SDK.
 static_assert(PAD_TRIGGER_L == 0x40 && PAD_TRIGGER_R == 0x20 && PAD_TRIGGER_Z == 0x10);
 static_assert(PAD_BUTTON_A == 0x100 && PAD_BUTTON_B == 0x200);

@@ -4,7 +4,7 @@
 #include "abi_bridge.h"
 #include "horizon_runtime_services.hpp"
 #include "memory.h"
-#include <dolphin/pad.h>
+#include "pad_button_contract.hpp"
 #include "hle/controller_status_contract.h"
 
 #include <algorithm>
@@ -17,6 +17,7 @@ extern "C" void mkw_switch_set_fast_track_stage(const char*) noexcept;
 
 namespace {
 using mkw::horizon_runtime_services::InputState;
+namespace pad = mkw::pad_buttons;
 namespace buttons = mkw::horizon_runtime_services::buttons;
 
 std::int8_t Axis(std::int32_t value) {
@@ -28,18 +29,18 @@ std::int8_t Axis(std::int32_t value) {
 PadStatusContract::Fields ConnectedStatus(const InputState& input) {
     PadStatusContract::Fields result{};
     constexpr std::array<std::pair<std::uint64_t, std::uint16_t>, 12> mappings{{
-        {buttons::A, PAD_BUTTON_A},
-        {buttons::B, PAD_BUTTON_B},
-        {buttons::X, PAD_BUTTON_X},
-        {buttons::Y, PAD_BUTTON_Y},
-        {buttons::L, PAD_TRIGGER_L},
-        {buttons::R, PAD_TRIGGER_R},
-        {buttons::ZL | buttons::ZR, PAD_TRIGGER_Z},
-        {buttons::Plus, PAD_BUTTON_START},
-        {buttons::Left, PAD_BUTTON_LEFT},
-        {buttons::Right, PAD_BUTTON_RIGHT},
-        {buttons::Down, PAD_BUTTON_DOWN},
-        {buttons::Up, PAD_BUTTON_UP},
+        {buttons::A, pad::A},
+        {buttons::B, pad::B},
+        {buttons::X, pad::X},
+        {buttons::Y, pad::Y},
+        {buttons::L, pad::L},
+        {buttons::R, pad::R},
+        {buttons::ZL | buttons::ZR, pad::Z},
+        {buttons::Plus, pad::Start},
+        {buttons::Left, pad::Left},
+        {buttons::Right, pad::Right},
+        {buttons::Down, pad::Down},
+        {buttons::Up, pad::Up},
     }};
     for (const auto& [host, guest] : mappings) {
         if (input.buttons_held & host) {
@@ -98,7 +99,7 @@ extern "C" void mkw_switch_hle_pad_read(CpuContext* cpu) noexcept {
         if (port == 0 && input.connected) {
             fields = ConnectedStatus(input);
         } else {
-            fields.error = PAD_ERR_NO_CONTROLLER; // PAD_ERR_NO_CONTROLLER, never a fabricated device.
+            fields.error = -1; // PAD_ERR_NO_CONTROLLER, never a fabricated device.
         }
         const auto encoded = PadStatusContract::Encode(fields);
         std::memcpy(destination + port * encoded.size(), encoded.data(), encoded.size());

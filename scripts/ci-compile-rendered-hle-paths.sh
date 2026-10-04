@@ -149,6 +149,12 @@ for source in "${rendered_sources[@]}"; do
     "$CXX_TOOL" "${common_flags[@]}" "$source"
 done
 
+echo "  CXX source/pad_read_hle_bridge.cpp (synthetic mode without desktop defines)"
+"$CXX_TOOL" -std=gnu++20 -fsyntax-only -Wall -Wextra -fno-rtti \
+    -include "$ROOT_DIR/include/devkita64_gcc_compat.hpp" \
+    -DMKW_SYNTHETIC_EXECUTION=1 -D__SWITCH__ -DMKW_PLATFORM_SWITCH=1 -I"$ROOT_DIR/include" -I"$RUNTIME_DIR/include" \
+    "$ROOT_DIR/source/pad_read_hle_bridge.cpp"
+
 echo "  CXX source/horizon_runtime_services.cpp (actual libnx input backend)"
 "$CXX_TOOL" "${common_flags[@]}" "$ROOT_DIR/source/horizon_runtime_services.cpp"
 

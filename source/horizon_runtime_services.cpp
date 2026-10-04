@@ -6,6 +6,20 @@
 #include <filesystem>
 
 namespace mkw::horizon_runtime_services {
+static_assert(buttons::A == HidNpadButton_A);
+static_assert(buttons::B == HidNpadButton_B);
+static_assert(buttons::X == HidNpadButton_X);
+static_assert(buttons::Y == HidNpadButton_Y);
+static_assert(buttons::L == HidNpadButton_L);
+static_assert(buttons::R == HidNpadButton_R);
+static_assert(buttons::ZL == HidNpadButton_ZL);
+static_assert(buttons::ZR == HidNpadButton_ZR);
+static_assert(buttons::Plus == HidNpadButton_Plus);
+static_assert(buttons::Left == HidNpadButton_Left);
+static_assert(buttons::Up == HidNpadButton_Up);
+static_assert(buttons::Right == HidNpadButton_Right);
+static_assert(buttons::Down == HidNpadButton_Down);
+
 namespace {
 
 PadState g_pad{};
@@ -86,6 +100,7 @@ InputState poll_input() {
     }
 
     padUpdate(&g_pad);
+    result.connected = padIsConnected(&g_pad);
     result.buttons_down = padGetButtonsDown(&g_pad);
     result.buttons_held = padGetButtons(&g_pad);
 

@@ -12,7 +12,8 @@
 - [x] Implement the [bounded sphere bridge](docs/GX_DRAW_SPHERE_2026-10-04.md), execute its native recording dependencies and fix the demonstrated float conversion bug; 648 cases / 48 refusals pass.
 - [x] Pass sphere code `e7dd6806` on thirteen local suites, four rejected mutants, five exact-code workflows / six jobs and the private NRO build; sixteen scoped providers verified.
 - [x] Hardware-accept both sphere variants returning; verify 31 reports / 541,214 bytes and the PADRead frontier.
-- [ ] Bridge PADRead to actual Switch input, resolve subsequent boundaries and establish recognizable game pixels.
+- [x] Implement the [PADRead candidate](docs/PAD_READ_2026-10-04.md) using the existing Switch input service; 65,563 host cases pass.
+- [ ] Complete PADRead workflow/build and console validation, resolve subsequent boundaries and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
 

@@ -72,3 +72,10 @@ extern "C" __attribute__((used)) void synthetic_pad_init_hle_probe(CpuContext* c
 
     InvokeDirectCpu<0x801AF2F0u>(cpu);
 }
+
+static_assert(KnownNativeCpuCall<0x801AF44Cu>::kAvailable);
+
+// Compile/link retention only; no fabricated controller read during startup.
+extern "C" __attribute__((used)) void synthetic_pad_read_hle_probe(CpuContext* cpu) {
+    InvokeDirectCpu<0x801AF44Cu>(cpu);
+}

@@ -190,3 +190,14 @@ not returned; recording/replay require coordinated FIFO/context/buffer work.
 The user confirms black output and an error. The snapshot before the texture
 constructor retains 99 successful presents, without proof of visible pixels.
 Earlier dated records retain their scope.
+
+## Current PAD input slice
+
+[PADRead](PAD_READ_2026-10-04.md) acquires input through the existing Horizon
+service's single default/handheld libnx PadState. It writes four pinned
+big-endian PADStatus slots: actual connection/input on port 0, absent ports
+1..3, no claimed rumble capability. The entire destination is checked before
+polling or writing. Desktop SDL objects are not constructed on Horizon.
+The already translated PADClampCircle2 applies game-side stick clamping.
+Host contracts and SDK compilation are distinct from console input/image
+acceptance; multiplayer, Wiimote behavior and audio remain later slices.

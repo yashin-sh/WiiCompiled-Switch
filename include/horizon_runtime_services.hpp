@@ -20,6 +20,24 @@ struct Status {
     BackendState graphics = BackendState::Stubbed;
 };
 
+// Button masks retain libnx HID values. The Horizon implementation checks
+// them against the SDK; consumers need no Switch or SDL headers.
+namespace buttons {
+inline constexpr std::uint64_t A = 1ull << 0;
+inline constexpr std::uint64_t B = 1ull << 1;
+inline constexpr std::uint64_t X = 1ull << 2;
+inline constexpr std::uint64_t Y = 1ull << 3;
+inline constexpr std::uint64_t L = 1ull << 6;
+inline constexpr std::uint64_t R = 1ull << 7;
+inline constexpr std::uint64_t ZL = 1ull << 8;
+inline constexpr std::uint64_t ZR = 1ull << 9;
+inline constexpr std::uint64_t Plus = 1ull << 10;
+inline constexpr std::uint64_t Left = 1ull << 12;
+inline constexpr std::uint64_t Up = 1ull << 13;
+inline constexpr std::uint64_t Right = 1ull << 14;
+inline constexpr std::uint64_t Down = 1ull << 15;
+} // namespace buttons
+
 struct InputState {
     std::uint64_t buttons_down = 0;
     std::uint64_t buttons_held = 0;
@@ -27,6 +45,7 @@ struct InputState {
     std::int32_t left_y = 0;
     std::int32_t right_x = 0;
     std::int32_t right_y = 0;
+    bool connected = false;
 };
 
 struct AudioBufferView {

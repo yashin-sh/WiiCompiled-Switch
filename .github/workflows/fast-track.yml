@@ -177,6 +177,8 @@ jobs:
           grep -E ' T mkw_switch_hle_gx_begin_display_list$' /tmp/fast-track.nm
           grep -E ' T mkw_switch_hle_gx_end_display_list$' /tmp/fast-track.nm
           grep -E ' T mkw_switch_hle_gx_draw_sphere$' /tmp/fast-track.nm
+          grep -E ' T synthetic_pad_read_hle_probe$' /tmp/fast-track.nm
+          grep -E ' T mkw_switch_hle_pad_read$' /tmp/fast-track.nm
           grep -E ' T mkw_switch_hle_gx_set_fog$' /tmp/fast-track.nm
           grep -E ' T mkw_switch_hle_gx_set_z_comp_loc$' /tmp/fast-track.nm
           grep -E ' T synthetic_translated_fast_track_start$' /tmp/fast-track.nm

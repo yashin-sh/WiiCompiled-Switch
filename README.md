@@ -42,7 +42,9 @@ The later snapshot records 3,937 guest FIFO writes, 99 preceding successful
 presents / zero failures and zero list replay calls. The user confirms black
 output followed by an error. These counters do not establish visible geometry;
 recognizable game pixels and broader display-list replay remain unaccepted.
-The next correction connects PADRead to the existing Switch input service.
+The [PADRead candidate](docs/PAD_READ_2026-10-04.md) connects to the existing
+Switch input service; 65,563 host cases pass. Full CI/build and console return
+validation are pending.
 
 The [SU-state correction](docs/GX_SU_STATE_2026-10-04.md) passes 632 host cases /
 39 refusals, all five exact-code GitHub workflows / six jobs and its private

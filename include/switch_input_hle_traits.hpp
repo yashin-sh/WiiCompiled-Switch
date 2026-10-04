@@ -103,7 +103,7 @@ struct KnownNativeCpuCall<0x801C0EC4u> {
 // idempotent, marks its host PAD state initialized, seeds desktop keyboard
 // bindings, and returns true. Horizon does not have those SDL keyboard objects
 // at this boundary, so preserve only the proven initialization state and the
-// guest-visible success value (1); do not pre-port PADRead or device mappings.
+// guest-visible success value (1). PADRead uses the existing Horizon backend.
 template <>
 struct KnownNativeCpuCall<0x801AF2F0u> {
     static constexpr bool kAvailable = true;
@@ -115,5 +115,17 @@ struct KnownNativeCpuCall<0x801AF2F0u> {
 
         mkw::switch_input_hle::g_pad_initialized = true;
         cpu->gpr[3] = 1u;
+    }
+};
+
+// PADRead (PAL 0x801AF44C), observed after sphere recording on hardware.
+// The bridge writes the pinned four-channel big-endian PADStatus contract.
+extern "C" void mkw_switch_hle_pad_read(CpuContext* cpu) noexcept;
+
+template <>
+struct KnownNativeCpuCall<0x801AF44Cu> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_pad_read(cpu);
     }
 };

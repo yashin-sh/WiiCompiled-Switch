@@ -87,8 +87,9 @@ for required in \
     fi
 done
 
+# PADRead is an input bridge on the same executed path, with no rendered macro.
 mapfile -t rendered_sources < <(
-    grep -l 'MKW_LOCAL_RENDERED_FAST_TRACK' "$ROOT_DIR"/source/*_hle_bridge.cpp | sort
+    { printf '%s\n' "$ROOT_DIR/source/pad_read_hle_bridge.cpp"; grep -l 'MKW_LOCAL_RENDERED_FAST_TRACK' "$ROOT_DIR"/source/*_hle_bridge.cpp; } | sort -u
 )
 
 if (( ${#rendered_sources[@]} == 0 )); then
@@ -132,9 +133,14 @@ common_flags=(
     -I"$AURORA_DIR/lib"
 )
 
-if [[ -n "${DEVKITPRO:-}" && -d "$DEVKITPRO/libnx/include" ]]; then
-    common_flags+=( -I"$DEVKITPRO/libnx/include" )
+# Resolve SDK headers even when the compiler is supplied as an explicit path.
+SDK_ROOT="${DEVKITPRO:-$(cd "$(dirname "$CXX_TOOL")/../.." && pwd)}"
+readonly SDK_ROOT
+if [[ ! -d "$SDK_ROOT/libnx/include" ]]; then
+    echo "error: libnx headers missing: $SDK_ROOT/libnx/include" >&2
+    exit 2
 fi
+common_flags+=( -I"$SDK_ROOT/libnx/include" )
 
 echo "Rendered HLE syntax gate: ${#rendered_sources[@]} source files"
 for source in "${rendered_sources[@]}"; do
@@ -142,6 +148,9 @@ for source in "${rendered_sources[@]}"; do
     echo "  CXX $rel"
     "$CXX_TOOL" "${common_flags[@]}" "$source"
 done
+
+echo "  CXX source/horizon_runtime_services.cpp (actual libnx input backend)"
+"$CXX_TOOL" "${common_flags[@]}" "$ROOT_DIR/source/horizon_runtime_services.cpp"
 
 echo "  CXX source/fast_track_crash_diagnostics.cpp (Discovery mode)"
 "$CXX_TOOL" "${common_flags[@]}"     -DMKW_DISCOVERY_SCAN_MODE=1     "$ROOT_DIR/source/fast_track_crash_diagnostics.cpp"

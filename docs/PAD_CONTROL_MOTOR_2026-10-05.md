@@ -45,9 +45,34 @@ on either fail the executable link.
 
 The new seventeenth host suite and synthetic probe/production symbol retention
 are wired into CI. The full synthetic NRO build passes, retaining all four
-input bridges/probes. The AArch64 syntax gate compiles this bridge in rendered
-and synthetic configurations. Remaining local suites, exact-code workflows,
-private NRO build and hardware launch results will be recorded after completion.
+input bridges/probes. All seventeen local suites, script/workflow lint and
+both AArch64 configurations pass. Dependency pins, the original upstream
+patch bytes and its modification times are preserved.
+
+Code `1cff562ad888f917a2ffd9c586e5e3cab47cb765` passes all five exact-code
+pull-request workflows / six jobs. The
+[actual build-switch log](https://github.com/yashin-sh/WiiCompiled-Switch/actions/runs/37265909786)
+confirms 4,152 PADControlMotor cases, 8,987 KPAD cases, 556 WPADProbe cases,
+65,563 PADRead cases and the new synthetic compile gate without desktop defines.
+
+The private Rendered Discovery build exits 0. Its NRO is **73,494,584 bytes**,
+SHA-256 `b4cb13ebb58a6cf7a1a567e5ed89ce73df0f7bdf905cc266fa7b6856d8a1feda`.
+All 49 required strong symbols are retained. Twenty scoped native, bridge,
+flag and FIFO symbols have unique expected providers across 230 host inputs,
+nineteen container Rust archives and seven named libraries. Checked FIFO and
+vertex mirrors match their preparation contract. This audit does not cover
+broader symbols or compiler-injected implicit libraries.
+
+## Console deployment
+
+UDP netloader discovery on **2026-10-05 05:26:31 UTC** receives no reply.
+No TCP preflight is used. USB/MTP copies the validated NRO from **05:27:33
+to 05:27:43 UTC** to
+`sdmc:/switch/WiiCompiled-Switch-pad-control-motor-rendered-discovery.nro`.
+A complete readback matches all 73,494,584 bytes and the SHA-256 above.
+This deployment does not launch the application or accept PADControlMotor's
+hardware return. Exit USB/MTP mode and launch this file from hbmenu for the
+next console run; fresh reports must establish return beyond `0x801AF908`.
 
 The preceding KPAD run remains the hardware baseline. PADControlMotor return,
 physical vibration, recognizable game pixels, sustained gameplay and later

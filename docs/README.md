@@ -2,7 +2,7 @@
 
 ## Architecture / runtime
 
-- [PAD_CONTROL_MOTOR_2026-10-05.md](PAD_CONTROL_MOTOR_2026-10-05.md) — current correction: absent-actuator void return consistent with PADRead; validation and console return pending
+- [PAD_CONTROL_MOTOR_2026-10-05.md](PAD_CONTROL_MOTOR_2026-10-05.md) — current correction: absent-actuator void return consistent with PADRead; 4,152 cases, seventeen suites, five workflows / six jobs and private build pass; console return pending
 - [HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md](HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md) — latest console result: count-1 KPAD polling returned; PADControlMotor `(0,2)` frontier, black then error; 34 reports verified
 - [KPAD_UNIFIED_STATUS_2026-10-04.md](KPAD_UNIFIED_STATUS_2026-10-04.md) — absent-remote samples, 8,987 cases, five workflows / six jobs and private NRO passed; observed count-1 polling hardware-crossed
 

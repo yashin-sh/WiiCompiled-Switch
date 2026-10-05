@@ -34,9 +34,13 @@ constexpr std::array contracts{
     Contract{0x801722ccu, "RMCP01_GX_SET_FOG", "GX_SET_FOG_UNPROVEN_ARGS", "GX_SET_FOG_UNREADABLE_COLOR", KnownNativeCpuCall<0x801722ccu>::Invoke},
     Contract{0x80172858u, "RMCP01_GX_SET_Z_COMP_LOC", nullptr, nullptr, KnownNativeCpuCall<0x80172858u>::Invoke},
 };
-constexpr std::array<std::uint64_t, 4> observedBits{
-    0x0000000000000000ull, 0x3ff0000000000000ull,
-    0x3fb99999a0000000ull, 0x3ff0000000000000ull};
+constexpr std::array<std::array<std::uint64_t, 4>, 2> observedTuples{{
+    {0x0000000000000000ull, 0x3ff0000000000000ull,
+     0x3fb99999a0000000ull, 0x3ff0000000000000ull},
+    {0x3ff0000000000000ull, 0x3ff0000000000000ull,
+     0x0000000000000000ull, 0x0000000000000000ull},
+}};
+std::size_t selectedTuple = 0;
 constexpr std::uint32_t address = 0x70002000u;
 const char* stage = nullptr;
 std::uint32_t stageCalls = 0;
@@ -86,8 +90,8 @@ CpuContext MakeCpu(const Args& args) {
         bytes[i] = static_cast<unsigned char>(0x43u + i * 37u);
     for (std::size_t i = 0; i < args.size(); ++i)
         cpu.gpr[3u + i] = args[i];
-    for (std::size_t i = 0; i < observedBits.size(); ++i)
-        std::memcpy(&cpu.fpr[1u + i].d, &observedBits[i], sizeof(observedBits[i]));
+    for (std::size_t i = 0; i < observedTuples[selectedTuple].size(); ++i)
+        std::memcpy(&cpu.fpr[1u + i].d, &observedTuples[selectedTuple][i], sizeof(observedTuples[selectedTuple][i]));
     return cpu;
 }
 void Prepare(CpuContext& cpu, Operation op) {
@@ -128,16 +132,13 @@ void InvokeAndCheck(Operation op, const Args& args) {
     liveCpu = nullptr;
     ++validCases;
 }
-void ExpectAbort(const Args& args, bool memoryFailure = false, int changedFpr = -1, std::uint64_t bits = 0) {
+void ExpectAbortCpu(const CpuContext& initial, bool memoryFailure = false) {
     const auto op = Operation::Fog;
     const auto memory = CaptureMemory();
     void* storage = mmap(nullptr, sizeof(CpuContext), PROT_READ | PROT_WRITE,
                          MAP_SHARED | MAP_ANONYMOUS, -1, 0);
     assert(storage != MAP_FAILED);
     auto* sharedCpu = new (storage) CpuContext;
-    auto initial = MakeCpu(args);
-    if (changedFpr >= 0)
-        std::memcpy(&initial.fpr[1 + changedFpr].d, &bits, sizeof(bits));
     std::memcpy(sharedCpu, &initial, sizeof(initial));
     int descriptors[2]{};
     assert(pipe(descriptors) == 0);
@@ -169,6 +170,12 @@ void ExpectAbort(const Args& args, bool memoryFailure = false, int changedFpr = 
     sharedCpu->~CpuContext();
     assert(munmap(storage, sizeof(CpuContext)) == 0);
     ++abortCases;
+}
+void ExpectAbort(const Args& args, bool memoryFailure = false, int changedFpr = -1, std::uint64_t bits = 0) {
+    auto initial = MakeCpu(args);
+    if (changedFpr >= 0)
+        std::memcpy(&initial.fpr[1 + changedFpr].d, &bits, sizeof(bits));
+    ExpectAbortCpu(initial, memoryFailure);
 }
 void CheckNull() {
     const auto oldStage = stage;
@@ -245,11 +252,14 @@ extern "C" void GXSetFog(GXFogType type, float start, float end, float near, flo
     // Independent expected native representation; catches .f instead of .d,
     // swapped FPRs and constant/incorrect rounding of the captured near plane.
     const std::array<float, 4> values{start, end, near, far};
-    constexpr std::array<std::uint32_t, 4> expected{0u, 0x3f800000u, 0x3dcccccdu, 0x3f800000u};
+    constexpr std::array<std::array<std::uint32_t, 4>, 2> expected{{
+        {0u, 0x3f800000u, 0x3dcccccdu, 0x3f800000u},
+        {0x3f800000u, 0x3f800000u, 0u, 0u},
+    }};
     for (std::size_t i = 0; i < values.size(); ++i) {
         std::uint32_t bits;
         std::memcpy(&bits, &values[i], sizeof(bits));
-        assert(bits == expected[i]);
+        assert(bits == expected[selectedTuple][i]);
     }
     assert(color.r == expectedColor[0] && color.g == expectedColor[1]);
     assert(color.b == expectedColor[2] && color.a == expectedColor[3]);
@@ -283,44 +293,62 @@ int main() {
     const rlimit noCore{0, 0};
     assert(setrlimit(RLIMIT_CORE, &noCore) == 0);
     CheckNull();
-    ExpectAbort({1u, address}); // Invalid tuple before memory initialization.
-    ExpectAbort({0u, address}, true);
+    for (selectedTuple = 0; selectedTuple < observedTuples.size(); ++selectedTuple) {
+        ExpectAbort({1u, address}); // Invalid tuple before memory initialization.
+        ExpectAbort({0u, address}, true);
+    }
     Memory::Config config;
     config.regions.push_back({"physical-zero", 0u, 64u});
     config.regions.push_back({"fog-test", address, 64u});
     config.regions.push_back({"wrap-test", 0xfffffff0u, 16u});
     Memory::Init(config);
-    for (auto pointer : {0u, 1u, 60u, address, address + 1u, address + 60u, 0xfffffff0u, 0xfffffff1u, 0xfffffffcu})
-        for (const std::array<std::uint8_t, 4> color : {std::array<std::uint8_t, 4>{0, 0, 0, 0}, {255, 255, 255, 255}, {0x12, 0x34, 0x56, 0x78}, {0x80, 0xff, 0x01, 0x7f}})
-            CheckColor(pointer, color);
-    for (std::size_t component = 0; component < 4u; ++component)
-        for (std::uint32_t value = 0; value < 256u; ++value) {
-            std::array<std::uint8_t, 4> color{0x12, 0x34, 0x56, 0x78};
-            color[component] = static_cast<std::uint8_t>(value);
-            CheckColor(address + 1u, color);
+    for (selectedTuple = 0; selectedTuple < observedTuples.size(); ++selectedTuple) {
+        for (auto pointer : {0u, 1u, 60u, address, address + 1u, address + 60u, 0xfffffff0u, 0xfffffff1u, 0xfffffffcu})
+            for (const std::array<std::uint8_t, 4> color : {std::array<std::uint8_t, 4>{0, 0, 0, 0}, {255, 255, 255, 255}, {0x12, 0x34, 0x56, 0x78}, {0x80, 0xff, 0x01, 0x7f}})
+                CheckColor(pointer, color);
+        for (std::size_t component = 0; component < 4u; ++component)
+            for (std::uint32_t value = 0; value < 256u; ++value) {
+                std::array<std::uint8_t, 4> color{0x12, 0x34, 0x56, 0x78};
+                color[component] = static_cast<std::uint8_t>(value);
+                CheckColor(address + 1u, color);
+            }
+        // Every single-bit departure must refuse before memory or native work,
+        // including f64 deviations which would disappear after narrowing to f32.
+        for (int fpr = 0; fpr < 4; ++fpr)
+            for (unsigned bit = 0; bit < 64u; ++bit)
+                ExpectAbort({0u, 0x60000000u}, false, fpr, observedTuples[selectedTuple][fpr] ^ (std::uint64_t{1} << bit));
+        for (int fpr = 0; fpr < 4; ++fpr)
+            for (const std::uint64_t bits : {0x7ff0000000000000ull, 0xfff0000000000000ull,
+                                             0x7ff8000000000000ull, 0x7ff0000000000001ull,
+                                             0x7fefffffffffffffull, 0xbff0000000000000ull})
+                ExpectAbort({0u, address}, false, fpr, bits);
+        for (auto type : {1u, 2u, 4u, 5u, 7u, 10u, 15u, 256u, 0x80000000u, 0xffffffffu})
+            for (auto pointer : {address, 0x60000000u})
+                ExpectAbort({type, pointer});
+        for (auto pointer : {61u, 64u, address - 1u, address + 61u, address + 64u, 0x60000000u, 0xfffffffdu, 0xfffffffeu, 0xffffffffu})
+            ExpectAbort({0u, pointer}, true);
+    }
+    // Mixing independently admitted components must not create a third tuple.
+    // The end parameter is shared; all six hybrids of start/near/far refuse.
+    selectedTuple = 0;
+    for (unsigned combination = 1; combination < 7u; ++combination) {
+        auto cpu = MakeCpu({0u, 0x60000000u});
+        for (unsigned bit = 0; bit < 3u; ++bit) {
+            const auto fpr = bit == 0 ? 0u : bit + 1u;
+            const auto tuple = (combination >> bit) & 1u;
+            std::memcpy(&cpu.fpr[1u + fpr].d, &observedTuples[tuple][fpr], sizeof(std::uint64_t));
         }
-    // Every single-bit departure must refuse before memory or native work,
-    // including f64 deviations which would disappear after narrowing to f32.
-    for (int fpr = 0; fpr < 4; ++fpr)
-        for (unsigned bit = 0; bit < 64u; ++bit)
-            ExpectAbort({0u, 0x60000000u}, false, fpr, observedBits[fpr] ^ (std::uint64_t{1} << bit));
-    for (int fpr = 0; fpr < 4; ++fpr)
-        for (const std::uint64_t bits : {0x7ff0000000000000ull, 0xfff0000000000000ull,
-                                         0x7ff8000000000000ull, 0x7ff0000000000001ull,
-                                         0x7fefffffffffffffull, 0xbff0000000000000ull})
-            ExpectAbort({0u, address}, false, fpr, bits);
-    for (auto type : {1u, 2u, 4u, 5u, 7u, 10u, 15u, 256u, 0x80000000u, 0xffffffffu})
-        for (auto pointer : {address, 0x60000000u})
-            ExpectAbort({type, pointer});
-    for (auto pointer : {61u, 64u, address - 1u, address + 61u, address + 64u, 0x60000000u, 0xfffffffdu, 0xfffffffeu, 0xffffffffu})
-        ExpectAbort({0u, pointer}, true);
+        // Use the normal refusal harness with a complete explicit CPU fixture.
+        ExpectAbortCpu(cpu);
+    }
     for (std::uint32_t value = 0; value < 65536u; ++value)
         InvokeAndCheck(Operation::ZComp, {value, 0x60000000u});
     for (auto value : {0x10000u, 0x100ffu, 0x80000000u, 0xffffff00u, 0xffffffffu})
         InvokeAndCheck(Operation::ZComp, {value, 0x60000000u});
     CheckNull();
     Memory::Reset();
-    ExpectAbort({0u, 0u}, true);
-    assert(validCases == 66601u && abortCases == 312u);
+    for (selectedTuple = 0; selectedTuple < observedTuples.size(); ++selectedTuple)
+        ExpectAbort({0u, 0u}, true);
+    assert(validCases == 67661u && abortCases == 630u);
     std::printf("PASS: Fog/ZComp valid=%u diagnosed-aborts=%u native=%u rendered=%d\n", validCases, abortCases, nativeCalls, MKW_LOCAL_RENDERED_FAST_TRACK);
 }

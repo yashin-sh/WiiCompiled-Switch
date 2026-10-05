@@ -24,20 +24,25 @@ extern "C" void mkw_switch_hle_gx_set_fog(CpuContext* cpu) noexcept {
     const std::uint32_t colorAddress = cpu->gpr[4];
     mkw_switch_set_fast_track_stage("RMCP01_GX_SET_FOG");
 
-    // Bound this first bridge to the exact captured GX_FOG_NONE call. Check
+    // Bound this bridge to the two captured GX_FOG_NONE tuples. Check
     // f64 representations before any narrowing, guest lookup or native work:
     // Aurora still normalizes coefficients for NONE, including a float->u32
     // conversion that is unsafe for some non-finite or negative parameters.
-    constexpr std::array<std::uint64_t, 4> capturedBits{
-        0x0000000000000000ull, 0x3ff0000000000000ull,
-        0x3fb99999a0000000ull, 0x3ff0000000000000ull};
-    bool proven = type == 0u;
-    for (std::size_t i = 0; i < capturedBits.size(); ++i) {
+    constexpr std::array<std::array<std::uint64_t, 4>, 2> capturedBits{{
+        {0x0000000000000000ull, 0x3ff0000000000000ull,
+         0x3fb99999a0000000ull, 0x3ff0000000000000ull},
+        {0x3ff0000000000000ull, 0x3ff0000000000000ull,
+         0x0000000000000000ull, 0x0000000000000000ull},
+    }};
+    std::array<std::uint64_t, 4> argumentBits{};
+    for (std::size_t i = 0; i < argumentBits.size(); ++i) {
         std::uint64_t bits;
         static_assert(sizeof(bits) == sizeof(cpu->fpr[1].d));
         std::memcpy(&bits, &cpu->fpr[1u + i].d, sizeof(bits));
-        proven = proven && bits == capturedBits[i];
+        argumentBits[i] = bits;
     }
+    const bool proven = type == 0u &&
+                        (argumentBits == capturedBits[0] || argumentBits == capturedBits[1]);
     if (!proven) {
         mkw_switch_report_unsupported_translated_dispatch(
             "GX_SET_FOG_UNPROVEN_ARGS", 0x801722CCu, cpu);

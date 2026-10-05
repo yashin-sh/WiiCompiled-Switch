@@ -25,27 +25,31 @@ std::vector<std::uint32_t> commands;
 
 int main() {
     unsigned fogCases = 0;
-    for (std::size_t channel = 0; channel < 4u; ++channel)
-        for (unsigned value = 0; value < 256u; ++value) {
-            std::array<std::uint8_t, 4> rgba{0x12, 0x34, 0x56, 0x78};
-            rgba[channel] = static_cast<std::uint8_t>(value);
-            commands.clear();
-            state.bpSent = 0;
-            state.peCtrl = 0x43123456u;
-            GXSetFog(GX_FOG_NONE, 0.0f, 1.0f, 0.1f, 1.0f,
-                     GXColor{rgba[0], rgba[1], rgba[2], rgba[3]});
-            // Fixed audited register fixture for the console's finite tuple.
-            // NONE still emits all five BP registers; alpha is not in FOGCLR.
-            const std::array<std::uint32_t, 5> expected{
-                0xee03ce38u, 0xef471c82u, 0xf0000002u, 0xf1000000u,
-                0xf2000000u | (std::uint32_t(rgba[0]) << 16u) |
-                    (std::uint32_t(rgba[1]) << 8u) | rgba[2]};
-            assert(commands.size() == expected.size());
-            for (std::size_t i = 0; i < expected.size(); ++i)
-                assert(commands[i] == expected[i]);
-            assert(state.bpSent == 1u && state.peCtrl == 0x43123456u);
-            ++fogCases;
-        }
+    for (const bool degenerate : {false, true})
+        for (std::size_t channel = 0; channel < 4u; ++channel)
+            for (unsigned value = 0; value < 256u; ++value) {
+                std::array<std::uint8_t, 4> rgba{0x12, 0x34, 0x56, 0x78};
+                rgba[channel] = static_cast<std::uint8_t>(value);
+                commands.clear();
+                state.bpSent = 0;
+                state.peCtrl = 0x43123456u;
+                GXSetFog(GX_FOG_NONE, degenerate ? 1.0f : 0.0f, 1.0f,
+                         degenerate ? 0.0f : 0.1f, degenerate ? 0.0f : 1.0f,
+                         GXColor{rgba[0], rgba[1], rgba[2], rgba[3]});
+                // Fixed audited register fixture for the console's finite tuple.
+                // NONE still emits all five BP registers; alpha is not in FOGCLR.
+                const std::array<std::uint32_t, 5> expected{
+                    degenerate ? 0xee000000u : 0xee03ce38u,
+                    degenerate ? 0xef40000fu : 0xef471c82u,
+                    degenerate ? 0xf0000001u : 0xf0000002u, 0xf1000000u,
+                    0xf2000000u | (std::uint32_t(rgba[0]) << 16u) |
+                        (std::uint32_t(rgba[1]) << 8u) | rgba[2]};
+                assert(commands.size() == expected.size());
+                for (std::size_t i = 0; i < expected.size(); ++i)
+                    assert(commands[i] == expected[i]);
+                assert(state.bpSent == 1u && state.peCtrl == 0x43123456u);
+                ++fogCases;
+            }
     for (const auto initial : {0u, 0x43123456u, 0x43abcdefu, 0xffffffffu})
         for (const bool before : {false, true}) {
             commands.clear();

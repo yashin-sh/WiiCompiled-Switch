@@ -32,7 +32,9 @@
 - [x] Implement the [PADReset pinned ignored-mask success contract](docs/PAD_RESET_2026-10-05.md); 5,223 executable host cases pass.
 - [x] Pass PADReset code `7ac668e` on eighteen local suites, four rejected mutations, both AArch64 modes, full synthetic build, five exact-code workflows / six jobs and private Rendered Discovery build; 50 strong symbols / 21 scoped providers verified.
 - [x] Copy the exact PADReset NRO to the SD at 17:55:43 UTC; complete readback verifies all 73,494,584 bytes and SHA-256.
-- [ ] Launch the PADReset NRO and retrieve fresh progression evidence beyond `0x801AF0DC`; its native return remains unaccepted.
+- [x] Launch the exact PADReset NRO via nxlink with exit 0 at 20:07:42 UTC; verify [36 reports / 629,680 bytes](docs/HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md) and accept mask `0x70000000` return before the new `(1,1,0,0)` Fog refusal in Mii texture preparation.
+- [x] Implement the [bounded second Fog tuple](docs/GX_FOG_DEGENERATE_2026-10-05.md), preserving native coefficient/BP work and whole-tuple guards.
+- [ ] Validate the second Fog tuple on local/CI/private-build gates and retest its console return.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
@@ -69,11 +71,12 @@
 - [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The [latest console result](docs/HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md)
-accepts the count-1 KPAD unified status polling path. The new DIRECT stop is
-PADControlMotor `0x801AF908`, channel 0, command 2, 618177 / 109.316 seconds.
-The earlier snapshot retains 3,937 FIFO writes, 99 successful presents and
-zero replay calls. The user confirms black output followed by an error.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md)
+accepts PADReset mask `0x70000000` return. The new stop is
+`GX_SET_FOG_UNPROVEN_ARGS` at `0x801722CC`, type 0, `(1,1,0,0)`, dispatch
+635434 / 129.411 seconds. The preceding heartbeat has 5,988 FIFO writes,
+102 successful presents / 0 failures and zero replay calls. The user confirms
+black output followed by an error.
 
 Further SDK calls, replay, recognizable pixels, sustained execution, full
 input, audio and performance remain to validate. No fixed count of remaining

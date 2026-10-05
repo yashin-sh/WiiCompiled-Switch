@@ -46,6 +46,7 @@ jobs:
           bash scripts/test-wpad-probe.sh
           bash scripts/test-kpad-unified-status.sh
           bash scripts/test-pad-control-motor.sh
+          bash scripts/test-pad-reset.sh
           bash scripts/test-memory-slice.sh
           bash scripts/test-host-context.sh
 

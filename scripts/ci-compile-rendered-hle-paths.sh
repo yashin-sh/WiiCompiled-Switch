@@ -89,7 +89,7 @@ done
 
 # These input bridges share the executed path without a rendered-only macro.
 mapfile -t rendered_sources < <(
-    { printf '%s\n' "$ROOT_DIR/source/pad_read_hle_bridge.cpp" "$ROOT_DIR/source/wpad_probe_hle_bridge.cpp" "$ROOT_DIR/source/kpad_unified_status_hle_bridge.cpp" "$ROOT_DIR/source/pad_control_motor_hle_bridge.cpp"; grep -l 'MKW_LOCAL_RENDERED_FAST_TRACK' "$ROOT_DIR"/source/*_hle_bridge.cpp; } | sort -u
+    { printf '%s\n' "$ROOT_DIR/source/pad_read_hle_bridge.cpp" "$ROOT_DIR/source/wpad_probe_hle_bridge.cpp" "$ROOT_DIR/source/kpad_unified_status_hle_bridge.cpp" "$ROOT_DIR/source/pad_control_motor_hle_bridge.cpp" "$ROOT_DIR/source/pad_reset_hle_bridge.cpp"; grep -l 'MKW_LOCAL_RENDERED_FAST_TRACK' "$ROOT_DIR"/source/*_hle_bridge.cpp; } | sort -u
 )
 
 if (( ${#rendered_sources[@]} == 0 )); then
@@ -149,7 +149,7 @@ for source in "${rendered_sources[@]}"; do
     "$CXX_TOOL" "${common_flags[@]}" "$source"
 done
 
-for input_source in pad_read_hle_bridge.cpp wpad_probe_hle_bridge.cpp kpad_unified_status_hle_bridge.cpp pad_control_motor_hle_bridge.cpp; do
+for input_source in pad_read_hle_bridge.cpp wpad_probe_hle_bridge.cpp kpad_unified_status_hle_bridge.cpp pad_control_motor_hle_bridge.cpp pad_reset_hle_bridge.cpp; do
     echo "  CXX source/$input_source (synthetic mode without desktop defines)"
     "$CXX_TOOL" -std=gnu++20 -fsyntax-only -Wall -Wextra -fno-rtti \
         -include "$ROOT_DIR/include/devkita64_gcc_compat.hpp" \

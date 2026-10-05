@@ -185,7 +185,27 @@ If a new run:
 - runs without a blocker: use liveness/invariant evidence before assuming
   success or adding more HLE.
 
-## Current frontier
+## Current frontier — 2026-10-05
+
+The [fresh motor hardware result](HARDWARE_RESULTS_2026-10-05_PAD_CONTROL_MOTOR_PAD_RESET_FRONTIER.md)
+accepts PADControlMotor channel 0 / STOP_HARD command 2 returning. The new
+DIRECT boundary is PADReset `0x801AF0DC`, mask `0x70000000`, dispatch 619288 /
+112.024 seconds. All 35 reports / 544,876 bytes have verified manifest,
+baseline and archive evidence. The current visual observation is pending.
+
+The [PADReset candidate](PAD_RESET_2026-10-05.md), code `7ac668e`, passes all
+local, exact-code remote and private rendered-build gates. The validated NRO
+is copied to SD with complete readback at 17:55:43 UTC. Its native return still
+requires fresh console progression. The earlier present counters do not prove
+recognizable pixels, and older scheduler-dependent branches keep their scope.
+
+On October 5 the user authorized managing PRs and merging when their pipelines
+pass, without another confirmation. Merge status and hardware acceptance are
+recorded separately: merging a validated candidate does not label its pending
+native return or image hardware-crossed. Private rendered-build and exact NRO
+checks remain required before deployment.
+
+## Earlier frontiers — 2026-10-03
 
 The latest attributable real-Switch evidence is recorded in
 [HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md):
@@ -313,7 +333,7 @@ successful presents; those counters do not establish a visible frame. Current
 screen observation is pending. Earlier dated sections retain their scope.
 
 
-## Latest console result — depth LOD crossed (2026-10-03)
+## Earlier console result — depth LOD crossed (2026-10-03)
 
 The [fresh hardware result](HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md)
 establishes LOD returned on the observed depth object with `lod-pass` and guest

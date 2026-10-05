@@ -166,3 +166,15 @@ struct KnownNativeCpuCall<0x801AF908u> {
         mkw_switch_hle_pad_control_motor(cpu);
     }
 };
+
+// PADReset (PAL 0x801AF0DC), observed after PADControlMotor with mask
+// 0x70000000. Pinned Aurora ignores every mask and returns true unchanged.
+extern "C" void mkw_switch_hle_pad_reset(CpuContext* cpu) noexcept;
+
+template <>
+struct KnownNativeCpuCall<0x801AF0DCu> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_pad_reset(cpu);
+    }
+};

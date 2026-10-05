@@ -2,8 +2,10 @@
 
 ## Architecture / runtime
 
-- [PAD_CONTROL_MOTOR_2026-10-05.md](PAD_CONTROL_MOTOR_2026-10-05.md) — current correction: absent-actuator void return consistent with PADRead; 4,152 cases, seventeen suites, five workflows / six jobs and private build pass; console return pending
-- [HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md](HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md) — latest console result: count-1 KPAD polling returned; PADControlMotor `(0,2)` frontier, black then error; 34 reports verified
+- [PAD_RESET_2026-10-05.md](PAD_RESET_2026-10-05.md) — current candidate: pinned ignored-mask success return; 5,223 cases, eighteen suites, all workflows and private build pass; SD deployment/readback verified, console return pending
+- [HARDWARE_RESULTS_2026-10-05_PAD_CONTROL_MOTOR_PAD_RESET_FRONTIER.md](HARDWARE_RESULTS_2026-10-05_PAD_CONTROL_MOTOR_PAD_RESET_FRONTIER.md) — latest console result: motor `(0,2)` returned; PADReset mask `0x70000000` frontier; 35 reports verified, visual observation pending
+- [PAD_CONTROL_MOTOR_2026-10-05.md](PAD_CONTROL_MOTOR_2026-10-05.md) — absent-actuator void return; local/CI/private-build gates passed, observed channel-0 / command-2 console return accepted
+- [HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md](HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md) — preceding result: KPAD count-1 polling returned, motor frontier, black then error
 - [KPAD_UNIFIED_STATUS_2026-10-04.md](KPAD_UNIFIED_STATUS_2026-10-04.md) — absent-remote samples, 8,987 cases, five workflows / six jobs and private NRO passed; observed count-1 polling hardware-crossed
 
 - [HARDWARE_RESULTS_2026-10-04_WPAD_PROBE_KPAD_UNIFIED_FRONTIER.md](HARDWARE_RESULTS_2026-10-04_WPAD_PROBE_KPAD_UNIFIED_FRONTIER.md) — preceding console result: WPADProbe returned on channel 0; KPAD unified status frontier, black then error

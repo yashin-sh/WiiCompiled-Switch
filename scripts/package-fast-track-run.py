@@ -38,11 +38,16 @@ def select(files: list[Path], full: bool) -> tuple[list[Path], list[Path]]:
     return included, excluded
 
 
-def build_report(files: list[Path]) -> str:
+def build_report(files: list[Path], contents: dict[Path, bytes] | None = None) -> str:
     parts: list[str] = []
     for path in files:
         parts.append(f"===== {path.name} =====")
-        parts.append(path.read_text(encoding="utf-8", errors="replace").rstrip())
+        text = (
+            contents[path].decode("utf-8", errors="replace")
+            if contents is not None
+            else path.read_text(encoding="utf-8", errors="replace")
+        )
+        parts.append(text.rstrip())
         parts.append("")
     return "\n".join(parts).rstrip() + "\n"
 
@@ -53,9 +58,13 @@ def build_manifest(
     excluded: list[Path],
     total_files: list[Path],
     full: bool,
+    contents: dict[Path, bytes] | None = None,
 ) -> str:
-    total_bytes = sum(path.stat().st_size for path in total_files)
-    included_bytes = sum(path.stat().st_size for path in included)
+    def size(path: Path) -> int:
+        return len(contents[path]) if contents is not None else path.stat().st_size
+
+    total_bytes = sum(size(path) for path in total_files)
+    included_bytes = sum(size(path) for path in included)
     profile = "full" if full else "compact"
 
     lines = [
@@ -71,12 +80,17 @@ def build_manifest(
         "[included]",
     ]
     for path in included:
-        lines.append(f"{path.name}\t{path.stat().st_size}\tsha256={sha256(path)}")
+        digest = (
+            hashlib.sha256(contents[path]).hexdigest()
+            if contents is not None
+            else sha256(path)
+        )
+        lines.append(f"{path.name}\t{size(path)}\tsha256={digest}")
 
     if excluded:
         lines.extend(["", "[excluded-verbose]"])
         for path in excluded:
-            lines.append(f"{path.name}\t{path.stat().st_size}")
+            lines.append(f"{path.name}\t{size(path)}")
 
     return "\n".join(lines) + "\n"
 
@@ -92,24 +106,53 @@ def bundle(
     if not files:
         raise ValueError(f"no .txt diagnostics found in {source}")
 
+    input_paths = {path.resolve() for path in files}
+    if coverage is not None:
+        input_paths.add(coverage.resolve())
+    if output.resolve() in input_paths:
+        raise ValueError("output ZIP must not overwrite a diagnostic or coverage input")
+
+    # Read each input once: report, hashes and raw members describe the same
+    # bytes even if the source diagnostics are updated during packaging.
+    contents = {path: path.read_bytes() for path in files}
+    coverage_bytes = coverage.read_bytes() if coverage is not None else None
     included, excluded = select(files, full)
-    report = build_report(included)
-    manifest = build_manifest(source, included, excluded, files, full)
+    report = build_report(included, contents)
+    manifest = build_manifest(source, included, excluded, files, full, contents)
+    if coverage_bytes is not None:
+        manifest += (
+            "\n[coverage]\nrmcp01-dispatch-coverage.json\t"
+            f"{len(coverage_bytes)}\tsha256={hashlib.sha256(coverage_bytes).hexdigest()}\n"
+        )
 
     output.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr("fast-track-report.txt", report)
-        archive.writestr("manifest.txt", manifest)
-        if raw:
-            for path in included:
-                archive.write(path, arcname=f"raw/{path.name}")
-        if coverage is not None:
-            archive.write(
-                coverage,
-                arcname="rmcp01-dispatch-coverage.json",
-            )
+    with tempfile.NamedTemporaryFile(
+        dir=output.parent, prefix=f".{output.name}.", suffix=".tmp", delete=False
+    ) as handle:
+        temporary = Path(handle.name)
+    try:
+        with zipfile.ZipFile(temporary, "w") as archive:
 
-    return len(files), len(included), sum(path.stat().st_size for path in included)
+            def write_member(name: str, value: str | bytes) -> None:
+                # Fixed metadata makes repeated bundles of identical captured
+                # inputs deterministic and accepts old/MTP zero timestamps.
+                info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+                info.compress_type = zipfile.ZIP_DEFLATED
+                info.external_attr = 0o100644 << 16
+                archive.writestr(info, value)
+
+            write_member("fast-track-report.txt", report)
+            write_member("manifest.txt", manifest)
+            if raw:
+                for path in included:
+                    write_member(f"raw/{path.name}", contents[path])
+            if coverage_bytes is not None:
+                write_member("rmcp01-dispatch-coverage.json", coverage_bytes)
+        temporary.replace(output)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+    return len(files), len(included), sum(len(contents[path]) for path in included)
 
 
 def self_test() -> None:
@@ -150,6 +193,26 @@ def self_test() -> None:
         with zipfile.ZipFile(full) as archive:
             assert "raw/fast-track-os-sleep-events.txt" in archive.namelist()
             assert "rmcp01-dispatch-coverage.json" in archive.namelist()
+            assert archive.testzip() is None
+
+        repeated = root / "repeated.zip"
+        bundle(root, repeated, full=True, raw=True, coverage=coverage)
+        assert sha256(full) == sha256(repeated)
+        original = (root / "fast-track-dispatch-blocker.txt").read_bytes()
+        try:
+            bundle(root, root / "fast-track-dispatch-blocker.txt", full=True, raw=True)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("a diagnostic input must not be overwritten")
+        assert (root / "fast-track-dispatch-blocker.txt").read_bytes() == original
+        try:
+            bundle(root, full, full=True, raw=True, coverage=root / "absent.json")
+        except OSError:
+            pass
+        else:
+            raise AssertionError("missing coverage must fail before replacing a bundle")
+        assert sha256(full) == sha256(repeated)
 
     print("fast-track log bundle self-test: PASS")
 

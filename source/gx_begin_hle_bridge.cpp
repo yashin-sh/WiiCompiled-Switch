@@ -8,6 +8,7 @@
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
 #include "gx_internal.h"
 #include "gx_stream_common.h"
+extern "C" void mkw_switch_gx_record_begin(CpuContext* cpu) noexcept;
 #endif
 
 extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
@@ -25,8 +26,7 @@ extern "C" void mkw_switch_hle_gx_begin(CpuContext* cpu) noexcept {
 
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
     if (IsDisplayListActive()) {
-        WriteDisplayListData(static_cast<u8>(primitive | vtx_fmt), 1);
-        WriteDisplayListData(static_cast<u16>(vertex_count), 2);
+        mkw_switch_gx_record_begin(cpu);
         return;
     }
 

@@ -40,17 +40,39 @@ patched_paths=(
     runtime/src/hle/gx/gx_dl.cpp
 )
 
+patch_applied=0
 restore_wiicompiled() {
-    git -C "$WII_DIR" restore --source="$WII_PIN" -- "${patched_paths[@]}" >/dev/null 2>&1 || true
+    local exit_status=$?
+    trap - EXIT
+    if ((patch_applied != 0)); then
+        if ! git -C "$WII_DIR" apply --reverse "$WII_RENDERED_PATCH"; then
+            echo "error: could not undo the rendered syntax gate's own patch; existing edits were preserved" >&2
+            if ((exit_status == 0)); then
+                exit_status=2
+            fi
+        fi
+    fi
+    exit "$exit_status"
 }
 trap restore_wiicompiled EXIT
 
-git -C "$WII_DIR" restore --source="$WII_PIN" -- "${patched_paths[@]}"
-if ! git -C "$WII_DIR" apply --check "$WII_RENDERED_PATCH"; then
-    echo "error: rendered WiiCompiled patch no longer applies to $WII_PIN" >&2
-    exit 2
+# Reuse the configured patch without rewriting headers or removing local
+# changes. A clean checkout receives a temporary patch owned by this gate.
+if git -C "$WII_DIR" apply --reverse --check "$WII_RENDERED_PATCH" >/dev/null 2>&1; then
+    echo "Reusing the existing rendered WiiCompiled patch"
+else
+    if ! git -C "$WII_DIR" diff --quiet -- "${patched_paths[@]}" ||
+       ! git -C "$WII_DIR" diff --cached --quiet -- "${patched_paths[@]}"; then
+        echo "error: rendered header paths have local changes; refusing to overwrite them" >&2
+        exit 2
+    fi
+    if ! git -C "$WII_DIR" apply --check "$WII_RENDERED_PATCH"; then
+        echo "error: rendered WiiCompiled patch no longer applies to $WII_PIN" >&2
+        exit 2
+    fi
+    git -C "$WII_DIR" apply "$WII_RENDERED_PATCH"
+    patch_applied=1
 fi
-git -C "$WII_DIR" apply "$WII_RENDERED_PATCH"
 
 for required in \
     "$RUNTIME_DIR/include/host_context.h" \
@@ -65,8 +87,9 @@ for required in \
     fi
 done
 
+# These input bridges share the executed path without a rendered-only macro.
 mapfile -t rendered_sources < <(
-    grep -l 'MKW_LOCAL_RENDERED_FAST_TRACK' "$ROOT_DIR"/source/*_hle_bridge.cpp | sort
+    { printf '%s\n' "$ROOT_DIR/source/pad_read_hle_bridge.cpp" "$ROOT_DIR/source/wpad_probe_hle_bridge.cpp" "$ROOT_DIR/source/kpad_unified_status_hle_bridge.cpp" "$ROOT_DIR/source/pad_control_motor_hle_bridge.cpp"; grep -l 'MKW_LOCAL_RENDERED_FAST_TRACK' "$ROOT_DIR"/source/*_hle_bridge.cpp; } | sort -u
 )
 
 if (( ${#rendered_sources[@]} == 0 )); then
@@ -110,9 +133,14 @@ common_flags=(
     -I"$AURORA_DIR/lib"
 )
 
-if [[ -n "${DEVKITPRO:-}" && -d "$DEVKITPRO/libnx/include" ]]; then
-    common_flags+=( -I"$DEVKITPRO/libnx/include" )
+# Resolve SDK headers even when the compiler is supplied as an explicit path.
+SDK_ROOT="${DEVKITPRO:-$(cd "$(dirname "$CXX_TOOL")/../.." && pwd)}"
+readonly SDK_ROOT
+if [[ ! -d "$SDK_ROOT/libnx/include" ]]; then
+    echo "error: libnx headers missing: $SDK_ROOT/libnx/include" >&2
+    exit 2
 fi
+common_flags+=( -I"$SDK_ROOT/libnx/include" )
 
 echo "Rendered HLE syntax gate: ${#rendered_sources[@]} source files"
 for source in "${rendered_sources[@]}"; do
@@ -120,6 +148,17 @@ for source in "${rendered_sources[@]}"; do
     echo "  CXX $rel"
     "$CXX_TOOL" "${common_flags[@]}" "$source"
 done
+
+for input_source in pad_read_hle_bridge.cpp wpad_probe_hle_bridge.cpp kpad_unified_status_hle_bridge.cpp pad_control_motor_hle_bridge.cpp; do
+    echo "  CXX source/$input_source (synthetic mode without desktop defines)"
+    "$CXX_TOOL" -std=gnu++20 -fsyntax-only -Wall -Wextra -fno-rtti \
+        -include "$ROOT_DIR/include/devkita64_gcc_compat.hpp" \
+        -DMKW_SYNTHETIC_EXECUTION=1 -D__SWITCH__ -DMKW_PLATFORM_SWITCH=1 \
+        -I"$ROOT_DIR/include" -I"$RUNTIME_DIR/include" "$ROOT_DIR/source/$input_source"
+done
+
+echo "  CXX source/horizon_runtime_services.cpp (actual libnx input backend)"
+"$CXX_TOOL" "${common_flags[@]}" "$ROOT_DIR/source/horizon_runtime_services.cpp"
 
 echo "  CXX source/fast_track_crash_diagnostics.cpp (Discovery mode)"
 "$CXX_TOOL" "${common_flags[@]}"     -DMKW_DISCOVERY_SCAN_MODE=1     "$ROOT_DIR/source/fast_track_crash_diagnostics.cpp"

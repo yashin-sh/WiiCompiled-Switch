@@ -16,7 +16,7 @@
 
 #include "dolphin/gx.h"
 #include "gfx/common.hpp"
-#include "gx/fifo.hpp"
+#include "aurora_fifo_transport.hpp"
 #include "gx_internal.h"
 #include "gx_stream_common.h"
 #include "internal.hpp"

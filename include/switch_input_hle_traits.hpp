@@ -103,7 +103,7 @@ struct KnownNativeCpuCall<0x801C0EC4u> {
 // idempotent, marks its host PAD state initialized, seeds desktop keyboard
 // bindings, and returns true. Horizon does not have those SDL keyboard objects
 // at this boundary, so preserve only the proven initialization state and the
-// guest-visible success value (1); do not pre-port PADRead or device mappings.
+// guest-visible success value (1). PADRead uses the existing Horizon backend.
 template <>
 struct KnownNativeCpuCall<0x801AF2F0u> {
     static constexpr bool kAvailable = true;
@@ -115,5 +115,54 @@ struct KnownNativeCpuCall<0x801AF2F0u> {
 
         mkw::switch_input_hle::g_pad_initialized = true;
         cpu->gpr[3] = 1u;
+    }
+};
+
+// PADRead (PAL 0x801AF44C), observed after sphere recording on hardware.
+// The bridge writes the pinned four-channel big-endian PADStatus contract.
+extern "C" void mkw_switch_hle_pad_read(CpuContext* cpu) noexcept;
+
+template <>
+struct KnownNativeCpuCall<0x801AF44Cu> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_pad_read(cpu);
+    }
+};
+
+// WPADProbe (PAL 0x801C0990), reached after PADRead on the Switch. No Wii
+// Bluetooth backend exists here; preserve the pinned absent-remote branch.
+extern "C" void mkw_switch_hle_wpad_probe(CpuContext* cpu) noexcept;
+
+template <>
+struct KnownNativeCpuCall<0x801C0990u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_wpad_probe(cpu);
+    }
+};
+
+// KPADGetUnifiedWpadStatus (PAL 0x8019812C), reached after WPADProbe.
+// Preserve the pinned raw absent-remote samples, including count clamping.
+extern "C" void mkw_switch_hle_kpad_unified_status(CpuContext* cpu) noexcept;
+
+template <>
+struct KnownNativeCpuCall<0x8019812Cu> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_kpad_unified_status(cpu);
+    }
+};
+
+// PADControlMotor (PAL 0x801AF908), reached with channel 0 / STOP_HARD.
+// PADRead exposes no rumble actuator; preserve the pinned absent-device void
+// return without polling input, writing guest state or fabricating vibration.
+extern "C" void mkw_switch_hle_pad_control_motor(CpuContext* cpu) noexcept;
+
+template <>
+struct KnownNativeCpuCall<0x801AF908u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_pad_control_motor(cpu);
     }
 };

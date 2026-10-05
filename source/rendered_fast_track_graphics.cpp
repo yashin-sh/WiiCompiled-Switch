@@ -10,7 +10,7 @@
 
 #include "dolphin/gx.h"
 #include "gfx/common.hpp"
-#include "gx/fifo.hpp"
+#include "aurora_fifo_transport.hpp"
 #include "gx_internal.h"
 #include "internal.hpp"
 #include "webgpu/gpu.hpp"
@@ -367,7 +367,18 @@ bool present_frame_locked(bool clear) {
     g_queue.Submit(1, &commands);
     aurora::gfx::after_submit();
 
-    if (!g_surface.Present()) {
+    const bool presented = g_surface.Present();
+    const bool hadWork =
+        g_auroraFrameHadWork.load(std::memory_order_acquire);
+
+    // Aurora has completed this frame before Present returns. Release the
+    // consumed surface state even on failure so a later call begins a frame
+    // instead of reusing Aurora's already-unmapped staging buffers.
+    aurora::webgpu::g_frameBuffer = {};
+    g_currentSurfaceTexture = {};
+    g_auroraFrameActive.store(false, std::memory_order_release);
+
+    if (!presented) {
         g_presentFailures.fetch_add(1u, std::memory_order_relaxed);
         report("FRAME PRESENT FAIL frame=%llu\n",
                static_cast<unsigned long long>(g_presentedFrames + 1));
@@ -375,8 +386,6 @@ bool present_frame_locked(bool clear) {
     }
     g_presentSuccesses.fetch_add(1u, std::memory_order_relaxed);
 
-    const bool hadWork =
-        g_auroraFrameHadWork.load(std::memory_order_acquire);
     ++g_presentedFrames;
     ++g_gxFrameCount;
 
@@ -388,10 +397,6 @@ bool present_frame_locked(bool clear) {
                static_cast<unsigned long long>(g_presentedFrames),
                hadWork ? 1u : 0u);
     }
-
-    aurora::webgpu::g_frameBuffer = {};
-    g_currentSurfaceTexture = {};
-    g_auroraFrameActive.store(false, std::memory_order_release);
 
     // Match the pinned runtime's pre-warm strategy: keep a valid frame open so
     // CP/BP/XF state emitted before the next draw is not dropped by Aurora.
@@ -486,6 +491,7 @@ extern "C" void mkw_switch_renderer_shutdown() noexcept {
     report("STAGE RENDERER_TEARDOWN begin frames=%llu\n",
            static_cast<unsigned long long>(g_presentedFrames));
 
+    bool teardownSucceeded = true;
     try {
         if (g_auroraFrameActive.exchange(false, std::memory_order_acq_rel)) {
             aurora::gfx::abort_frame();
@@ -509,11 +515,12 @@ extern "C" void mkw_switch_renderer_shutdown() noexcept {
 
         report("STAGE RENDERER_TEARDOWN PASS\n");
     } catch (...) {
+        teardownSucceeded = false;
         report("STAGE RENDERER_TEARDOWN FAIL exception\n");
     }
 
     g_initialized = false;
-    report("RESULT=PASS renderer-shutdown\n");
+    report("RESULT=%s renderer-shutdown\n", teardownSucceeded ? "PASS" : "FAIL");
     close_report();
 }
 
@@ -522,59 +529,6 @@ void* GuestToHostPtr(uint32_t addr, size_t len) {
         return nullptr;
     }
     return Memory::GetPointer(addr, len);
-}
-
-void BeginDisplayListRecording(uint32_t listAddr, uint32_t sizeBytes) {
-    g_dlRecordState.base = listAddr;
-    g_dlRecordState.size = sizeBytes;
-    g_dlRecordState.writePtr = listAddr;
-    g_dlRecordState.count = 0;
-    g_dlRecordState.active = listAddr != 0 && sizeBytes != 0;
-}
-
-void EndDisplayListRecording() {
-    if (!g_dlRecordState.active) {
-        return;
-    }
-    g_dlRecordState.active = false;
-    try {
-        Memory::Write32(kDlWritePtrAddr, g_dlRecordState.writePtr);
-        Memory::Write32(kDlCountAddr, g_dlRecordState.count);
-    } catch (...) {
-    }
-}
-
-void WriteDisplayListData(uint32_t value, uint32_t sizeBytes) {
-    auto& dl = g_dlRecordState;
-    if (!dl.active || dl.base == 0 || dl.size == 0 || dl.writePtr == 0) {
-        return;
-    }
-
-    try {
-        const uint32_t writePtr = dl.writePtr;
-        switch (sizeBytes) {
-        case 1:
-            Memory::Write8(writePtr, static_cast<uint8_t>(value));
-            break;
-        case 2:
-            Memory::Write16(writePtr, static_cast<uint16_t>(value));
-            break;
-        default:
-            Memory::Write32(writePtr, value);
-            sizeBytes = 4;
-            break;
-        }
-
-        uint32_t nextPtr = writePtr + sizeBytes;
-        const uint32_t end = dl.base + dl.size;
-        if (nextPtr > end) {
-            Memory::Write8(kDlFifoAddr + kDlWrapFlagOffset, 1);
-            nextPtr = dl.base + (nextPtr - end);
-        }
-        dl.writePtr = nextPtr;
-        dl.count += sizeBytes;
-    } catch (...) {
-    }
 }
 
 void BeginNextAuroraFrameWithRetry(std::chrono::milliseconds timeout) {

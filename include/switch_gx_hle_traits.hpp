@@ -12,25 +12,50 @@ extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_viewport(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_scissor(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_load_pos_mtx_imm(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_load_tex_mtx_imm(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_current_mtx(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_clear_vtx_desc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_vtx_desc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_vtx_attr_fmt(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_tex_gens(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tex_coord_gen2(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tex_coord_scale_manually(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tex_coord_bias(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_ind_stages(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_ind_tex_mtx(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_ind_tex_coord_scale(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_tev_stages(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_direct(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_color_in(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_color_op(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_alpha_in(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_alpha_op(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_swap_mode(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_k_color(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_color(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_swap_mode_table(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_op(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_order(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_blend_mode(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_alpha_compare(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_fog(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_z_comp_loc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_color_update(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_alpha_update(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_z_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_pixel_fmt(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_cull_mode(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_co_planar(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_clip_mode(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_dither(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_dst_alpha(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_begin(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_draw_sphere(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_begin_display_list(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_end_display_list(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_chan_amb_color(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_copy_filter(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_flush(CpuContext* cpu) noexcept;
@@ -113,6 +138,19 @@ struct KnownNativeCpuCall<0x8017310Cu> {
     }
 };
 
+// GXLoadTexMtxImm (PAL 0x80173234). Hardware reached r3=0x802581C8,
+// r4=30, r5=0 after eight IA8 map loads. Decode the guest big-endian matrix
+// (12 entries for type 0, otherwise 8 with zero padding), then forward the
+// id/type unchanged to Aurora. Invalid guest backing records a hard stop.
+template <>
+struct KnownNativeCpuCall<0x80173234u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_load_tex_mtx_imm(cpu);
+    }
+};
+
 // GXSetCurrentMtx (PAL 0x80173214). Pinned WiiCompiled consumes r3 as the
 // current position-matrix id and forwards it directly to Aurora GX.
 template <>
@@ -162,15 +200,38 @@ struct KnownNativeCpuCall<0x8016DC68u> {
     }
 };
 
-// GXSetTexCoordGen2 (PAL 0x8016E37C). Hardware currently proves only
-// GX_TEXCOORD0 / GX_TG_MTX2x4 / GX_TG_TEX0 / GX_IDENTITY / GX_FALSE /
-// GX_PTIDENTITY. Any later argument variation remains a fresh blocker.
+// GXSetTexCoordGen2 (PAL 0x8016E37C). Hardware proves coord 0 with the
+// tuple (coord,1,4,60,0,125). The audited local setup loop forecasts coords
+// 0..7; accept only that bounded variation and retain all other guards.
 template <>
 struct KnownNativeCpuCall<0x8016E37Cu> {
     static constexpr bool kAvailable = true;
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_tex_coord_gen2(cpu);
+    }
+};
+
+// GXSetTexCoordScaleManually (PAL 0x80171180). Hardware captured
+// (coord,enable,S,T)=(0,0,0,0). The audited batch accepts coords 0..7,
+// canonical bools and u16 size narrowing, then the pinned guest GX mirror.
+template <>
+struct KnownNativeCpuCall<0x80171180u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tex_coord_scale_manually(cpu);
+    }
+};
+
+// GXSetTexCoordBias (PAL 0x801711FC). Audited neighbor in the same local
+// loop: coords 0..7, canonical bools, native call then guest S/T bias mirror.
+template <>
+struct KnownNativeCpuCall<0x801711FCu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tex_coord_bias(cpu);
     }
 };
 
@@ -207,6 +268,140 @@ struct KnownNativeCpuCall<0x801722A8u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_num_tev_stages(cpu);
+    }
+};
+
+// Bounded TEV scalar batch. All six bridges preserve CpuContext and accept
+// stage IDs 0..15, independently of the active stage count. SDK-domain guards
+// are deliberately stricter than the pinned wrappers' unchecked enums;
+// unknown arguments emit a durable UNPROVEN_ARGS blocker before native GX.
+// Native Aurora owns the shared TEV caches and BP effects; these bridges do
+// not add guest mirrors, frame activation or work markers.
+// GXSetTevDirect: r3 stage.
+template <>
+struct KnownNativeCpuCall<0x80171B58u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_direct(cpu);
+    }
+};
+
+// GXSetTevColorIn: r3 stage, r4..r7 color inputs 0..15.
+template <>
+struct KnownNativeCpuCall<0x80171CE0u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_color_in(cpu);
+    }
+};
+
+// GXSetTevColorOp: r3 stage, r4 op {0,1,8..15}, r5 bias 0..2,
+// r6 scale 0..3, r7 clamp (any u32, nonzero is true), r8 output register 0..3.
+template <>
+struct KnownNativeCpuCall<0x80171D60u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_color_op(cpu);
+    }
+};
+
+// GXSetTevAlphaIn: r3 stage, r4..r7 alpha inputs 0..7.
+template <>
+struct KnownNativeCpuCall<0x80171D20u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_alpha_in(cpu);
+    }
+};
+
+// GXSetTevAlphaOp: r3 stage, r4 op {0,1,14,15}, r5 bias 0..2,
+// r6 scale 0..3, r7 clamp (any u32, nonzero is true), r8 output register 0..3.
+template <>
+struct KnownNativeCpuCall<0x80171DB8u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_alpha_op(cpu);
+    }
+};
+
+// GXSetTevSwapMode: r3 stage, r4 raster selector and r5 texture selector 0..3.
+template <>
+struct KnownNativeCpuCall<0x80171FD0u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_swap_mode(cpu);
+    }
+};
+
+// Bounded TEV color family. Pointer setters validate raw ID 0..3 before
+// resolving all four RGBA bytes. No CPU/guest writes or frame helpers.
+// GXSetTevKColor: r3 ID 0..3, r4 readable four-byte guest RGBA pointer.
+template <>
+struct KnownNativeCpuCall<0x80171ED4u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_k_color(cpu);
+    }
+};
+
+// GXSetTevColor: r3 register ID 0..3, r4 guest RGBA pointer.
+template <>
+struct KnownNativeCpuCall<0x80171E10u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_color(cpu);
+    }
+};
+
+// GXSetTevSwapModeTable: r3 ID and r4..r7 channel enums, all 0..3.
+template <>
+struct KnownNativeCpuCall<0x8017200Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_swap_mode_table(cpu);
+    }
+};
+
+// GXSetAlphaCompare: r3/r6 compare enums 0..7, r5 operator 0..3;
+// r4/r7 references use the pinned u8 conversion. Rendered mode publishes
+// the existing alpha-compare validity flag before native forwarding.
+template <>
+struct KnownNativeCpuCall<0x80172088u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_alpha_compare(cpu);
+    }
+};
+
+// GXSetFog: exact captured type-0 f64 tuple in f1..f4; complete color at r4.
+// Other tuples abort before narrowing, memory lookup or native forwarding.
+template <>
+struct KnownNativeCpuCall<0x801722CCu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_fog(cpu);
+    }
+};
+
+// GXSetZCompLoc: r3 uses the pinned TARGET_PC full-word GXBool conversion.
+// Prepared from the checked caller; console return is not yet established.
+template <>
+struct KnownNativeCpuCall<0x80172858u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_z_comp_loc(cpu);
     }
 };
 
@@ -306,6 +501,74 @@ struct KnownNativeCpuCall<0x8016F3B8u> {
     }
 };
 
+// GXSetCoPlanar (PAL 0x8016F3E0). Discovery hardware reaches this boundary
+// after GXSetPixelFmt returns, with r3=0. Pinned WiiCompiled casts r3 directly
+// to GXBool and forwards it to Aurora GXSetCoPlanar.
+template <>
+struct KnownNativeCpuCall<0x8016F3E0u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_co_planar(cpu);
+    }
+};
+
+// GXSetClipMode (PAL 0x8017351C). Hardware reaches this boundary with
+// r3=0 after GXSetCoPlanar. Pinned WiiCompiled forwards r3 as GXClipMode.
+template <>
+struct KnownNativeCpuCall<0x8017351Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_clip_mode(cpu);
+    }
+};
+
+// GXSetIndTexMtx (PAL 0x80171814). Hardware captured r3=1, r4=0x802581F8,
+// r5=1. Pinned WiiCompiled decodes six guest float32 coefficients, forwards
+// r3 as GXIndTexMtxID and narrows r5 to s8. Invalid memory/coefficients stop.
+template <>
+struct KnownNativeCpuCall<0x80171814u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_ind_tex_mtx(cpu);
+    }
+};
+
+// GXSetIndTexCoordScale (PAL 0x80171968). Audited adjacent scalar setter:
+// pinned WiiCompiled forwards r3/r4/r5 as stage/S-scale/T-scale enums.
+template <>
+struct KnownNativeCpuCall<0x80171968u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_ind_tex_coord_scale(cpu);
+    }
+};
+
+// GXSetDither (PAL 0x80172930). Pre-ported in the audited scalar batch:
+// pinned WiiCompiled forwards r3 as GXBool.
+template <>
+struct KnownNativeCpuCall<0x80172930u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_dither(cpu);
+    }
+};
+
+// GXSetDstAlpha (PAL 0x8017295C). Pre-ported in the audited scalar batch:
+// pinned WiiCompiled forwards r3 as GXBool and r4 as u8.
+template <>
+struct KnownNativeCpuCall<0x8017295Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_dst_alpha(cpu);
+    }
+};
+
 // GXBegin (PAL 0x8016F0F0). Pinned WiiCompiled consumes
 // r3/r4/r5 = primitive / vertex-format / vertex-count. The immediate-mode
 // path republishes the tracked vertex state, initializes HleFifoWrite's begin
@@ -316,6 +579,30 @@ struct KnownNativeCpuCall<0x8016F0F0u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_begin(cpu);
+    }
+};
+
+// GX display-list recording pair. Hardware has returned from Begin and End.
+// Sphere is bounded to the two audited constructor variants while recording.
+template <>
+struct KnownNativeCpuCall<0x80172A30u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_draw_sphere(cpu);
+    }
+};
+template <>
+struct KnownNativeCpuCall<0x80172E00u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_begin_display_list(cpu);
+    }
+};
+template <>
+struct KnownNativeCpuCall<0x80172EB4u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_end_display_list(cpu);
     }
 };
 
@@ -332,12 +619,21 @@ struct KnownNativeCpuCall<0x801707F8u> {
     }
 };
 
-// GXInitTexObjLOD (PAL 0x80170A4C). Hardware has now captured thirteen exact
-// descriptors, all with min/mag=GX_LINEAR/GX_LINEAR,
-// minLod=maxLod=lodBias=+0.0f, biasClamp=false, edgeLod=false and GX_ANISO_1.
-// Twelve object addresses are represented: obj=0x9018E480 has both the earlier
-// format-0 descriptor and a later exact format-2 descriptor. The bridge accepts
-// only those exact descriptors and their separately proven pre-LOD state.
+// GXSetChanAmbColor (PAL 0x8017039C). Hardware captured channel 4 in r3 and
+// guest color pointer 0x80398FD0 in r4. Preserve frame activation, decode
+// the big-endian RGBA word, and forward the unchanged channel to Aurora.
+template <>
+struct KnownNativeCpuCall<0x8017039Cu> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_chan_amb_color(cpu);
+    }
+};
+
+// GXInitTexObjLOD (PAL 0x80170A4C). The normal rendered build validates
+// the complete tiled descriptor, including the hardware-observed Z24X8 layout.
+// An optional legacy strict mode retains its earlier exact tuple allowlist.
 template <>
 struct KnownNativeCpuCall<0x80170A4Cu> {
     static constexpr bool kAvailable = true;

@@ -124,6 +124,7 @@ bool g_liveness_files_reset = false;
 bool g_main_reached = false;
 bool g_post_main_dispatch_recorded = false;
 std::uint64_t g_dispatch_count = 0u;
+std::uint64_t g_first_dispatch_tick = 0u;
 std::uint32_t g_discovery_targets[kDiscoveryTargetSlots]{};
 std::uint32_t g_discovery_unique_count = 0u;
 std::uint64_t g_post_main_dispatch_count = 0u;
@@ -166,6 +167,21 @@ std::uint64_t g_gx_begin_dispatch_count = 0u;
 std::uint64_t g_gx_set_num_chans_dispatch_count = 0u;
 std::uint64_t g_gx_set_chan_mat_color_dispatch_count = 0u;
 std::uint64_t g_gx_set_chan_ctrl_dispatch_count = 0u;
+
+std::uint64_t elapsed_since_first_dispatch_ms() noexcept {
+    // This measures host time from the first translated dispatch, not guest
+    // time or time spent in nxlink before the program starts.
+    if (g_dispatch_count == 0u) {
+        return 0u;
+    }
+    const std::uint64_t now = armGetSystemTick();
+    const std::uint64_t frequency = armGetSystemTickFreq();
+    if (frequency == 0u || now < g_first_dispatch_tick) {
+        return 0u;
+    }
+    const std::uint64_t ticks = now - g_first_dispatch_tick;
+    return (ticks / frequency) * 1000u + ((ticks % frequency) * 1000u) / frequency;
+}
 
 struct FstSnapshot {
     std::uint32_t address = 0u;
@@ -811,6 +827,9 @@ extern "C" void mkw_switch_note_translated_dispatch(
     std::uint32_t target,
     CpuContext* cpu) noexcept {
 #if MKW_FAST_TRACK_DIAGNOSTICS
+    if (g_dispatch_count == 0u) {
+        g_first_dispatch_tick = armGetSystemTick();
+    }
     reset_liveness_files_once();
     ++g_dispatch_count;
     if (target == kRkSystemRunAddress) {
@@ -1284,6 +1303,8 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         "=================================================\n"
         "kind                  : %s\n"
         "target                : 0x%08x\n"
+        "elapsed_ms            : %llu\n"
+        "dispatch count        : %llu\n"
         "guest pc              : 0x%08x\n"
         "lr                    : 0x%08x\n"
         "r1                    : 0x%08x\n"
@@ -1354,6 +1375,8 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         "action                : abort after durable blocker record\n",
         kind ? kind : "UNKNOWN",
         target,
+        static_cast<unsigned long long>(elapsed_since_first_dispatch_ms()),
+        static_cast<unsigned long long>(g_dispatch_count),
         guest_pc,
         lr,
         r1,
@@ -1460,9 +1483,40 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         osCancelOsCurrent,
         osCancelOsRunning);
     if (n > 0) {
-        const std::size_t size = static_cast<std::size_t>(n) < sizeof(buffer)
-            ? static_cast<std::size_t>(n)
-            : sizeof(buffer) - 1;
+        std::size_t size = static_cast<std::size_t>(n) < sizeof(buffer)
+                               ? static_cast<std::size_t>(n)
+                               : sizeof(buffer) - 1;
+        // The next forecast Fog boundary carries f1..f4 and a guest color.
+        // Capture their actual bits on arrival without executing that setter,
+        // narrowing floats, guessing constants or changing translated state.
+        if (target == 0x801722CCu && cpu && size < sizeof(buffer) - 1u) {
+            std::uint64_t fogBits[4]{};
+            for (std::size_t i = 0; i < 4u; ++i) {
+                static_assert(sizeof(cpu->fpr[1].d) == sizeof(fogBits[0]));
+                std::memcpy(&fogBits[i], &cpu->fpr[i + 1u].d, sizeof(fogBits[i]));
+            }
+            const auto* color = Memory::GetPointer(r4, 4u);
+            const int appended = std::snprintf(
+                buffer + size, sizeof(buffer) - size,
+                "gx fog f64 bits      : 0x%016llx / 0x%016llx / 0x%016llx / 0x%016llx\n"
+                "gx fog color readable: %s\n"
+                "gx fog rgba bytes    : %02x / %02x / %02x / %02x\n",
+                static_cast<unsigned long long>(fogBits[0]),
+                static_cast<unsigned long long>(fogBits[1]),
+                static_cast<unsigned long long>(fogBits[2]),
+                static_cast<unsigned long long>(fogBits[3]),
+                color ? "YES" : "NO",
+                color ? static_cast<unsigned>(color[0]) : 0u,
+                color ? static_cast<unsigned>(color[1]) : 0u,
+                color ? static_cast<unsigned>(color[2]) : 0u,
+                color ? static_cast<unsigned>(color[3]) : 0u);
+            if (appended > 0) {
+                const auto remaining = sizeof(buffer) - size - 1u;
+                size += static_cast<std::size_t>(appended) < remaining
+                            ? static_cast<std::size_t>(appended)
+                            : remaining;
+            }
+        }
         write_atomicish(kDispatchPath, buffer, size);
     }
 #else
@@ -1516,6 +1570,7 @@ extern "C" void __libnx_exception_handler(ThreadExceptionDump* ctx) {
         "==================================\n"
         "error desc            : 0x%08x\n"
         "fast-track stage      : %s\n"
+        "elapsed_ms            : %llu\n"
         "aarch64 pc            : 0x%016llx\n"
         "aarch64 lr            : 0x%016llx\n"
         "aarch64 sp            : 0x%016llx\n"
@@ -1543,6 +1598,7 @@ extern "C" void __libnx_exception_handler(ThreadExceptionDump* ctx) {
         "note                  : process will still terminate after this handler\n",
         ctx->error_desc,
         g_fast_track_stage,
+        static_cast<unsigned long long>(elapsed_since_first_dispatch_ms()),
         static_cast<unsigned long long>(ctx->pc.x),
         static_cast<unsigned long long>(ctx->lr.x),
         static_cast<unsigned long long>(ctx->sp.x),

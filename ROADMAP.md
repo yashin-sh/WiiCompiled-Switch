@@ -1,5 +1,81 @@
 # Roadmap
 
+## Current checkpoint — 2026-10-05
+
+- [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
+- [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.
+- [x] Transfer the exact display-list NRO with exit 0 at 2026-10-04 09:19:26 UTC; verify 29 reports / 534,803 bytes and the pending guest SU-state guard.
+- [x] Implement the [bounded SU-state correction](docs/GX_SU_STATE_2026-10-04.md): actual native texture register emission, selective guest shadow publication and Begin/End ordering; 632 host cases / 39 refusals pass.
+- [x] Pass SU correction `4a7e48b5` local contracts, six mutations, five exact-code GitHub workflows / six jobs and private NRO build; thirteen scoped providers verified.
+- [x] Transfer the SU NRO with exit 0 at 10:01:32 UTC, verify 30 reports / 535,712 bytes and accept native empty-update SU processing plus Begin/End return and a later 64-byte allocation length.
+- [x] Capture GXDrawSphere `0x80172A30`, `(4,8)`, dispatch 607503 / 104.178 seconds.
+- [x] Implement the [bounded sphere bridge](docs/GX_DRAW_SPHERE_2026-10-04.md), execute its native recording dependencies and fix the demonstrated float conversion bug; 648 cases / 48 refusals pass.
+- [x] Pass sphere code `e7dd6806` on thirteen local suites, four rejected mutants, five exact-code workflows / six jobs and the private NRO build; sixteen scoped providers verified.
+- [x] Hardware-accept both sphere variants returning; verify 31 reports / 541,214 bytes and the PADRead frontier.
+- [x] Implement the [PADRead candidate](docs/PAD_READ_2026-10-04.md) using the existing Switch input service; 65,563 host cases pass.
+- [x] Pass PADRead code `7ca14a76` on fourteen local suites, five rejected mutants, five exact-code workflows / six jobs, the full local synthetic build and private rendered NRO build; seventeen scoped providers verified.
+- [x] Transfer PADRead with exit 0 at 14:44:46 UTC; verify 32 reports / 541,985 bytes, connected port 0 and PADRead return through PADClampCircle2.
+- [x] Implement the [WPADProbe absent-remote candidate](docs/WPAD_PROBE_2026-10-04.md); 556 host cases pass with preserved CPU, memory and library state.
+- [x] Validate WPADProbe code `2941f1d`: fifteen local suites, six rejected mutants, five exact-code workflows / six jobs, full synthetic and private NRO builds; 47 retained symbols / 18 scoped providers.
+- [x] Transfer WPADProbe with exit 0 at 19:44:01 UTC; independently verify 33 reports / 542,797 bytes and accept channel 0 return before KPADGetUnifiedWpadStatus `0x8019812C`, count 1.
+- [x] Implement the [KPAD unified status candidate](docs/KPAD_UNIFIED_STATUS_2026-10-04.md): complete absent samples and count limit 16; 8,987 host cases pass.
+- [x] Pass KPAD unified local validation: sixteen suites, eight mutants, both AArch64 modes, full synthetic build and script/workflow lint.
+- [x] Pass all five exact-code KPAD workflows / six jobs and the private rendered NRO build; verify 48 retained symbols and nineteen scoped providers.
+- [x] Transfer the exact KPAD unified NRO with exit 0 at 21:42:13 UTC (26,743,208 compressed bytes / 2,247 blocks).
+- [x] Retrieve and verify 34 KPAD-run reports / 544,124 bytes; accept count-1 polling return through later caller progression and the final channel-3 report.
+- [x] Capture [PADControlMotor `0x801AF908`](docs/HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md), channel 0, command 2, dispatch 618177 / 109.316 seconds; user confirms black then error.
+- [x] Implement the [PADControlMotor absent-actuator bridge](docs/PAD_CONTROL_MOTOR_2026-10-05.md), preserving the void CPU ABI and zero rumble capability.
+- [x] Validate PADControlMotor code `1cff562`: 4,152 host cases, four rejected mutants, seventeen local suites, synthetic retention, both AArch64 modes, five exact-code workflows / six jobs and private rendered build; 49 strong symbols and twenty scoped providers verified.
+- [x] Copy the validated PADControlMotor NRO to the Switch over USB/MTP at 05:27:43 UTC; independently verify all transferred bytes and SHA-256 by complete readback.
+- [ ] Run the exact PADControlMotor NRO and retrieve fresh progression evidence; console return remains unaccepted.
+- [ ] Resolve subsequent observed calls and establish recognizable game pixels.
+
+- [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
+
+- [x] Hardware-cross GXSetCoPlanar, GXSetClipMode, indirect texture matrix/scale and ambient channel color on the documented Discovery path.
+- [x] Hardware-cross the exact IA8 descriptor loads on maps 0..7.
+- [x] Hardware-cross the ten type-0 GXLoadTexMtxImm loop calls (IDs 30,33,...,57), followed by return from Gen2 coord 0.
+- [x] Capture the preceding DIRECT frontier: GXSetTexCoordScaleManually `0x80171180`, `(0,0,0,0)`, dispatch 605350, 99.513 seconds from the first dispatch.
+- [x] Build and locally validate bounded coordinate candidate `91a4a01b8e316f9010e9d31754e279065772f9f3`; transfer its exact Rendered Discovery NRO with nxlink exit 0.
+- [x] Retrieve fresh reports for NRO SHA-256 `64ba837720f4e37cbd127c37a0e9bde6dc146ed229a92c8697b9c531a8984d08`, transferred at 2026-10-02 23:09:38 UTC; the user confirms a black screen.
+- [x] Hardware-accept the eight Gen2(c,1,4,60,0,125) / disabled Scale(c,0,0,0) / disabled Bias(c,0,0) triples on coords 0..7 by return to caller `0x80241380` and a later distinct frontier.
+- [x] Record the new DIRECT frontier: GXSetTevDirect `0x80171B58`, stage 0, LR `0x80240F98`, dispatch 605633, 100.205 seconds from the first dispatch.
+- [x] Launch audit NRO SHA-256 `7ecbc8a9fe1efb31697c2ee36d0b0b648a8e87d3fa7dda1fb9d262d6de5b7d09`, transfer exit 0 at 2026-10-03 09:25:19 UTC, and accept normal-path non-regression through TEV Direct stage 0 at dispatch 608381 / 107.925 seconds. Error-path fixes remain outside this hardware acceptance.
+- [x] Pass the six-setter [TEV scalar candidate](docs/GX_TEV_SCALAR_BATCH_2026-10-03.md) local workflow/host-contract gates and exact private Rendered Discovery build.
+- [x] Pass all five GitHub workflows on integrated code `e76e8f38`; transfer NRO `cc88a78c...` with exit 0 and hardware-accept the six TEV setters on default tuples across stages 0..15 (96 new calls plus 16 existing Order calls).
+- [x] Capture the [KColor frontier](docs/HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md): ID 0, pointer `0x80398FCC`, dispatch 605056 / 98.265 seconds; user reports black screen and error at exit.
+- [x] Implement the [bounded TEV color/table candidate](docs/GX_TEV_COLOR_BATCH_2026-10-03.md): KColor and adjacent Color/SwapModeTable, with ID-before-memory guards and passing executable host contracts.
+- [x] Pass all five GitHub workflows and the exact private Rendered Discovery build for color/table code `1333b0e2`, NRO SHA-256 `a56be88113ff7c2cc20808111cf7d6c0e947b0c8955b2252737b974b28a9e0ad`, with 25 retained symbols and the three unique Aurora providers checked.
+- [x] Transfer the color/table NRO with exit 0 at 13:43:58 UTC and establish fresh console return from all twelve calls through the restored later caller.
+- [x] Capture [AlphaCompare](docs/HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md) `0x80172088`, (7,0,0,7,0), dispatch 700091, stage BlendMode; user still reports black output and a crash.
+- [x] Implement the [separate AlphaCompare candidate](docs/GX_ALPHA_COMPARE_2026-10-03.md), including the existing host validity flag; pass both host-contract modes and four mutation checks.
+- [x] Pass AlphaCompare rendered syntax, all five exact-code GitHub workflows and the private NRO build: SHA-256 `7032c756f4f0872334aea0a4421a8633e8d76d9ed1c004cf2d59fafa87b5b310`, 27 strong symbols, unique native and existing flag providers.
+- [x] Transfer the exact AlphaCompare NRO with exit 0 at 17:50:16 UTC and accept the observed tuple return through existing ZMode to [Fog](docs/HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md).
+- [x] Capture Fog type 0, pointer `0x80398FD0`, four exact f64 parameter bits and readable RGBA 255,255,255,255 at dispatch 603961 / 99.156 seconds.
+- [x] Implement the [bounded Fog/ZCompLoc candidate](docs/GX_FOG_Z_COMP_2026-10-03.md), including exact f64 guards, complete color range and full-word bool semantics; pass host/native contracts and rendered syntax.
+- [x] Pass all five exact-bridge-code workflows and the private Fog/ZCompLoc NRO build, with 31 symbols and unique scoped native providers.
+- [x] Validate the host-test-only core-dump optimization on all five workflows; preserve real SIGABRT and sanitizers, with byte-identical NRO. The observed host job is 10 min 39 sec versus 19 min 03 sec initially.
+- [x] Transfer Fog/ZCompLoc NRO `652afed4...` with exit 0 at 19:20:07 UTC; accept both observed returns and the existing pixel setup from fresh coherent reports.
+- [x] Capture the 4×4 `GX_TF_Z24X8` depth texture: native init passes, LOD rejects full format 22 at dispatch 609384 / 109.572 seconds.
+- [x] Correct and locally contract-test the depth-texture LOD structural validation; see [the candidate](docs/GX_DEPTH_LOD_2026-10-03.md).
+- [x] Pass all five workflows / six jobs on depth-LOD code `b5f0a2b0`, with actual new contract/native-fixture logs; build NRO `596ba38a...` with 35 strong symbols and unique scoped native Init/LOD providers.
+- [x] Transfer NRO `596ba38a...` with exit 0 at 20:49:11 UTC; accept observed depth LOD return from fresh `lod-pass` and coherent later execution.
+- [x] Capture GXBeginDisplayList `0x80172E00`, buffer `0x80394F00`, 16 KiB, dispatch 609010 / 108.440 seconds; user confirms black screen then error.
+- [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
+- [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
+
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md)
+accepts the count-1 KPAD unified status polling path. The new DIRECT stop is
+PADControlMotor `0x801AF908`, channel 0, command 2, 618177 / 109.316 seconds.
+The earlier snapshot retains 3,937 FIFO writes, 99 successful presents and
+zero replay calls. The user confirms black output followed by an error.
+
+Further SDK calls, replay, recognizable pixels, sustained execution, full
+input, audio and performance remain to validate. No fixed count of remaining
+corrections or image ETA is established by these traces.
+
+The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
+
 ## M0 — libnx bootstrap
 - [x] Minimal AArch64 `.nro` target
 - [x] Atmosphère/hbmenu launch loop
@@ -124,9 +200,16 @@ Hardware evidence is recorded in:
 - `docs/HARDWARE_RESULTS_2026-09-18_M3_HLE_FIFO_AURORA.md`
 - `docs/HARDWARE_RESULTS_2026-09-19_RMCP01_RESOURCE_THREAD_FRONTIER.md`
 
-The current hardware-driven method remains deliberate after `main`: execute the broadest safe translated path, stop on the first unsupported native/translated boundary or attributable exception, and when no blocker appears use the independent heartbeat watchdog to distinguish sustained execution from a real stall. New runtime behavior is still added only from hardware evidence and pinned WiiCompiled semantics. Post-main bring-up remains tracked in #117.
+The current hardware-driven method remains deliberate after `main`: execute the broadest safe translated path, stop on the first unsupported native/translated boundary or attributable exception, and when no blocker appears use the independent heartbeat watchdog to distinguish sustained execution from a real stall. The default remains hardware evidence plus pinned WiiCompiled semantics; the user-authorized exception is a documented bounded GX batch with wrapper/Aurora audits and executable contracts. Each member still needs its own hardware progression proof. Post-main bring-up remains tracked in #117.
 
-Validation policy after the 2026-09-20 audit: the five public CI workflows remain mandatory, but rendered RMCP01 changes additionally require a successful private `build-local-rendered-fast-track.sh` build before hardware testing. A dispatch hit counter is telemetry, not a standalone PASS; a boundary is hardware-crossed only when execution durably progresses beyond the tested target. See `docs/FAST_TRACK_VALIDATION_POLICY.md`.
+Validation policy after the 2026-09-20 audit: the five public CI workflows remain
+mandatory under the project validation policy. The main-branch rules do not yet
+require their job contexts; see [the audit](docs/PORT_AUDIT_2026-10-03.md).
+Rendered RMCP01 changes additionally require a successful private
+`build-local-rendered-fast-track.sh` build before hardware testing. A dispatch
+hit counter is telemetry, not a standalone PASS; a boundary is hardware-crossed
+only when execution durably progresses beyond the tested target. See
+`docs/FAST_TRACK_VALIDATION_POLICY.md`.
 
 ## M3 — graphics / first frame
 - [ ] Resolve shared upstream GX safety blockers before attributing failures to a Switch backend:
@@ -160,8 +243,10 @@ The upstream GX audit behind issues #109–#112 is recorded in `docs/UPSTREAM_GX
 > AIInit (0x801240B0), __AXOutInitDSP (0x801269BC), AIRegisterDMACallback (0x80123F88), AIInitDMA (0x80123FCC), and AIStartDMA (0x80124048) are hardware-crossed.
 > The third wrap tuple on obj 0x9018E140 and fourth LOD tuple on obj 0x9018E480
 > are hardware-crossed. OSSetPeriodicAlarm (0x801A08E0) is also hardware-crossed.
-> SoundPlayer::SetVolume (0x800A35E0), the fifth GXInitTexObjLOD tuple on obj 0x908FA4E0, the fourth GXInitTexObjWrapMode tuple on obj 0x908FA4E0, the sixth GXInitTexObjLOD tuple on obj 0x908FA5C0, the seventh GXInitTexObjLOD tuple on obj 0x907938A0, and the fifth GXInitTexObjWrapMode tuple on obj 0x907938A0 are hardware-crossed. The eighth GXInitTexObjLOD tuple and seventh GXInitTexObjWrapMode tuple on obj 0x908FA820, the tenth GXInitTexObjLOD tuple on obj 0x909019C0, and the eleventh GXInitTexObjLOD tuple on obj 0x908FA840 are hardware-crossed. The ninth GXInitTexObjWrapMode tuple on obj 0x908FA840 is now also hardware-crossed. The thirteenth GXInitTexObjLOD descriptor on obj 0x908FAE00 is now also hardware-crossed. Scheduler-dependent current gates are the ninth GXInitTexObjLOD tuple on obj 0x90793BE0, the twelfth exact GXInitTexObjLOD descriptor on obj 0x9018E480 (format 2), plus the sixth/eighth/tenth/eleventh GXInitTexObjWrapMode tuples on obj 0x908FA5C0 / 0x909019C0 / 0x9018E480 / 0x908FAE00. Visual Mario
-> Kart Wii pixels remain unproven.
+> Earlier scheduler-dependent texture-object, KD and audio gates are retained
+> in the dated hardware reports. The current accepted Discovery frontier and
+> the coordinate candidate awaiting reports are listed in the checkpoint above.
+> A recognizable Mario Kart Wii image remains unproven.
 
 ## M4 — input + audio
 - [ ] Map Joy-Con / Pro Controller to WiiCompiled input

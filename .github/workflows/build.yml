@@ -2,17 +2,62 @@ name: build-switch
 
 on:
   push:
-    branches-ignore:
-      - main
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}-${{ github.ref_type }}
+  cancel-in-progress: true
+
 jobs:
+  gx-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          submodules: recursive
+      - name: Install host GX contract compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang
+      - name: Verify WiiCompiled pin for GX contracts
+        run: test "$(git -C third_party/WiiCompiled rev-parse HEAD)" = "a135beb201042b20f390c6695ca6b26768820fb4"
+      - name: Prepare pinned Switch headers for GX contracts
+        run: git -C third_party/WiiCompiled apply ../../patches/wiicompiled/m3-wiicompiled-switch-build.patch
+      - name: Execute GX, memory and host-context contracts
+        run: |
+          bash scripts/test-gx-scalar-batch.sh
+          bash scripts/test-gx-indirect-batch.sh
+          bash scripts/test-gx-chan-amb-color.sh
+          bash scripts/test-gx-texture-load.sh
+          bash scripts/test-gx-tex-mtx.sh
+          bash scripts/test-gx-tex-coord-batch.sh
+          bash scripts/test-gx-tev-scalar-batch.sh
+          bash scripts/test-gx-tev-color-batch.sh
+          bash scripts/test-gx-alpha-compare.sh
+          bash scripts/test-gx-fog-z-comp.sh
+          bash scripts/test-gx-display-list.sh
+          bash scripts/test-pad-read.sh
+          bash scripts/test-wpad-probe.sh
+          bash scripts/test-kpad-unified-status.sh
+          bash scripts/test-pad-control-motor.sh
+          bash scripts/test-memory-slice.sh
+          bash scripts/test-host-context.sh
+
   nro:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     container: devkitpro/devkita64:latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
           submodules: recursive
       - name: Verify WiiCompiled pin
         run: test "$(git -C third_party/WiiCompiled rev-parse HEAD)" = "a135beb201042b20f390c6695ca6b26768820fb4"
@@ -85,7 +130,7 @@ jobs:
           "$NM_TOOL" WiiCompiled-Switch.elf | grep -E ' W mkw_switch_get_translated_product_api$'
           "$NM_TOOL" WiiCompiled-Switch.elf | grep -E ' W mkw_switch_get_translated_product_handoff_api$'
           "$NM_TOOL" WiiCompiled-Switch.elf | grep -E ' W mkw_switch_get_translated_execution_handoff_api$'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: WiiCompiled-Switch-nro
           path: WiiCompiled-Switch.nro
@@ -99,7 +144,7 @@ jobs:
           "$NM_TOOL" WiiCompiled-Switch-synthetic-product.elf | grep -E ' T mkw_switch_get_translated_product_api$'
           "$NM_TOOL" WiiCompiled-Switch-synthetic-product.elf | grep -E ' W mkw_switch_get_translated_product_handoff_api$'
           "$NM_TOOL" WiiCompiled-Switch-synthetic-product.elf | grep -E ' W mkw_switch_get_translated_execution_handoff_api$'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: WiiCompiled-Switch-synthetic-product-nro
           path: WiiCompiled-Switch-synthetic-product.nro
@@ -113,7 +158,7 @@ jobs:
           "$NM_TOOL" WiiCompiled-Switch-synthetic-data-init.elf | grep -E ' T mkw_switch_get_translated_product_api$'
           "$NM_TOOL" WiiCompiled-Switch-synthetic-data-init.elf | grep -E ' T mkw_switch_get_translated_product_handoff_api$'
           "$NM_TOOL" WiiCompiled-Switch-synthetic-data-init.elf | grep -E ' W mkw_switch_get_translated_execution_handoff_api$'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: WiiCompiled-Switch-synthetic-data-init-nro
           path: WiiCompiled-Switch-synthetic-data-init.nro
@@ -127,7 +172,7 @@ jobs:
           "$NM_TOOL" WiiCompiled-Switch-synthetic-function-link.elf | grep -E ' T synthetic_translated_leaf$'
           "$NM_TOOL" WiiCompiled-Switch-synthetic-function-link.elf | grep -E ' T GX_HLE_FIFO_Write8$'
           "$NM_TOOL" WiiCompiled-Switch-synthetic-function-link.elf | grep -E ' W mkw_switch_get_translated_execution_handoff_api$'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: WiiCompiled-Switch-synthetic-function-link-nro
           path: WiiCompiled-Switch-synthetic-function-link.nro
@@ -142,7 +187,7 @@ jobs:
           "$NM_TOOL" WiiCompiled-Switch-synthetic-execution.elf | grep -E ' T mkw_switch_get_translated_product_handoff_api$'
           "$NM_TOOL" WiiCompiled-Switch-synthetic-execution.elf | grep -E ' T mkw_switch_get_translated_execution_handoff_api$'
           "$NM_TOOL" WiiCompiled-Switch-synthetic-execution.elf | grep -E ' T synthetic_translated_execution_leaf$'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: WiiCompiled-Switch-synthetic-execution-nro
           path: WiiCompiled-Switch-synthetic-execution.nro

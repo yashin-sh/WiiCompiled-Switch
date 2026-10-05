@@ -17,98 +17,110 @@ Run a legally-owned Mario Kart Wii dump through the WiiCompiled static-recompila
 The project now executes real WiiCompiled-translated RMCP01 code on Switch,
 loads real user-owned boot/StaticR/Home Button resources, produces real GX FIFO
 work, and presents frames successfully through Aurora → Dawn/WebGPU →
-Vulkan/NVK. The remaining first-image work is no longer about proving that the
-GPU backend can present; it is about advancing the real game/UI initialization
-path far enough that the presented pixels are visually correct Mario Kart Wii
-content.
+Vulkan/NVK. The next work is to advance game/UI initialization, verify GX
+state and resources on the executed path, and establish recognizable Mario
+Kart Wii pixels. Present counters alone do not identify why the observed
+screen remains black.
 
 ## Current status
+
+The current engineering review and remaining CI/runtime risks are recorded in
+[`docs/PORT_AUDIT_2026-10-03.md`](docs/PORT_AUDIT_2026-10-03.md).
 
 The post-`main` fast-track tracked in issue #117 has hardware-crossed the
 scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-Latest accepted graphics-path evidence reaches:
+The latest [KPAD console run](docs/HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md)
+accepts return through the count-1 KPADGetUnifiedWpadStatus polling path,
+then stops at **PADControlMotor (`0x801AF908`)**, channel 0, command 2,
+dispatch 618177 / 109.316 seconds. All 34 reports / 544,124 bytes are verified. The user
+confirms black output followed by an error; recognizable game pixels remain
+unproven. The [KPAD unified status candidate](docs/KPAD_UNIFIED_STATUS_2026-10-04.md)
+passes 8,987 host cases, eight mutation checks, sixteen local suites and
+five exact-code GitHub workflows / six jobs. Its private NRO build passes;
+console progression now accepts the observed count-1 polling path.
 
-```text
-RMCP01 FIFO writes    : 1450
-GXCopyDisp calls      : 94
-present successes     : 94
-present failures      : 0
-StaticR dispatches    : 3608
-FST structurally valid: YES
-renderer active       : YES
-```
+The [PADControlMotor correction](docs/PAD_CONTROL_MOTOR_2026-10-05.md)
+implements the pinned absent-actuator void return, consistent with PADRead's
+zero rumble capability. Its 4,152 host cases, seventeen local suites, five
+exact-code workflows / six jobs and private NRO build pass. Its console return
+still requires fresh progression evidence.
 
-Hardware has now crossed eleven exact `GXInitTexObjLOD (0x80170A4C)` descriptors and captured two further exact descriptors:
+The [WPADProbe bridge](docs/WPAD_PROBE_2026-10-04.md) passes 556 host cases,
+six mutations, five exact-code workflows / six jobs and its private NRO build.
+Its exact NRO transferred successfully at 19:44:01 UTC. The preceding
+[PADRead bridge](docs/PAD_READ_2026-10-04.md) remains crossed through translated
+PADClampCircle2. The earlier snapshot retains 3,937 FIFO writes, 99 preceding
+successful presents and zero replay calls. Per-button input remains open.
 
-- `obj=0x9018E120`;
-- `obj=0x9018E460`;
-- `obj=0x9018E140`;
-- `obj=0x9018E480` (hardware-crossed format-0 descriptor; separate format-2 descriptor captured);
-- `obj=0x908FA4E0`;
-- `obj=0x908FA5C0`;
-- `obj=0x907938A0`;
-- `obj=0x908FA820`;
-- `obj=0x90793BE0` (captured; exact bridge candidate);
-- `obj=0x909019C0`;
-- `obj=0x908FA840`;
-- `obj=0x908FAE00`.
+The [SU-state correction](docs/GX_SU_STATE_2026-10-04.md) passes 632 host cases /
+39 refusals, all five exact-code GitHub workflows / six jobs and its private
+NRO build. The [earlier pending-state refusal](docs/HARDWARE_RESULTS_2026-10-04_DISPLAY_LIST_PENDING_STATE.md)
+remains the diagnostic baseline, not the current frontier.
 
-The first five exact `GXInitTexObjWrapMode (0x80170B50)` tuples are
-hardware-crossed, including the fifth tuple on `obj=0x907938A0`. The seventh
-tuple on `obj=0x908FA820` and ninth tuple on `obj=0x908FA840` are also
-hardware-crossed. Sixth, eighth, tenth and eleventh tuples on
-`obj=0x908FA5C0` / `obj=0x909019C0` / `obj=0x9018E480` /
-`obj=0x908FAE00` remain hardware-captured and bridged.
+The [depth-LOD fix](docs/GX_DEPTH_LOD_2026-10-03.md) passes local/native
+contracts, all five exact-code workflows / six jobs and its private NRO build.
+The first transfer failed; the later retry completed with exit 0 at
+**20:49:11 UTC** on 2026-10-03. Fresh verified reports now accept the observed
+LOD return. The earlier IA8/matrix/coordinate/TEV/AlphaCompare/Fog/ZCompLoc and
+pixel-setup progression remains crossed; alternate inputs retain host proof.
 
-In parallel, the scheduler can reach the NWC24/KD path first. Hardware has
-crossed the exact sequence through:
+The preceding heartbeat at dispatch 608302 records 1556 guest FIFO writes,
+99 successful presents and zero failures. A later post-main snapshot at
+608722, before the texture constructor, records 1558 FIFO writes, last word
+`E8000156`, and the same 99 presents. These counters do not establish a frame
+with visible content after LOD or separately count native BP emissions.
+The watchdog has 102 ACTIVE and one recovered STALE sample, maximum interval
+2168 ms. Discovery first hits, checked caller flow and later coherent state
+establish returns without tracing every invocation.
 
-```text
-fd 2000 / cmd 2 / close
-fd 2001 / cmd 1 / close
-fd 2002 / cmd 0x0F / close
-fd 2003 / cmd 3 / close
-```
+The [bounded coordinate candidate](docs/GX_TEX_COORD_BATCH_2026-10-03.md),
+code `91a4a01b8e316f9010e9d31754e279065772f9f3`, passed its local host/workflow
+checks and private Rendered Discovery build. Its 73,297,976-byte NRO has
+SHA-256 `64ba837720f4e37cbd127c37a0e9bde6dc146ed229a92c8697b9c531a8984d08`.
+Nxlink transferred it with exit 0 at 2026-10-02 23:09:38 UTC (01:09:38 on
+October 3, Europe/Paris). Fresh reports now accept the eight exact triples;
+enabled Scale/Bias branches still have host contracts only. The user confirmed
+a black screen for that coordinate run. Its Direct stage-0 arrival remained
+unreturned until the later TEV run described below.
 
-Recent accepted 2026-09-28/29 runs prove scheduler-dependent GX
-frontiers while preserving real `revo_kart.brsar` and Home Button resource
-loading, 1,450 FIFO writes and 94 successful presents / 0 failures. One path
-reaches the sixth exact `GXInitTexObjWrapMode` tuple on `obj=0x908FA5C0`;
-another reaches the ninth exact LOD descriptor on `obj=0x90793BE0`; another
-reaches the tenth exact LOD descriptor on `obj=0x909019C0` at the strongest
-translated-dispatch frontier so far (62,488 dispatches). The latest run
-hardware-crosses the seventh wrap on `obj=0x908FA820`, later hardware-crosses
-the tenth LOD on `obj=0x909019C0`, and another run hardware-crosses the
-eleventh LOD on `obj=0x908FA840` before reaching its ninth exact wrap tuple.
-A later run reaches a second, exact format-2 LOD descriptor on the already
-known `obj=0x9018E480`; it is tracked independently from the earlier
-hardware-crossed format-0 descriptor. A 2026-09-30 run hardware-crosses the
-ninth wrap on `obj=0x908FA840` and then reaches a thirteenth exact LOD
-descriptor on `obj=0x908FAE00`. A later 2026-10-01 run takes a different
-scheduler branch: the already-proven format-0 LOD on `obj=0x9018E480`
-passes and a tenth exact clamp/clamp wrap tuple is captured for that same
-format-0 descriptor. The latest run hardware-crosses the thirteenth LOD on
-`obj=0x908FAE00` and then reaches its eleventh exact clamp/clamp wrap tuple.
+The separate audit NRO has SHA-256
+`7ecbc8a9fe1efb31697c2ee36d0b0b648a8e87d3fa7dda1fb9d262d6de5b7d09`.
+Nxlink transferred it with exit 0 at 2026-10-03 09:25:19 UTC. Fresh reports
+accept normal-path non-regression through the same TEV Direct frontier;
+the user again confirmed a black screen. SIZE_MAX rejection, Present(false),
+teardown exceptions and shutdown recovery were not exercised on this run.
+See [the audit record](docs/PORT_AUDIT_2026-10-03.md).
 
-So the current hardware gates are scheduler-order dependent:
+The [bounded TEV scalar batch](docs/GX_TEV_SCALAR_BATCH_2026-10-03.md) passed
+local contracts, all five GitHub workflows on integrated code `e76e8f38`, and
+its exact private Rendered Discovery build. NRO SHA-256 `cc88a78c...` transferred
+with exit 0 at 2026-10-03 11:39:21 UTC. Fresh reports accept all sixteen
+iterations on the caller default tuples; alternate arguments retain host
+contracts only. The user saw a black screen and an error at the end. The
+following KColor guest-pointer boundary stays outside this accepted lot.
+The [TEV color/table batch](docs/GX_TEV_COLOR_BATCH_2026-10-03.md)
+implements KColor plus the audited adjacent Color and SwapModeTable setters.
+All five GitHub workflows, its ten host contracts, rendered syntax gate and
+exact private build pass on code `1333b0e2`. NRO `a56be881...` transferred
+with exit 0 at 13:43:58 UTC; fresh reports now accept all twelve executed calls.
+The next [AlphaCompare candidate](docs/GX_ALPHA_COMPARE_2026-10-03.md) implements
+the observed hard stop and preserves the existing native validity flag.
+Its eleven host contracts, rendered syntax, all five GitHub workflows and
+exact private build pass on code `1a8c092f`. NRO `7032c756...` is ready with
+27 checked symbols and unique native/flag providers. Nxlink transferred it
+with exit 0 at 17:50:16 UTC; fresh reports accept the observed AlphaCompare
+return and identify Fog as the next hard stop.
 
-```text
-GX path A: sixth GXInitTexObjWrapMode tuple on obj 0x908FA5C0
-GX path B: ninth GXInitTexObjLOD tuple on obj 0x90793BE0
-GX path C: eighth GXInitTexObjWrapMode tuple on obj 0x909019C0
-GX path D: eleventh GXInitTexObjWrapMode tuple on obj 0x908FAE00
-GX path E: twelfth GXInitTexObjLOD descriptor on obj 0x9018E480 (format 2)
-GX path F: tenth GXInitTexObjWrapMode tuple on obj 0x9018E480 (format-0 descriptor)
-Audio path: SoundPlayer::SetVolume (0x800A35E0) crossed
-```
-
-Whichever path hardware reaches first defines the next exact blocker. No
-neighboring GX, KD or audio behavior is pre-ported.
-
-The logs still do **not** prove a visually correct Mario Kart Wii image.
+The method now permits bounded GX batches after auditing the pinned wrapper,
+Aurora effects, argument guards and relevant guest-memory mirrors. Every
+member still requires its own progression proof; unknown/stateful calls
+remain hard stops. Older texture-object, KD and audio results are dated
+historical evidence, and different scheduler paths can expose different gates.
+A visually correct Mario Kart Wii image is still unproven. The preceding
+IA8, coordinate, audit and TEV runs were observed black.
 
 The complete blocker-by-blocker history and current checklist live in
 [`ROADMAP.md`](ROADMAP.md). Hardware evidence is recorded in dated files under
@@ -167,7 +179,7 @@ MKW_JOBS=4 bash scripts/build-local-fast-track-incremental.sh
 
 Copy `WiiCompiled-Switch-local-fast-track.nro` to the Switch and launch it through hbmenu in application/title-override mode with full memory.
 
-For the first graphics-enabled RMCP01 run, keep that headless NRO as the control baseline and build the separate rendered target:
+Keep that headless NRO as the control baseline and build the separate rendered target:
 
 ```sh
 MKW_JOBS=4 bash scripts/build-local-rendered-fast-track.sh
@@ -175,7 +187,7 @@ MKW_JOBS=4 bash scripts/build-local-rendered-fast-track.sh
 
 This produces `WiiCompiled-Switch-local-rendered-fast-track.nro`. It contains locally generated game-derived code and must not be uploaded or committed.
 
-The fast-track is intentionally headless. Use the SD diagnostic files instead of expecting a text console:
+The headless control target intentionally has no renderer. Both targets use durable SD diagnostics rather than a text console:
 
 ```text
 /switch/WiiCompiled-Switch/fast-track-progress.txt
@@ -211,7 +223,19 @@ The repository currently validates five Nintendo-data-free CI workflows for fast
 - `bootstrap-register-prelude`;
 - `build-switch`.
 
-For rendered RMCP01 work, these five checks are **necessary but not sufficient**. The public `build-switch` workflow now also compiles every rendered HLE bridge with `MKW_LOCAL_RENDERED_FAST_TRACK=1` against the pinned WiiCompiled/Aurora headers, which catches rendered-only C++ regressions before merge. The private `scripts/build-local-rendered-fast-track.sh` build remains a required sixth gate because public CI still cannot include the user-owned generated RMCP01 product or the complete private rendered link graph. A boundary is only called **hardware-crossed** when its hit count is non-zero **and** execution durably progresses beyond that target; a hit counter alone is not a PASS. See [`docs/FAST_TRACK_VALIDATION_POLICY.md`](docs/FAST_TRACK_VALIDATION_POLICY.md).
+For rendered RMCP01 work, these five checks are **necessary but not sufficient**.
+The public `build-switch` workflow also compiles every rendered HLE bridge with
+`MKW_LOCAL_RENDERED_FAST_TRACK=1` against pinned WiiCompiled/Aurora headers to
+catch rendered-only C++ regressions. The private rendered build remains a
+required sixth gate because public CI cannot include the user-owned generated
+RMCP01 product or the complete private rendered link graph. Build it through
+`scripts/build-local-rendered-fast-track.sh` or the documented equivalent
+rendered/Discovery target in a validated prepared tree.
+
+A boundary is only called **hardware-crossed** when attributable runtime
+evidence places it on the executed path **and** execution durably progresses
+beyond it; a hit counter or first-hit record alone is not a PASS. See
+[`docs/FAST_TRACK_VALIDATION_POLICY.md`](docs/FAST_TRACK_VALIDATION_POLICY.md).
 
 ## Legal / content policy
 
@@ -273,6 +297,10 @@ playability are not yet proven.
 
 Start with:
 
+- [TEV scalar hardware result](docs/HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md) — six setters on stages 0..15 return; KColor pointer frontier, black screen and error at exit;
+- [TEV scalar batch](docs/GX_TEV_SCALAR_BATCH_2026-10-03.md) — legal SDK domains, host/private-build validation and bounded hardware scope;
+- [Earlier audit result](docs/HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md) — normal-path non-regression at the preceding Direct frontier;
+- [Accepted coordinate batch](docs/GX_TEX_COORD_BATCH_2026-10-03.md) — eight exact triples, host/private-build validation, exact NRO and enabled-branch limits;
 - [`ROADMAP.md`](ROADMAP.md) — authoritative current milestone/frontier checklist;
 - [`docs/FAST_TRACK_VALIDATION_POLICY.md`](docs/FAST_TRACK_VALIDATION_POLICY.md) — required validation ladder, strict hardware-cross definition, invariant checklist, and private rendered-build gate;
 - [`docs/M2_RUNTIME_BOOTSTRAP.md`](docs/M2_RUNTIME_BOOTSTRAP.md) — current runtime/bootstrap architecture and hardware method;

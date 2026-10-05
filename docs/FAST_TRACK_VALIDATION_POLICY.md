@@ -3,10 +3,12 @@
 This document defines the validation contract for blocker-driven RMCP01 bring-up
 on real Nintendo Switch hardware.
 
-The 2026-09-20 audit confirmed that the overall strategy is sound: advance from
-the first exact hardware blocker, map it against the pinned WiiCompiled
-revision, implement only that boundary, validate, retest on hardware, and let
-the next observed blocker decide the next change.
+The 2026-09-20 audit established a hardware-first strategy: attribute the first
+exact blocker against pinned WiiCompiled, preserve its semantics, validate, and
+retest on hardware. On 2026-10-02, the user authorized bounded audited GX batches
+to reduce repeated builds and console round trips, as described in
+`RMCP01_DISCOVERY_SCAN.md`. A batch changes implementation scope, not the proof
+required to call each boundary hardware-crossed.
 
 The audit also identified two places where the proof standard must be stricter:
 public CI does not build the private RMCP01 rendered target, and a dispatch
@@ -28,13 +30,22 @@ Every blocker-driven change should pass these stages in order:
      `a135beb201042b20f390c6695ca6b26768820fb4`;
    - use RMCP01 / decomp / DTK attribution only as needed;
    - distinguish upstream semantics, hardware evidence, and inference.
-3. **Minimal implementation**
-   - implement only the observed boundary;
+3. **Bounded implementation**
+   - implement the observed boundary, or a documented bounded audited GX setter family;
    - preserve pinned argument/register semantics;
-   - do not pre-port neighboring GX, DVD, resource, input, or audio calls.
+   - for each batch member, audit both the pinned native wrapper and the real
+     Aurora implementation, including conversions and state/FIFO effects;
+   - require a separate diagnostic stage and synthetic dispatch/link coverage
+     for every member, plus executable argument/context-preservation tests;
+   - identify members not yet reached on hardware as pre-ported, not validated;
+   - keep unknown boundaries as hard stops; a batch may include the exact
+     guest GXData mirror required by its audited setters, with executable
+     memory contracts. Other guest-memory, callback, scheduler, resource, DVD,
+     input, and audio behavior remains hardware-driven.
 4. **Nintendo-data-free validation**
    - add or update narrow synthetic/link coverage where practical;
-   - require the five repository workflows to pass on the exact PR HEAD:
+   - require the five repository workflows to pass on the exact candidate
+     revision (the exact PR HEAD when a PR is used):
      `lint`, `fast-track-startup`, `bootstrap-register-prelude`,
      `stateful-translated-sequence`, and `build-switch`;
    - `build-switch` must additionally syntax-compile every
@@ -46,7 +57,9 @@ Every blocker-driven change should pass these stages in order:
      signature drift) before merge.
 5. **Private rendered build gate**
    - build `scripts/build-local-rendered-fast-track.sh` successfully from the
-     exact candidate revision;
+     exact candidate revision, or build the same rendered/Discovery CMake
+     target directly in the validated prepared tree, recording dependency
+     pins, mode, command and candidate source hashes locally;
    - this is a required sixth gate for rendered RMCP01 work because the public
      CI graph does not include the local game-derived product or the complete
      Aurora/Dawn/NVK rendered target.
@@ -66,7 +79,8 @@ A boundary is considered **hardware-crossed** only when all applicable evidence
 supports progression beyond it:
 
 ```text
-target hit count > 0
+target is attributable to the executed path
+  (first-hit record, counter, or verified caller/control-flow evidence)
 AND current blocker != that target
 AND execution reaches a later durable dispatch / milestone
 ```
@@ -76,6 +90,20 @@ to a later known state or milestone can also qualify when the control flow does
 not naturally produce another blocker.
 
 Do not mark a boundary hardware-crossed solely because `GX... hits = 1`.
+Discovery records entries before invocation and only the first occurrence of
+an address. For a repeated loop, a later caller can establish all returns
+when the verified control flow, captured arguments, stack/fiber state and
+counter agree. State that inference explicitly; do not turn one first-hit
+line into a claim of individually captured calls. Acceptance remains scoped
+to the executed argument family, not every branch of the bridge.
+
+Bind each run to its candidate revision and exact NRO size/SHA-256, successful
+launch/transfer record and raw-report manifest. Compare report hashes against
+the previous baseline. Files retained on SD can be byte-identical or stale;
+MTP timestamps may be unavailable. A successful nxlink transfer, host test,
+private link, or static coverage entry does not prove a native return or an
+observed image. Newly recorded `elapsed_ms` measures host time from the first
+translated dispatch, excluding transfer time.
 
 ## Hardware invariants checked on every rendered run
 
@@ -109,9 +137,9 @@ Track separately:
 - present successes and failures;
 - renderer/frame lifecycle state.
 
-The latest accepted run reaches eleven FIFO writes. The two new writes are
-additional GX-state traffic; with no drawable work, display list, `GXCopyDisp`,
-or present they are **not** proof that RMCP01 drawing works.
+GX-state FIFO writes alone are **not** proof that RMCP01 drawing works. Compare
+the counters in the attributable durable reports for each run; snapshots may
+precede a later bridge and cannot prove that bridge's FIFO effects.
 
 The first transition to drawable FIFO work, a game-facing display list,
 `GXCopyDisp`, or a successful RMCP01 present is a distinct milestone and must
@@ -139,15 +167,19 @@ fixtures or committed Nintendo-derived data.
 
 ## Scope discipline
 
-The default remains **hardware-first, boundary-minimal**.
+The default remains **hardware-first**. Discovery may additionally pre-port a
+bounded family of audited GX setters in one candidate, one rendered
+build, and one hardware run. See `GX_SCALAR_BATCH_2026-10-02.md` for the first
+batch and its explicit evidence limits.
 
 Preparing generic instrumentation, build checks, or reusable dispatch plumbing
-is allowed when it does not implement speculative game behavior. Implementing
-the next GX/resource/DVD boundary before hardware reaches it is not.
+is allowed. Audited batching is not permission to skip unknown calls, guess
+guest-memory values, or substitute success for unimplemented stateful behavior.
 
 If a new run:
 
-- crosses the current blocker and exposes target X: branch for X;
+- crosses the current blocker and exposes target X: record X and audit the next
+  bounded candidate;
 - hits the same blocker again: fix only that current boundary;
 - raises a host/native exception first: that exception becomes the frontier;
 - runs without a blocker: use liveness/invariant evidence before assuming
@@ -155,32 +187,139 @@ If a new run:
 
 ## Current frontier
 
-The latest real-Switch rendered evidence is the 2026-09-21 run after the
-merged `GXSetCopyFilter` bridge:
+The latest attributable real-Switch evidence is recorded in
+[HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md](HARDWARE_RESULTS_2026-10-03_DISCOVERY_GX_TEV_DIRECT_FRONTIER.md):
 
-- real RMCP01 FIFO work remains proven;
-- the renderer records `PASS FIRST_RMCP01_GX_PRESENT hadWork=1`;
-- that PASS record is emitted only after `g_surface.Present()` succeeds;
-- the final durable blocker is the distinct DIRECT target
-  `GXFlush (0x8016E654)`;
-- its durable stage is `RMCP01_GX_PRESENTED`, which is written only after
-  the `GXCopyDisp` host seam completes a successful present;
-- therefore `GXSetCopyFilter`, the game-facing `GXCopyDisp` boundary, and
-  the first successful RMCP01 GPU present are hardware-crossed/proven;
-- an earlier periodic durable snapshot still reports zero
-  `GXSetCopyFilter`/present counters because it predates the final transition;
-  the later final blocker + renderer PASS are the stronger evidence;
-- pinned WiiCompiled remains
-  `a135beb201042b20f390c6695ca6b26768820fb4`;
-- pinned `0x8016E654` semantics are the no-argument `GXFlush()` call;
-- the logs prove GPU presentation, not visual correctness of the displayed
-  Mario Kart Wii pixels.
+- GXSetCoPlanar, GXSetClipMode, GXSetIndTexMtx, GXSetIndTexCoordScale and
+  GXSetChanAmbColor are hardware-crossed;
+- the exact IA8 descriptor loads on maps 0..7 remain crossed;
+- GXLoadTexMtxImm remains accepted for the ten type-0 loop loads, IDs
+  30,33,...57, as recorded in the dated matrix baseline;
+- all eight `Gen2(c,1,4,60,0,125)`, `Scale(c,0,0,0)` and `Bias(c,0,0)` triples
+  are accepted for c=0..7;
+- restored caller `0x80241380`, dispatch 605620, captures r3=7, r8=125 and
+  stage `RMCP01_GX_SET_TEX_COORD_BIAS`; coherent state and verified loop
+  control flow support repeated returns without logging every call;
+- the new DIRECT blocker is GXSetTevDirect (`0x80171B58`), stage ID 0,
+  LR `0x80240F98`, stage `RMCP01_GX_SET_NUM_TEV_STAGES`, dispatch 605633;
+- elapsed time is 100,205 ms after the first dispatch, and the action
+  remains abort after durable blocker record; Direct has arrived, not returned;
+- the preceding durable snapshot is at dispatch 605367, before the loop,
+  with 99 successful presents, no present failures, valid FST and coherent
+  guest scheduler identities;
+- pinned WiiCompiled remains `a135beb201042b20f390c6695ca6b26768820fb4`;
+- Scale-to-later-caller is +35 versus the callback-free forecast +23, and
+  later-caller-to-frontier is +13 versus +1. These deltas are compatible with
+  VI callback polling, without establishing an exact callback count;
+- the earlier FIFO/present counters do not independently measure later
+  native writes or prove recognizable pixels. The user saw a black screen;
+- watchdog history records 94 ACTIVE samples and one one-second STALE interval,
+  then ACTIVE at 95,808 ms and later progression, rather than a persistent stall.
 
-The candidate implements only `GXFlush`. The following GX/resource/game
-boundary must remain hardware-defined.
+The scalar batch covers GXSetClipMode, GXSetDither and GXSetDstAlpha. The
+latter two remain unreached. The indirect, ambient, bounded IA8 and current
+matrix and disabled coordinate candidates are hardware-accepted within their
+documented scopes.
+The coordinate neighbors are audited in
+[GX_TEX_COORD_NEIGHBORS_2026-10-02.md](GX_TEX_COORD_NEIGHBORS_2026-10-02.md).
+The [bounded coordinate candidate](GX_TEX_COORD_BATCH_2026-10-03.md), code
+`91a4a01`, passed local host/workflow checks and its private Rendered Discovery
+build. NRO `64ba8377...` transferred with nxlink exit 0 at 2026-10-02
+23:09:38 UTC. Retrieval on October 3 produced 28 reports, 526,932 bytes, with
+12 changed files and verified hashes/ZIP CRC. Enabled Scale/Bias branches
+and arbitrary sizes still have host contracts only. Native return does not
+establish every best-effort guest-mirror write completed; no GXData dump was
+captured. The remaining TEV neighbors stay static forecasts; Direct stage 0
+arrival does not accept its return or stage IDs 1..15. No unknown/stateful call
+is skipped to suppress an exit.
+
+The subsequent [audit run](HARDWARE_RESULTS_2026-10-03_AUDIT_GX_TEV_DIRECT_FRONTIER.md),
+`b3484117` / `7ecbc8a9...`, preserves this normal path and reaches Direct
+stage 0 at dispatch 608381, elapsed 107,925 ms. It establishes normal-path
+non-regression, while negative failure branches remain host/static evidence.
+The user again saw black. The subsequent [six-setter TEV batch](GX_TEV_SCALAR_BATCH_2026-10-03.md)
+passed local contracts, all five GitHub workflows on code `e76e8f38` and the
+private build. Its [fresh hardware result](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR_KCOLOR_FRONTIER.md)
+accepts the caller default tuples on stages 0..15 by six first hits, checked
+loop control flow, coherent state and the later KColor frontier at 605056.
+This is 96 new calls plus 16 existing Order calls, not individual return
+tracing or hardware proof of alternate inputs. The user reported black output
+and an error at exit. KColor ID 0 / pointer `0x80398FCC` is arrived at, not
+returned; the actual RGBA bytes remain unknown.
+The [TEV color/table batch](GX_TEV_COLOR_BATCH_2026-10-03.md) passed all five
+GitHub workflows and its exact private build (code `1333b0e2`, NRO `a56be881...`).
+Its [fresh console result](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md)
+now establishes all twelve calls returned, with AlphaCompare `0x80172088`
+as that run's arrival boundary. The separate
+[AlphaCompare candidate](GX_ALPHA_COMPARE_2026-10-03.md) preserves the pinned
+native forwarding and existing host validity flag. Its local contracts, all
+five exact-code GitHub workflows and private Rendered Discovery build pass;
+its subsequent [console run](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md)
+accepts AlphaCompare returned on (7,0,0,7,0), through existing ZMode to Fog.
+Fog type 0, four f64 parameters and readable RGBA 255,255,255,255 are captured.
+That preceding run stopped before Fog returned; the user confirmed black output
+and an error. The [later Fog/ZCompLoc result](HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md)
+now accepts both new bridge returns and the existing pixel setup. Native init
+of a 4×4 depth texture passed; GXInitTexObjLOD rejects its valid format 22
+because the structural layout table lacks it in that preceding candidate.
+The subsequent [depth-LOD hardware result](HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md)
+accepts the corrected LOD return and identifies GXBeginDisplayList as the new
+DIRECT boundary. The user confirms black output followed by an error;
+recognizable game pixels remain unproven.
+
+The separate [audit candidate](PORT_AUDIT_2026-10-03.md), code `b3484117`,
+NRO `7ecbc8a9...`, passed local gates, its private build and the attributable
+normal-path console run above. Its corrected failure branches retain their
+separate host/static evidence and were not exercised by that console run.
 
 ## Governance note
 
 The five public workflow checks are currently a project process rule. They do
 not replace the private rendered-build gate, and branch settings should not be
 assumed to enforce the full validation policy automatically.
+
+
+## Earlier console result — TEV colors crossed (2026-10-03)
+
+The [fresh color/table hardware result](HARDWARE_RESULTS_2026-10-03_TEV_COLOR_ALPHA_COMPARE_FRONTIER.md)
+supersedes the earlier pending color/table status. All twelve executed calls
+returned through the coherent later caller; AlphaCompare `0x80172088`,
+(7,0,0,7,0), is the new DIRECT hard stop. Black output and a crash persist.
+Actual RGBA bytes and recognizable game pixels remain unproven. The elapsed
+time includes an unexplained watchdog sampling gap, so it is not a performance
+measurement. Prior dated results above retain their original scope.
+
+
+## Earlier console result — AlphaCompare crossed (2026-10-03)
+
+The [fresh AlphaCompare hardware result](HARDWARE_RESULTS_2026-10-03_ALPHA_COMPARE_FOG_FRONTIER.md)
+establishes its observed tuple returned. Fog `0x801722CC` is the new DIRECT
+hard stop at dispatch 603961 / 99.156 seconds, with actual float parameter bits
+and readable color captured. All 96 watchdog samples are ACTIVE. Preceding
+present counters do not prove visible pixels. The user confirms a black screen
+followed by an error; the exact on-screen wording is unavailable. Earlier dated
+sections retain their original scope.
+
+
+## Earlier console result — Fog/ZCompLoc crossed (2026-10-03)
+
+The [fresh hardware result](HARDWARE_RESULTS_2026-10-03_FOG_Z_COMP_DEPTH_LOD_FRONTIER.md)
+establishes the admitted Fog call, ZCompLoc(1) and existing pixel setup returned.
+The next stop is GXInitTexObjLOD at `0x80170A4C`, dispatch 609384 / 109.572
+seconds. Native init passed for the 4×4 `GX_TF_Z24X8` object; the LOD layout
+validator lacks full format 22. Its forwarding and later drawing remain
+unproven. The later snapshot records 1558 guest FIFO writes and the same 99
+successful presents; those counters do not establish a visible frame. Current
+screen observation is pending. Earlier dated sections retain their scope.
+
+
+## Latest console result — depth LOD crossed (2026-10-03)
+
+The [fresh hardware result](HARDWARE_RESULTS_2026-10-03_DEPTH_LOD_DISPLAY_LIST_FRONTIER.md)
+establishes LOD returned on the observed depth object with `lod-pass` and guest
+word0 `0x105`, then reaches GXBeginDisplayList `0x80172E00`: buffer
+`0x80394F00`, capacity 16 KiB, dispatch 609010 / 108.440 seconds. Begin has
+not returned; recording/replay require coordinated FIFO/context/buffer work.
+The user confirms black output and an error. The snapshot before the texture
+constructor retains 99 successful presents, without proof of visible pixels.
+Earlier dated records retain their scope.

@@ -42,6 +42,10 @@ passes 8,987 host cases, eight mutation checks, sixteen local suites and
 five exact-code GitHub workflows / six jobs. Its private NRO build passes;
 console progression now accepts the observed count-1 polling path.
 
+The [PADControlMotor correction](docs/PAD_CONTROL_MOTOR_2026-10-05.md)
+implements the pinned absent-actuator void return, consistent with PADRead's
+zero rumble capability. Its console return remains pending validation.
+
 The [WPADProbe bridge](docs/WPAD_PROBE_2026-10-04.md) passes 556 host cases,
 six mutations, five exact-code workflows / six jobs and its private NRO build.
 Its exact NRO transferred successfully at 19:44:01 UTC. The preceding

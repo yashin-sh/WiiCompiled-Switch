@@ -24,6 +24,8 @@
 - [x] Transfer the exact KPAD unified NRO with exit 0 at 21:42:13 UTC (26,743,208 compressed bytes / 2,247 blocks).
 - [x] Retrieve and verify 34 KPAD-run reports / 544,124 bytes; accept count-1 polling return through later caller progression and the final channel-3 report.
 - [x] Capture [PADControlMotor `0x801AF908`](docs/HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md), channel 0, command 2, dispatch 618177 / 109.316 seconds; user confirms black then error.
+- [x] Implement the [PADControlMotor absent-actuator bridge](docs/PAD_CONTROL_MOTOR_2026-10-05.md), preserving the void CPU ABI and zero rumble capability.
+- [ ] Validate PADControlMotor host contract, synthetic retention, exact-code workflows and private rendered build; run the exact NRO and retrieve fresh progression evidence.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

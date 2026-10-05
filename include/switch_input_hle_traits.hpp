@@ -153,3 +153,16 @@ struct KnownNativeCpuCall<0x8019812Cu> {
         mkw_switch_hle_kpad_unified_status(cpu);
     }
 };
+
+// PADControlMotor (PAL 0x801AF908), reached with channel 0 / STOP_HARD.
+// PADRead exposes no rumble actuator; preserve the pinned absent-device void
+// return without polling input, writing guest state or fabricating vibration.
+extern "C" void mkw_switch_hle_pad_control_motor(CpuContext* cpu) noexcept;
+
+template <>
+struct KnownNativeCpuCall<0x801AF908u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_pad_control_motor(cpu);
+    }
+};

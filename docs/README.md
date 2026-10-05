@@ -2,8 +2,10 @@
 
 ## Architecture / runtime
 
-- [PAD_RESET_2026-10-05.md](PAD_RESET_2026-10-05.md) — current candidate: pinned ignored-mask success return; 5,223 cases, eighteen suites, all workflows and private build pass; SD deployment/readback verified, console return pending
-- [HARDWARE_RESULTS_2026-10-05_PAD_CONTROL_MOTOR_PAD_RESET_FRONTIER.md](HARDWARE_RESULTS_2026-10-05_PAD_CONTROL_MOTOR_PAD_RESET_FRONTIER.md) — latest console result: motor `(0,2)` returned; PADReset mask `0x70000000` frontier; 35 reports verified, visual observation pending
+- [GX_FOG_DEGENERATE_2026-10-05.md](GX_FOG_DEGENERATE_2026-10-05.md) — current correction: exact Mii texture Fog `(1,1,0,0)` tuple; expanded contracts, eighteen local suites, both modes, synthetic/private builds pass; console return pending
+- [HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md](HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md) — latest console result: PADReset mask returned; Mii texture Fog frontier, 36 reports verified, black then error
+- [PAD_RESET_2026-10-05.md](PAD_RESET_2026-10-05.md) — pinned ignored-mask success return; 5,223 cases, all gates pass; observed mask `0x70000000` console return accepted
+- [HARDWARE_RESULTS_2026-10-05_PAD_CONTROL_MOTOR_PAD_RESET_FRONTIER.md](HARDWARE_RESULTS_2026-10-05_PAD_CONTROL_MOTOR_PAD_RESET_FRONTIER.md) — preceding result: motor `(0,2)` returned; PADReset mask `0x70000000` frontier; 35 reports verified, visual observation pending
 - [PAD_CONTROL_MOTOR_2026-10-05.md](PAD_CONTROL_MOTOR_2026-10-05.md) — absent-actuator void return; local/CI/private-build gates passed, observed channel-0 / command-2 console return accepted
 - [HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md](HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md) — preceding result: KPAD count-1 polling returned, motor frontier, black then error
 - [KPAD_UNIFIED_STATUS_2026-10-04.md](KPAD_UNIFIED_STATUS_2026-10-04.md) — absent-remote samples, 8,987 cases, five workflows / six jobs and private NRO passed; observed count-1 polling hardware-crossed

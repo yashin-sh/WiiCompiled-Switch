@@ -32,16 +32,25 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest [PADControlMotor console run](docs/HARDWARE_RESULTS_2026-10-05_PAD_CONTROL_MOTOR_PAD_RESET_FRONTIER.md)
-accepts the observed channel-0 / command-2 motor return, then stops at
-**PADReset (`0x801AF0DC`)**, mask `0x70000000`, dispatch 619288 / 112.024 seconds.
-All 35 reports / 544,876 bytes are verified against the preceding KPAD run.
-The current visual observation is pending; recognizable game pixels remain
-unproven. The [PADReset candidate](docs/PAD_RESET_2026-10-05.md) preserves the
-pinned ignored-mask success return. Its 5,223 cases, eighteen local suites,
-five exact-code workflows / six jobs and private rendered build pass. The
-validated NRO is copied to the SD at 17:55:43 UTC with full byte/hash readback;
-PADReset's console return remains pending.
+The latest [PADReset console run](docs/HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md)
+accepts mask `0x70000000` returning 1, then reaches **GXSetFog (`0x801722CC`)**
+with the new `(1,1,0,0)` tuple during Mii texture preparation, dispatch 635434 /
+129.411 seconds. All 36 reports / 629,680 bytes are verified against the motor
+run. The user confirms a black screen followed by an error. The new snapshot
+has 5,988 FIFO writes and 102 successful presents / 0 failures; recognizable
+pixels remain unproven. The [bounded Fog correction](docs/GX_FOG_DEGENERATE_2026-10-05.md)
+adds this exact observed tuple and retains the existing argument/memory guards.
+Its expanded contracts, eighteen local suites, both AArch64 modes, synthetic
+and private rendered builds pass. Remote checks and deployment are tracked
+in [PR #315](https://github.com/yashin-sh/WiiCompiled-Switch/pull/315); its new
+console return remains pending.
+
+The [PADReset candidate](docs/PAD_RESET_2026-10-05.md), code `7ac668e`, passed
+5,223 cases, eighteen local suites, five exact-code workflows / six jobs and
+its private rendered build. Its exact NRO transferred via direct nxlink with
+exit 0 at 20:07:42 UTC on October 5. The preceding
+[motor run](docs/HARDWARE_RESULTS_2026-10-05_PAD_CONTROL_MOTOR_PAD_RESET_FRONTIER.md)
+accepts channel 0 / command 2 before the now-crossed reset boundary.
 
 The [PADControlMotor correction](docs/PAD_CONTROL_MOTOR_2026-10-05.md) passed
 4,152 host cases, seventeen local suites, five exact-code workflows / six jobs

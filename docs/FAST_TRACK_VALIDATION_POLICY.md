@@ -187,17 +187,18 @@ If a new run:
 
 ## Current frontier — 2026-10-05
 
-The [fresh motor hardware result](HARDWARE_RESULTS_2026-10-05_PAD_CONTROL_MOTOR_PAD_RESET_FRONTIER.md)
-accepts PADControlMotor channel 0 / STOP_HARD command 2 returning. The new
-DIRECT boundary is PADReset `0x801AF0DC`, mask `0x70000000`, dispatch 619288 /
-112.024 seconds. All 35 reports / 544,876 bytes have verified manifest,
-baseline and archive evidence. The current visual observation is pending.
+The [fresh PADReset hardware result](HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md)
+accepts mask `0x70000000` returning 1 after the earlier motor `(0,2)` return.
+The new boundary is `GX_SET_FOG_UNPROVEN_ARGS` at `0x801722CC`, type 0,
+`(1,1,0,0)`, dispatch 635434 / 129.411 seconds, during Mii texture preparation.
+All 36 reports / 629,680 bytes have verified manifest, baseline and archive
+evidence. The user confirms black output then an error.
 
-The [PADReset candidate](PAD_RESET_2026-10-05.md), code `7ac668e`, passes all
-local, exact-code remote and private rendered-build gates. The validated NRO
-is copied to SD with complete readback at 17:55:43 UTC. Its native return still
-requires fresh console progression. The earlier present counters do not prove
-recognizable pixels, and older scheduler-dependent branches keep their scope.
+The [bounded Fog correction](GX_FOG_DEGENERATE_2026-10-05.md) preserves the
+pinned degenerate coefficient branch and admits only this additional complete
+f64 tuple. Its native return needs another console run after validation.
+The 102 successful presents and later display-list end report do not establish
+recognizable pixels or replay; older scheduler-dependent branches keep their scope.
 
 On October 5 the user authorized managing PRs and merging when their pipelines
 pass, without another confirmation. Merge status and hardware acceptance are

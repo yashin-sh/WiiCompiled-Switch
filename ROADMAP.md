@@ -30,7 +30,9 @@
 - [x] Transfer the exact PADControlMotor NRO via direct nxlink with exit 0 at 17:13:07 UTC (26,743,203 compressed bytes / 2,247 blocks); candidate hashes and dependency pins reverified.
 - [x] Retrieve and verify [35 reports / 544,876 bytes](docs/HARDWARE_RESULTS_2026-10-05_PAD_CONTROL_MOTOR_PAD_RESET_FRONTIER.md); accept motor channel 0 / command 2 return before PADReset `0x801AF0DC`, mask `0x70000000`, dispatch 619288 / 112.024 seconds.
 - [x] Implement the [PADReset pinned ignored-mask success contract](docs/PAD_RESET_2026-10-05.md); 5,223 executable host cases pass.
-- [ ] Complete PADReset integration, all five exact-head workflows and private rendered build, then test its native return on the Switch.
+- [x] Pass PADReset code `7ac668e` on eighteen local suites, four rejected mutations, both AArch64 modes, full synthetic build, five exact-code workflows / six jobs and private Rendered Discovery build; 50 strong symbols / 21 scoped providers verified.
+- [x] Copy the exact PADReset NRO to the SD at 17:55:43 UTC; complete readback verifies all 73,494,584 bytes and SHA-256.
+- [ ] Launch the PADReset NRO and retrieve fresh progression evidence beyond `0x801AF0DC`; its native return remains unaccepted.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

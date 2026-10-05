@@ -38,8 +38,10 @@ accepts the observed channel-0 / command-2 motor return, then stops at
 All 35 reports / 544,876 bytes are verified against the preceding KPAD run.
 The current visual observation is pending; recognizable game pixels remain
 unproven. The [PADReset candidate](docs/PAD_RESET_2026-10-05.md) preserves the
-pinned ignored-mask success return; 5,223 host cases pass, with the remaining
-integration/build gates in progress.
+pinned ignored-mask success return. Its 5,223 cases, eighteen local suites,
+five exact-code workflows / six jobs and private rendered build pass. The
+validated NRO is copied to the SD at 17:55:43 UTC with full byte/hash readback;
+PADReset's console return remains pending.
 
 The [PADControlMotor correction](docs/PAD_CONTROL_MOTOR_2026-10-05.md) passed
 4,152 host cases, seventeen local suites, five exact-code workflows / six jobs

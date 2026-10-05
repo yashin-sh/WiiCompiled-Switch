@@ -32,15 +32,15 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest [WPADProbe console run](docs/HARDWARE_RESULTS_2026-10-04_WPAD_PROBE_KPAD_UNIFIED_FRONTIER.md)
-accepts WPADProbe returning on channel 0, then stops at
-**KPADGetUnifiedWpadStatus (`0x8019812C`)**, count 1, dispatch 617560 /
-107.369 seconds. All 33 reports / 542,797 bytes are verified. The user
+The latest [KPAD console run](docs/HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md)
+accepts return through the count-1 KPADGetUnifiedWpadStatus polling path,
+then stops at **PADControlMotor (`0x801AF908`)**, channel 0, command 2,
+dispatch 618177 / 109.316 seconds. All 34 reports / 544,124 bytes are verified. The user
 confirms black output followed by an error; recognizable game pixels remain
 unproven. The [KPAD unified status candidate](docs/KPAD_UNIFIED_STATUS_2026-10-04.md)
 passes 8,987 host cases, eight mutation checks, sixteen local suites and
 five exact-code GitHub workflows / six jobs. Its private NRO build passes;
-console return remains unaccepted.
+console progression now accepts the observed count-1 polling path.
 
 The [WPADProbe bridge](docs/WPAD_PROBE_2026-10-04.md) passes 556 host cases,
 six mutations, five exact-code workflows / six jobs and its private NRO build.

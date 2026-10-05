@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current checkpoint — 2026-10-04
+## Current checkpoint — 2026-10-05
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.
@@ -22,7 +22,8 @@
 - [x] Pass KPAD unified local validation: sixteen suites, eight mutants, both AArch64 modes, full synthetic build and script/workflow lint.
 - [x] Pass all five exact-code KPAD workflows / six jobs and the private rendered NRO build; verify 48 retained symbols and nineteen scoped providers.
 - [x] Transfer the exact KPAD unified NRO with exit 0 at 21:42:13 UTC (26,743,208 compressed bytes / 2,247 blocks).
-- [ ] Retrieve fresh KPAD-run reports and hardware-accept its return.
+- [x] Retrieve and verify 34 KPAD-run reports / 544,124 bytes; accept count-1 polling return through later caller progression and the final channel-3 report.
+- [x] Capture [PADControlMotor `0x801AF908`](docs/HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md), channel 0, command 2, dispatch 618177 / 109.316 seconds; user confirms black then error.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
@@ -59,9 +60,9 @@
 - [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The [latest console result](docs/HARDWARE_RESULTS_2026-10-04_WPAD_PROBE_KPAD_UNIFIED_FRONTIER.md)
-accepts WPADProbe return on channel 0. The new DIRECT stop is
-KPADGetUnifiedWpadStatus `0x8019812C`, count 1, 617560 / 107.369 seconds.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md)
+accepts the count-1 KPAD unified status polling path. The new DIRECT stop is
+PADControlMotor `0x801AF908`, channel 0, command 2, 618177 / 109.316 seconds.
 The earlier snapshot retains 3,937 FIFO writes, 99 successful presents and
 zero replay calls. The user confirms black output followed by an error.
 

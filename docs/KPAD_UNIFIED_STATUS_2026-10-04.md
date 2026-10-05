@@ -4,7 +4,10 @@ The [verified WPADProbe run](HARDWARE_RESULTS_2026-10-04_WPAD_PROBE_KPAD_UNIFIED
 reaches KPADGetUnifiedWpadStatus `0x8019812C`, channel 0, output `0x80398F50`,
 count 1, LR `0x8051EEC0`, dispatch 617560 / 107.369 seconds. The user sees
 black output followed by an error. This candidate implements that boundary;
-its console return remains unaccepted.
+the [fresh console result](HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md)
+now accepts return through the observed count-1 polling path, with a final
+channel-3 report and later PADControlMotor frontier. The user again confirms
+black output followed by an error.
 
 ## Primary contract and scope
 
@@ -73,8 +76,9 @@ seven named libraries. Checked FIFO/vertex mirrors match their preparation
 contract. This provider audit excludes broader symbols and compiler-injected
 implicit libraries.
 
-Console return, other input paths, game pixels, replay and sustained gameplay
-remain open. Pins, the original nine-file upstream patch and its modification
+The count-1 polling return is now hardware-crossed. Other input paths, larger
+counts, raw output capture, game pixels, replay and sustained gameplay remain
+open. Pins, the original nine-file upstream patch and its modification
 times, and private-data exclusions are preserved. The private NRO and raw
 validation artifacts are excluded from the public repository.
 
@@ -89,5 +93,8 @@ The same validated NRO was subsequently sent successfully: direct nxlink
 started at **21:41:58 UTC** and exited **0 at 21:42:13 UTC**, transferring
 26,743,208 compressed bytes / 2,247 blocks (36.39%). Launch revision
 `6a43ec8` differs from the validated code revision only in Markdown. No TCP
-preflight was used. Fresh console reports and visual observations have not
-yet been retrieved; KPAD return and game pixels remain unaccepted.
+preflight was used. USB/MTP retrieval on October 5 supplies 34 verified reports
+/ 544,124 bytes and accepts the observed polling return before PADControlMotor
+`0x801AF908`, channel 0, command 2, dispatch 618177 / 109.316 seconds.
+The user confirms black output followed by an error; game pixels remain
+unaccepted. See the linked hardware report for freshness and acceptance limits.

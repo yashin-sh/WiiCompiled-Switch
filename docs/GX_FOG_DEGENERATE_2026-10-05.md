@@ -43,5 +43,23 @@ preservation, tuple-before-lookup ordering and null contexts are checked.
 The pinned native Fog function body and register macro execute verbatim with
 only state storage/transport replaced. **2,048 native fixtures** verify all
 five BP words across both tuples and every RGBA byte domain, plus the existing
-ZCompLoc preservation checks. Broader local, CI and private-build validation
-and console deployment are pending.
+ZCompLoc preservation checks. Four independently compiled mutants are rejected:
+rejecting the new tuple, admitting component hybrids, narrowing the type guard
+and forwarding the wrong FPR.
+
+All eighteen local host suites, both AArch64 modes, the full synthetic NRO,
+script/workflow lint and formatting
+pass. The existing Fog/ZComp synthetic probe and both production symbols are
+retained. Original upstream patch bytes/mtimes and WiiCompiled/Dawn/Mesa pins
+are preserved. Remote acceptance is tracked in [PR #315](https://github.com/yashin-sh/WiiCompiled-Switch/pull/315).
+
+The private Rendered Discovery build from code `d2c8abe` exits 0 at
+**2026-10-05 20:18:52 UTC**. Its NRO is **73,494,584 bytes**, SHA-256
+`7a0463aaf070422c1d4ae1191b22a0304616c1a88194eadb4ed389fcb5235a4f`.
+All fifty required strong symbols are retained. Twenty-three scoped symbols,
+including native `GXSetFog` and its bridge, have unique expected providers
+across 231 host inputs, nineteen Rust archives and seven named libraries.
+The checked native Fog source matches the pinned original byte-for-byte.
+Broader symbols and implicit compiler libraries are outside this scoped audit.
+Console deployment and remote checks are tracked in PR #315. The new tuple's
+console return remains unaccepted until fresh progression evidence is retrieved.

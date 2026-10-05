@@ -34,7 +34,8 @@
 - [x] Copy the exact PADReset NRO to the SD at 17:55:43 UTC; complete readback verifies all 73,494,584 bytes and SHA-256.
 - [x] Launch the exact PADReset NRO via nxlink with exit 0 at 20:07:42 UTC; verify [36 reports / 629,680 bytes](docs/HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md) and accept mask `0x70000000` return before the new `(1,1,0,0)` Fog refusal in Mii texture preparation.
 - [x] Implement the [bounded second Fog tuple](docs/GX_FOG_DEGENERATE_2026-10-05.md), preserving native coefficient/BP work and whole-tuple guards.
-- [ ] Validate the second Fog tuple on local/CI/private-build gates and retest its console return.
+- [x] Validate the second Fog tuple: 67,661 valid calls / 630 refusals per mode, 2,048 native BP fixtures, four rejected mutants, all eighteen local suites, both AArch64 modes, full synthetic and private rendered builds; 50 strong symbols / 23 scoped providers verified. Remote acceptance is tracked in [PR #315](https://github.com/yashin-sh/WiiCompiled-Switch/pull/315).
+- [ ] Deploy the validated second Fog tuple and establish its return on the Switch.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

@@ -50,9 +50,12 @@ action            = abort after durable blocker record
 
 Pinned WiiCompiled attributes the target to `GX__SetFog_801722cc`, forwarding
 f1..f4 narrowed to float and the checked guest RGBA to Aurora. PAL symbols place
-LR in `RFLiMakeTexture` (`0x800C2680..0x800C36F3`); this is caller-family
-attribution to Mii texture preparation, without claiming an independently
-verified exact callsite. Discovery retains only the first hit per address:
+LR in `RFLiMakeTexture` (`0x800C2680..0x800C36F3`). Checked private generated
+code sets that LR before calling `RFLiSetupCopyTex` `0x800C2550`. Its 48-byte
+frame places a zero RGBA word at stack +12, sets type 0, copies f1 to f2 and
+f3 to f4, then invokes this exact Fog target. The captured stack difference,
+pointer and values agree. Guest constant bytes are not independently dumped;
+no generated game code is published. Discovery retains only the first hit per address:
 its earlier Fog entry at dispatch 607760 is the already accepted initial tuple,
 not an argument capture of this later invocation.
 

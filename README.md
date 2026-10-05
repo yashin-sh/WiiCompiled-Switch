@@ -39,8 +39,11 @@ with the new `(1,1,0,0)` tuple during Mii texture preparation, dispatch 635434 /
 run. The user confirms a black screen followed by an error. The new snapshot
 has 5,988 FIFO writes and 102 successful presents / 0 failures; recognizable
 pixels remain unproven. The [bounded Fog correction](docs/GX_FOG_DEGENERATE_2026-10-05.md)
-adds this exact observed tuple and retains the existing argument/memory guards;
-its console return remains pending.
+adds this exact observed tuple and retains the existing argument/memory guards.
+Its expanded contracts, eighteen local suites, both AArch64 modes, synthetic
+and private rendered builds pass. Remote checks and deployment are tracked
+in [PR #315](https://github.com/yashin-sh/WiiCompiled-Switch/pull/315); its new
+console return remains pending.
 
 The [PADReset candidate](docs/PAD_RESET_2026-10-05.md), code `7ac668e`, passed
 5,223 cases, eighteen local suites, five exact-code workflows / six jobs and

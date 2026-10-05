@@ -96,3 +96,8 @@ static_assert(KnownNativeCpuCall<0x801AF908u>::kAvailable);
 extern "C" __attribute__((used)) void synthetic_pad_control_motor_hle_probe(CpuContext* cpu) {
     InvokeDirectCpu<0x801AF908u>(cpu);
 }
+
+static_assert(KnownNativeCpuCall<0x801AF0DCu>::kAvailable);
+extern "C" __attribute__((used)) void synthetic_pad_reset_hle_probe(CpuContext* cpu) {
+    InvokeDirectCpu<0x801AF0DCu>(cpu);
+}

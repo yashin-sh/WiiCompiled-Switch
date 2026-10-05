@@ -28,7 +28,9 @@
 - [x] Validate PADControlMotor code `1cff562`: 4,152 host cases, four rejected mutants, seventeen local suites, synthetic retention, both AArch64 modes, five exact-code workflows / six jobs and private rendered build; 49 strong symbols and twenty scoped providers verified.
 - [x] Copy the validated PADControlMotor NRO to the Switch over USB/MTP at 05:27:43 UTC; independently verify all transferred bytes and SHA-256 by complete readback.
 - [x] Transfer the exact PADControlMotor NRO via direct nxlink with exit 0 at 17:13:07 UTC (26,743,203 compressed bytes / 2,247 blocks); candidate hashes and dependency pins reverified.
-- [ ] Retrieve fresh reports from that launch and accept progression beyond PADControlMotor; console return remains unaccepted.
+- [x] Retrieve and verify [35 reports / 544,876 bytes](docs/HARDWARE_RESULTS_2026-10-05_PAD_CONTROL_MOTOR_PAD_RESET_FRONTIER.md); accept motor channel 0 / command 2 return before PADReset `0x801AF0DC`, mask `0x70000000`, dispatch 619288 / 112.024 seconds.
+- [x] Implement the [PADReset pinned ignored-mask success contract](docs/PAD_RESET_2026-10-05.md); 5,223 executable host cases pass.
+- [ ] Complete PADReset integration, all five exact-head workflows and private rendered build, then test its native return on the Switch.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

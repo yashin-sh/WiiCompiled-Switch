@@ -3,8 +3,8 @@
 The [verified KPAD run](HARDWARE_RESULTS_2026-10-05_KPAD_UNIFIED_PAD_CONTROL_MOTOR_FRONTIER.md)
 stops at PADControlMotor `0x801AF908`, channel 0, command 2, LR `0x8051EEEC`,
 dispatch 618177 / 109.316 seconds. The user observes black output followed
-by an error. This candidate implements that exact boundary; its return still
-needs fresh console progression evidence.
+by an error. This candidate implements that exact boundary; the subsequent [fresh console result](HARDWARE_RESULTS_2026-10-05_PAD_CONTROL_MOTOR_PAD_RESET_FRONTIER.md)
+accepts its observed channel-0 / command-2 return before PADReset.
 
 ## Pinned contract and implementation
 
@@ -80,12 +80,12 @@ via direct nxlink with **exit 0**, sending 26,743,203 compressed bytes in
 The launch checks reverified all non-Markdown candidate hashes, the NRO size
 and SHA-256, dependency pins and the original upstream patch before transfer.
 UDP discovery at 17:12:23 UTC had no reply; the actual transfer nevertheless
-succeeded without a TCP preflight. Transfer success does not establish the
-native return or visible game output. Fresh reports and the user's observation
-from this launch remain pending; they must establish progression beyond
-`0x801AF908`.
+succeeded without a TCP preflight. Transfer success alone does not establish the native return or visible game
+output. The subsequent [35-report console result](HARDWARE_RESULTS_2026-10-05_PAD_CONTROL_MOTOR_PAD_RESET_FRONTIER.md)
+now establishes motor `(0,2)` return and the later PADReset frontier. The current
+visual observation remains pending.
 
-The preceding KPAD run remains the hardware baseline. PADControlMotor return,
-physical vibration, recognizable game pixels, sustained gameplay and later
-unknown calls remain outside hardware acceptance. Private products and raw
+The preceding KPAD run is the comparison baseline. Only motor channel 0 /
+command 2 is now hardware-accepted. Other motor inputs, PADReset return, physical
+vibration, recognizable game pixels and sustained gameplay remain open. Private products and raw
 diagnostics remain excluded from Git.

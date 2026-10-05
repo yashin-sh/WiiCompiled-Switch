@@ -45,8 +45,10 @@ console progression now accepts the observed count-1 polling path.
 The [PADControlMotor correction](docs/PAD_CONTROL_MOTOR_2026-10-05.md)
 implements the pinned absent-actuator void return, consistent with PADRead's
 zero rumble capability. Its 4,152 host cases, seventeen local suites, five
-exact-code workflows / six jobs and private NRO build pass. Its console return
-still requires fresh progression evidence.
+exact-code workflows / six jobs and private NRO build pass. The exact NRO
+transferred via nxlink with exit 0 on **2026-10-05 17:13:07 UTC** after the
+earlier verified USB copy. Its console return still requires fresh progression
+evidence from this launch.
 
 The [WPADProbe bridge](docs/WPAD_PROBE_2026-10-04.md) passes 556 host cases,
 six mutations, five exact-code workflows / six jobs and its private NRO build.

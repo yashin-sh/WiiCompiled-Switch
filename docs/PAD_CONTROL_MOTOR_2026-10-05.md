@@ -70,9 +70,20 @@ No TCP preflight is used. USB/MTP copies the validated NRO from **05:27:33
 to 05:27:43 UTC** to
 `sdmc:/switch/WiiCompiled-Switch-pad-control-motor-rendered-discovery.nro`.
 A complete readback matches all 73,494,584 bytes and the SHA-256 above.
-This deployment does not launch the application or accept PADControlMotor's
-hardware return. Exit USB/MTP mode and launch this file from hbmenu for the
-next console run; fresh reports must establish return beyond `0x801AF908`.
+This USB deployment does not launch the application or accept PADControlMotor's
+hardware return.
+
+On **2026-10-05 17:13:07 UTC**, the same validated NRO subsequently transferred
+via direct nxlink with **exit 0**, sending 26,743,203 compressed bytes in
+2,247 blocks (36.39%). The source revision is `1cff562`; launch revision
+`0d230ed` differs only in Markdown and is included in merged PR #313.
+The launch checks reverified all non-Markdown candidate hashes, the NRO size
+and SHA-256, dependency pins and the original upstream patch before transfer.
+UDP discovery at 17:12:23 UTC had no reply; the actual transfer nevertheless
+succeeded without a TCP preflight. Transfer success does not establish the
+native return or visible game output. Fresh reports and the user's observation
+from this launch remain pending; they must establish progression beyond
+`0x801AF908`.
 
 The preceding KPAD run remains the hardware baseline. PADControlMotor return,
 physical vibration, recognizable game pixels, sustained gameplay and later

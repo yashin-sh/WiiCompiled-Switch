@@ -62,6 +62,7 @@ extern "C" void mkw_switch_hle_gx_flush(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_invalidate_tex_all(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_copy_tex(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_copy_clamp(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tex_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tex_copy_dst(CpuContext* cpu) noexcept;
@@ -815,3 +816,12 @@ struct KnownNativeCpuCall<0x8016FC38u> {
     }
 };
 #endif
+
+// Hardware-observed Mii RGB5A3 EFB copy; unknown state still refuses.
+template <>
+struct KnownNativeCpuCall<0x8016FD74u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_copy_tex(cpu);
+    }
+};

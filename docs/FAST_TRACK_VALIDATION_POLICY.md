@@ -187,18 +187,15 @@ If a new run:
 
 ## Current frontier — 2026-10-06
 
-The [fresh Mii Fog hardware result](HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md)
-accepts the new `(1,1,0,0)` tuple through checked caller/guard/later-blocker
-proof. The new DIRECT stop is GXSetCopyClamp `0x8016F618`, value 3, dispatch
-631958 / 119.749 seconds. All 36 reports / 628,989 bytes have verified manifest,
-baseline and archive evidence. This run's visual observation is pending.
-
-The [bounded configuration lot](GX_TEXTURE_COPY_CONFIG_2026-10-06.md) implements
-observed Clamp and its pinned guest mirrors. The next Src/Dst setters are
-pre-ported from the same checked caller; native state, u16/bool semantics and
-canonical HLE shadow are audited. They are not yet observed or hardware-crossed.
-Actual texture copying, buffer resolution/readback and neighboring non-setter
-APIs remain hardware-driven. The 102 successful presents do not identify pixels.
+The [fresh GXCopyTex hardware result](HARDWARE_RESULTS_2026-10-06_GX_COPY_TEX_PIX_MODE_SYNC_FRONTIER.md)
+accepts the observed native RGB5A3 128×128 copy to `0x9210A720`, clear 1,
+using its new copy-pass report, verified caller and later DIRECT blocker
+GXPixModeSync `0x8016EB70`, stage GX_COPY_TEX, 120.375 seconds. All 37 reports /
+629,452 bytes are independently checked, 13 changed / 24 identical. The user
+reports black then error. Native return does not establish GPU completion,
+copied pixels or later retirement; the preceding present counts do not identify
+images. PixModeSync must preserve the pinned guest-mirror-before-native order
+and emit the real Aurora pixel-engine control command.
 
 On October 5 the user authorized managing PRs and merging when their pipelines
 pass, without another confirmation. Merge status and hardware acceptance are

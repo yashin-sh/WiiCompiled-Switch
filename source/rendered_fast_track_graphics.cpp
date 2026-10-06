@@ -1,6 +1,7 @@
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
 
 #include "rendered_fast_track_graphics.hpp"
+#include "switch_texture_copy_lifetime.hpp"
 
 #include "abi_bridge.h"
 #include "memory.h"
@@ -491,6 +492,7 @@ extern "C" void mkw_switch_renderer_shutdown() noexcept {
     report("STAGE RENDERER_TEARDOWN begin frames=%llu\n",
            static_cast<unsigned long long>(g_presentedFrames));
 
+    mkw_switch_gx_forget_copy_destinations();
     bool teardownSucceeded = true;
     try {
         if (g_auroraFrameActive.exchange(false, std::memory_order_acq_rel)) {
@@ -666,12 +668,14 @@ extern "C" void GX__CallDisplayList_80172f64(uint32_t listAddr, uint32_t sizeByt
 extern "C" void mkw_switch_gx_notify_guest_ram_dma_write(
     uint32_t address,
     uint32_t sizeBytes) noexcept {
-    // First rendered-RMCP01 gate: the FIFO/renderer path is live, while the
-    // texture/display-list invalidation caches from the full desktop runtime
-    // remain intentionally out of this minimal closure. Initial boot data is
-    // still read directly from guest RAM.
-    (void)address;
-    (void)sizeBytes;
+    // Retire GPU-only copies before a reused allocation can be sampled.
+    // The broader desktop texture/TLUT/display-list caches remain outside
+    // this slice; this hook owns only the new EFB-copy lifetime dependency.
+    mkw_switch_gx_invalidate_copy_destinations(address, sizeBytes);
+}
+
+extern "C" bool mkw_switch_renderer_has_active_frame() noexcept {
+    return g_initialized && g_auroraFrameActive.load(std::memory_order_acquire);
 }
 
 extern "C" MkwSwitchRendererDiagnostics mkw_switch_renderer_diagnostics_snapshot() noexcept {

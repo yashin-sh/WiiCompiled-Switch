@@ -41,6 +41,7 @@ jobs:
           bash scripts/test-gx-tev-color-batch.sh
           bash scripts/test-gx-alpha-compare.sh
           bash scripts/test-gx-fog-z-comp.sh
+          bash scripts/test-gx-texture-copy-config.sh
           bash scripts/test-gx-display-list.sh
           bash scripts/test-pad-read.sh
           bash scripts/test-wpad-probe.sh

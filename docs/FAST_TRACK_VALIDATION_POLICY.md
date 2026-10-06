@@ -185,20 +185,20 @@ If a new run:
 - runs without a blocker: use liveness/invariant evidence before assuming
   success or adding more HLE.
 
-## Current frontier — 2026-10-05
+## Current frontier — 2026-10-06
 
-The [fresh PADReset hardware result](HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md)
-accepts mask `0x70000000` returning 1 after the earlier motor `(0,2)` return.
-The new boundary is `GX_SET_FOG_UNPROVEN_ARGS` at `0x801722CC`, type 0,
-`(1,1,0,0)`, dispatch 635434 / 129.411 seconds, during Mii texture preparation.
-All 36 reports / 629,680 bytes have verified manifest, baseline and archive
-evidence. The user confirms black output then an error.
+The [fresh Mii Fog hardware result](HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md)
+accepts the new `(1,1,0,0)` tuple through checked caller/guard/later-blocker
+proof. The new DIRECT stop is GXSetCopyClamp `0x8016F618`, value 3, dispatch
+631958 / 119.749 seconds. All 36 reports / 628,989 bytes have verified manifest,
+baseline and archive evidence. This run's visual observation is pending.
 
-The [bounded Fog correction](GX_FOG_DEGENERATE_2026-10-05.md) preserves the
-pinned degenerate coefficient branch and admits only this additional complete
-f64 tuple. Its native return needs another console run after validation.
-The 102 successful presents and later display-list end report do not establish
-recognizable pixels or replay; older scheduler-dependent branches keep their scope.
+The [bounded configuration lot](GX_TEXTURE_COPY_CONFIG_2026-10-06.md) implements
+observed Clamp and its pinned guest mirrors. The next Src/Dst setters are
+pre-ported from the same checked caller; native state, u16/bool semantics and
+canonical HLE shadow are audited. They are not yet observed or hardware-crossed.
+Actual texture copying, buffer resolution/readback and neighboring non-setter
+APIs remain hardware-driven. The 102 successful presents do not identify pixels.
 
 On October 5 the user authorized managing PRs and merging when their pipelines
 pass, without another confirmation. Merge status and hardware acceptance are

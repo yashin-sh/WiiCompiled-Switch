@@ -54,7 +54,9 @@
 - [x] Transfer the exact PixModeSync NRO via direct nxlink, exit 0 at 19:14:18 UTC, 26,774,763 compressed bytes / 2,249 blocks.
 - [x] Verify 37 reports / 631,739 bytes and accept PixModeSync return through later Mii code and GXGetViewportv; merge #318 after all final-head jobs pass.
 - [x] Implement the [viewport snapshot/getter and audited depth dependency](docs/GX_VIEWPORT_STATE_2026-10-06.md).
-- [ ] Complete their local/CI/private build validation and hardware return; GPU completion, copied pixels and recognizable game images remain open.
+- [x] Pass 22 suites, six rejected mutants, all 65 SDK sources, synthetic retention, five code-head workflows / six jobs and the private rendered build; verify 69 strong functions / 46 scoped providers.
+- [x] Deploy the exact 73,621,560-byte viewport/depth NRO and verify every SD byte by USB readback.
+- [ ] Verify its hardware launch and getter/depth return; GPU completion, copied pixels and recognizable game images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

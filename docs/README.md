@@ -2,7 +2,7 @@
 
 ## Architecture / runtime
 
-- [GX_VIEWPORT_STATE_2026-10-06.md](GX_VIEWPORT_STATE_2026-10-06.md) — guest viewport and bounded depth dependency; validation in progress, hardware pending
+- [GX_VIEWPORT_STATE_2026-10-06.md](GX_VIEWPORT_STATE_2026-10-06.md) — guest viewport and bounded depth dependency; 22 suites, code-head CI/private build pass, SD readback verified, hardware pending
 - [HARDWARE_RESULTS_2026-10-06_PIX_MODE_SYNC_VIEWPORT_FRONTIER.md](HARDWARE_RESULTS_2026-10-06_PIX_MODE_SYNC_VIEWPORT_FRONTIER.md) — latest verified run: PixModeSync returned, viewport getter frontier; visual pending
 - [GX_PIX_MODE_SYNC_2026-10-06.md](GX_PIX_MODE_SYNC_2026-10-06.md) — next synchronization candidate; 21 suites, five workflows and private build pass, observed console return accepted; merged #318
 - [HARDWARE_RESULTS_2026-10-06_GX_COPY_TEX_PIX_MODE_SYNC_FRONTIER.md](HARDWARE_RESULTS_2026-10-06_GX_COPY_TEX_PIX_MODE_SYNC_FRONTIER.md) — preceding run: native copy returned, PixModeSync frontier, black then error

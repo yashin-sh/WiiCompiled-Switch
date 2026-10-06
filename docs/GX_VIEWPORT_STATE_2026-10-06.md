@@ -44,10 +44,29 @@ and verifies FIFO widths/values, state and flag order in 108 cases. No game
 product or copied proprietary function is published in the fixtures.
 
 Public CI runs the new suite and retains synthetic probes for both addresses.
-The devkitA64 rendered syntax gate includes the new bridge. Complete local
-suite, synthetic build, exact-head GitHub workflows, private rendered build
-and provider ownership evidence are required before deployment. Their results
-will be recorded after completion; no hardware result is claimed here.
+The devkitA64 rendered syntax gate compiles all 65 rendered sources. All 22
+local suites and six compiled rejected mutants pass, as do the complete
+synthetic ELF/NRO and all five actual code-head workflows / six jobs. Contract
+counts and both retained synthetic bridges/probe are checked in CI logs.
+
+Validated code is `cc0d633417a58e3c53847598d65a6ccc12e8f2e8`. The immutable-image,
+network-disabled private rendered build exits 0, **20:08:07–20:36:14 UTC**.
+All tracked build inputs are unchanged during that build. **69 required strong
+functions** and **46 scoped unique providers** are verified over **235 host
+objects/archives, 19 container Rust archives and seven named libraries**.
+This includes the viewport shadow, frame counter and checked float writer;
+provider ownership does not prove runtime pixels or every linked symbol.
+
+The exact NRO is **73,621,560 bytes**, SHA-256
+`73eb2313764fd89c8f777106b154ad7f6f80437161a623b01f68f94e8e905a16`.
+USB/MTP deployment at **20:39:07–20:39:17 UTC** verifies every byte by complete
+SD readback, at `sdmc:/switch/WiiCompiled-Switch-gx-viewport-state-rendered-discovery.nro`.
+Original upstream patch bytes and nanosecond mtimes remain unchanged. Private
+NROs, generated game products and raw archives remain excluded from GitHub.
+
+Hardware launch/return and visual observation are pending. Documentation-only
+publication commits preserve the built code; final publication-head workflows
+must additionally pass before merge. No hardware result is claimed here.
 
 Unknown APIs and copy argument families remain blocked. This candidate does
 not prove GPU completion, texture pixels or recognizable game images.

@@ -77,6 +77,27 @@ Nine independently compiled defects are rejected: missing draw drain, short
 preflight, missing registration, wrong host alias, adjacent-copy eviction,
 missing cache-line rounding, unmapped-span acceptance, CPU clobber and repeated
 SD opens. All twenty local suites, both AArch64 modes, full synthetic NRO/ELF
-retention and script/workflow lint pass. Exact-code GitHub workflows and the
-private rendered NRO are being validated. Dependency pins and the original upstream patch are
+retention and script/workflow lint pass. All five exact-code workflows / six jobs and the private Rendered Discovery
+build pass at `c18f2577c7b8ab09eec702b275a6f56df641afee`.
+The [actual build-switch run](https://github.com/yashin-sh/WiiCompiled-Switch/actions/runs/37506492103) confirms the rendered syntax and
+65,746/25/2 contract counts plus 65,025 size fixtures. The
+[fast-track run](https://github.com/yashin-sh/WiiCompiled-Switch/actions/runs/37506492220) confirms the real synthetic bridge/probe symbols.
+The final private ELF retains **63 required strong functions** and canonical
+`g_texCopyState`; **37 scoped symbols** have one expected provider each across
+233 host inputs, 19 Rust archives and seven named libraries. Checked FIFO and
+vertex mirrors match their preparation contract. Broader symbols and implicit
+compiler-injected libraries remain outside this provider audit. Dependency pins and the original upstream patch are
 preserved; private game data, NROs and raw archives stay excluded.
+
+
+## Verified SD deployment
+
+The NRO is **73,543,736 bytes**, SHA-256
+`60b1b6649731195722fed9fd610ac7b34d489c93cc8387e9d55f36dccbbcb8c6`.
+USB/MTP copies it to
+`sdmc:/switch/WiiCompiled-Switch-gx-copy-tex-rendered-discovery.nro`
+at **2026-10-06 18:18:20 UTC**. Complete readback matches every byte and hash.
+The original nine-file upstream patch bytes and nanosecond modification times
+are preserved. Deployment establishes file identity, not a console launch.
+Exit MTP and launch the named candidate from hbmenu; its native return, GPU
+completion, pixels and subsequent execution remain pending a fresh run.

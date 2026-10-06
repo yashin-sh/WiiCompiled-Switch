@@ -49,8 +49,11 @@ successfully via nxlink at 16:47:54 UTC. Configuration returns are accepted
 only for the observed tuples. The [bounded GXCopyTex candidate](docs/GX_COPY_TEX_2026-10-06.md)
 adds native EFB copying, complete 32 KiB range checks and GPU-copy retirement
 through existing cache/DMA hooks. Twenty local suites, nine mutations, both
-AArch64 modes and the synthetic build pass; remote/private-build and hardware
-return remain pending.
+AArch64 modes, the synthetic/private rendered builds and five exact-code
+workflows / six jobs pass. The 73,543,736-byte NRO is on SD with complete
+readback verified at 18:18:20 UTC. Exit MTP and launch
+`WiiCompiled-Switch-gx-copy-tex-rendered-discovery.nro` from hbmenu; its console
+return remains pending.
 
 The [Fog correction](docs/GX_FOG_DEGENERATE_2026-10-05.md) passed all eighteen
 local suites, both AArch64 modes, the synthetic/private rendered builds and

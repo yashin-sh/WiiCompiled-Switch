@@ -2,8 +2,9 @@
 
 ## Architecture / runtime
 
-- [GX_PIX_MODE_SYNC_2026-10-06.md](GX_PIX_MODE_SYNC_2026-10-06.md) — next synchronization candidate; 21 suites, five workflows and private build pass, nxlink launch verified, console return pending
-- [HARDWARE_RESULTS_2026-10-06_GX_COPY_TEX_PIX_MODE_SYNC_FRONTIER.md](HARDWARE_RESULTS_2026-10-06_GX_COPY_TEX_PIX_MODE_SYNC_FRONTIER.md) — latest verified run: native copy returned, PixModeSync frontier, black then error
+- [HARDWARE_RESULTS_2026-10-06_PIX_MODE_SYNC_VIEWPORT_FRONTIER.md](HARDWARE_RESULTS_2026-10-06_PIX_MODE_SYNC_VIEWPORT_FRONTIER.md) — latest verified run: PixModeSync returned, viewport getter frontier; visual pending
+- [GX_PIX_MODE_SYNC_2026-10-06.md](GX_PIX_MODE_SYNC_2026-10-06.md) — next synchronization candidate; 21 suites, five workflows and private build pass, observed console return accepted; merged #318
+- [HARDWARE_RESULTS_2026-10-06_GX_COPY_TEX_PIX_MODE_SYNC_FRONTIER.md](HARDWARE_RESULTS_2026-10-06_GX_COPY_TEX_PIX_MODE_SYNC_FRONTIER.md) — preceding run: native copy returned, PixModeSync frontier, black then error
 - [GX_COPY_TEX_2026-10-06.md](GX_COPY_TEX_2026-10-06.md) — current bounded native copy/cache lifetime candidate; twenty suites, five workflows and private build pass, verified native return on console; GPU pixels pending
 - [HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG_COPY_TEX_FRONTIER.md](HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG_COPY_TEX_FRONTIER.md) — preceding verified run: Clamp/Src/Dst returned, GXCopyTex frontier; visual result pending
 - [GX_TEXTURE_COPY_CONFIG_2026-10-06.md](GX_TEXTURE_COPY_CONFIG_2026-10-06.md) — all three observed configuration returns accepted; GXCopyTex and cache lifetime remain open

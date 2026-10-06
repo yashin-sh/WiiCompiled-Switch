@@ -52,7 +52,8 @@
 - [x] Implement the [faithful GXPixModeSync candidate](docs/GX_PIX_MODE_SYNC_2026-10-06.md); pass 21 local suites, six rejected mutants, both SDK modes, full synthetic retention and five exact-code workflows / six jobs.
 - [x] Build the exact PixModeSync rendered NRO (73,556,024 bytes), verify 65 strong functions and 39 scoped unique providers; preserve candidate bytes and upstream patch/mtimes.
 - [x] Transfer the exact PixModeSync NRO via direct nxlink, exit 0 at 19:14:18 UTC, 26,774,763 compressed bytes / 2,249 blocks.
-- [ ] Retrieve fresh reports and hardware-accept PixModeSync; GPU completion, copied pixels and recognizable game images remain open.
+- [x] Verify 37 reports / 631,739 bytes and accept PixModeSync return through later Mii code and GXGetViewportv; merge #318 after all final-head jobs pass.
+- [ ] Implement the viewport snapshot/getter and audited transform-state dependency; GPU completion, copied pixels and recognizable game images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
@@ -89,12 +90,12 @@
 - [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The [latest console result](docs/HARDWARE_RESULTS_2026-10-06_GX_COPY_TEX_PIX_MODE_SYNC_FRONTIER.md)
-accepts the observed native copy return and reaches GXPixModeSync `0x8016EB70`
-at 120.375 seconds, stage GX_COPY_TEX. The 37 reports / 629,452 bytes are
-independently verified. The user reports black then error. The preceding
-snapshot has 5,988 FIFO writes, 102 successful presents / zero failures and
-zero replay calls; it does not establish copied texture pixels.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-06_PIX_MODE_SYNC_VIEWPORT_FRONTIER.md)
+accepts native copy and PixModeSync return, then reaches GXGetViewportv
+`0x801733E0`, output `0x80397B10`, 128.396 seconds. All 37 reports / 631,739
+bytes are independently verified. This launch's visual observation remains
+pending. The preceding 5,988 FIFO writes and 102 successful presents do not
+establish copied texture pixels.
 
 Further SDK calls, replay, recognizable pixels, sustained execution, full
 input, audio and performance remain to validate. No fixed count of remaining

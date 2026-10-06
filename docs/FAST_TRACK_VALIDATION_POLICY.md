@@ -187,19 +187,14 @@ If a new run:
 
 ## Current frontier — 2026-10-06
 
-The [fresh GXCopyTex hardware result](HARDWARE_RESULTS_2026-10-06_GX_COPY_TEX_PIX_MODE_SYNC_FRONTIER.md)
-accepts the observed native RGB5A3 128×128 copy to `0x9210A720`, clear 1,
-using its new copy-pass report, verified caller and later DIRECT blocker
-GXPixModeSync `0x8016EB70`, stage GX_COPY_TEX, 120.375 seconds. All 37 reports /
-629,452 bytes are independently checked, 13 changed / 24 identical. The user
-reports black then error. Native return does not establish GPU completion,
-copied pixels or later retirement; the preceding present counts do not identify
-images. PixModeSync must preserve the pinned guest-mirror-before-native order
-and emit the real Aurora pixel-engine control command. The
-[validated candidate](GX_PIX_MODE_SYNC_2026-10-06.md) supplies that ordering;
-21 suites, five exact-code workflows / six jobs and the private build pass.
-The exact candidate transfers with nxlink exit 0 at 19:14:18 UTC.
-Fresh reports and native console return remain pending.
+The [fresh PixModeSync result](HARDWARE_RESULTS_2026-10-06_PIX_MODE_SYNC_VIEWPORT_FRONTIER.md)
+accepts the observed native synchronization return through later Mii code and
+the DIRECT GXGetViewportv `0x801733E0` frontier, output `0x80397B10`, 128.396
+seconds. All 37 reports / 631,739 bytes are independently verified, 15 changed /
+22 identical. This launch's visual observation, raw guest mirrors and GPU
+completion remain unproven. The getter needs saved guest-space values and the
+pinned frame-gated offscreen-screen side effect. GXSetZScaleOffset is a checked
+static dependency of the next setup caller, not a hardware-crossed claim.
 
 On October 5 the user authorized managing PRs and merging when their pipelines
 pass, without another confirmation. Merge status and hardware acceptance are

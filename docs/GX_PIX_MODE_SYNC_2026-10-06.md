@@ -74,7 +74,10 @@ Direct nxlink starts at **19:14:05 UTC** and exits **0 at 19:14:18 UTC**,
 sending **26,774,763 compressed bytes / 2,249 blocks (36.40%)**. Launch revision
 `b38a69aff9130a85b213556e8a65f2b26a06a2bf` differs from validated code only
 in Markdown; candidate hashes, pins and upstream patch are rechecked before
-transfer. No SD deployment is claimed. Fresh reports, this launch's visual
-observation and native console return remain pending; the preceding GXCopyTex
-run remains the latest verified console return evidence. Private game products, NROs and raw diagnostic archives stay
+transfer. No SD deployment is claimed. The [fresh hardware result](HARDWARE_RESULTS_2026-10-06_PIX_MODE_SYNC_VIEWPORT_FRONTIER.md)
+verifies 37 reports / 631,739 bytes, 15 changed / 22 identical, and accepts
+PixModeSync return through the later Mii continuation and GXGetViewportv
+frontier. This launch’s visual observation, raw guest mirrors and GPU pixels
+remain unproven. PR #318 is merged as `7b41350` after all six final-head jobs
+pass. Private game products, NROs and raw diagnostic archives stay
 excluded. GPU completion and recognizable game pixels remain open.

@@ -8,6 +8,7 @@ extern "C" void mkw_switch_hle_gx_copy_disp(CpuContext* cpu) noexcept;
 
 extern "C" void mkw_switch_hle_gx_init(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_draw_done(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_pix_mode_sync(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_viewport(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_scissor(CpuContext* cpu) noexcept;
@@ -90,6 +91,16 @@ struct KnownNativeCpuCall<0x8016EAB0u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_draw_done(cpu);
+    }
+};
+
+// GXPixModeSync (PAL 0x8016EB70): best-effort GXData mirror, then Aurora's
+// real pixel-engine control BP command. Reached after the native Mii EFB copy.
+template <>
+struct KnownNativeCpuCall<0x8016EB70u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_pix_mode_sync(cpu);
     }
 };
 

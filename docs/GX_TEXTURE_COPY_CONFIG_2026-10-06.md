@@ -61,6 +61,31 @@ destination domains, both mipmap states and untouched sentinel fields.
 Targeted validation passes **393,253 valid rendered calls and 12 diagnosed
 refusals**, plus **12 headless refusals** with no native/memory effects.
 The independent verbatim native setter fixture passes **524,292 state cases**.
-ASan, fatal UBSan and LeakSanitizer remain active. CI includes the nineteenth
-host suite and a retained probe for all three dispatches. Complete local,
-exact-head CI, private rendered-build and console validation are pending.
+ASan, fatal UBSan and LeakSanitizer remain active. All nineteen local host
+suites pass, along with both AArch64 modes, full synthetic retention and lint.
+Seven compiled mutants are rejected, including native-after-memory ordering
+checked through actual scalar Read32/Write32 entry points. All five GitHub
+workflows / six jobs pass on integrated code `fec006a`; the actual CI log
+includes the new rendered/headless contracts and native state fixture.
+
+The private Rendered Discovery build passes on that same code with pinned
+Dawn/Mesa/WiiCompiled dependencies and preserved upstream patch bytes/mtimes.
+It retains 56 required strong functions plus canonical `g_texCopyState`.
+The scoped provider audit finds one owner for each of 30 symbols across
+232 host inputs, 19 Rust archives and seven named libraries. These checks
+establish link ownership, not executed copy calls or recognizable pixels.
+
+The NRO is **73,498,680 bytes**, SHA-256
+`45d7b6eaec53a3d8df1cdf96832fd76a0d2a6c237fca8e92291e2f790f775e29`.
+USB/MTP copies it to
+`sdmc:/switch/WiiCompiled-Switch-gx-texture-copy-config-rendered-discovery.nro`
+at **2026-10-06 05:50:54 UTC**, with complete byte-for-byte and hash readback.
+The direct nxlink attempt at 05:51:17 UTC cannot connect to `192.168.1.194`
+(exit 1), so it establishes no application launch. The console remains in
+MTP; exit transfer mode and launch the verified SD file from hbmenu.
+
+Final documentation-only head checks and merge status are tracked in
+[PR #316](https://github.com/yashin-sh/WiiCompiled-Switch/pull/316).
+Configuration returns and subsequent texture-copy execution remain pending
+fresh console evidence. Private NROs, game products and raw archives remain
+excluded from the public repository.

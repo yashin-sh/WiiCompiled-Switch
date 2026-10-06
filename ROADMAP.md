@@ -38,7 +38,9 @@
 - [x] Merge Fog PR #315 (`f6da5a7`) after all five exact-head workflows / six jobs; copy the exact NRO to SD with full readback.
 - [x] Launch Fog via nxlink with exit 0 at 2026-10-06 04:57:43 UTC; verify [36 reports / 628,989 bytes](docs/HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md) and accept the `(1,1,0,0)` Mii tuple returning before GXSetCopyClamp `0x8016F618`, value 3, dispatch 631958 / 119.749 seconds.
 - [x] Implement the [bounded texture-copy configuration lot](docs/GX_TEXTURE_COPY_CONFIG_2026-10-06.md): observed Clamp and guest mirrors; checked-caller Src/Dst pre-ports with pinned HLE shadow.
-- [ ] Validate the configuration lot on local/CI/private-build gates, then establish its executed returns on Switch.
+- [x] Validate configuration code `fec006a`: 393,253 rendered calls / 12 diagnosed refusals, 12 headless refusals, 524,292 native fixtures, seven rejected mutants, nineteen local suites, both AArch64 modes, full synthetic/private rendered builds and five exact-code workflows / six jobs; 56 retained strong functions and 30 scoped providers verified.
+- [x] Copy the 73,498,680-byte configuration NRO to SD at 05:50:54 UTC with complete readback; direct nxlink fails to connect before launch. Final documentation-head checks and merge status: [PR #316](https://github.com/yashin-sh/WiiCompiled-Switch/pull/316).
+- [ ] Launch the verified configuration NRO and establish its executed returns on Switch.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

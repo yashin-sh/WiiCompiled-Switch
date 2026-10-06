@@ -43,8 +43,14 @@ pending and recognizable pixels remain unproven.
 The [bounded texture-copy configuration candidate](docs/GX_TEXTURE_COPY_CONFIG_2026-10-06.md)
 implements Clamp and its guest low-bit mirrors, plus the next two audited
 Src/Dst setters and pinned HLE shadow. Src/Dst are pre-ported from the checked
-caller and remain unobserved. Local/CI/private-build validation and the new
-configuration's console returns remain pending.
+caller and remain unobserved. All nineteen local suites, seven mutations,
+both AArch64 modes, the synthetic/private rendered builds and five exact-code
+workflows / six jobs pass. The 73,498,680-byte NRO is on the Switch SD with
+complete USB/MTP readback verified at 05:50:54 UTC. Direct nxlink cannot connect;
+exit MTP and launch `WiiCompiled-Switch-gx-texture-copy-config-rendered-discovery.nro`
+from hbmenu. Final documentation-head checks and merge are tracked in
+[PR #316](https://github.com/yashin-sh/WiiCompiled-Switch/pull/316);
+configuration returns still need a fresh console run.
 
 The [Fog correction](docs/GX_FOG_DEGENERATE_2026-10-05.md) passed all eighteen
 local suites, both AArch64 modes, the synthetic/private rendered builds and

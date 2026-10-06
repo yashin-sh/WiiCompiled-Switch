@@ -51,9 +51,9 @@ adds native EFB copying, complete 32 KiB range checks and GPU-copy retirement
 through existing cache/DMA hooks. Twenty local suites, nine mutations, both
 AArch64 modes, the synthetic/private rendered builds and five exact-code
 workflows / six jobs pass. The 73,543,736-byte NRO is on SD with complete
-readback verified at 18:18:20 UTC. Exit MTP and launch
-`WiiCompiled-Switch-gx-copy-tex-rendered-discovery.nro` from hbmenu; its console
-return remains pending.
+readback verified at 18:18:20 UTC. The same exact candidate transfers via
+direct nxlink with exit 0 at 18:27:37 UTC. Fresh hardware reports, its console
+return and this launch’s visual observation remain pending.
 
 The [Fog correction](docs/GX_FOG_DEGENERATE_2026-10-05.md) passed all eighteen
 local suites, both AArch64 modes, the synthetic/private rendered builds and

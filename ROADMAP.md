@@ -47,7 +47,8 @@
 - [x] Pass GXCopyTex local validation: 65,746 calls / 25 rendered refusals, two headless refusals, 65,025 pinned size cases, nine rejected mutants, twenty suites, both AArch64 modes and full synthetic retention.
 - [x] Pass GXCopyTex code `c18f257` on five exact-code workflows / six jobs and the private rendered NRO build; verify 63 strong functions and 37 scoped providers.
 - [x] Copy the exact 73,543,736-byte GXCopyTex NRO to SD at 18:18:20 UTC with complete byte/hash readback.
-- [ ] Launch the verified GXCopyTex NRO and hardware-accept its observed return; GPU completion and copied pixels remain open.
+- [x] Transfer and launch the exact GXCopyTex NRO via direct nxlink, exit 0 at 18:27:37 UTC, 26,769,071 compressed bytes / 2,249 blocks.
+- [ ] Retrieve fresh GXCopyTex reports and hardware-accept its observed return; GPU completion and copied pixels remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

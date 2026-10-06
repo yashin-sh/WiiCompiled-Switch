@@ -99,5 +99,11 @@ USB/MTP copies it to
 at **2026-10-06 18:18:20 UTC**. Complete readback matches every byte and hash.
 The original nine-file upstream patch bytes and nanosecond modification times
 are preserved. Deployment establishes file identity, not a console launch.
-Exit MTP and launch the named candidate from hbmenu; its native return, GPU
-completion, pixels and subsequent execution remain pending a fresh run.
+A later direct nxlink launch starts at **18:27:14 UTC** and exits **0 at
+18:27:37 UTC**, sending **26,769,071 compressed bytes / 2,249 blocks (36.40%)**.
+Launch revision `0e96ca8b13f18a03ae69b83e941609ff27a5149a` differs from the
+validated code only in Markdown; candidate source hashes, dependency pins and
+upstream patch bytes are rechecked before transfer. The exact NRO identity
+above is unchanged. Fresh durable reports and this launch's visual observation
+remain pending; transfer success does not establish native return, GPU
+completion, copied pixels or later execution.

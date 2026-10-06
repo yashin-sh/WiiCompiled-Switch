@@ -32,27 +32,31 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest [GXCopyTex console run](docs/HARDWARE_RESULTS_2026-10-06_GX_COPY_TEX_PIX_MODE_SYNC_FRONTIER.md)
-accepts the native RGB5A3 128×128 copy to `0x9210A720`, clear 1, after the
-Mii texture configuration returns. A new `copy-pass` report and the later
-DIRECT stop at **GXPixModeSync (`0x8016EB70`)**, stage GX_COPY_TEX, establish
-the observed return. All 37 reports / 629,452 bytes are independently verified,
-13 changed / 24 identical. The user reports **black then error**; recognizable
-game pixels and GPU completion remain unproven.
+The latest [PixModeSync console run](docs/HARDWARE_RESULTS_2026-10-06_PIX_MODE_SYNC_VIEWPORT_FRONTIER.md)
+accepts native copy and PixModeSync return through the later Mii continuation.
+The next DIRECT stop is **GXGetViewportv (`0x801733E0`)**, output `0x80397B10`,
+dispatch 635096 / 128.396 seconds, stage GX_INVALIDATE_TEX_ALL. All 37 reports /
+631,739 bytes are verified, 15 changed / 22 identical. This launch's visual
+observation, copied pixels and GPU completion remain unproven.
 
-The [bounded GXCopyTex bridge](docs/GX_COPY_TEX_2026-10-06.md) supplies native
-EFB copying, complete 32 KiB checks and GPU-copy retirement through existing
-cache/DMA hooks. PR #317 is merged as `e5ec490`. Twenty suites, nine mutations, both AArch64 modes, full
-synthetic/private rendered builds and five exact-code workflows / six jobs
-pass. The exact 73,543,736-byte NRO transfers with nxlink exit 0 at 18:27:37
-UTC. Acceptance covers the captured copy tuple; later retirement is locally
-tested but not exercised by this run. The [PixModeSync candidate](docs/GX_PIX_MODE_SYNC_2026-10-06.md) now passes
-21 local suites, six rejected mutations, rendered/synthetic SDK builds, five
-exact-code workflows / six jobs and the private rendered build. Its exact
-73,556,024-byte NRO retains 65 strong functions with 39 scoped unique providers.
-The exact candidate launches via nxlink with exit 0 at 19:14:18 UTC. Fresh
-reports, its visual result and native console return remain pending. The preceding snapshot retains 5,988 FIFO writes and 102 successful
-presents / zero failures; those counts do not identify pixels.
+The [PixModeSync bridge](docs/GX_PIX_MODE_SYNC_2026-10-06.md) passes 21 suites,
+six rejected mutants, both SDK modes, full synthetic/private rendered builds
+and five workflows / six jobs on code and final PR HEAD. PR #318 is merged
+as `7b41350`. The exact 73,556,024-byte NRO transfers with nxlink exit 0 at
+19:14:18 UTC; 65 strong functions and 39 scoped unique providers are verified.
+The preceding heartbeat retains 5,988 FIFO writes and 102 successful presents /
+zero failures; it does not identify pixels. The next getter needs the saved
+guest viewport and its pinned frame-gated offscreen-screen side effect.
+The [viewport/depth candidate](docs/GX_VIEWPORT_STATE_2026-10-06.md) implements
+that getter and the statically checked depth dependency. It passes 22 local
+suites, six compiled rejected mutants, the SDK/synthetic/private builds and
+all five code-head workflows / six jobs. Its exact 73,621,560-byte NRO is
+verified on the SD card by complete USB readback; hardware launch/return and
+visual observation remain pending.
+
+The [bounded copy](docs/GX_COPY_TEX_2026-10-06.md) remains accepted for RGB5A3
+128×128, clear 1, now also at destination `0x9210A740`. GPU lifetime tests
+remain broader than this observed execution. PR #317 is merged as `e5ec490`.
 
 The [configuration bridges](docs/GX_TEXTURE_COPY_CONFIG_2026-10-06.md) remain
 accepted for Clamp(3), Src(0,0,128,128), Dst(128,128,5,0). PR #316 is merged

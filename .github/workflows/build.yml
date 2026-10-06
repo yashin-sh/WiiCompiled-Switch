@@ -44,6 +44,7 @@ jobs:
           bash scripts/test-gx-texture-copy-config.sh
           bash scripts/test-gx-copy-tex.sh
           bash scripts/test-gx-pix-mode-sync.sh
+          bash scripts/test-gx-viewport-state.sh
           bash scripts/test-gx-display-list.sh
           bash scripts/test-pad-read.sh
           bash scripts/test-wpad-probe.sh

@@ -213,3 +213,30 @@ void Memory::Write64(std::uint32_t address, std::uint64_t value) {
     const std::uint64_t raw = __builtin_bswap64(value);
     std::memcpy(require_pointer(address, sizeof(raw)), &raw, sizeof(raw));
 }
+
+// Pinned Gekko stfs bit conversion; host casts differ for double inputs.
+void Memory::WriteFloat32(std::uint32_t address, double value) {
+    const auto bits = [](double value) -> std::uint32_t {
+        uint64_t bits = 0;
+        std::memcpy(&bits, &value, sizeof(bits));
+        const uint32_t exponent = static_cast<uint32_t>((bits >> 52) & 0x7FFu);
+        // The subnormal-single arm applies to exactly the exponents 874..896; every
+        // other exponent takes the plain sign/exponent/fraction narrowing below.
+        // Inside that window the exponent field is nonzero, so the magnitude cannot
+        // be zero and needs no separate test - the zero case (exponent 0) reaches
+        // the narrowing exactly as it did when the two arms shared that test.
+        if (exponent - 874u <= 22u) [[unlikely]] {
+            uint32_t narrowed = static_cast<uint32_t>(
+                0x80000000ULL | ((bits & 0x000FFFFFFFFFFFFFULL) >> 21));
+            narrowed >>= (905u - exponent);
+            narrowed |= static_cast<uint32_t>((bits >> 32) & 0x80000000ULL);
+            return narrowed;
+        }
+
+        // Results below the documented conversion range are architecturally
+        // undefined; this is the behavior measured on Gekko/Broadway hardware.
+        return static_cast<uint32_t>(
+            ((bits >> 32) & 0xC0000000ULL) | ((bits >> 29) & 0x3FFFFFFFULL));
+    }(value);
+    Write32(address, bits);
+}

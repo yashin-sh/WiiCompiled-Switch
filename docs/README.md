@@ -2,8 +2,10 @@
 
 ## Architecture / runtime
 
-- [GX_FOG_DEGENERATE_2026-10-05.md](GX_FOG_DEGENERATE_2026-10-05.md) — current correction: exact Mii texture Fog `(1,1,0,0)` tuple; expanded contracts, eighteen local suites, both modes, synthetic/private builds pass; console return pending
-- [HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md](HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md) — latest console result: PADReset mask returned; Mii texture Fog frontier, 36 reports verified, black then error
+- [GX_TEXTURE_COPY_CONFIG_2026-10-06.md](GX_TEXTURE_COPY_CONFIG_2026-10-06.md) — current candidate: observed Clamp with guest mirrors; next Src/Dst configurations pre-ported with pinned HLE shadow
+- [HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md](HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md) — latest console result: Mii Fog returned; Clamp(3) frontier; 36 reports verified, visual pending
+- [GX_FOG_DEGENERATE_2026-10-05.md](GX_FOG_DEGENERATE_2026-10-05.md) — Mii texture Fog `(1,1,0,0)` tuple; all gates pass, exact observed tuple console return accepted
+- [HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md](HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md) — preceding result: PADReset mask returned; Mii texture Fog frontier, 36 reports verified, black then error
 - [PAD_RESET_2026-10-05.md](PAD_RESET_2026-10-05.md) — pinned ignored-mask success return; 5,223 cases, all gates pass; observed mask `0x70000000` console return accepted
 - [HARDWARE_RESULTS_2026-10-05_PAD_CONTROL_MOTOR_PAD_RESET_FRONTIER.md](HARDWARE_RESULTS_2026-10-05_PAD_CONTROL_MOTOR_PAD_RESET_FRONTIER.md) — preceding result: motor `(0,2)` returned; PADReset mask `0x70000000` frontier; 35 reports verified, visual observation pending
 - [PAD_CONTROL_MOTOR_2026-10-05.md](PAD_CONTROL_MOTOR_2026-10-05.md) — absent-actuator void return; local/CI/private-build gates passed, observed channel-0 / command-2 console return accepted

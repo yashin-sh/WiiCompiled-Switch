@@ -32,18 +32,31 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest [PADReset console run](docs/HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md)
-accepts mask `0x70000000` returning 1, then reaches **GXSetFog (`0x801722CC`)**
-with the new `(1,1,0,0)` tuple during Mii texture preparation, dispatch 635434 /
-129.411 seconds. All 36 reports / 629,680 bytes are verified against the motor
-run. The user confirms a black screen followed by an error. The new snapshot
-has 5,988 FIFO writes and 102 successful presents / 0 failures; recognizable
-pixels remain unproven. The [bounded Fog correction](docs/GX_FOG_DEGENERATE_2026-10-05.md)
-adds this exact observed tuple and retains the existing argument/memory guards.
-Its expanded contracts, eighteen local suites, both AArch64 modes, synthetic
-and private rendered builds pass. Remote checks and deployment are tracked
-in [PR #315](https://github.com/yashin-sh/WiiCompiled-Switch/pull/315); its new
-console return remains pending.
+The latest [Mii Fog console run](docs/HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md)
+accepts the new `(1,1,0,0)` Fog tuple returning through the checked texture
+caller, then stops at **GXSetCopyClamp (`0x8016F618`)**, value 3, dispatch
+631958 / 119.749 seconds. All 36 reports / 628,989 bytes are verified against
+the PADReset baseline. The snapshot has 5,044 FIFO writes, 102 successful
+presents / 0 failures and zero replay calls; this run's visual observation is
+pending and recognizable pixels remain unproven.
+
+The [bounded texture-copy configuration candidate](docs/GX_TEXTURE_COPY_CONFIG_2026-10-06.md)
+implements Clamp and its guest low-bit mirrors, plus the next two audited
+Src/Dst setters and pinned HLE shadow. Src/Dst are pre-ported from the checked
+caller and remain unobserved. All nineteen local suites, seven mutations,
+both AArch64 modes, the synthetic/private rendered builds and five exact-code
+workflows / six jobs pass. The 73,498,680-byte NRO is on the Switch SD with
+complete USB/MTP readback verified at 05:50:54 UTC. Direct nxlink cannot connect;
+exit MTP and launch `WiiCompiled-Switch-gx-texture-copy-config-rendered-discovery.nro`
+from hbmenu. Final documentation-head checks and merge are tracked in
+[PR #316](https://github.com/yashin-sh/WiiCompiled-Switch/pull/316);
+configuration returns still need a fresh console run.
+
+The [Fog correction](docs/GX_FOG_DEGENERATE_2026-10-05.md) passed all eighteen
+local suites, both AArch64 modes, the synthetic/private rendered builds and
+five exact-head workflows / six jobs. PR #315 is merged as `f6da5a7`.
+Its exact NRO transferred via nxlink with exit 0 at 2026-10-06 04:57:43 UTC;
+the new reports now accept its observed Mii tuple return.
 
 The [PADReset candidate](docs/PAD_RESET_2026-10-05.md), code `7ac668e`, passed
 5,223 cases, eighteen local suites, five exact-code workflows / six jobs and

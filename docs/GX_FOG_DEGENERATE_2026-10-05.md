@@ -61,5 +61,9 @@ including native `GXSetFog` and its bridge, have unique expected providers
 across 231 host inputs, nineteen Rust archives and seven named libraries.
 The checked native Fog source matches the pinned original byte-for-byte.
 Broader symbols and implicit compiler libraries are outside this scoped audit.
-Console deployment and remote checks are tracked in PR #315. The new tuple's
-console return remains unaccepted until fresh progression evidence is retrieved.
+All five exact-head workflows / six jobs pass at `d9de36c`; PR #315 is merged
+as `f6da5a7`. The exact NRO is copied to SD with complete readback at
+2026-10-05 21:19:19 UTC and later launched via direct nxlink with exit 0 at
+2026-10-06 04:57:43 UTC. The [fresh console result](HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md)
+now establishes the new Mii tuple return through the checked caller and later
+Clamp frontier. Recognizable pixels and broader Fog tuples remain unaccepted.

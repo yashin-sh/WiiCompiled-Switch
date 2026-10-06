@@ -62,6 +62,9 @@ extern "C" void mkw_switch_hle_gx_flush(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_invalidate_tex_all(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_copy_clamp(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tex_copy_src(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tex_copy_dst(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_init_tex_obj(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_init_tex_obj_wrap_mode(CpuContext* cpu) noexcept;
@@ -746,6 +749,30 @@ struct KnownNativeCpuCall<0x8016E654u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_flush(cpu);
+    }
+};
+
+// Bounded copy configuration: native state and pinned guest/HLE mirrors.
+// Headless calls refuse; synthetic probes retain these dispatches only.
+template <>
+struct KnownNativeCpuCall<0x8016F618u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_copy_clamp(cpu);
+    }
+};
+template <>
+struct KnownNativeCpuCall<0x8016F478u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tex_copy_src(cpu);
+    }
+};
+template <>
+struct KnownNativeCpuCall<0x8016F4DCu> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tex_copy_dst(cpu);
     }
 };
 

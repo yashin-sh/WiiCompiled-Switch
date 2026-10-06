@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current checkpoint — 2026-10-05
+## Current checkpoint — 2026-10-06
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.
@@ -35,7 +35,12 @@
 - [x] Launch the exact PADReset NRO via nxlink with exit 0 at 20:07:42 UTC; verify [36 reports / 629,680 bytes](docs/HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md) and accept mask `0x70000000` return before the new `(1,1,0,0)` Fog refusal in Mii texture preparation.
 - [x] Implement the [bounded second Fog tuple](docs/GX_FOG_DEGENERATE_2026-10-05.md), preserving native coefficient/BP work and whole-tuple guards.
 - [x] Validate the second Fog tuple: 67,661 valid calls / 630 refusals per mode, 2,048 native BP fixtures, four rejected mutants, all eighteen local suites, both AArch64 modes, full synthetic and private rendered builds; 50 strong symbols / 23 scoped providers verified. Remote acceptance is tracked in [PR #315](https://github.com/yashin-sh/WiiCompiled-Switch/pull/315).
-- [ ] Deploy the validated second Fog tuple and establish its return on the Switch.
+- [x] Merge Fog PR #315 (`f6da5a7`) after all five exact-head workflows / six jobs; copy the exact NRO to SD with full readback.
+- [x] Launch Fog via nxlink with exit 0 at 2026-10-06 04:57:43 UTC; verify [36 reports / 628,989 bytes](docs/HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md) and accept the `(1,1,0,0)` Mii tuple returning before GXSetCopyClamp `0x8016F618`, value 3, dispatch 631958 / 119.749 seconds.
+- [x] Implement the [bounded texture-copy configuration lot](docs/GX_TEXTURE_COPY_CONFIG_2026-10-06.md): observed Clamp and guest mirrors; checked-caller Src/Dst pre-ports with pinned HLE shadow.
+- [x] Validate configuration code `fec006a`: 393,253 rendered calls / 12 diagnosed refusals, 12 headless refusals, 524,292 native fixtures, seven rejected mutants, nineteen local suites, both AArch64 modes, full synthetic/private rendered builds and five exact-code workflows / six jobs; 56 retained strong functions and 30 scoped providers verified.
+- [x] Copy the 73,498,680-byte configuration NRO to SD at 05:50:54 UTC with complete readback; direct nxlink fails to connect before launch. Final documentation-head checks and merge status: [PR #316](https://github.com/yashin-sh/WiiCompiled-Switch/pull/316).
+- [ ] Launch the verified configuration NRO and establish its executed returns on Switch.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
@@ -72,12 +77,11 @@
 - [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The [latest console result](docs/HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md)
-accepts PADReset mask `0x70000000` return. The new stop is
-`GX_SET_FOG_UNPROVEN_ARGS` at `0x801722CC`, type 0, `(1,1,0,0)`, dispatch
-635434 / 129.411 seconds. The preceding heartbeat has 5,988 FIFO writes,
-102 successful presents / 0 failures and zero replay calls. The user confirms
-black output followed by an error.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md)
+accepts the Mii Fog tuple return. The new stop is DIRECT GXSetCopyClamp
+`0x8016F618`, value 3, dispatch 631958 / 119.749 seconds. The preceding snapshot
+has 5,044 FIFO writes, 102 successful presents / 0 failures and zero replay
+calls. This run's visual observation is pending.
 
 Further SDK calls, replay, recognizable pixels, sustained execution, full
 input, audio and performance remain to validate. No fixed count of remaining

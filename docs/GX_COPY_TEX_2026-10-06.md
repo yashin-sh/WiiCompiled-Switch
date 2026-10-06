@@ -4,7 +4,9 @@ The [verified configuration run](HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG
 reaches GXCopyTex `0x8016FD74`, destination `0x9210A720`, clear 1, after
 Clamp(3), Src(0,0,128,128) and Dst(128,128,5,0) return. This candidate
 implements that observed copy and its GPU-destination lifetime dependency.
-Its console return and copied pixels remain unaccepted.
+The [fresh console run](HARDWARE_RESULTS_2026-10-06_GX_COPY_TEX_PIX_MODE_SYNC_FRONTIER.md)
+accepts its observed native return and reaches GXPixModeSync. Copied pixels
+and GPU completion remain unproven.
 
 ## Copy contract
 
@@ -104,6 +106,7 @@ A later direct nxlink launch starts at **18:27:14 UTC** and exits **0 at
 Launch revision `0e96ca8b13f18a03ae69b83e941609ff27a5149a` differs from the
 validated code only in Markdown; candidate source hashes, dependency pins and
 upstream patch bytes are rechecked before transfer. The exact NRO identity
-above is unchanged. Fresh durable reports and this launch's visual observation
-remain pending; transfer success does not establish native return, GPU
-completion, copied pixels or later execution.
+above is unchanged. The fresh 18:30:43 UTC retrieval verifies 37 reports / 629,452 bytes,
+13 changed / 24 identical. A new copy-pass report and the later PixModeSync
+blocker establish the observed native return. The user reports black then
+error. GPU completion, copied pixels and later destination reuse remain open.

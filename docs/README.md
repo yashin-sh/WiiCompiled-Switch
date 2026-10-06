@@ -2,8 +2,9 @@
 
 ## Architecture / runtime
 
-- [GX_COPY_TEX_2026-10-06.md](GX_COPY_TEX_2026-10-06.md) — current bounded native copy/cache lifetime candidate; twenty suites, five workflows and private build pass, verified SD copy and successful nxlink transfer; console return pending
-- [HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG_COPY_TEX_FRONTIER.md](HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG_COPY_TEX_FRONTIER.md) — latest verified run: Clamp/Src/Dst returned, GXCopyTex frontier; visual result pending
+- [HARDWARE_RESULTS_2026-10-06_GX_COPY_TEX_PIX_MODE_SYNC_FRONTIER.md](HARDWARE_RESULTS_2026-10-06_GX_COPY_TEX_PIX_MODE_SYNC_FRONTIER.md) — latest verified run: native copy returned, PixModeSync frontier, black then error
+- [GX_COPY_TEX_2026-10-06.md](GX_COPY_TEX_2026-10-06.md) — current bounded native copy/cache lifetime candidate; twenty suites, five workflows and private build pass, verified native return on console; GPU pixels pending
+- [HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG_COPY_TEX_FRONTIER.md](HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG_COPY_TEX_FRONTIER.md) — preceding verified run: Clamp/Src/Dst returned, GXCopyTex frontier; visual result pending
 - [GX_TEXTURE_COPY_CONFIG_2026-10-06.md](GX_TEXTURE_COPY_CONFIG_2026-10-06.md) — all three observed configuration returns accepted; GXCopyTex and cache lifetime remain open
 - [HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md](HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md) — latest console result: Mii Fog returned; Clamp(3) frontier; 36 reports verified, visual pending
 - [GX_FOG_DEGENERATE_2026-10-05.md](GX_FOG_DEGENERATE_2026-10-05.md) — Mii texture Fog `(1,1,0,0)` tuple; all gates pass, exact observed tuple console return accepted

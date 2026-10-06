@@ -48,7 +48,8 @@
 - [x] Pass GXCopyTex code `c18f257` on five exact-code workflows / six jobs and the private rendered NRO build; verify 63 strong functions and 37 scoped providers.
 - [x] Copy the exact 73,543,736-byte GXCopyTex NRO to SD at 18:18:20 UTC with complete byte/hash readback.
 - [x] Transfer and launch the exact GXCopyTex NRO via direct nxlink, exit 0 at 18:27:37 UTC, 26,769,071 compressed bytes / 2,249 blocks.
-- [ ] Retrieve fresh GXCopyTex reports and hardware-accept its observed return; GPU completion and copied pixels remain open.
+- [x] Verify 37 fresh reports / 629,452 bytes, 13 changed / 24 identical; accept the observed native copy return via copy-pass plus later GXPixModeSync stop.
+- [ ] Implement and validate GXPixModeSync `0x8016EB70`; GPU completion, copied pixels and recognizable game images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
@@ -85,11 +86,12 @@
 - [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The [latest console result](docs/HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG_COPY_TEX_FRONTIER.md)
-accepts all three configuration returns. The next DIRECT stop is GXCopyTex
-`0x8016FD74`, destination `0x9210A720`, clear 1, dispatch 633774 / 126.018
-seconds. The preceding snapshot has 5,988 FIFO writes, 102 successful presents /
-0 failures and zero replay calls. This run's visual observation is pending.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-06_GX_COPY_TEX_PIX_MODE_SYNC_FRONTIER.md)
+accepts the observed native copy return and reaches GXPixModeSync `0x8016EB70`
+at 120.375 seconds, stage GX_COPY_TEX. The 37 reports / 629,452 bytes are
+independently verified. The user reports black then error. The preceding
+snapshot has 5,988 FIFO writes, 102 successful presents / zero failures and
+zero replay calls; it does not establish copied texture pixels.
 
 Further SDK calls, replay, recognizable pixels, sustained execution, full
 input, audio and performance remain to validate. No fixed count of remaining

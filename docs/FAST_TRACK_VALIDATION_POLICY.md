@@ -187,19 +187,15 @@ If a new run:
 
 ## Current frontier — 2026-10-06
 
-The [fresh configuration hardware result](HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG_COPY_TEX_FRONTIER.md)
-accepts Clamp(3), Src(0,0,128,128) and Dst(128,128,5,0) through ordered
-caller/stage/later-blocker proof. The next DIRECT stop is GXCopyTex
-`0x8016FD74`, destination `0x9210A720`, clear 1, dispatch 633774 / 126.018
-seconds. All 36 reports / 630,085 bytes have verified manifest, baseline and
-archive evidence. This run's visual observation remains pending.
-
-Configuration acceptance is scoped to the captured tuples. Actual copying
-needs faithful native draw ordering, complete guest destination range
-validation and the pinned copy lifetime/cache dependency. Existing DC range
-no-ops omit the GX tracker; silently forwarding a texture copy with that
-omission is not an accepted implementation. The preceding 102 successful
-presents do not identify pixels.
+The [fresh GXCopyTex hardware result](HARDWARE_RESULTS_2026-10-06_GX_COPY_TEX_PIX_MODE_SYNC_FRONTIER.md)
+accepts the observed native RGB5A3 128×128 copy to `0x9210A720`, clear 1,
+using its new copy-pass report, verified caller and later DIRECT blocker
+GXPixModeSync `0x8016EB70`, stage GX_COPY_TEX, 120.375 seconds. All 37 reports /
+629,452 bytes are independently checked, 13 changed / 24 identical. The user
+reports black then error. Native return does not establish GPU completion,
+copied pixels or later retirement; the preceding present counts do not identify
+images. PixModeSync must preserve the pinned guest-mirror-before-native order
+and emit the real Aurora pixel-engine control command.
 
 On October 5 the user authorized managing PRs and merging when their pipelines
 pass, without another confirmation. Merge status and hardware acceptance are

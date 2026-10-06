@@ -32,29 +32,27 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest [configuration console run](docs/HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG_COPY_TEX_FRONTIER.md)
-accepts Clamp(3), TexCopySrc(0,0,128,128) and TexCopyDst(128,128,5,0)
-returning through the Mii texture caller. The next stop is **GXCopyTex
-(`0x8016FD74`)**, destination `0x9210A720`, clear 1, dispatch 633774 /
-126.018 seconds. All 36 reports / 630,085 bytes are independently verified.
-The preceding snapshot has 5,988 FIFO writes, 102 successful presents / 0
-failures and zero replay calls. This run's visual observation is pending;
-recognizable game pixels remain unproven.
+The latest [GXCopyTex console run](docs/HARDWARE_RESULTS_2026-10-06_GX_COPY_TEX_PIX_MODE_SYNC_FRONTIER.md)
+accepts the native RGB5A3 128×128 copy to `0x9210A720`, clear 1, after the
+Mii texture configuration returns. A new `copy-pass` report and the later
+DIRECT stop at **GXPixModeSync (`0x8016EB70`)**, stage GX_COPY_TEX, establish
+the observed return. All 37 reports / 629,452 bytes are independently verified,
+13 changed / 24 identical. The user reports **black then error**; recognizable
+game pixels and GPU completion remain unproven.
 
-The [bounded texture-copy configuration bridges](docs/GX_TEXTURE_COPY_CONFIG_2026-10-06.md)
-pass nineteen local suites, seven mutations, both AArch64 modes, the
-synthetic/private rendered builds and five exact-code workflows / six jobs.
-PR #316 is merged as `666e559`; the exact 73,498,680-byte NRO transfers
-successfully via nxlink at 16:47:54 UTC. Configuration returns are accepted
-only for the observed tuples. The [bounded GXCopyTex candidate](docs/GX_COPY_TEX_2026-10-06.md)
-adds native EFB copying, complete 32 KiB range checks and GPU-copy retirement
-through existing cache/DMA hooks. Twenty local suites, nine mutations, both
-AArch64 modes, the synthetic/private rendered builds and five exact-code
-workflows / six jobs pass. The 73,543,736-byte NRO is on SD with complete
-readback verified at 18:18:20 UTC. The same exact candidate transfers via
-direct nxlink with exit 0 at 18:27:37 UTC. Fresh hardware reports, its console
-return and this launch’s visual observation remain pending.
+The [bounded GXCopyTex bridge](docs/GX_COPY_TEX_2026-10-06.md) supplies native
+EFB copying, complete 32 KiB checks and GPU-copy retirement through existing
+cache/DMA hooks. Twenty suites, nine mutations, both AArch64 modes, full
+synthetic/private rendered builds and five exact-code workflows / six jobs
+pass. The exact 73,543,736-byte NRO transfers with nxlink exit 0 at 18:27:37
+UTC. Acceptance covers the captured copy tuple; later retirement is locally
+tested but not exercised by this run. PixModeSync is the next implementation
+boundary. The preceding snapshot retains 5,988 FIFO writes and 102 successful
+presents / zero failures; those counts do not identify pixels.
 
+The [configuration bridges](docs/GX_TEXTURE_COPY_CONFIG_2026-10-06.md) remain
+accepted for Clamp(3), Src(0,0,128,128), Dst(128,128,5,0). PR #316 is merged
+as `666e559`.
 The [Fog correction](docs/GX_FOG_DEGENERATE_2026-10-05.md) passed all eighteen
 local suites, both AArch64 modes, the synthetic/private rendered builds and
 five exact-head workflows / six jobs. PR #315 is merged as `f6da5a7`.

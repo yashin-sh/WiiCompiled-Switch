@@ -88,6 +88,7 @@ class Memory {
     static void Write16(std::uint32_t address, std::uint16_t value);
     static void Write32(std::uint32_t address, std::uint32_t value);
     static void Write64(std::uint32_t address, std::uint64_t value);
+    static void WriteFloat32(std::uint32_t address, double value);
 
     static std::uint8_t* GetPointer(std::uint32_t address);
     static std::uint8_t* GetPointer(std::uint32_t address, std::size_t length);

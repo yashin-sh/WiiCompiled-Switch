@@ -47,6 +47,9 @@ as `7b41350`. The exact 73,556,024-byte NRO transfers with nxlink exit 0 at
 The preceding heartbeat retains 5,988 FIFO writes and 102 successful presents /
 zero failures; it does not identify pixels. The next getter needs the saved
 guest viewport and its pinned frame-gated offscreen-screen side effect.
+The [viewport/depth candidate](docs/GX_VIEWPORT_STATE_2026-10-06.md) implements
+that getter and the statically checked depth dependency; complete validation
+and hardware return remain pending.
 
 The [bounded copy](docs/GX_COPY_TEX_2026-10-06.md) remains accepted for RGB5A3
 128×128, clear 1, now also at destination `0x9210A740`. GPU lifetime tests

@@ -43,7 +43,9 @@
 - [x] Transfer the exact configuration NRO via direct nxlink with exit 0 at 16:47:54 UTC (26,745,240 compressed bytes / 2,247 blocks).
 - [x] Retrieve and independently verify 36 reports / 630,085 bytes; accept Clamp(3), TexCopySrc(0,0,128,128) and TexCopyDst(128,128,5,0) return.
 - [x] Capture GXCopyTex `0x8016FD74`, destination `0x9210A720`, clear 1, dispatch 633774 / 126.018 seconds.
-- [ ] Implement and validate actual texture copying with guest-range and destination/cache lifetime handling.
+- [x] Implement the [bounded GXCopyTex candidate](docs/GX_COPY_TEX_2026-10-06.md), native copy/draw ordering, full 32 KiB preflight and destination retirement via DC/DMA hooks.
+- [x] Pass GXCopyTex local validation: 65,746 calls / 25 rendered refusals, two headless refusals, 65,025 pinned size cases, nine rejected mutants, twenty suites, both AArch64 modes and full synthetic retention.
+- [ ] Pass exact-code workflows and private rendered NRO build, then hardware-accept the observed copy return.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

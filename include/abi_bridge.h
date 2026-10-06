@@ -84,14 +84,14 @@ struct KnownTranslatedCpuCall {
     static constexpr void (*Entry)(CpuContext*) = nullptr;
 };
 
-#define MKW_TRANSLATED_TRAIT(addr, winner, nonvolatile_fpr_write_mask)                    \
-    extern "C" void winner(CpuContext* ctx);                                              \
-    template <>                                                                           \
-    struct KnownTranslatedCpuCall<0x##addr##u> {                                          \
-        static constexpr bool kAvailable = true;                                          \
+#define MKW_TRANSLATED_TRAIT(addr, winner, nonvolatile_fpr_write_mask)                        \
+    extern "C" void winner(CpuContext* ctx);                                                  \
+    template <>                                                                               \
+    struct KnownTranslatedCpuCall<0x##addr##u> {                                              \
+        static constexpr bool kAvailable = true;                                              \
         static constexpr std::uint32_t kNonvolatileFprWriteMask = nonvolatile_fpr_write_mask; \
-        static constexpr bool kMustRemainDynamicallyDispatchable = false;                 \
-        static constexpr void (*Entry)(CpuContext*) = &winner;                            \
+        static constexpr bool kMustRemainDynamicallyDispatchable = false;                     \
+        static constexpr void (*Entry)(CpuContext*) = &winner;                                \
     }
 
 // Minimal native/HLE catalog for guest entry points that WiiCompiled itself
@@ -221,10 +221,10 @@ struct KnownNativeCpuCall<0x801A661Cu> {
 // Broadway hardware-register helpers that the pinned WiiCompiled runtime
 // intentionally replaces with host no-ops. Keep the catalogue narrowly scoped
 // to helpers whose upstream HLE has no guest-visible state change.
-#define MKW_NATIVE_NOOP_TRAIT(addr)            \
-    template <>                                \
-    struct KnownNativeCpuCall<0x##addr##u> {   \
-        static constexpr bool kAvailable = true; \
+#define MKW_NATIVE_NOOP_TRAIT(addr)                        \
+    template <>                                            \
+    struct KnownNativeCpuCall<0x##addr##u> {               \
+        static constexpr bool kAvailable = true;           \
         static inline void Invoke(CpuContext*) noexcept {} \
     }
 
@@ -243,16 +243,24 @@ MKW_NATIVE_NOOP_TRAIT(8012E64C); // PPCMtwpar
 MKW_NATIVE_NOOP_TRAIT(8012E654); // PPCDisableSpeculation
 MKW_NATIVE_NOOP_TRAIT(8012E684); // PPCMthid4
 
-// PAL data-cache range maintenance. WiiCompiled native-overrides this whole
-// five-function family because host CPUs own cache coherency. Upstream also
-// validates the guest range and notifies its GX RAM tracker; the Switch port
-// does not have that GX tracker yet, so preserving CpuContext is the complete
-// guest-visible CPU behavior for this stage of startup.
-MKW_NATIVE_NOOP_TRAIT(801A1600); // DCInvalidateRange
-MKW_NATIVE_NOOP_TRAIT(801A162C); // DCFlushRange
-MKW_NATIVE_NOOP_TRAIT(801A165C); // DCStoreRange
-MKW_NATIVE_NOOP_TRAIT(801A168C); // DCFlushRangeNoSync
-MKW_NATIVE_NOOP_TRAIT(801A16B8); // DCStoreRangeNoSync
+// Pinned cache-range alignment/validation plus live GPU-copy retirement.
+// Headless startup retains the previous no-op behavior; the rendered bridge
+// supplies the copy-lifetime part of the GX RAM tracker.
+extern "C" void mkw_switch_hle_dc_range(CpuContext* cpu) noexcept;
+#define MKW_NATIVE_DC_RANGE_TRAIT(addr)                       \
+    template <>                                               \
+    struct KnownNativeCpuCall<0x##addr##u> {                  \
+        static constexpr bool kAvailable = true;              \
+        static inline void Invoke(CpuContext* cpu) noexcept { \
+            mkw_switch_hle_dc_range(cpu);                     \
+        }                                                     \
+    }
+MKW_NATIVE_DC_RANGE_TRAIT(801A1600);
+MKW_NATIVE_DC_RANGE_TRAIT(801A162C);
+MKW_NATIVE_DC_RANGE_TRAIT(801A165C);
+MKW_NATIVE_DC_RANGE_TRAIT(801A168C);
+MKW_NATIVE_DC_RANGE_TRAIT(801A16B8);
+#undef MKW_NATIVE_DC_RANGE_TRAIT
 
 // PAL cache-control entry points whose pinned WiiCompiled HLE is the shared
 // Cache_Maintenance_Stub. These have no guest-visible state change on the host.
@@ -314,7 +322,7 @@ struct KnownNativeCpuCall<0x80168B00u> {
 // f14..f31 internally, but those registers are nonvolatile to its caller.
 // Generated trait headers provide the exact write mask for each direct target.
 class PpcNonvolatileFprGuard {
-public:
+  public:
     explicit PpcNonvolatileFprGuard(
         CpuContext* cpu,
         std::uint32_t mask = kPpcAllNonvolatileFprMask) noexcept
@@ -343,7 +351,7 @@ public:
     PpcNonvolatileFprGuard(const PpcNonvolatileFprGuard&) = delete;
     PpcNonvolatileFprGuard& operator=(const PpcNonvolatileFprGuard&) = delete;
 
-private:
+  private:
     CpuContext* cpu_ = nullptr;
     std::uint32_t mask_ = 0u;
     PPC_FPR saved_[18]{};

@@ -46,8 +46,11 @@ pass nineteen local suites, seven mutations, both AArch64 modes, the
 synthetic/private rendered builds and five exact-code workflows / six jobs.
 PR #316 is merged as `666e559`; the exact 73,498,680-byte NRO transfers
 successfully via nxlink at 16:47:54 UTC. Configuration returns are accepted
-only for the observed tuples. Actual copying and destination/cache lifetime
-are the next implementation work.
+only for the observed tuples. The [bounded GXCopyTex candidate](docs/GX_COPY_TEX_2026-10-06.md)
+adds native EFB copying, complete 32 KiB range checks and GPU-copy retirement
+through existing cache/DMA hooks. Twenty local suites, nine mutations, both
+AArch64 modes and the synthetic build pass; remote/private-build and hardware
+return remain pending.
 
 The [Fog correction](docs/GX_FOG_DEGENERATE_2026-10-05.md) passed all eighteen
 local suites, both AArch64 modes, the synthetic/private rendered builds and

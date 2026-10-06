@@ -41,7 +41,9 @@
 - [x] Validate configuration code `fec006a`: 393,253 rendered calls / 12 diagnosed refusals, 12 headless refusals, 524,292 native fixtures, seven rejected mutants, nineteen local suites, both AArch64 modes, full synthetic/private rendered builds and five exact-code workflows / six jobs; 56 retained strong functions and 30 scoped providers verified.
 - [x] Copy the 73,498,680-byte configuration NRO to SD at 05:50:54 UTC with complete readback; the first direct nxlink attempt fails before transfer. PR #316 merges as `666e559` at 06:05:01 UTC after final documentation-head checks.
 - [x] Transfer the exact configuration NRO via direct nxlink with exit 0 at 16:47:54 UTC (26,745,240 compressed bytes / 2,247 blocks).
-- [ ] Retrieve fresh configuration-run reports and establish its executed returns on Switch; this later run's visual observation is pending.
+- [x] Retrieve and independently verify 36 reports / 630,085 bytes; accept Clamp(3), TexCopySrc(0,0,128,128) and TexCopyDst(128,128,5,0) return.
+- [x] Capture GXCopyTex `0x8016FD74`, destination `0x9210A720`, clear 1, dispatch 633774 / 126.018 seconds.
+- [ ] Implement and validate actual texture copying with guest-range and destination/cache lifetime handling.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
@@ -78,11 +80,11 @@
 - [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The [latest console result](docs/HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md)
-accepts the Mii Fog tuple return. The new stop is DIRECT GXSetCopyClamp
-`0x8016F618`, value 3, dispatch 631958 / 119.749 seconds. The preceding snapshot
-has 5,044 FIFO writes, 102 successful presents / 0 failures and zero replay
-calls. This run's visual observation is pending.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG_COPY_TEX_FRONTIER.md)
+accepts all three configuration returns. The next DIRECT stop is GXCopyTex
+`0x8016FD74`, destination `0x9210A720`, clear 1, dispatch 633774 / 126.018
+seconds. The preceding snapshot has 5,988 FIFO writes, 102 successful presents /
+0 failures and zero replay calls. This run's visual observation is pending.
 
 Further SDK calls, replay, recognizable pixels, sustained execution, full
 input, audio and performance remain to validate. No fixed count of remaining

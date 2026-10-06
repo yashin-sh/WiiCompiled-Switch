@@ -32,25 +32,22 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest [Mii Fog console run](docs/HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md)
-accepts the new `(1,1,0,0)` Fog tuple returning through the checked texture
-caller, then stops at **GXSetCopyClamp (`0x8016F618`)**, value 3, dispatch
-631958 / 119.749 seconds. All 36 reports / 628,989 bytes are verified against
-the PADReset baseline. The snapshot has 5,044 FIFO writes, 102 successful
-presents / 0 failures and zero replay calls; this run's visual observation is
-pending and recognizable pixels remain unproven.
+The latest [configuration console run](docs/HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG_COPY_TEX_FRONTIER.md)
+accepts Clamp(3), TexCopySrc(0,0,128,128) and TexCopyDst(128,128,5,0)
+returning through the Mii texture caller. The next stop is **GXCopyTex
+(`0x8016FD74`)**, destination `0x9210A720`, clear 1, dispatch 633774 /
+126.018 seconds. All 36 reports / 630,085 bytes are independently verified.
+The preceding snapshot has 5,988 FIFO writes, 102 successful presents / 0
+failures and zero replay calls. This run's visual observation is pending;
+recognizable game pixels remain unproven.
 
-The [bounded texture-copy configuration candidate](docs/GX_TEXTURE_COPY_CONFIG_2026-10-06.md)
-implements Clamp and its guest low-bit mirrors, plus the next two audited
-Src/Dst setters and pinned HLE shadow. Src/Dst are pre-ported from the checked
-caller and remain unobserved. All nineteen local suites, seven mutations,
-both AArch64 modes, the synthetic/private rendered builds and five exact-code
-workflows / six jobs pass. The 73,498,680-byte NRO is on the Switch SD with
-complete USB/MTP readback verified at 05:50:54 UTC. After the earlier connection
-failure and reported manual launch, direct nxlink transfers the exact NRO
-successfully at 16:47:54 UTC. Fresh reports and this later run's visual
-observation are pending. [PR #316](https://github.com/yashin-sh/WiiCompiled-Switch/pull/316)
-is merged as `666e559`; configuration returns remain unaccepted.
+The [bounded texture-copy configuration bridges](docs/GX_TEXTURE_COPY_CONFIG_2026-10-06.md)
+pass nineteen local suites, seven mutations, both AArch64 modes, the
+synthetic/private rendered builds and five exact-code workflows / six jobs.
+PR #316 is merged as `666e559`; the exact 73,498,680-byte NRO transfers
+successfully via nxlink at 16:47:54 UTC. Configuration returns are accepted
+only for the observed tuples. Actual copying and destination/cache lifetime
+are the next implementation work.
 
 The [Fog correction](docs/GX_FOG_DEGENERATE_2026-10-05.md) passed all eighteen
 local suites, both AArch64 modes, the synthetic/private rendered builds and

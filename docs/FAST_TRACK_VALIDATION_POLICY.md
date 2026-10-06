@@ -187,18 +187,19 @@ If a new run:
 
 ## Current frontier — 2026-10-06
 
-The [fresh Mii Fog hardware result](HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md)
-accepts the new `(1,1,0,0)` tuple through checked caller/guard/later-blocker
-proof. The new DIRECT stop is GXSetCopyClamp `0x8016F618`, value 3, dispatch
-631958 / 119.749 seconds. All 36 reports / 628,989 bytes have verified manifest,
-baseline and archive evidence. This run's visual observation is pending.
+The [fresh configuration hardware result](HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG_COPY_TEX_FRONTIER.md)
+accepts Clamp(3), Src(0,0,128,128) and Dst(128,128,5,0) through ordered
+caller/stage/later-blocker proof. The next DIRECT stop is GXCopyTex
+`0x8016FD74`, destination `0x9210A720`, clear 1, dispatch 633774 / 126.018
+seconds. All 36 reports / 630,085 bytes have verified manifest, baseline and
+archive evidence. This run's visual observation remains pending.
 
-The [bounded configuration lot](GX_TEXTURE_COPY_CONFIG_2026-10-06.md) implements
-observed Clamp and its pinned guest mirrors. The next Src/Dst setters are
-pre-ported from the same checked caller; native state, u16/bool semantics and
-canonical HLE shadow are audited. They are not yet observed or hardware-crossed.
-Actual texture copying, buffer resolution/readback and neighboring non-setter
-APIs remain hardware-driven. The 102 successful presents do not identify pixels.
+Configuration acceptance is scoped to the captured tuples. Actual copying
+needs faithful native draw ordering, complete guest destination range
+validation and the pinned copy lifetime/cache dependency. Existing DC range
+no-ops omit the GX tracker; silently forwarding a texture copy with that
+omission is not an accepted implementation. The preceding 102 successful
+presents do not identify pixels.
 
 On October 5 the user authorized managing PRs and merging when their pipelines
 pass, without another confirmation. Merge status and hardware acceptance are

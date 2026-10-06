@@ -2,7 +2,8 @@
 
 ## Architecture / runtime
 
-- [GX_TEXTURE_COPY_CONFIG_2026-10-06.md](GX_TEXTURE_COPY_CONFIG_2026-10-06.md) — observed Clamp plus pre-ported Src/Dst with pinned HLE shadow; validated and merged, later nxlink transfer succeeded, fresh results pending
+- [HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG_COPY_TEX_FRONTIER.md](HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG_COPY_TEX_FRONTIER.md) — latest verified run: Clamp/Src/Dst returned, GXCopyTex frontier; visual result pending
+- [GX_TEXTURE_COPY_CONFIG_2026-10-06.md](GX_TEXTURE_COPY_CONFIG_2026-10-06.md) — all three observed configuration returns accepted; GXCopyTex and cache lifetime remain open
 - [HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md](HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md) — latest console result: Mii Fog returned; Clamp(3) frontier; 36 reports verified, visual pending
 - [GX_FOG_DEGENERATE_2026-10-05.md](GX_FOG_DEGENERATE_2026-10-05.md) — Mii texture Fog `(1,1,0,0)` tuple; all gates pass, exact observed tuple console return accepted
 - [HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md](HARDWARE_RESULTS_2026-10-05_PAD_RESET_MII_FOG_FRONTIER.md) — preceding result: PADReset mask returned; Mii texture Fog frontier, 36 reports verified, black then error

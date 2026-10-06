@@ -4,13 +4,13 @@ The [fresh Fog run](HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md)
 crosses the Mii Fog call, then reaches GXSetCopyClamp `0x8016F618`, value 3.
 This candidate implements that observed setter and pre-ports the next two
 configuration setters from the checked caller, under the authorized bounded
-GX setter policy. Src/Dst remain forecasts until a fresh console run.
+GX setter policy. All three observed tuples now return in the [verified console run](HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG_COPY_TEX_FRONTIER.md); broader argument families retain host proof.
 
 | Setter | Target | Scope / forecast |
 | --- | --- | --- |
 | CopyClamp | `0x8016F618` | Full raw word 0..3; observed 3 |
-| TexCopySrc | `0x8016F478` | Full r3..r6 narrowed to u16; forecast `(0,0,128,128)` |
-| TexCopyDst | `0x8016F4DC` | u16 dimensions, full format 5 only; forecast `(128,128,5,0)` |
+| TexCopySrc | `0x8016F478` | Full r3..r6 narrowed to u16; observed `(0,0,128,128)` |
+| TexCopyDst | `0x8016F4DC` | u16 dimensions, full format 5 only; observed `(128,128,5,0)` |
 
 ## Pinned semantics
 
@@ -90,7 +90,7 @@ retrieved. These observations are separate from the later network launch.
 `666e559c9140bb63a1694be2e15d09834a19af68` at **06:05:01 UTC**, after final
 documentation-head checks.
 
-## Later direct launch — 2026-10-06
+## Later direct launch and verified result — 2026-10-06
 
 The Switch replied to UDP netloader discovery at **16:47:21 UTC**. Direct
 nxlink started at **16:47:41 UTC** and exited **0 at 16:47:54 UTC**, sending
@@ -100,7 +100,12 @@ code `fec006a` only in Markdown. Candidate source hashes, dependency pins and
 the existing upstream patch were checked before transfer. No TCP preflight
 was used.
 
-Fresh reports and this later run's visual observation are pending; successful
-transfer does not establish configuration returns, texture-copy execution or
-recognizable game pixels. Private NROs, game products and raw archives remain
+Fresh [verified reports](HARDWARE_RESULTS_2026-10-06_TEXTURE_COPY_CONFIG_COPY_TEX_FRONTIER.md)
+at 16:54:08 UTC establish return from Clamp(3), Src(0,0,128,128) and
+Dst(128,128,5,0), before GXCopyTex `0x8016FD74`, destination `0x9210A720`,
+clear 1, dispatch 633774 / 126.018 seconds. All 36 reports / 630,085 bytes
+have independently verified manifest, baseline and archive bytes. Acceptance
+is limited to these tuples; raw mirrors and GPU state are not captured.
+This later run's visual observation, actual texture-copy execution and
+recognizable game pixels remain pending. Private NROs, game products and raw archives remain
 excluded from the public repository.

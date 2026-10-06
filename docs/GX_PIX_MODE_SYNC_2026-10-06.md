@@ -70,8 +70,11 @@ modification times remain unchanged.
 The exact NRO is **73,556,024 bytes**, SHA-256
 `fefaaf0e40a9b6553f18746ae64d8b1dfdb6708f1053c7537b981a16f0c630df`:
 `WiiCompiled-Switch-gx-pix-mode-sync-rendered-discovery.nro`.
-Its transfer and console return remain pending: the Switch is currently absent
-from USB/MTP and UDP netloader discovery. No SD copy or launch is inferred
-from host validation. The preceding GXCopyTex run remains the latest console
-return evidence. Private game products, NROs and raw diagnostic archives stay
+Direct nxlink starts at **19:14:05 UTC** and exits **0 at 19:14:18 UTC**,
+sending **26,774,763 compressed bytes / 2,249 blocks (36.40%)**. Launch revision
+`b38a69aff9130a85b213556e8a65f2b26a06a2bf` differs from validated code only
+in Markdown; candidate hashes, pins and upstream patch are rechecked before
+transfer. No SD deployment is claimed. Fresh reports, this launch's visual
+observation and native console return remain pending; the preceding GXCopyTex
+run remains the latest verified console return evidence. Private game products, NROs and raw diagnostic archives stay
 excluded. GPU completion and recognizable game pixels remain open.

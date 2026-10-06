@@ -51,7 +51,8 @@
 - [x] Verify 37 fresh reports / 629,452 bytes, 13 changed / 24 identical; accept the observed native copy return via copy-pass plus later GXPixModeSync stop.
 - [x] Implement the [faithful GXPixModeSync candidate](docs/GX_PIX_MODE_SYNC_2026-10-06.md); pass 21 local suites, six rejected mutants, both SDK modes, full synthetic retention and five exact-code workflows / six jobs.
 - [x] Build the exact PixModeSync rendered NRO (73,556,024 bytes), verify 65 strong functions and 39 scoped unique providers; preserve candidate bytes and upstream patch/mtimes.
-- [ ] Transfer and hardware-accept PixModeSync after reconnection; GPU completion, copied pixels and recognizable game images remain open.
+- [x] Transfer the exact PixModeSync NRO via direct nxlink, exit 0 at 19:14:18 UTC, 26,774,763 compressed bytes / 2,249 blocks.
+- [ ] Retrieve fresh reports and hardware-accept PixModeSync; GPU completion, copied pixels and recognizable game images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

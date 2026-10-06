@@ -50,7 +50,8 @@ tested but not exercised by this run. The [PixModeSync candidate](docs/GX_PIX_MO
 21 local suites, six rejected mutations, rendered/synthetic SDK builds, five
 exact-code workflows / six jobs and the private rendered build. Its exact
 73,556,024-byte NRO retains 65 strong functions with 39 scoped unique providers.
-Transfer and console return remain pending the reconnection of the Switch. The preceding snapshot retains 5,988 FIFO writes and 102 successful
+The exact candidate launches via nxlink with exit 0 at 19:14:18 UTC. Fresh
+reports, its visual result and native console return remain pending. The preceding snapshot retains 5,988 FIFO writes and 102 successful
 presents / zero failures; those counts do not identify pixels.
 
 The [configuration bridges](docs/GX_TEXTURE_COPY_CONFIG_2026-10-06.md) remain

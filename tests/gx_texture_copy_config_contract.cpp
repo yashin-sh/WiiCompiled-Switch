@@ -239,7 +239,8 @@ std::uint8_t* HostPointer(std::uint32_t addr) {
 } // namespace GuestFlat
 
 extern "C" std::uint8_t* __real__ZN6Memory10GetPointerEjm(std::uint32_t, std::size_t);
-extern "C" std::uint8_t* __wrap__ZN6Memory10GetPointerEjm(std::uint32_t addr, std::size_t length) {
+namespace {
+void ObserveMemory(std::size_t length) {
     if (observing) {
         if (reportPipe >= 0)
             _exit(92);
@@ -247,7 +248,23 @@ extern "C" std::uint8_t* __wrap__ZN6Memory10GetPointerEjm(std::uint32_t addr, st
         CheckCpu();
         ++lookups;
     }
+}
+} // namespace
+extern "C" std::uint8_t* __wrap__ZN6Memory10GetPointerEjm(std::uint32_t addr, std::size_t length) {
+    ObserveMemory(length);
     return __real__ZN6Memory10GetPointerEjm(addr, length);
+}
+// Wrap the scalar entry points used by the bridge. GetPointer inside the
+// Memory TU can be inlined, so wrapping only that symbol misses their order.
+extern "C" std::uint32_t __real__ZN6Memory6Read32Ej(std::uint32_t);
+extern "C" std::uint32_t __wrap__ZN6Memory6Read32Ej(std::uint32_t addr) {
+    ObserveMemory(4u);
+    return __real__ZN6Memory6Read32Ej(addr);
+}
+extern "C" void __real__ZN6Memory7Write32Ejj(std::uint32_t, std::uint32_t);
+extern "C" void __wrap__ZN6Memory7Write32Ejj(std::uint32_t addr, std::uint32_t value) {
+    ObserveMemory(4u);
+    __real__ZN6Memory7Write32Ejj(addr, value);
 }
 extern "C" void mkw_switch_set_fast_track_stage(const char* value) noexcept {
     stage = value;

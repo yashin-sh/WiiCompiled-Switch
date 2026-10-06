@@ -23,7 +23,8 @@ for rendered in 0 1; do
         "$ROOT_DIR/tests/gx_texture_copy_config_contract.cpp" \
         "$ROOT_DIR/source/memory_switch_slice.cpp" \
         "$ROOT_DIR/source/gx_texture_copy_config_hle_bridge.cpp" \
-        -Wl,--wrap=_ZN6Memory10GetPointerEjm -Wl,--wrap=abort \
+        -Wl,--wrap=_ZN6Memory10GetPointerEjm \
+        -Wl,--wrap=_ZN6Memory6Read32Ej -Wl,--wrap=_ZN6Memory7Write32Ejj -Wl,--wrap=abort \
         -o "$TEST_DIR/contract-$rendered"
     "$TEST_DIR/contract-$rendered"
 done

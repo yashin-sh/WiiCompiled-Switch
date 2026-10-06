@@ -39,8 +39,9 @@
 - [x] Launch Fog via nxlink with exit 0 at 2026-10-06 04:57:43 UTC; verify [36 reports / 628,989 bytes](docs/HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md) and accept the `(1,1,0,0)` Mii tuple returning before GXSetCopyClamp `0x8016F618`, value 3, dispatch 631958 / 119.749 seconds.
 - [x] Implement the [bounded texture-copy configuration lot](docs/GX_TEXTURE_COPY_CONFIG_2026-10-06.md): observed Clamp and guest mirrors; checked-caller Src/Dst pre-ports with pinned HLE shadow.
 - [x] Validate configuration code `fec006a`: 393,253 rendered calls / 12 diagnosed refusals, 12 headless refusals, 524,292 native fixtures, seven rejected mutants, nineteen local suites, both AArch64 modes, full synthetic/private rendered builds and five exact-code workflows / six jobs; 56 retained strong functions and 30 scoped providers verified.
-- [x] Copy the 73,498,680-byte configuration NRO to SD at 05:50:54 UTC with complete readback; direct nxlink fails to connect before launch. Final documentation-head checks and merge status: [PR #316](https://github.com/yashin-sh/WiiCompiled-Switch/pull/316).
-- [ ] Launch the verified configuration NRO and establish its executed returns on Switch.
+- [x] Copy the 73,498,680-byte configuration NRO to SD at 05:50:54 UTC with complete readback; the first direct nxlink attempt fails before transfer. PR #316 merges as `666e559` at 06:05:01 UTC after final documentation-head checks.
+- [x] Transfer the exact configuration NRO via direct nxlink with exit 0 at 16:47:54 UTC (26,745,240 compressed bytes / 2,247 blocks).
+- [ ] Retrieve fresh configuration-run reports and establish its executed returns on Switch; this later run's visual observation is pending.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

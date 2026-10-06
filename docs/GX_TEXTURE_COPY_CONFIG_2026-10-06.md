@@ -80,12 +80,27 @@ The NRO is **73,498,680 bytes**, SHA-256
 USB/MTP copies it to
 `sdmc:/switch/WiiCompiled-Switch-gx-texture-copy-config-rendered-discovery.nro`
 at **2026-10-06 05:50:54 UTC**, with complete byte-for-byte and hash readback.
-The direct nxlink attempt at 05:51:17 UTC cannot connect to `192.168.1.194`
-(exit 1), so it establishes no application launch. The console remains in
-MTP; exit transfer mode and launch the verified SD file from hbmenu.
+The earlier direct nxlink attempt ended at 05:51:17 UTC with a connection
+failure (exit 1), before transfer. The verified SD file was subsequently
+reported launched manually, with black output followed by an error; its
+precise launch time is unavailable and no reports from that attempt have been
+retrieved. These observations are separate from the later network launch.
 
-Final documentation-only head checks and merge status are tracked in
-[PR #316](https://github.com/yashin-sh/WiiCompiled-Switch/pull/316).
-Configuration returns and subsequent texture-copy execution remain pending
-fresh console evidence. Private NROs, game products and raw archives remain
+[PR #316](https://github.com/yashin-sh/WiiCompiled-Switch/pull/316) merged as
+`666e559c9140bb63a1694be2e15d09834a19af68` at **06:05:01 UTC**, after final
+documentation-head checks.
+
+## Later direct launch — 2026-10-06
+
+The Switch replied to UDP netloader discovery at **16:47:21 UTC**. Direct
+nxlink started at **16:47:41 UTC** and exited **0 at 16:47:54 UTC**, sending
+the exact validated NRO: 26,745,240 compressed bytes / 2,247 blocks (36.39%).
+Launch revision `7ef008f8f3747babecf14f96236ff6e765742242` differs from validated
+code `fec006a` only in Markdown. Candidate source hashes, dependency pins and
+the existing upstream patch were checked before transfer. No TCP preflight
+was used.
+
+Fresh reports and this later run's visual observation are pending; successful
+transfer does not establish configuration returns, texture-copy execution or
+recognizable game pixels. Private NROs, game products and raw archives remain
 excluded from the public repository.

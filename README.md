@@ -46,11 +46,11 @@ Src/Dst setters and pinned HLE shadow. Src/Dst are pre-ported from the checked
 caller and remain unobserved. All nineteen local suites, seven mutations,
 both AArch64 modes, the synthetic/private rendered builds and five exact-code
 workflows / six jobs pass. The 73,498,680-byte NRO is on the Switch SD with
-complete USB/MTP readback verified at 05:50:54 UTC. Direct nxlink cannot connect;
-exit MTP and launch `WiiCompiled-Switch-gx-texture-copy-config-rendered-discovery.nro`
-from hbmenu. Final documentation-head checks and merge are tracked in
-[PR #316](https://github.com/yashin-sh/WiiCompiled-Switch/pull/316);
-configuration returns still need a fresh console run.
+complete USB/MTP readback verified at 05:50:54 UTC. After the earlier connection
+failure and reported manual launch, direct nxlink transfers the exact NRO
+successfully at 16:47:54 UTC. Fresh reports and this later run's visual
+observation are pending. [PR #316](https://github.com/yashin-sh/WiiCompiled-Switch/pull/316)
+is merged as `666e559`; configuration returns remain unaccepted.
 
 The [Fog correction](docs/GX_FOG_DEGENERATE_2026-10-05.md) passed all eighteen
 local suites, both AArch64 modes, the synthetic/private rendered builds and

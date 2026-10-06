@@ -39,7 +39,39 @@ occurring after transport. It does not establish physical GPU completion.
 
 The targeted contract passes **65,559 rendered returns**, one diagnosed native
 exception and two diagnosed headless refusals. The pinned BP fixture passes
-**65,536 cases**, with ASan, fatal UBSan and LeakSanitizer active. Broader local
-suites, mutation checks, exact-head workflows, both AArch64 modes, the private
-rendered build and console return are pending. The previous GXCopyTex NRO
-remains the only candidate with fresh console return evidence.
+**65,536 cases**, with ASan, fatal UBSan and LeakSanitizer active. All **21 local suites** pass at
+`bed9d2965a0c3add48d702c1bdeed713166f2802`. Six separately compiled defects
+are rejected: missing mirror, missing native command, wrong write width,
+native-before-mirror, CPU clobber and headless success. Every mutant compiles
+successfully and fails its contract; compiler failure is not a passing mutant.
+
+The full rendered devkitA64 gate and full synthetic NRO/ELF build pass, with
+the new probe and bridge retained. All five actual exact-code PR workflows /
+six jobs pass. Actual [build-switch evidence](https://github.com/yashin-sh/WiiCompiled-Switch/actions/runs/37513014982)
+confirms the new contract counts and rendered compilation; actual
+[fast-track evidence](https://github.com/yashin-sh/WiiCompiled-Switch/actions/runs/37513014934)
+confirms both retained symbols. Script/workflow lint and new C++ formatting
+pass. Final documentation-head checks are separate from exact-code evidence.
+
+The private Rendered Discovery build runs in the immutable pinned environment,
+with network disabled and six jobs, from **18:42:32 to 19:09:34 UTC**.
+All tracked candidate files remain byte-identical during compilation. The
+final ELF retains **65 required strong functions** plus canonical
+`g_texCopyState`. **39 scoped symbols** have one expected provider each across
+**234 host inputs, 19 Rust archives and seven named libraries**. The new native
+command comes from GXManage, the bridge from its own translation unit. Checked
+FIFO and vertex mirrors match the preparation contract. Broader duplicate
+symbols and compiler-injected implicit libraries remain outside this audit.
+Dependency pins and the original nine-file upstream patch bytes/nanosecond
+modification times remain unchanged.
+
+## Console candidate
+
+The exact NRO is **73,556,024 bytes**, SHA-256
+`fefaaf0e40a9b6553f18746ae64d8b1dfdb6708f1053c7537b981a16f0c630df`:
+`WiiCompiled-Switch-gx-pix-mode-sync-rendered-discovery.nro`.
+Its transfer and console return remain pending: the Switch is currently absent
+from USB/MTP and UDP netloader discovery. No SD copy or launch is inferred
+from host validation. The preceding GXCopyTex run remains the latest console
+return evidence. Private game products, NROs and raw diagnostic archives stay
+excluded. GPU completion and recognizable game pixels remain open.

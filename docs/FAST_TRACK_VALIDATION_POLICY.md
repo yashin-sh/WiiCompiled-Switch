@@ -195,7 +195,10 @@ GXPixModeSync `0x8016EB70`, stage GX_COPY_TEX, 120.375 seconds. All 37 reports /
 reports black then error. Native return does not establish GPU completion,
 copied pixels or later retirement; the preceding present counts do not identify
 images. PixModeSync must preserve the pinned guest-mirror-before-native order
-and emit the real Aurora pixel-engine control command.
+and emit the real Aurora pixel-engine control command. The
+[validated candidate](GX_PIX_MODE_SYNC_2026-10-06.md) supplies that ordering;
+21 suites, five exact-code workflows / six jobs and the private build pass.
+Transfer and native console return remain pending reconnection.
 
 On October 5 the user authorized managing PRs and merging when their pipelines
 pass, without another confirmation. Merge status and hardware acceptance are

@@ -42,12 +42,15 @@ game pixels and GPU completion remain unproven.
 
 The [bounded GXCopyTex bridge](docs/GX_COPY_TEX_2026-10-06.md) supplies native
 EFB copying, complete 32 KiB checks and GPU-copy retirement through existing
-cache/DMA hooks. Twenty suites, nine mutations, both AArch64 modes, full
+cache/DMA hooks. PR #317 is merged as `e5ec490`. Twenty suites, nine mutations, both AArch64 modes, full
 synthetic/private rendered builds and five exact-code workflows / six jobs
 pass. The exact 73,543,736-byte NRO transfers with nxlink exit 0 at 18:27:37
 UTC. Acceptance covers the captured copy tuple; later retirement is locally
-tested but not exercised by this run. PixModeSync is the next implementation
-boundary. The preceding snapshot retains 5,988 FIFO writes and 102 successful
+tested but not exercised by this run. The [PixModeSync candidate](docs/GX_PIX_MODE_SYNC_2026-10-06.md) now passes
+21 local suites, six rejected mutations, rendered/synthetic SDK builds, five
+exact-code workflows / six jobs and the private rendered build. Its exact
+73,556,024-byte NRO retains 65 strong functions with 39 scoped unique providers.
+Transfer and console return remain pending the reconnection of the Switch. The preceding snapshot retains 5,988 FIFO writes and 102 successful
 presents / zero failures; those counts do not identify pixels.
 
 The [configuration bridges](docs/GX_TEXTURE_COPY_CONFIG_2026-10-06.md) remain

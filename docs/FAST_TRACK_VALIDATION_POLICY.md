@@ -392,3 +392,12 @@ sixteen changed / twenty-one retained. Both exact identities share 2,560 bytes
 at `0x109C0200`; native objects stay distinct and logical width stays 38.
 The changed copy/display-list reports do not establish pixels or GPU completion.
 Second-object return and recognizable game images remain unaccepted.
+
+The [15:39 CEST second-RGB5A3 run](HARDWARE_RESULTS_2026-10-07_MII_I4_16X16_LOAD_FRONTIER.md)
+accepts second-object, draw-helper and intervening GX state-call return through
+the checked unconditional caller and distinct I4 16×16 stop. All 37 reports /
+632,976 bytes are verified, thirteen changed / twenty-four retained. The new
+exact object `0x80397E00`, slot 0, requires all eight words and 128 readable
+physical MEM2 bytes at `0x109C1E80`; native dimensions stay 16×16. Retained
+copy/display-list reports are not fresh GPU/image evidence. New I4 return,
+GPU completion and recognizable game images remain unaccepted.

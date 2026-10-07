@@ -35,6 +35,10 @@ The 22-suite local gate, five final-head workflows / six actual jobs, merge
 and full SD readback evidence are tracked in
 [PR #327](https://github.com/yashin-sh/WiiCompiled-Switch/pull/327).
 Deployment requires all of those gates; subsequent Markdown changes must
-leave every non-Markdown built input unchanged. New second-object return,
-GPU completion and recognizable game images remain unaccepted until fresh
-hardware evidence. Private products, NROs and raw archives stay excluded.
+leave every non-Markdown built input unchanged. The second-object return is accepted by the subsequent checked run below;
+GPU completion and recognizable images still require separate evidence. Private products, NROs and raw archives stay excluded.
+
+The [15:39 CEST console run](HARDWARE_RESULTS_2026-10-07_MII_I4_16X16_LOAD_FRONTIER.md)
+now accepts second-object, draw-helper and intervening-call return before a
+distinct I4 16×16 stop. All 37 reports / 632,976 bytes are verified, thirteen
+changed / twenty-four retained. Final visible outcome remains unconfirmed.

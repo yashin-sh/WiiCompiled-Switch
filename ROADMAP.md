@@ -87,7 +87,8 @@
 - [x] Reject 27 compiled mutations; pass SDK/synthetic/private builds and lint on code `63df50a`, retaining 71 strong functions and 48 scoped unique providers. NRO 73,621,560 bytes, SHA-256 `ccbf2569...`; the 22-suite gate, final-head CI, merge and verified SD deployment are tracked in [PR #327](https://github.com/yashin-sh/WiiCompiled-Switch/pull/327).
 - [x] Merge PR #327 (`0d4fff0`) after five final-head workflows / six jobs; verify SD readback and successful Netloader transfer at 15:40:26 CEST.
 - [x] Verify [37 reports / 632,976 bytes](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_16X16_LOAD_FRONTIER.md), thirteen changed / twenty-four retained; accept second-RGB5A3/helper/state-call return before I4 `0x80397E00`, slot 0, 16×16.
-- [ ] Validate the [captured I4 16×16 object](docs/GX_MII_I4_16X16_LOAD_2026-10-07.md), merge after final-head CI and verify SD deployment.
+- [x] Implement and pass targeted contracts for the [captured I4 16×16 object](docs/GX_MII_I4_16X16_LOAD_2026-10-07.md): 28 loads per mode, 2,708 / 2,728 diagnosed refusals.
+- [x] Pass SDK/synthetic/private builds and lint on code `e0dd8e8`, retaining 71 strong functions and 48 scoped unique providers. NRO 73,621,560 bytes, SHA-256 `75686e0f...`; 33 mutation checks, the 22-suite gate, final-head CI, merge and verified SD deployment are tracked in [PR #328](https://github.com/yashin-sh/WiiCompiled-Switch/pull/328).
 - [ ] Establish I4 16×16 return on Switch; GPU completion and recognizable images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 

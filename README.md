@@ -42,9 +42,14 @@ visible outcome and game pixels remain unproven.
 
 The [I4 16×16 correction](docs/GX_MII_I4_16X16_LOAD_2026-10-07.md) admits only
 the captured identity, slot and eight words, requiring the full **128-byte**
-tiled range, native 16×16 dimensions and a distinct host object. Ten fixtures
-cover four formats. Validation is in progress; new I4 return, GPU completion
-and recognizable pixels require fresh evidence.
+tiled range, native 16×16 dimensions and a distinct host object. Ten independent
+fixtures across four formats pass 28 valid loads per mode, 2,708 headless /
+2,728 rendered refusals. SDK/synthetic/private builds and lint pass, with 71
+strong functions and 48 scoped unique providers verified. The 73,621,560-byte
+NRO has SHA-256 `75686e0f...`. The 33 compiled mutation checks, 22-suite local
+gate, final-head CI, merge and verified SD deployment are tracked in
+[PR #328](https://github.com/yashin-sh/WiiCompiled-Switch/pull/328).
+New I4 return, GPU completion and recognizable pixels require fresh evidence.
 
 The [second-38×32 correction](docs/GX_MII_RGB5A3_38X32_SECOND_LOAD_2026-10-07.md)
 passes 22 suites, 27 mutations, SDK/synthetic/private builds and five final-head

@@ -202,6 +202,15 @@ recorded separately: merging a validated candidate does not label its pending
 native return or image hardware-crossed. Private rendered-build and exact NRO
 checks remain required before deployment.
 
+The [2026-10-07 relocated-source run](HARDWARE_RESULTS_2026-10-07_MII_I4_RELOCATED_DATA_FRONTIER.md) is a first-load branch,
+not proof that the prior next-pass candidate returned. The pinned caller's
+first-hit base `0x80397C20`, object `base + 352 = 0x80397D80`, and absent
+subsequent draw-helper first-hit entry establish the earlier stop. A higher
+dispatch total must not override captured caller/descriptor evidence.
+Historical returns stay scoped to their observed source tuples. Only the
+new first-object tuple `word3=0x0084E0D1`, data `0x109C1A20`, 32×64, slot 0,
+is eligible for the current bounded correction; no pointer interval is inferred.
+
 ## Earlier frontiers — 2026-10-03
 
 The latest attributable real-Switch evidence is recorded in

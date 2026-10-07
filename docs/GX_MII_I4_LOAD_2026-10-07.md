@@ -50,6 +50,10 @@ unchanged. Exact publication-head CI, merge and SD deployment evidence are
 tracked in [PR #320](https://github.com/yashin-sh/WiiCompiled-Switch/pull/320).
 Deployment requires all five final-head workflows / six actual jobs to pass.
 Documentation-only publication commits preserve the built production code.
-The new load remains hardware-unaccepted until a fresh attributable run returns
-through it. Upload, GPU completion and recognizable texture pixels remain open.
+The [08:47 Netloader run](HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_LOAD_FRONTIER.md)
+now accepts the observed first load returning through the later draw helper
+before the second captured object is refused. PR #320 is merged as `750ac3e`
+after all five final-head workflows / six jobs; complete SD readback and direct
+Netloader transfer both verify this candidate. The second object is not yet
+hardware-accepted. Upload, GPU completion and recognizable texture pixels remain open.
 Private NROs, generated products and raw reports are excluded from GitHub.

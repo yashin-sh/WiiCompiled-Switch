@@ -56,7 +56,9 @@
 - [x] Implement the [viewport snapshot/getter and audited depth dependency](docs/GX_VIEWPORT_STATE_2026-10-06.md).
 - [x] Pass 22 suites, six rejected mutants, all 65 SDK sources, synthetic retention, five code-head workflows / six jobs and the private rendered build; verify 69 strong functions / 46 scoped providers.
 - [x] Deploy the exact 73,621,560-byte viewport/depth NRO and verify every SD byte by USB readback.
-- [ ] Verify its hardware launch and getter/depth return; GPU completion, copied pixels and recognizable game images remain open.
+- [x] Merge viewport PR #319 as `378267f` after all five final publication-head workflows / six jobs.
+- [x] Transfer the exact viewport/depth NRO via Netloader with exit 0 at 2026-10-07 07:53:15 UTC, 26,799,100 compressed bytes / 2,253 blocks; the user reports black with the test still running.
+- [ ] Retrieve fresh reports and establish getter/depth return; GPU completion, copied pixels and recognizable game images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

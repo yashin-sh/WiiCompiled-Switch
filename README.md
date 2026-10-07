@@ -51,8 +51,11 @@ The [viewport/depth candidate](docs/GX_VIEWPORT_STATE_2026-10-06.md) implements
 that getter and the statically checked depth dependency. It passes 22 local
 suites, six compiled rejected mutants, the SDK/synthetic/private builds and
 all five code-head workflows / six jobs. Its exact 73,621,560-byte NRO is
-verified on the SD card by complete USB readback; hardware launch/return and
-visual observation remain pending.
+verified on the SD card by complete USB readback. PR #319 is merged as
+`378267f` after all five final-head workflows / six jobs. The exact NRO
+transfers via Netloader with exit 0 at 2026-10-07 07:53:15 UTC (26,799,100
+compressed bytes / 2,253 blocks). The user reports a black screen with the
+test still running; fresh reports and getter/depth return remain pending.
 
 The [bounded copy](docs/GX_COPY_TEX_2026-10-06.md) remains accepted for RGB5A3
 128×128, clear 1, now also at destination `0x9210A740`. GPU lifetime tests

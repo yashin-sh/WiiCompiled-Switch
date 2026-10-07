@@ -77,6 +77,7 @@ constexpr std::uint32_t kObservedMiiSmallI4TextureSize = 640u;
 // Sixth captured Mii load: RGB5A3 38x32 includes a partial 4x4 tile.
 // Ceil(38/4) x ceil(32/4) x 32 requires 2560 bytes; native width stays 38.
 constexpr std::uint32_t kObservedMiiSmallRgb5a3LoadObj = 0x80397C40u;
+constexpr std::uint32_t kObservedSecondMiiSmallRgb5a3LoadObj = 0x80397C80u;
 constexpr std::uint32_t kObservedMiiSmallRgb5a3Data = 0x109C0200u;
 constexpr std::uint32_t kObservedMiiSmallRgb5a3TextureSize = 2560u;
 
@@ -1881,7 +1882,7 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
         wrapS == 0u && wrapT == 0u && mipmap == 0u;
 
     const bool exactMiiSmallRgb5a3Descriptor =
-        obj == kObservedMiiSmallRgb5a3LoadObj &&
+        (obj == kObservedMiiSmallRgb5a3LoadObj || obj == kObservedSecondMiiSmallRgb5a3LoadObj) &&
         tid == 0u &&
         word0 == 0x00000190u &&
         word1 == 0x00000000u &&

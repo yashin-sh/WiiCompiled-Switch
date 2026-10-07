@@ -1,0 +1,29 @@
+# Second captured RGB5A3 38×32 object — 2026-10-07
+
+The [fresh Switch run](HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_38X32_SECOND_LOAD_FRONTIER.md)
+accepts object `0x80397C40` and its draw helper, then stops at sibling
+`0x80397C80`, slot 0. The descriptors share all eight words and physical
+MEM2 payload `0x109C0200`. Extend only the exact identity guard to these two
+observed addresses, retaining slot 0, RGB5A3 38×32, all words, clamp/clamp,
+no mipmap, zero/linear LOD and the full **2,560-byte** tiled range.
+Native logical width stays 38.
+
+The pair shares data but keeps distinct independently reused native GXTexObj
+instances. Native init/LOD/user-data/binding precede guest bookkeeping;
+CPU, descriptor and payload bytes are preserved. Existing RGB565, IA8, 44×32
+RGB5A3 and both I4 pairs remain covered. Unknown identities, words and slots,
+short/missing ranges, null pointers and native exceptions retain diagnosed
+stops. No API, dispatch trait or provider is added.
+
+Nine independent objects across four formats include three shared-data pairs.
+Contracts cover every descriptor bit, wrong mapped identities/slots, full and
+missing/short descriptor/data ranges including 2,432/2,559-byte data, distinct
+host reuse, native width/format/order/failure and complete CPU/guest preservation.
+ASan/fatal UBSan/LSan contracts pass **26 valid loads per mode**,
+**2,436 headless / 2,454 rendered diagnosed refusals**. Synthetic fixtures contain no game data.
+
+Validation is in progress. Deployment requires all 22 local suites, rendered
+SDK compilation, full synthetic/private builds, native/provider audits, lint
+and all five final-head workflows / six actual jobs. New second-object return,
+GPU completion and recognizable images require fresh hardware evidence.
+Private products, NROs and raw archives stay excluded.

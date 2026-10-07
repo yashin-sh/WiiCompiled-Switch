@@ -60,7 +60,8 @@
 - [x] Transfer the exact viewport/depth NRO via Netloader with exit 0 at 2026-10-07 07:53:15 UTC, 26,799,100 compressed bytes / 2,253 blocks; the user reports black with the test still running.
 - [x] Verify [37 reports / 630,954 bytes](docs/HARDWARE_RESULTS_2026-10-07_VIEWPORT_MII_I4_LOAD_FRONTIER.md), 16 changed / 21 retained; accept observed getter/depth return before GXLoadTexObj at object `0x80397D80`, slot 0, I4 32×64.
 - [x] Implement and pass targeted contracts for the [bounded Mii I4 load](docs/GX_MII_I4_LOAD_2026-10-07.md).
-- [ ] Complete local/CI/private-build validation and establish the new I4 load return on Switch; GPU completion, copied pixels and recognizable game images remain open.
+- [x] Validate I4 code `076dce6`: 22 local suites, six rejected mutants, both SDK modes, full synthetic/private rendered builds; 71 strong functions and 48 scoped providers verified. The 73,621,560-byte NRO has SHA-256 `e7cc019d...`; final-head CI, merge and deployment evidence are tracked in [PR #320](https://github.com/yashin-sh/WiiCompiled-Switch/pull/320).
+- [ ] Establish the new I4 load return on Switch; GPU completion, copied pixels and recognizable game images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

@@ -33,10 +33,23 @@ null host pointers and native exceptions. ASan, fatal UBSan and LeakSanitizer
 remain active outside sandbox tracing. Shared depth-LOD regressions also pass.
 
 All six compiled mutations are rejected: widened slot, missing word 7 guard,
-short range, wrong edge LOD, early bookkeeping and CPU clobber. The complete
-synthetic build passes. All 22 local suites, SDK compilation, the private
-rendered NRO and exact-head CI are being completed in
-[PR #320](https://github.com/yashin-sh/WiiCompiled-Switch/pull/320).
+short range, wrong edge LOD, early bookkeeping and CPU clobber. All **22 local
+suites**, both SDK modes, complete synthetic retention and lint pass. The
+immutable-image, network-disabled private rendered build passes on code
+`076dce6`; all captured tracked inputs stay unchanged during compilation.
+It retains **71 required strong functions**. The expanded scoped audit checks
+**48 unique providers** over **235 host inputs, 19 Rust archives and seven
+named libraries**, including native GXLoadTexObj and its production bridge.
+These checks establish scoped link ownership, not pixels or every linked symbol.
+
+The NRO is **73,621,560 bytes**, SHA-256
+`e7cc019de0eb0c68c271a21135732abbee403797580a5593310468df658d53c7`.
+Its size matches the preceding viewport candidate; its bytes/hash differ.
+Dependency pins and original upstream patch bytes/nanosecond mtimes remain
+unchanged. Exact publication-head CI, merge and SD deployment evidence are
+tracked in [PR #320](https://github.com/yashin-sh/WiiCompiled-Switch/pull/320).
+Deployment requires all five final-head workflows / six actual jobs to pass.
+Documentation-only publication commits preserve the built production code.
 The new load remains hardware-unaccepted until a fresh attributable run returns
 through it. Upload, GPU completion and recognizable texture pixels remain open.
 Private NROs, generated products and raw reports are excluded from GitHub.

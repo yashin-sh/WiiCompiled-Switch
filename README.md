@@ -42,8 +42,13 @@ pixels remain unproven.
 
 The [bounded I4 load candidate](docs/GX_MII_I4_LOAD_2026-10-07.md) admits only
 that complete captured descriptor and its 1,024-byte physical MEM2 range.
-Targeted contracts pass 14 loads per mode, 804 headless / 810 rendered refusals;
-complete local/CI/private-build gates and new hardware acceptance remain pending.
+Targeted contracts pass 14 loads per mode, 804 headless / 810 rendered refusals.
+All 22 local suites, six mutations, both SDK modes and synthetic/private rendered
+builds pass; 71 retained strong functions and 48 scoped providers are verified.
+The corrected NRO is 73,621,560 bytes, SHA-256 `e7cc019d...`.
+Final-head CI, merge and deployment are tracked in
+[PR #320](https://github.com/yashin-sh/WiiCompiled-Switch/pull/320);
+the new I4 load still needs fresh console acceptance.
 
 The [PixModeSync bridge](docs/GX_PIX_MODE_SYNC_2026-10-06.md) passes 21 suites,
 six rejected mutants, both SDK modes, full synthetic/private rendered builds

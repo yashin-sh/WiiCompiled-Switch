@@ -89,7 +89,10 @@
 - [x] Verify [37 reports / 632,976 bytes](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_16X16_LOAD_FRONTIER.md), thirteen changed / twenty-four retained; accept second-RGB5A3/helper/state-call return before I4 `0x80397E00`, slot 0, 16×16.
 - [x] Implement and pass targeted contracts for the [captured I4 16×16 object](docs/GX_MII_I4_16X16_LOAD_2026-10-07.md): 28 loads per mode, 2,708 / 2,728 diagnosed refusals.
 - [x] Pass SDK/synthetic/private builds and lint on code `e0dd8e8`, retaining 71 strong functions and 48 scoped unique providers. NRO 73,621,560 bytes, SHA-256 `75686e0f...`; 33 mutation checks, the 22-suite gate, final-head CI, merge and verified SD deployment are tracked in [PR #328](https://github.com/yashin-sh/WiiCompiled-Switch/pull/328).
-- [ ] Establish I4 16×16 return on Switch; GPU completion and recognizable images remain open.
+- [x] Establish [I4 16×16 and prior-caller-pass return](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_32X64_NEXT_PASS_FRONTIER.md) through checked control flow; verify 37 reports / 632,236 bytes, thirteen changed / twenty-four retained.
+- [x] Implement and pass targeted contracts for the [next-pass I4 object](docs/GX_MII_I4_32X64_NEXT_PASS_LOAD_2026-10-07.md), `0x80397F80`, slot 0, 32×64: 30 loads per mode, 2,980 / 3,002 diagnosed refusals.
+- [x] Pass SDK/synthetic/private builds and lint on code `551cdbf`, retaining 71 strong functions and 48 scoped unique providers. NRO 73,621,560 bytes, SHA-256 `0b30ee17...`; 35 mutation checks, the 22-suite gate, final-head CI, merge and verified SD deployment are tracked in the development PR and issue #117.
+- [ ] Establish next-pass object return on Switch; GPU completion and recognizable images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
@@ -126,14 +129,14 @@
 - [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The [latest console result](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_16X16_LOAD_FRONTIER.md)
-accepts second RGB5A3 38×32, draw-helper and intervening GX state-call return,
-then reaches I4 object `0x80397E00`, slot 0, 16×16, at 122.353 seconds.
-All 37 reports / 632,976 bytes are verified, thirteen changed / twenty-four
-retained. The new descriptor requires 128 physical MEM2 bytes at `0x109C1E80`.
-The diagnostic records an intentional abort. Retained copy/display-list reports
-do not establish fresh pixels or GPU completion; controller/audio and sustained
-gameplay acceptance remain open.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_32X64_NEXT_PASS_FRONTIER.md) accepts I4 16×16 and
+completion of the previous Mii caller pass through checked caller inference,
+then reaches next-pass I4 object `0x80397F80`, slot 0, 32×64, at 120.862
+seconds. All 37 reports / 632,236 bytes are verified, thirteen changed /
+twenty-four retained. The descriptor shares 1,024 physical MEM2 bytes at
+`0x109C1A40` with earlier I4 objects. The diagnostic records an intentional
+abort. Retained copy/display-list reports do not establish fresh pixels or GPU
+completion; controller/audio and sustained gameplay acceptance remain open.
 
 The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
 

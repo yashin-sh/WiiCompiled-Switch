@@ -353,3 +353,11 @@ accepts the first load and draw-helper return, then reaches identical descriptor
 load at `0x80397DC0`. Admit only the two observed identities with all eight
 words, slot and full 1,024-byte payload checked. Host objects stay distinct;
 other identities/families and second hardware return remain guarded/unproven.
+
+The [09:42 second-I4 run](HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_LOAD_FRONTIER.md)
+accepts second-object/helper return through the checked caller, later setup
+entry and distinct third-load stop. The new complete RGB5A3 descriptor at
+`0x80397D40`, slot 0, requires all eight words and 2,816 readable physical MEM2
+bytes before any native work. The user's intermediate black/running observation
+and later durable abort are separate evidence; neither establishes game pixels.
+RGB5A3 return and other object identities remain unaccepted/guarded.

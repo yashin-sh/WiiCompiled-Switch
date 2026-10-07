@@ -65,7 +65,10 @@
 - [x] Verify [37 reports / 632,060 bytes](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_LOAD_FRONTIER.md), 13 changed / 24 retained; accept first I4 load and intervening helper return before the second object `0x80397DC0`.
 - [x] Implement and pass targeted contracts for the [second captured I4 object](docs/GX_MII_I4_SECOND_LOAD_2026-10-07.md).
 - [x] Validate second-object code `3256e81`: 22 local suites, eight rejected mutants, rendered SDK gate, full synthetic/private builds; 71 strong functions and 48 scoped providers verified. The 73,621,560-byte NRO has SHA-256 `fe2a28d9...`; final-head CI, merge and verified deployment are tracked in [PR #321](https://github.com/yashin-sh/WiiCompiled-Switch/pull/321).
-- [ ] Establish second-object return on Switch; GPU completion and recognizable images remain open.
+- [x] Merge second I4 PR #321 (`4da5100`) after all five final-head workflows / six jobs; deploy with complete readback and transfer via Netloader with exit 0 at 09:42:22 UTC.
+- [x] Verify [37 reports / 633,035 bytes](docs/HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_LOAD_FRONTIER.md), 13 changed / 24 retained; accept second I4 load and intervening helper/setup return before RGB5A3 object `0x80397D40`, slot 0, 44×32.
+- [x] Implement and pass targeted contracts for the [captured RGB5A3 load](docs/GX_MII_RGB5A3_LOAD_2026-10-07.md).
+- [ ] Finish RGB5A3 local/CI/private-build gates and establish its return on Switch; GPU completion and recognizable images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
@@ -102,15 +105,14 @@
 - [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The [latest console result](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_LOAD_FRONTIER.md)
-accepts the first I4 load and intervening Mii draw-helper return, then reaches
-the second identical object `0x80397DC0`, slot 0, 120.247 seconds. All 37
-reports / 632,060 bytes are verified. The user confirms black then error.
-The preceding 5,988 FIFO writes and 102 presents do not identify pixels.
-
-Further SDK calls, replay, recognizable pixels, sustained execution, full
-input, audio and performance remain to validate. No fixed count of remaining
-corrections or image ETA is established by these traces.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_LOAD_FRONTIER.md)
+accepts second I4 load and intervening Mii draw/setup returns, then reaches
+RGB5A3 object `0x80397D40`, slot 0, 44×32, at 128.806 seconds. All 37 reports /
+633,035 bytes are verified, 13 changed / 24 retained. The complete captured
+words require physical MEM2 payload `0x109C0C40` over 2,816 bytes. The user
+reported black with the test still running; the durable diagnostic later
+records an intentional abort. Recognizable pixels and GPU completion remain
+unproven. Controller/audio and sustained gameplay acceptance remain open.
 
 The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
 

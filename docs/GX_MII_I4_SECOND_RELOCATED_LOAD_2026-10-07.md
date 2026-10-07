@@ -34,9 +34,16 @@ the scoped audit verifies 48 unique providers across 235 host inputs,
 SHA-256 `af9575be2b491e7f0bfe5b8e8f08581936ebd91be2a169017a38f86bdb4d872d`. Original pins and private upstream patch
 bytes/ns mtimes stay preserved.
 
-Forty-two compiled mutation checks and all 22 local suites are required before
-deployment. Final-head workflows / six actual jobs, merge and full SD readback
-are tracked with the development PR and issue #117. Subsequent Markdown-only
+All 42 compiled mutations are rejected (compile exit 0; real SIGABRT -6),
+and all 22 local suites pass on the exact non-Markdown built inputs. Five
+final-head workflows / six actual jobs pass on `f8b82839441d6e7ffedf7b4ca40e5babdd6ff980`.
+[PR #331](https://github.com/yashin-sh/WiiCompiled-Switch/pull/331) merges as
+`265839ddb8901a595e43646042dffbc3fb28a865` at **18:02:36 CEST**
+(16:02:36 UTC); the fetched main tree equals the validated candidate.
+The exact validated NRO is ready locally. **SD copy and complete readback are
+pending**, because the Switch is no longer detected in USB/MTP. No new copy
+or execution is claimed. Issue #117 records the completed gates and pending
+deployment. Subsequent Markdown-only
 changes preserve every non-Markdown built input. Second relocated-source
 return, next-pass return, GPU completion and game pixels require fresh
 hardware evidence. Private products remain excluded.

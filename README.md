@@ -49,9 +49,10 @@ refresh the current source on each load. The next-pass identity retains only
 its earlier captured source. Thirteen descriptors / eleven identities pass
 40 loads per mode and 3,527 / 3,553 refusals. SDK/synthetic/private builds and
 lint pass, retaining 71 strong functions and 48 scoped providers. NRO SHA-256
-`af9575be...`, size 73,621,560 bytes. All 42 mutation
-checks, 22 suites, final-head CI and verified deployment are required before
-the next console run.
+`af9575be...`, size 73,621,560 bytes. All 42 mutation checks and 22 local suites pass. Five final-head workflows /
+six jobs pass on `f8b8283`; [PR #331](https://github.com/yashin-sh/WiiCompiled-Switch/pull/331) merges as `265839d`. The exact NRO is ready locally; SD copy and complete
+readback await the Switch's USB/MTP connection. Second relocated-source and
+next-pass return require a fresh console run.
 
 The [first relocated-source correction](docs/GX_MII_I4_RELOCATED_LOAD_2026-10-07.md)
 is merged and hardware-crossed for its first captured load/helper path. The

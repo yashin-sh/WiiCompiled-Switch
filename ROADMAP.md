@@ -98,7 +98,8 @@
 - [x] Reject all 40 compiled mutations and pass all 22 local suites; five final-head workflows / six actual jobs pass on `873495e`. Merge [PR #330](https://github.com/yashin-sh/WiiCompiled-Switch/pull/330) as `e72047d` and verify complete SD readback of NRO `a8718895...` at 17:24:56 CEST.
 - [x] Establish [first relocated-source load and helper return](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_RELOCATED_DATA_FRONTIER.md) through the pinned unconditional caller and fresh second-object stop; verify 37 reports / 632,567 bytes, seven changed / thirty retained.
 - [x] Implement and contract-test the [second relocated I4 object](docs/GX_MII_I4_SECOND_RELOCATED_LOAD_2026-10-07.md), slot 0, 32×64, data `0x109C1A20`: 40 loads per mode, 3,527 / 3,553 refusals, stable independent first/second native objects across source changes.
-- [ ] Finish 42 mutation checks, the 22-suite gate and final-head CI; deploy only after all gates pass.
+- [x] Reject all 42 compiled mutations and pass all 22 local suites; five final-head workflows / six actual jobs pass on `f8b8283`. Merge [PR #331](https://github.com/yashin-sh/WiiCompiled-Switch/pull/331) as `265839d`.
+- [ ] Copy exact NRO `af9575be...` to SD and verify its complete byte/SHA-256 readback; the Switch's USB/MTP connection is currently unavailable.
 - [ ] Establish second relocated-source and next-pass object return on Switch; GPU completion and recognizable images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 

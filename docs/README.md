@@ -1,4 +1,6 @@
 # Documentation index
+- [Second RGB5A3 38×32 return and I4 16×16 frontier](HARDWARE_RESULTS_2026-10-07_MII_I4_16X16_LOAD_FRONTIER.md)
+- [Captured Mii I4 16×16 correction](GX_MII_I4_16X16_LOAD_2026-10-07.md)
 - [First RGB5A3 38×32 return and second-object frontier](HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_38X32_SECOND_LOAD_FRONTIER.md)
 - [Second captured RGB5A3 38×32 correction](GX_MII_RGB5A3_38X32_SECOND_LOAD_2026-10-07.md)
 - [Second I4 36×32 return and RGB5A3 38×32 frontier](HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_38X32_LOAD_FRONTIER.md)

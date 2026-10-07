@@ -23,9 +23,17 @@ complete CPU/guest preservation, seven distinct/reused host objects and
 native-before-bookkeeping order. Native seams require width 36 and full
 640-byte resolution for both new objects. No proprietary payload is embedded.
 
-Nineteen compiled mutations, all 22 local suites, rendered SDK compilation,
-full synthetic/private rendered builds and exact-head CI are in progress.
-Deployment requires every local gate and all five final-head workflows / six
-actual jobs. Second-object return, GPU completion and recognizable images
+All nineteen compiled mutations are rejected. All 22 local suites, rendered
+SDK compilation, full synthetic retention and lint pass on code `5e65cdd`.
+The immutable-image, network-disabled private Rendered Discovery build passes;
+71 required strong functions and 48 scoped unique providers are verified across
+235 host inputs, 19 Rust archives and seven named libraries. The NRO contains
+**73,621,560 bytes**, SHA-256
+`bf093aeaccc848938d4477f9660bfc9256ad649b52e353016456533605145a75`.
+Dependency pins and existing upstream patch bytes/ns mtimes are preserved.
+Final-head CI, merge and verified deployment evidence are tracked in
+[PR #324](https://github.com/yashin-sh/WiiCompiled-Switch/pull/324). Deployment
+requires all five workflows / six actual jobs at that final head; subsequent
+Markdown updates must leave every non-Markdown built input unchanged. Second-object return, GPU completion and recognizable images
 require fresh hardware evidence. Private products, NROs and raw archives stay
 excluded.

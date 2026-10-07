@@ -35,7 +35,8 @@ enum class Texture { Rgb,
                      SecondMiiSmallRgb5a3,
                      MiiTinyI4,
                      NextPassMiiI4,
-                     RelocatedMiiI4 };
+                     RelocatedMiiI4,
+                     SecondRelocatedMiiI4 };
 struct Fixture {
     std::uint32_t object, data, width, height, format, size;
     bool disableEdgeLod;
@@ -54,6 +55,8 @@ constexpr Fixture GetFixture(Texture texture) {
         return {0x80397f80u, 0x109c1a40u, 32u, 64u, 0u, 4u * 8u * 32u, true};
     case Texture::RelocatedMiiI4:
         return {0x80397d80u, 0x109c1a20u, 32u, 64u, 0u, 4u * 8u * 32u, true};
+    case Texture::SecondRelocatedMiiI4:
+        return {0x80397dc0u, 0x109c1a20u, 32u, 64u, 0u, 4u * 8u * 32u, true};
     case Texture::MiiRgb5a3:
         return {0x80397d40u, 0x109c0c40u, 44u, 32u, 5u, 11u * 8u * 32u, true};
     case Texture::MiiSmallI4:
@@ -145,7 +148,8 @@ void InitMemory(std::uint32_t ia8Bytes = 32u, std::uint32_t rgbBytes = rgbSize,
     config.regions.push_back({"rgb-object", rgbObj, 64u});
     const auto primaryI4 = relocatedI4 ? Texture::RelocatedMiiI4 : Texture::MiiI4;
     const auto i4 = GetFixture(primaryI4);
-    const auto secondI4 = GetFixture(Texture::SecondMiiI4);
+    const auto secondaryI4 = relocatedI4 ? Texture::SecondRelocatedMiiI4 : Texture::SecondMiiI4;
+    const auto secondI4 = GetFixture(secondaryI4);
     const auto rgb5a3 = GetFixture(Texture::MiiRgb5a3);
     const auto smallI4 = GetFixture(Texture::MiiSmallI4);
     const auto secondSmallI4 = GetFixture(Texture::SecondMiiSmallI4);
@@ -197,7 +201,7 @@ void InitMemory(std::uint32_t ia8Bytes = 32u, std::uint32_t rgbBytes = rgbSize,
     if (i4DescriptorBytes >= 32u)
         WriteDescriptor(primaryI4);
     if (secondI4DescriptorBytes >= 32u)
-        WriteDescriptor(Texture::SecondMiiI4);
+        WriteDescriptor(secondaryI4);
     if (rgb5a3DescriptorBytes >= 32u)
         WriteDescriptor(Texture::MiiRgb5a3);
     if (smallI4DescriptorBytes >= 32u)
@@ -297,7 +301,7 @@ void CheckLoad(Texture texture, std::uint32_t tid = 0u) {
     assert(currentEdgeLod == (f.disableEdgeLod ? GX_FALSE : GX_TRUE));
     // Guest identity stays the same when its captured payload address changes.
     const auto hostIndex = static_cast<std::size_t>(
-        texture == Texture::RelocatedMiiI4 ? Texture::MiiI4 : texture);
+        texture == Texture::RelocatedMiiI4 ? Texture::MiiI4 : (texture == Texture::SecondRelocatedMiiI4 ? Texture::SecondMiiI4 : texture));
     auto*& previous = previousHosts[hostIndex];
     if (previous)
         assert(previous == currentHost);
@@ -523,22 +527,28 @@ int main() {
     // Alternate the captured data tuples on the same guest object. The
     // host allocation must remain stable while Init/LOD/UserData/Load refresh.
     const auto initRelocated = [](std::uint32_t dataBytes = 1024u,
-                                  std::uint32_t objectBytes = 64u) {
-        InitMemory(32u, rgbSize, 64u, dataBytes, objectBytes, 64u, 2816u,
+                                  std::uint32_t objectBytes = 64u,
+                                  std::uint32_t secondObjectBytes = 64u) {
+        InitMemory(32u, rgbSize, 64u, dataBytes, objectBytes, secondObjectBytes, 2816u,
                    64u, 640u, 64u, 64u, 2560u, 64u, 64u, 128u, 64u, 64u, true);
     };
     initRelocated();
     CheckLoad(Texture::RelocatedMiiI4);
+    CheckLoad(Texture::SecondRelocatedMiiI4);
     InitMemory();
     CheckLoad(Texture::MiiI4);
+    CheckLoad(Texture::SecondMiiI4);
     initRelocated();
     CheckLoad(Texture::RelocatedMiiI4);
+    CheckLoad(Texture::SecondRelocatedMiiI4);
     CheckLoad(Texture::RelocatedMiiI4);
+    CheckLoad(Texture::SecondRelocatedMiiI4);
     initRelocated();
     CheckDescriptorRefusals(Texture::RelocatedMiiI4);
-    // The new source is captured for the first object only. Other admitted
-    // identities must not silently inherit its new word3/data tuple.
-    for (auto texture : {Texture::SecondMiiI4, Texture::NextPassMiiI4}) {
+    CheckDescriptorRefusals(Texture::SecondRelocatedMiiI4);
+    // The new source is captured for this pair only. The next-pass identity
+    // must not silently inherit its new word3/data tuple.
+    for (auto texture : {Texture::NextPassMiiI4}) {
         const auto object = GetFixture(texture).object;
         std::memcpy(Memory::GetPointer(object, 32u),
                     Memory::GetPointer(GetFixture(Texture::RelocatedMiiI4).object, 32u), 32u);
@@ -546,33 +556,42 @@ int main() {
     }
     for (auto bytes : {0u, 512u, 992u, 1023u}) {
         initRelocated(bytes);
-        ExpectAbort(MakeCpu(GetFixture(Texture::RelocatedMiiI4).object),
-                    "GX_LOAD_TEX_OBJ_DATA_UNMAPPED", 1024u);
+        for (auto texture : {Texture::RelocatedMiiI4, Texture::SecondRelocatedMiiI4})
+            ExpectAbort(MakeCpu(GetFixture(texture).object),
+                        "GX_LOAD_TEX_OBJ_DATA_UNMAPPED", 1024u);
     }
     for (auto bytes : {0u, 31u}) {
         initRelocated(1024u, bytes);
         ExpectAbort(MakeCpu(GetFixture(Texture::RelocatedMiiI4).object),
                     "GX_LOAD_TEX_OBJ_GUEST_UNMAPPED", 0u);
     }
+    for (auto bytes : {0u, 31u}) {
+        initRelocated(1024u, 64u, bytes);
+        ExpectAbort(MakeCpu(GetFixture(Texture::SecondRelocatedMiiI4).object),
+                    "GX_LOAD_TEX_OBJ_GUEST_UNMAPPED", 0u);
+    }
 #if MKW_LOCAL_RENDERED_FAST_TRACK
     initRelocated();
-    nullHostPointer = true;
-    ExpectAbort(MakeCpu(GetFixture(Texture::RelocatedMiiI4).object),
-                "GX_LOAD_TEX_OBJ_DATA_POINTER_NULL", 1024u);
-    nullHostPointer = false;
-    throwOnInit = true;
-    ExpectAbort(MakeCpu(GetFixture(Texture::RelocatedMiiI4).object),
-                "GX_LOAD_TEX_OBJ_HOST_EXCEPTION", 1024u);
-    throwOnInit = false;
+    for (auto texture : {Texture::RelocatedMiiI4, Texture::SecondRelocatedMiiI4}) {
+        nullHostPointer = true;
+        ExpectAbort(MakeCpu(GetFixture(texture).object),
+                    "GX_LOAD_TEX_OBJ_DATA_POINTER_NULL", 1024u);
+        nullHostPointer = false;
+        throwOnInit = true;
+        ExpectAbort(MakeCpu(GetFixture(texture).object),
+                    "GX_LOAD_TEX_OBJ_HOST_EXCEPTION", 1024u);
+        throwOnInit = false;
+    }
 #endif
     InitMemory();
     CheckLoad(Texture::MiiI4);
+    CheckLoad(Texture::SecondMiiI4);
     const auto previousStage = stage;
     KnownNativeCpuCall<0x80170f2cu>::Invoke(nullptr);
     assert(stage == previousStage);
     Memory::Reset();
-    assert(validCalls == 35u);
-    assert(diagnosedAborts == (MKW_LOCAL_RENDERED_FAST_TRACK ? 3279u : 3255u));
+    assert(validCalls == 40u);
+    assert(diagnosedAborts == (MKW_LOCAL_RENDERED_FAST_TRACK ? 3553u : 3527u));
     std::printf("PASS: texture-load valid=%u diagnosed-aborts=%u rendered=%d\n", validCalls,
                 diagnosedAborts, MKW_LOCAL_RENDERED_FAST_TRACK);
 }

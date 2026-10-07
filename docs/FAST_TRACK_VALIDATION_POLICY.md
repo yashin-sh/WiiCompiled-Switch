@@ -340,3 +340,10 @@ not returned; recording/replay require coordinated FIFO/context/buffer work.
 The user confirms black output and an error. The snapshot before the texture
 constructor retains 99 successful presents, without proof of visible pixels.
 Earlier dated records retain their scope.
+
+The [2026-10-07 viewport run](HARDWARE_RESULTS_2026-10-07_VIEWPORT_MII_I4_LOAD_FRONTIER.md)
+accepts getter/depth return through the later guarded GXLoadTexObj frontier:
+object `0x80397D80`, slot 0, I4 32×64, eight captured words and physical MEM2
+data `0x109C1A40`. Its bounded load audit checks the full 1,024-byte tile range
+and existing native-before-bookkeeping behavior. Other descriptors remain
+guarded; new load return and GPU pixels require fresh console evidence.

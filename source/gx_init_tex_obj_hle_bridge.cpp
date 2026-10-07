@@ -54,6 +54,12 @@ constexpr std::uint32_t kObservedIa8LoadObj = 0x80384500u;
 constexpr std::uint32_t kObservedIa8Data = 0x00384540u;
 constexpr std::uint32_t kObservedIa8TextureSize = 32u;
 
+// Captured in the Mii draw helper after viewport/depth setup. I4 stores
+// 8x8 texels per 32-byte tile: 4x8 tiles require exactly 1,024 bytes.
+constexpr std::uint32_t kObservedMiiI4LoadObj = 0x80397D80u;
+constexpr std::uint32_t kObservedMiiI4Data = 0x109C1A40u;
+constexpr std::uint32_t kObservedMiiI4TextureSize = 1024u;
+
 constexpr std::uint32_t kObservedLodObj = 0x9018E120u;
 constexpr std::uint32_t kObservedLodMinFilter = 1u;
 constexpr std::uint32_t kObservedLodMagFilter = 1u;
@@ -1806,10 +1812,26 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
         format == 3u && formatWord2 == 3u &&
         wrapS == 0u && wrapT == 0u && mipmap == 0u;
 
-    // Report no proven size for an unknown descriptor. The original RGB565
-    // size must never be presented as this IA8 tile's range requirement.
-    const std::uint32_t textureSize = exactOriginalDescriptor ? kObservedTextureSize : (exactIa8Descriptor ? kObservedIa8TextureSize : 0u);
-    if (!exactOriginalDescriptor && !exactIa8Descriptor) {
+    const bool exactMiiI4Descriptor =
+        obj == kObservedMiiI4LoadObj &&
+        tid == 0u &&
+        word0 == 0x00000190u &&
+        word1 == 0x00000000u &&
+        word2 == 0x0000FC1Fu &&
+        word3 == 0x0084E0D2u &&
+        word4 == 0x00000000u &&
+        word5 == 0x00000000u &&
+        word6 == 0x00000000u &&
+        word7 == 0x00200102u &&
+        data == kObservedMiiI4Data &&
+        width == 32u && height == 64u &&
+        format == 0u && formatWord2 == 0u &&
+        wrapS == 0u && wrapT == 0u && mipmap == 0u;
+
+    // Unknown descriptors have no proven size. Every admitted descriptor
+    // checks its own complete tiled range before allocating or calling Aurora.
+    const std::uint32_t textureSize = exactOriginalDescriptor ? kObservedTextureSize : (exactIa8Descriptor ? kObservedIa8TextureSize : (exactMiiI4Descriptor ? kObservedMiiI4TextureSize : 0u));
+    if (!exactOriginalDescriptor && !exactIa8Descriptor && !exactMiiI4Descriptor) {
         AbortLoadBoundary(
             "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR",
             cpu,

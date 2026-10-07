@@ -2,8 +2,8 @@
 
 This bounded candidate addresses the [observed GXGetViewportv frontier](HARDWARE_RESULTS_2026-10-06_PIX_MODE_SYNC_VIEWPORT_FRONTIER.md)
 `0x801733E0`, output `0x80397B10`, dispatch 635096. The checked Mii draw setup
-also calls GXSetZScaleOffset `0x80173400`; that dependency is a static forecast,
-not an observed hardware return. Both new boundaries remain hardware-unaccepted.
+also calls GXSetZScaleOffset `0x80173400`; that dependency was a static forecast before the 2026-10-07 run. The [2026-10-07 run](HARDWARE_RESULTS_2026-10-07_VIEWPORT_MII_I4_LOAD_FRONTIER.md)
+accepts both observed returns through the later guarded Mii texture load.
 
 ## Preserved behavior
 
@@ -64,9 +64,24 @@ SD readback, at `sdmc:/switch/WiiCompiled-Switch-gx-viewport-state-rendered-disc
 Original upstream patch bytes and nanosecond mtimes remain unchanged. Private
 NROs, generated game products and raw archives remain excluded from GitHub.
 
-Hardware launch/return and visual observation are pending. Documentation-only
-publication commits preserve the built code; final publication-head workflows
-must additionally pass before merge. No hardware result is claimed here.
+All five publication-head workflows / six jobs pass on `c209b1f`.
+[PR #319](https://github.com/yashin-sh/WiiCompiled-Switch/pull/319) merges as
+`378267f` at 2026-10-06 20:56:08 UTC; publication changes Markdown only.
+
+## Netloader launch — 2026-10-07
+
+Direct nxlink starts at **07:52:41 UTC** and exits **0 at 07:53:15 UTC**,
+sending **26,799,100 compressed bytes / 2,253 blocks (36.40%)** of that exact
+validated NRO. Its SHA-256, dependency pins, upstream patch and all non-Markdown
+candidate source hashes are rechecked before transfer. Launch revision is
+`c209b1fb03d0d91df04697346ab56c6095966b96`.
+
+The user reports **a black screen with the test still running**. This is an
+intermediate visual observation. Fresh USB/MTP reports now establish getter
+and depth return before the distinct guarded I4 texture load. Raw guest
+outputs, final visible outcome and recognizable pixels remain unproven.
+The transfer establishes the launch transaction; it does not establish that
+these native calls returned or that the GPU produced game pixels.
 
 Unknown APIs and copy argument families remain blocked. This candidate does
 not prove GPU completion, texture pixels or recognizable game images.

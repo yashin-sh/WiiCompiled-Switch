@@ -34,5 +34,6 @@ Dependency pins and existing upstream patch bytes/ns mtimes are preserved.
 Final-head CI, merge and verified deployment evidence are tracked in
 [PR #322](https://github.com/yashin-sh/WiiCompiled-Switch/pull/322). Deployment
 requires all five workflows / six actual jobs at that final head; subsequent
-Markdown updates must leave every non-Markdown built input unchanged. RGB5A3 return, GPU completion and recognizable images require
-fresh hardware evidence. Private products, NROs and raw archives stay excluded.
+Markdown updates must leave every non-Markdown built input unchanged. The [10:16 Netloader run](HARDWARE_RESULTS_2026-10-07_MII_I4_36X32_LOAD_FRONTIER.md)
+now accepts RGB5A3 and intervening helper return before a distinct I4 36×32
+load. GPU completion and recognizable images still require fresh evidence. Private products, NROs and raw archives stay excluded.

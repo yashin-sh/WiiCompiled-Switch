@@ -79,7 +79,8 @@
 - [x] Validate second-36×32 code `5e65cdd`: 22 suites, nineteen rejected mutants, rendered SDK gate, full synthetic/private builds; 71 strong functions and 48 scoped providers verified. The 73,621,560-byte NRO has SHA-256 `bf093aea...`; final-head CI, merge and verified deployment are tracked in [PR #324](https://github.com/yashin-sh/WiiCompiled-Switch/pull/324).
 - [x] Merge PR #324 (`1df611f`) after five final-head workflows / six jobs; verify full SD readback and successful Netloader transfer at 14:26:06 CEST.
 - [x] Verify [37 reports / 632,811 bytes](docs/HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_38X32_LOAD_FRONTIER.md), seven changed / thirty retained; accept second-36×32 and intervening-helper return before RGB5A3 `0x80397C40`, slot 0, 38×32.
-- [ ] Validate the [captured RGB5A3 38×32 correction](docs/GX_MII_RGB5A3_38X32_LOAD_2026-10-07.md), merge after final-head CI and verify SD deployment.
+- [x] Implement and pass targeted contracts for the [captured RGB5A3 38×32 correction](docs/GX_MII_RGB5A3_38X32_LOAD_2026-10-07.md): 24 loads per mode, 2,164 / 2,180 diagnosed refusals.
+- [x] Reject 25 compiled mutations; pass SDK/synthetic/private builds and lint on code `ad75948`, retaining 71 strong functions and 48 scoped unique providers. NRO 73,621,560 bytes, SHA-256 `4fd7e46e...`; the 22-suite gate, final-head CI, merge and verified SD deployment are tracked in [PR #326](https://github.com/yashin-sh/WiiCompiled-Switch/pull/326).
 - [ ] Establish RGB5A3 38×32 return on Switch; GPU completion and recognizable images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 

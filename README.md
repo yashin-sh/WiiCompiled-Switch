@@ -42,8 +42,13 @@ record a deliberate abort. Final visible outcome and game pixels remain unproven
 The [38×32 correction](docs/GX_MII_RGB5A3_38X32_LOAD_2026-10-07.md) admits only
 the captured identity, slot and eight words, requiring the full **2,560-byte**
 tiled range while preserving native logical width 38 and a distinct host object.
-Eight independent fixtures cover four formats. Validation is in progress;
-new RGB5A3 return, GPU completion and recognizable pixels require fresh evidence.
+Eight independent fixtures across four formats pass 24 valid loads per mode,
+2,164 headless / 2,180 rendered refusals. Twenty-five mutations are rejected;
+SDK/synthetic/private builds and lint pass, with 71 strong functions and 48
+scoped unique providers verified. The 73,621,560-byte NRO has SHA-256
+`4fd7e46e...`. The 22-suite local gate, final-head CI, merge and verified SD
+deployment are tracked in [PR #326](https://github.com/yashin-sh/WiiCompiled-Switch/pull/326).
+New RGB5A3 return, GPU completion and recognizable pixels require fresh evidence.
 
 The [second-36×32 correction](docs/GX_MII_I4_36X32_SECOND_LOAD_2026-10-07.md)
 passes all 22 suites, nineteen mutation checks, SDK/synthetic/private builds,

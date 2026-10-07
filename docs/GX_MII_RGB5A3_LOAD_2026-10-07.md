@@ -23,8 +23,16 @@ full/missing/short data and descriptor ranges, CPU/guest byte preservation,
 separate/reused host objects and native-before-bookkeeping order. The native
 seam also verifies that RGB5A3 is forwarded as format 5, not RGB565.
 
-Twelve compiled mutations, all 22 local suites, rendered SDK compilation,
-full synthetic/private rendered builds and exact-head CI are in progress.
-Deployment requires every local gate and all five final-head workflows / six
-actual jobs. RGB5A3 return, GPU completion and recognizable images require
+All twelve compiled mutations are rejected. All 22 local suites, rendered
+SDK compilation, full synthetic retention and lint pass on code `e6a4727`.
+The immutable-image, network-disabled private Rendered Discovery build passes;
+71 required strong functions and 48 scoped unique providers are verified across
+235 host inputs, 19 Rust archives and seven named libraries. The NRO contains
+**73,621,560 bytes**, SHA-256
+`4794cdc6ad5b3a203b6eb86a1d77c3a6c1433d7e5169f85c700b6e30ca5b9641`.
+Dependency pins and existing upstream patch bytes/ns mtimes are preserved.
+Final-head CI, merge and verified deployment evidence are tracked in
+[PR #322](https://github.com/yashin-sh/WiiCompiled-Switch/pull/322). Deployment
+requires all five workflows / six actual jobs at that final head; subsequent
+Markdown updates must leave every non-Markdown built input unchanged. RGB5A3 return, GPU completion and recognizable images require
 fresh hardware evidence. Private products, NROs and raw archives stay excluded.

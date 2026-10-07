@@ -72,7 +72,8 @@
 - [x] Merge RGB5A3 PR #322 (`8938122`) after all five final-head workflows / six jobs; deploy with complete readback and transfer via Netloader with exit 0 at 10:17:06 UTC.
 - [x] Verify [37 reports / 632,748 bytes](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_36X32_LOAD_FRONTIER.md), 13 changed / 24 retained; accept RGB5A3 and intervening draw-helper return before I4 object `0x80397CC0`, slot 0, 36×32.
 - [x] Implement and pass targeted contracts for the [captured I4 36×32 load](docs/GX_MII_I4_36X32_LOAD_2026-10-07.md).
-- [ ] Finish I4 36×32 local/CI/private-build gates and establish its return on Switch; GPU completion and recognizable images remain open.
+- [x] Validate I4 36×32 code `4056328`: 22 local suites, seventeen rejected mutants, rendered SDK gate, full synthetic/private builds; 71 strong functions and 48 scoped providers verified. The 73,621,560-byte NRO has SHA-256 `e2ae9043...`; final-head CI, merge and verified deployment are tracked in [PR #323](https://github.com/yashin-sh/WiiCompiled-Switch/pull/323).
+- [ ] Establish I4 36×32 return on Switch; GPU completion and recognizable images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

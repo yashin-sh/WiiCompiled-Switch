@@ -43,8 +43,12 @@ outcome and recognizable game pixels remain unproven.
 The [I4 36×32 correction](docs/GX_MII_I4_36X32_LOAD_2026-10-07.md) admits only
 the captured identity, all eight words, slot 0 and full **640-byte** tiled
 range, keeping logical width 36. Targeted contracts pass 20 loads per mode,
-1,620 headless / 1,632 rendered refusals; complete local/CI/private-build
-gates and this new I4 return are open.
+1,620 headless / 1,632 rendered refusals. All 22 local suites, seventeen
+rejected mutants, SDK/synthetic/private builds pass; 71 strong functions and
+48 scoped unique providers are verified. The 73,621,560-byte NRO has SHA-256
+`e2ae9043...`. Exact-head CI, merge and verified deployment are tracked in
+[PR #323](https://github.com/yashin-sh/WiiCompiled-Switch/pull/323); I4 36×32
+return and game pixels still require fresh console evidence.
 
 The [RGB5A3 correction](docs/GX_MII_RGB5A3_LOAD_2026-10-07.md) passes 22 suites,
 twelve mutants, SDK/synthetic/private builds and five final-head workflows /

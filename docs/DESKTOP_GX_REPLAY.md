@@ -69,8 +69,10 @@ and SD writes to an experimental build; its console timing remains unmeasured.
 ## Capture boundary and lifetime
 
 Hooks observe the common FIFO drain, directly consumed big-endian display lists,
+optimized `submit_raw_draw` calls after their pending state drains,
 `GXInit`, viewport-policy changes and native `GXCopyDisp` / `GXCopyTex` after
-their preceding FIFO work drains. The native setters and guest HLE/burst paths
+their preceding FIFO work drains. Successful direct raw submissions become complete draw packets in the portable
+stream. The native setters and guest HLE/burst paths
 meet at these Aurora consumption boundaries; raw guest input bytes are not
 recorded separately.
 
@@ -147,7 +149,8 @@ copy state and indexed vertex bounds; and nonthrowing capture failure. Four
 independent-process GPU workloads compare byte-identical PNGs and exact pixels:
 
 - Red/blue triangles with a same-address texture update and cache invalidation.
-- EFB copy, regional clear, GPU copy sampling and destination retirement.
+- EFB copy, regional clear, GPU copy sampling through the optimized raw submission
+  path, and destination retirement.
 - A 617×341 framebuffer requiring padded GPU readback rows.
 - Relocated little-endian indexed position and UV arrays.
 

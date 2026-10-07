@@ -11,6 +11,7 @@
 
 #include <array>
 #include <atomic>
+#include <bit>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -18,6 +19,9 @@
 #include <stdexcept>
 #include <string>
 
+namespace aurora::gx::fifo {
+bool submit_raw_draw(GXPrimitive, GXVtxFmt, const std::uint8_t*, std::uint16_t, std::uint32_t);
+}
 namespace {
 std::atomic_bool gpuError{false};
 std::uint32_t width = 256, height = 256;
@@ -207,18 +211,19 @@ void setup() {
     GXSetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
     aurora::gx::fifo::drain();
 }
-void triangle(float center, bool raw, bool indexed = false) {
+void triangle(float center, bool raw, bool indexed = false, bool directSubmission = false) {
     if (raw) {
-        // Identical big-endian draw payload via the FIFO producer API. This
-        // exercises a second producer without claiming a guest HLE integration.
-        aurora::gx::fifo::write_u8(0x90);
-        aurora::gx::fifo::write_u16(3);
+        replay::Bytes vertices;
         for (auto xy : {std::array<float, 2>{center, 0.7f}, {center - 0.4f, -0.7f}, {center + 0.4f, -0.7f}}) {
-            aurora::gx::fifo::write_f32(xy[0]);
-            aurora::gx::fifo::write_f32(xy[1]);
-            aurora::gx::fifo::write_f32(0);
-            aurora::gx::fifo::write_f32(0.5f);
-            aurora::gx::fifo::write_f32(0.5f);
+            for (float value : {xy[0], xy[1], 0.f, 0.5f, 0.5f})
+                integer(vertices, std::bit_cast<std::uint32_t>(value));
+        }
+        if (directSubmission) {
+            check(aurora::gx::fifo::submit_raw_draw(GX_TRIANGLES, GX_VTXFMT0, vertices.data(), 3, vertices.size()), "direct raw draw submission failed");
+        } else {
+            aurora::gx::fifo::write_u8(0x90);
+            aurora::gx::fifo::write_u16(3);
+            aurora::gx::fifo::write_data(vertices.data(), vertices.size());
         }
     } else {
         GXBegin(GX_TRIANGLES, GX_VTXFMT0, 3);
@@ -329,7 +334,7 @@ int main(int argc, char** argv) {
             GXLoadTexObj(&obj, GX_TEXMAP0);
             // Flush pending native state, then use raw FIFO.
             GXFlush();
-            triangle(0.5f, true);
+            triangle(0.5f, true, false, copies);
             if (copies) {
                 GXSetDispCopySrc(0, 0, 640, 480);
                 GXSetDispCopyDst(640, 480);

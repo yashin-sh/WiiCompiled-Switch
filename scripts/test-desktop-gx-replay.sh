@@ -32,7 +32,7 @@ echo "PASS: independent capture/replay processes produce byte-identical PNGs and
 "$REPLAY" capture-copies "$OUT_ROOT/copies.mkwr" "$OUT_ROOT/copies-original.png"
 "$REPLAY" replay-copies-check "$OUT_ROOT/copies.mkwr" "$OUT_ROOT/copies-replayed.png"
 cmp "$OUT_ROOT/copies-original.png" "$OUT_ROOT/copies-replayed.png"
-echo "PASS: EFB copy, clear, GPU copy sampling and destination retirement survive replay"
+echo "PASS: EFB copy, clear, optimized direct draw, GPU copy sampling and destination retirement survive replay"
 
 "$REPLAY" capture-wide "$OUT_ROOT/wide.mkwr" "$OUT_ROOT/wide-original.png"
 "$REPLAY" replay-check "$OUT_ROOT/wide.mkwr" "$OUT_ROOT/wide-replayed.png"

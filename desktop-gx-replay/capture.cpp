@@ -292,6 +292,12 @@ void Recorder::copy(Kind kind, std::uint64_t destination, const CopyState& state
     }
     append(kind, std::move(payload));
 }
+void Recorder::raw_draw(unsigned primitive, unsigned format, std::span<const std::uint8_t> vertices, std::uint16_t count) {
+    require(primitive >= 0x80 && primitive <= 0xB8 && (primitive & 7) == 0 && format < 8 && count > 0 && !vertices.empty() && vertices.size() <= MaxBytes - 3, "invalid direct raw draw");
+    Bytes fifo{static_cast<std::uint8_t>(primitive | format), static_cast<std::uint8_t>(count >> 8), static_cast<std::uint8_t>(count)};
+    fifo.insert(fifo.end(), vertices.begin(), vertices.end());
+    drain(fifo);
+}
 void Recorder::drain(std::span<const std::uint8_t> data) {
     require(initialized && !ended && !data.empty() && data.size() <= MaxBytes, "invalid capture drain");
     Bytes fifo(data.begin(), data.end());
@@ -501,4 +507,8 @@ extern "C" void mkw_replay_capture_init() noexcept {
 }
 extern "C" void mkw_replay_capture_unsupported(const char* reason) noexcept {
     replay::fail(reason);
+}
+
+extern "C" void mkw_replay_capture_raw_draw(unsigned primitive, unsigned format, const unsigned char* vertices, unsigned short count, unsigned size) noexcept {
+    replay::observe([&](replay::Recorder& recorder) { recorder.raw_draw(primitive, format, {vertices, size}, count); });
 }

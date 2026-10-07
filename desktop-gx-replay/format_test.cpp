@@ -180,6 +180,17 @@ int main() {
     auto badIndex = indexed;
     badIndex.back() = 6;
     rejects([&] { replay::Recorder r; r.init(); r.memory(texture); r.drain(badIndex); });
+    replay::Recorder rawDraw;
+    rawDraw.init();
+    rawDraw.memory(texture);
+    rawDraw.begin();
+    rawDraw.drain(std::span(indexed).first(indexed.size() - 6));
+    rawDraw.raw_draw(0x90, 0, replay::Bytes{0, 1, 2}, 3);
+    rawDraw.end();
+    replay::Playback submitted(rawDraw.finish());
+    rejects([&] { replay::Recorder r; r.init(); r.raw_draw(0x91, 0, replay::Bytes{0}, 1); });
+    rejects([&] { replay::Recorder r; r.init(); r.raw_draw(0x90, 8, replay::Bytes{0}, 1); });
+    rejects([&] { replay::Recorder r; r.init(); r.raw_draw(0x90, 0, replay::Bytes{}, 1); });
     std::puts("PASS: nonthrowing capture failure, trusted resolution, overlap refusal, copy relocation/state bounds and indexed vertex bounds");
     std::printf("PASS: %zu truncations, %zu corruptions, trailing data, lifecycle, unsupported commands and size bound\n", good.size(), good.size());
     std::puts("PASS: independent pointer relocation, same-address resource updates, bounds, slots, formats and mipmap refusals");

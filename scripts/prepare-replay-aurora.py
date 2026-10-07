@@ -118,6 +118,12 @@ def prepare(source: Path, destination: Path, dawn: Path) -> None:
         target.write_text(text)
 
     hooks = {
+        "lib/gx/command_processor.cpp": [
+            (
+                "  // This entry point bypasses process(), so it owns the renderer lock itself.",
+                "  mkw_replay_capture_raw_draw(static_cast<unsigned>(prim), static_cast<unsigned>(fmt), vertices, vtxCount, vertexBytes);\n  // This entry point bypasses process(), so it owns the renderer lock itself.",
+            ),
+        ],
         "lib/dolphin/gx/GXManage.cpp": [
             (
                 "GXFifoObj* GXInit(void* base, u32 size) {",
@@ -170,6 +176,7 @@ def prepare(source: Path, destination: Path, dawn: Path) -> None:
             original = original.replace(needle, replacement)
         declarations = (
             'extern "C" void mkw_replay_capture_init() noexcept;\n'
+            'extern "C" void mkw_replay_capture_raw_draw(unsigned, unsigned, const unsigned char*, unsigned short, unsigned) noexcept;\n'
             'extern "C" void mkw_replay_capture_drain(const unsigned char*, unsigned int) noexcept;\n'
             'extern "C" void mkw_replay_capture_copy(bool, void*, bool) noexcept;\n'
             'extern "C" void mkw_replay_capture_mapping(unsigned) noexcept;\n'
@@ -180,6 +187,7 @@ def prepare(source: Path, destination: Path, dawn: Path) -> None:
 
 
 HOOK_SHA256 = {
+    "lib/gx/command_processor.cpp": "01fb6258987b4203a5add858c8b4fe56ec1a47cf8c32b85eaa7994da2e1bc038",
     "lib/dolphin/gx/GXManage.cpp": "3d3f40599683b5cb6e811e4f46b5ac71cf6fbb632f3bf39fab830c95c38e6fbb",
     "lib/dolphin/gx/GXDispList.cpp": "afd8d00985373dddd732867445a03d097e6fc3bac3f8846d3e1ab79506d8174e",
     "lib/dolphin/gx/GXFrameBuffer.cpp": "7a080e1aa4a39ae5f99bcdab34521852f296dbe9c69955c9abd4c2c8283c676e",

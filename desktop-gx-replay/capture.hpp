@@ -68,6 +68,7 @@ class Recorder {
     void mapping(std::uint32_t policy);
     void copy(Kind kind, std::uint64_t destination, const CopyState& state);
     void memory(std::span<const std::uint8_t> data);
+    void raw_draw(unsigned primitive, unsigned format, std::span<const std::uint8_t> vertices, std::uint16_t count);
     void drain(std::span<const std::uint8_t> data);
     void begin();
     void end();

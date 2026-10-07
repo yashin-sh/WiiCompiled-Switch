@@ -158,7 +158,8 @@ independent-process GPU workloads compare byte-identical PNGs and exact pixels:
 
 The public desktop CI runs these synthetic workloads and sanitizer format tests;
 the Switch CI compiles the opt-in recorder/SD integration without Nintendo data.
-Private rendered build evidence and current CI results are recorded in the PR.
+Public validation evidence and current CI results are recorded in the PR;
+private rendered build and deployment details remain local.
 
 Game captures can contain copyrighted textures, palettes and vertex data.
 Captures, temporary capture files, private NROs, game-derived PNGs and raw reports

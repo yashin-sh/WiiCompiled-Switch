@@ -34,6 +34,13 @@ jobs:
         run: test "$(git -C third_party/WiiCompiled rev-parse HEAD)" = "a135beb201042b20f390c6695ca6b26768820fb4"
       - name: Prepare pinned Switch headers for GX contracts
         run: git -C third_party/WiiCompiled apply ../../patches/wiicompiled/m3-wiicompiled-switch-build.patch
+      - name: Keep intentional aborts out of piped core collectors
+        # Linux ignores RLIMIT_CORE for piped collectors. These contracts set
+        # the limit to zero and observe real SIGABRT without needing a core file.
+        # Change only this disposable host runner, never the Switch runtime.
+        run: |
+          cat /proc/sys/kernel/core_pattern
+          sudo sysctl -w kernel.core_pattern=core
       - name: Execute GX, memory and host-context contracts
         run: |
           bash scripts/test-gx-scalar-batch.sh

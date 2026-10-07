@@ -253,3 +253,6 @@ the frontier wording that was correct when each run was captured.
 
 - [Viewport/depth returned; Mii I4 frontier](HARDWARE_RESULTS_2026-10-07_VIEWPORT_MII_I4_LOAD_FRONTIER.md) — verified 37-report Netloader run and observed native returns.
 - [Bounded Mii I4 load](GX_MII_I4_LOAD_2026-10-07.md) — exact descriptor, complete 1,024-byte physical MEM2 range and guarded native binding.
+
+- [First I4 load returned; second-object frontier](HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_LOAD_FRONTIER.md) — verified 37-report run and checked-caller return proof.
+- [Second captured Mii I4 object](GX_MII_I4_SECOND_LOAD_2026-10-07.md) — exact two-address guard and separate host objects sharing one checked payload.

@@ -347,3 +347,9 @@ object `0x80397D80`, slot 0, I4 32×64, eight captured words and physical MEM2
 data `0x109C1A40`. Its bounded load audit checks the full 1,024-byte tile range
 and existing native-before-bookkeeping behavior. Other descriptors remain
 guarded; new load return and GPU pixels require fresh console evidence.
+
+The [08:47 I4 run](HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_LOAD_FRONTIER.md)
+accepts the first load and draw-helper return, then reaches identical descriptor
+load at `0x80397DC0`. Admit only the two observed identities with all eight
+words, slot and full 1,024-byte payload checked. Host objects stay distinct;
+other identities/families and second hardware return remain guarded/unproven.

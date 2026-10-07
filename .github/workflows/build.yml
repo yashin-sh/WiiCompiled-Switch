@@ -21,10 +21,14 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
           submodules: recursive
-      - name: Install host GX contract compiler
+      - name: Prepare host GX contract compiler
         run: |
-          sudo apt-get update
-          sudo apt-get install -y clang
+          if command -v clang++ >/dev/null 2>&1; then
+            clang++ --version
+          else
+            sudo apt-get update
+            sudo apt-get install -y clang
+          fi
       - name: Verify WiiCompiled pin for GX contracts
         run: test "$(git -C third_party/WiiCompiled rev-parse HEAD)" = "a135beb201042b20f390c6695ca6b26768820fb4"
       - name: Prepare pinned Switch headers for GX contracts

@@ -368,3 +368,10 @@ caller sequence and distinct fourth-load stop. The new I4 36×32 descriptor at
 `0x80397CC0`, slot 0, requires all eight words and the full 640-byte physical
 MEM2 tiled range, including padding. Native logical width stays 36. The new
 return remains unaccepted; pixels and GPU completion require separate evidence.
+
+The [13:31 CEST first-36×32 run](HARDWARE_RESULTS_2026-10-07_MII_I4_36X32_SECOND_LOAD_FRONTIER.md)
+accepts first-object/helper return through the checked caller and distinct
+second-object stop. Both full descriptors share the same 640-byte payload;
+only their two observed identities may use this exact tuple. Native objects
+remain distinct. The changed copy destination is recorded separately; it does
+not establish pixels or GPU completion. Second-object return is unaccepted.

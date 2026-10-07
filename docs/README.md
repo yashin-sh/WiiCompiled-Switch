@@ -1,5 +1,8 @@
 # Documentation index
 
+- [First I4 36×32 return and second-object frontier](HARDWARE_RESULTS_2026-10-07_MII_I4_36X32_SECOND_LOAD_FRONTIER.md)
+- [Second captured I4 36×32 object correction](GX_MII_I4_36X32_SECOND_LOAD_2026-10-07.md)
+
 - [RGB5A3 return and I4 36×32 frontier](HARDWARE_RESULTS_2026-10-07_MII_I4_36X32_LOAD_FRONTIER.md)
 - [Captured I4 36×32 load correction](GX_MII_I4_36X32_LOAD_2026-10-07.md)
 

@@ -92,7 +92,11 @@
 - [x] Establish [I4 16×16 and prior-caller-pass return](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_32X64_NEXT_PASS_FRONTIER.md) through checked control flow; verify 37 reports / 632,236 bytes, thirteen changed / twenty-four retained.
 - [x] Implement and pass targeted contracts for the [next-pass I4 object](docs/GX_MII_I4_32X64_NEXT_PASS_LOAD_2026-10-07.md), `0x80397F80`, slot 0, 32×64: 30 loads per mode, 2,980 / 3,002 diagnosed refusals.
 - [x] Pass SDK/synthetic/private builds and lint on code `551cdbf`, retaining 71 strong functions and 48 scoped unique providers. NRO 73,621,560 bytes, SHA-256 `0b30ee17...`; 35 mutation checks, the 22-suite gate, final-head CI, merge and verified SD deployment are tracked in the development PR and issue #117.
-- [ ] Establish next-pass object return on Switch; GPU completion and recognizable images remain open.
+- [x] Merge PR #329 (`19a2dd4`) after five final-head workflows / six jobs; verify complete SD readback and successful Netloader transfer at 16:48:04 CEST.
+- [x] Verify [37 reports / 631,804 bytes](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_RELOCATED_DATA_FRONTIER.md), fourteen changed / twenty-three retained. The first object's data is `0x109C1A20`; this run stops before the next-pass object, whose return remains unconfirmed.
+- [x] Implement and contract-test the [exact relocated first I4 tuple](docs/GX_MII_I4_RELOCATED_LOAD_2026-10-07.md): 35 loads per mode, 3,255 / 3,279 refusals, current-source refresh on the same native identity.
+- [ ] Finish 40 mutation checks, the 22-suite gate and final-head CI; deploy only after all gates pass.
+- [ ] Establish relocated-source and next-pass object return on Switch; GPU completion and recognizable images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
@@ -129,14 +133,14 @@
 - [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The [latest console result](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_32X64_NEXT_PASS_FRONTIER.md) accepts I4 16×16 and
-completion of the previous Mii caller pass through checked caller inference,
-then reaches next-pass I4 object `0x80397F80`, slot 0, 32×64, at 120.862
-seconds. All 37 reports / 632,236 bytes are verified, thirteen changed /
-twenty-four retained. The descriptor shares 1,024 physical MEM2 bytes at
-`0x109C1A40` with earlier I4 objects. The diagnostic records an intentional
-abort. Retained copy/display-list reports do not establish fresh pixels or GPU
-completion; controller/audio and sustained gameplay acceptance remain open.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_RELOCATED_DATA_FRONTIER.md) captures the first
+Mii I4 object `0x80397D80` with data `0x109C1A20`, 32×64, slot 0,
+at 126.826 seconds. All 37 reports / 631,804 bytes are verified, fourteen
+changed / twenty-three retained. Checked first-load caller/base and absent
+draw-helper entry leave next-pass return unconfirmed. Retained copy/display-list
+reports and present counters do not establish fresh pixels or GPU completion.
+The correction is limited to the captured first-object source tuple and its
+complete 1,024-byte range; broader address shifts remain unproven.
 
 The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
 

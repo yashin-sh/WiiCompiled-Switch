@@ -37,3 +37,9 @@ are recorded with the development PR and
 Deployment requires every gate. Subsequent Markdown-only changes must preserve
 every non-Markdown built input. New-object return, GPU completion and game
 pixels require fresh hardware evidence. Private products remain excluded.
+
+The [subsequent console run](HARDWARE_RESULTS_2026-10-07_MII_I4_RELOCATED_DATA_FRONTIER.md) is attributable to this exact NRO,
+with a successful transfer at 16:48:04 CEST and verified 37-report retrieval.
+It stops at the first Mii object `0x80397D80` using the separately captured
+source `0x109C1A20`, before reaching this next-pass object. This candidate's
+next-pass return remains unconfirmed; its validated guard is preserved.

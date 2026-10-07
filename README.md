@@ -32,25 +32,32 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest [Mii console run](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_32X64_NEXT_PASS_FRONTIER.md) accepts I4 16×16 and
-completion of the prior caller pass, inferred from the checked unconditional
-caller and outer 512-byte descriptor stride. It stops at guarded
-**GXLoadTexObj (`0x80170F2C`)**, next-pass I4 object `0x80397F80`, slot 0,
-**32×64**. All 37 reports / 632,236 bytes are verified, thirteen changed /
-twenty-four retained. The exact PR #328 NRO transfers successfully at
-16:17:24 CEST; later diagnostics record a deliberate abort. Final visual
-outcome, GPU completion and recognizable game pixels remain unproven.
+The latest [Mii console run](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_RELOCATED_DATA_FRONTIER.md) reaches the **first
+GXLoadTexObj (`0x80170F2C`)**, object `0x80397D80`, slot 0, I4 32×64,
+with a different captured data source **`0x109C1A20`**. Its deliberate refusal
+occurs at dispatch 634566 / 126.826 seconds. All 37 reports / 631,804 bytes
+are verified, fourteen changed / twenty-three retained. The exact PR #329
+NRO transfers successfully at 16:48:04 CEST. Checked first-hit caller/base
+and absent subsequent draw-helper entry establish a first-load branch;
+**next-pass object `0x80397F80` return remains unconfirmed**. The higher
+counter does not establish later drawing. GPU completion and game pixels
+remain unproven.
 
-The [next-pass correction](docs/GX_MII_I4_32X64_NEXT_PASS_LOAD_2026-10-07.md) admits only the captured
-new identity and exact descriptor, requiring the full **1,024-byte** range
-and a distinct native object sharing the earlier I4 data. Eleven fixtures
-across four formats pass 30 loads per mode and 2,980 / 3,002 diagnosed
-refusals. SDK/synthetic/private builds and lint pass, retaining 71 strong
-functions and 48 scoped unique providers. NRO SHA-256 is
-`0b30ee17...`, size 73,621,560 bytes. The 35 mutation
-checks, 22-suite gate, final-head CI, merge and verified SD deployment are
-tracked with the development PR and issue #117. New-object return requires
-another hardware run.
+The [relocated-source correction](docs/GX_MII_I4_RELOCATED_LOAD_2026-10-07.md) adds only this first
+object's exact eight-word tuple and the complete 1,024-byte range. The original
+source stays limited to its three observed identities. Twelve descriptor
+fixtures across eleven identities pass 35 loads per mode and 3,255 / 3,279
+refusals, including current-source refresh on a stable native object.
+SDK/synthetic/private builds and lint pass, retaining 71 strong functions and
+48 scoped providers. NRO SHA-256 `a8718895...`,
+size 73,621,560 bytes. Forty mutation checks, 22 suites, final-head
+CI and verified deployment are required before the next console run.
+
+The [earlier next-pass correction](docs/GX_MII_I4_32X64_NEXT_PASS_LOAD_2026-10-07.md)
+remains locally/CI validated and merged in PR #329. The preceding captured
+source `0x109C1A40` established I4 16×16/prior-caller return in its own run;
+this different first-load tuple does not invalidate those scoped historical
+returns or establish acceptance of the new next-pass object.
 
 The [second-38×32 correction](docs/GX_MII_RGB5A3_38X32_SECOND_LOAD_2026-10-07.md)
 passes 22 suites, 27 mutations, SDK/synthetic/private builds and five final-head

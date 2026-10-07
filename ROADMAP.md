@@ -81,7 +81,11 @@
 - [x] Verify [37 reports / 632,811 bytes](docs/HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_38X32_LOAD_FRONTIER.md), seven changed / thirty retained; accept second-36×32 and intervening-helper return before RGB5A3 `0x80397C40`, slot 0, 38×32.
 - [x] Implement and pass targeted contracts for the [captured RGB5A3 38×32 correction](docs/GX_MII_RGB5A3_38X32_LOAD_2026-10-07.md): 24 loads per mode, 2,164 / 2,180 diagnosed refusals.
 - [x] Reject 25 compiled mutations; pass SDK/synthetic/private builds and lint on code `ad75948`, retaining 71 strong functions and 48 scoped unique providers. NRO 73,621,560 bytes, SHA-256 `4fd7e46e...`; the 22-suite gate, final-head CI, merge and verified SD deployment are tracked in [PR #326](https://github.com/yashin-sh/WiiCompiled-Switch/pull/326).
-- [ ] Establish RGB5A3 38×32 return on Switch; GPU completion and recognizable images remain open.
+- [x] Merge PR #326 (`101fee4`) after five final-head workflows / six jobs; verify SD readback and successful Netloader transfer at 15:07:34 CEST.
+- [x] Verify [37 reports / 632,323 bytes](docs/HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_38X32_SECOND_LOAD_FRONTIER.md), sixteen changed / twenty-one retained; accept first-38×32 and helper return before identical second object `0x80397C80`, slot 0.
+- [x] Implement and pass targeted contracts for the [second RGB5A3 38×32 object](docs/GX_MII_RGB5A3_38X32_SECOND_LOAD_2026-10-07.md): 26 loads per mode, 2,436 / 2,454 diagnosed refusals.
+- [x] Reject 27 compiled mutations; pass SDK/synthetic/private builds and lint on code `63df50a`, retaining 71 strong functions and 48 scoped unique providers. NRO 73,621,560 bytes, SHA-256 `ccbf2569...`; the 22-suite gate, final-head CI, merge and verified SD deployment are tracked in [PR #327](https://github.com/yashin-sh/WiiCompiled-Switch/pull/327).
+- [ ] Establish second-RGB5A3 38×32 return on Switch; GPU completion and recognizable images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
@@ -118,14 +122,14 @@
 - [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The [latest console result](docs/HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_38X32_LOAD_FRONTIER.md)
-accepts the second I4 36×32 load and intervening helpers, then reaches RGB5A3
-object `0x80397C40`, slot 0, 38×32, at 118.031 seconds. All 37 reports /
-632,811 bytes are verified, seven changed / thirty retained. This descriptor
-requires 2,560 physical MEM2 bytes including padding at `0x109C0200`.
-The later diagnostic records an intentional abort. Copy/display-list reports
-are retained; recognizable pixels, GPU completion, controller/audio and sustained
-gameplay acceptance remain open.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_38X32_SECOND_LOAD_FRONTIER.md)
+accepts first RGB5A3 38×32 and draw-helper return, then reaches second identical
+object `0x80397C80`, slot 0, at 125.572 seconds. All 37 reports / 632,323 bytes
+are verified, sixteen changed / twenty-one retained. Both objects require the
+same full 2,560 physical MEM2 bytes at `0x109C0200`, with logical width 38.
+The diagnostic records an intentional abort. Changed copy/display-list reports
+do not establish recognizable pixels or GPU completion; controller/audio and
+sustained gameplay acceptance remain open.
 
 The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
 

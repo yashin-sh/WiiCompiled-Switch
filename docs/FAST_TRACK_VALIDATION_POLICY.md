@@ -384,3 +384,11 @@ bytes are verified; seven changed / thirty retained. The new exact object
 bytes at `0x109C0200`; native logical width stays 38. The retained copy/display-list
 reports are not attributed as fresh GPU or image evidence. New RGB5A3 return,
 GPU completion and recognizable game pixels remain unaccepted.
+
+The [15:07 CEST first-RGB5A3-38×32 run](HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_38X32_SECOND_LOAD_FRONTIER.md)
+accepts first-object and intervening-helper return through the checked caller
+and distinct second-object stop. All 37 reports / 632,323 bytes are verified,
+sixteen changed / twenty-one retained. Both exact identities share 2,560 bytes
+at `0x109C0200`; native objects stay distinct and logical width stays 38.
+The changed copy/display-list reports do not establish pixels or GPU completion.
+Second-object return and recognizable game images remain unaccepted.

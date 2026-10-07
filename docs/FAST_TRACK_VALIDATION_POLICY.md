@@ -375,3 +375,12 @@ second-object stop. Both full descriptors share the same 640-byte payload;
 only their two observed identities may use this exact tuple. Native objects
 remain distinct. The changed copy destination is recorded separately; it does
 not establish pixels or GPU completion. Second-object return is unaccepted.
+
+The [14:25 CEST second-36×32 run](HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_38X32_LOAD_FRONTIER.md)
+accepts second-object and intervening-helper return through the checked
+unconditional caller and distinct RGB5A3 38×32 stop. All 37 reports / 632,811
+bytes are verified; seven changed / thirty retained. The new exact object
+`0x80397C40`, slot 0, requires all eight words and 2,560 readable physical MEM2
+bytes at `0x109C0200`; native logical width stays 38. The retained copy/display-list
+reports are not attributed as fresh GPU or image evidence. New RGB5A3 return,
+GPU completion and recognizable game pixels remain unaccepted.

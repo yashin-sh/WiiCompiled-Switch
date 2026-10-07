@@ -43,7 +43,11 @@ The [second-object correction](docs/GX_MII_I4_SECOND_LOAD_2026-10-07.md) admits
 only the two captured identities while retaining the full descriptor/slot/
 1,024-byte range checks and distinct host objects sharing that payload.
 Targeted contracts pass 16 loads per mode, 1,076 headless / 1,084 rendered
-refusals; complete local/CI/private-build gates and second return are open.
+refusals. All 22 local suites, eight rejected mutants, SDK/synthetic/private
+builds pass; 71 strong functions and 48 unique scoped providers are verified.
+The 73,621,560-byte NRO has SHA-256 `fe2a28d9...`. Exact-head CI, merge and
+verified deployment are tracked in [PR #321](https://github.com/yashin-sh/WiiCompiled-Switch/pull/321);
+second return and game pixels still require fresh console evidence.
 
 The [first I4 candidate](docs/GX_MII_I4_LOAD_2026-10-07.md) passes 22 suites,
 six mutants, SDK/synthetic/private builds and five final-head workflows / six

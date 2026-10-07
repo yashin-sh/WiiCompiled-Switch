@@ -64,7 +64,8 @@
 - [x] Merge first I4 PR #320 (`750ac3e`) after all five final-head workflows / six jobs; deploy with complete readback and transfer via Netloader with exit 0 at 08:47:45 UTC.
 - [x] Verify [37 reports / 632,060 bytes](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_LOAD_FRONTIER.md), 13 changed / 24 retained; accept first I4 load and intervening helper return before the second object `0x80397DC0`.
 - [x] Implement and pass targeted contracts for the [second captured I4 object](docs/GX_MII_I4_SECOND_LOAD_2026-10-07.md).
-- [ ] Finish its local/CI/private-build gates and establish second return on Switch; GPU completion and recognizable images remain open.
+- [x] Validate second-object code `3256e81`: 22 local suites, eight rejected mutants, rendered SDK gate, full synthetic/private builds; 71 strong functions and 48 scoped providers verified. The 73,621,560-byte NRO has SHA-256 `fe2a28d9...`; final-head CI, merge and verified deployment are tracked in [PR #321](https://github.com/yashin-sh/WiiCompiled-Switch/pull/321).
+- [ ] Establish second-object return on Switch; GPU completion and recognizable images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.

@@ -25,8 +25,17 @@ No proprietary payload is copied into the fixtures.
 
 All eight compiled mutations are rejected, including a widened object range
 and collapse of the pair into one host object. The full synthetic build passes.
-The rendered SDK compilation passes. All 22 local suites, the private rendered
-build and exact-head CI are in progress.
+All 22 local suites, rendered SDK compilation, full synthetic retention and
+lint pass on code `3256e81`. The immutable-image, network-disabled private
+Rendered Discovery build passes; 71 required strong functions and 48 scoped
+unique providers are verified across 235 host inputs, 19 Rust archives and
+seven named libraries. The NRO contains **73,621,560 bytes**, SHA-256
+`fe2a28d984164f24f0a45d8d70dd5ee399dec040c33a89ff04bed31c46ef79cd`.
+Dependency pins and existing upstream patch bytes/ns mtimes are preserved.
+Exact final-head CI, merge and deployment evidence are tracked in
+[PR #321](https://github.com/yashin-sh/WiiCompiled-Switch/pull/321). Deployment
+requires all five workflows / six jobs at the final head; subsequent Markdown
+updates must leave every non-Markdown built input unchanged.
 The second-object return, GPU completion and recognizable pixels still need
 fresh hardware evidence. Private generated products, NROs and raw archives
 remain local-only.

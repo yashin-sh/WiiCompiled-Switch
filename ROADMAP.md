@@ -302,6 +302,8 @@ only when execution durably progresses beyond the tested target. See
 - [x] Render first native Switch clear frame
 - [x] Reach first real RMCP01 GPU present through pinned FIFO → Aurora → Dawn/NVK
 - [ ] Visually confirm the first Mario Kart Wii image and continue GX/game-state correctness
+- [x] Validate a Nintendo-data-free desktop Aurora capture/replay with resource relocation, ordered updates and independent-process PNG comparison — **local lavapipe PASS, red/blue/background pixel oracles and byte-identical PNGs**; [prototype scope](docs/DESKTOP_GX_REPLAY.md)
+- [ ] Extend desktop replay to opt-in Switch game capture: initial state, guest FIFO/HLE paths, direct GX operations, EFB copy/cache lifetime and cross-frame resources
 - [ ] shader/pipeline cache strategy
 - [ ] 720p handheld / 1080p docked policy
 

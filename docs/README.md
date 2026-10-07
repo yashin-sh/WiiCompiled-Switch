@@ -1,4 +1,8 @@
 # Documentation index
+
+- [Build and hardware diagnostics](BUILD.md)
+- [Status history moved from the README](STATUS_LOG.md)
+- [Desktop GX capture/replay prototype](DESKTOP_GX_REPLAY.md)
 - [First relocated Mii I4 returned; second-object frontier](HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_RELOCATED_DATA_FRONTIER.md)
 - [Captured second relocated Mii I4 correction](GX_MII_I4_SECOND_RELOCATED_LOAD_2026-10-07.md)
 - [First Mii I4 load with relocated data; next-pass return unconfirmed](HARDWARE_RESULTS_2026-10-07_MII_I4_RELOCATED_DATA_FRONTIER.md)

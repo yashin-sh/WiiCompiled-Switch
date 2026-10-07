@@ -250,3 +250,6 @@ See [the latest accepted hardware report](HARDWARE_RESULTS_2026-10-03_TEV_SCALAR
 
 Dated hardware-result files are historical evidence and intentionally retain
 the frontier wording that was correct when each run was captured.
+
+- [Viewport/depth returned; Mii I4 frontier](HARDWARE_RESULTS_2026-10-07_VIEWPORT_MII_I4_LOAD_FRONTIER.md) — verified 37-report Netloader run and observed native returns.
+- [Bounded Mii I4 load](GX_MII_I4_LOAD_2026-10-07.md) — exact descriptor, complete 1,024-byte physical MEM2 range and guarded native binding.

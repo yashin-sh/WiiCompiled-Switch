@@ -58,7 +58,9 @@
 - [x] Deploy the exact 73,621,560-byte viewport/depth NRO and verify every SD byte by USB readback.
 - [x] Merge viewport PR #319 as `378267f` after all five final publication-head workflows / six jobs.
 - [x] Transfer the exact viewport/depth NRO via Netloader with exit 0 at 2026-10-07 07:53:15 UTC, 26,799,100 compressed bytes / 2,253 blocks; the user reports black with the test still running.
-- [ ] Retrieve fresh reports and establish getter/depth return; GPU completion, copied pixels and recognizable game images remain open.
+- [x] Verify [37 reports / 630,954 bytes](docs/HARDWARE_RESULTS_2026-10-07_VIEWPORT_MII_I4_LOAD_FRONTIER.md), 16 changed / 21 retained; accept observed getter/depth return before GXLoadTexObj at object `0x80397D80`, slot 0, I4 32×64.
+- [x] Implement and pass targeted contracts for the [bounded Mii I4 load](docs/GX_MII_I4_LOAD_2026-10-07.md).
+- [ ] Complete local/CI/private-build validation and establish the new I4 load return on Switch; GPU completion, copied pixels and recognizable game images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
@@ -95,12 +97,12 @@
 - [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The [latest console result](docs/HARDWARE_RESULTS_2026-10-06_PIX_MODE_SYNC_VIEWPORT_FRONTIER.md)
-accepts native copy and PixModeSync return, then reaches GXGetViewportv
-`0x801733E0`, output `0x80397B10`, 128.396 seconds. All 37 reports / 631,739
-bytes are independently verified. This launch's visual observation remains
-pending. The preceding 5,988 FIFO writes and 102 successful presents do not
-establish copied texture pixels.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-07_VIEWPORT_MII_I4_LOAD_FRONTIER.md)
+accepts getter/depth return, then reaches guarded GXLoadTexObj `0x80170F2C`,
+I4 32×64, slot 0, 119.369 seconds. All 37 reports / 630,954 bytes are verified.
+The intermediate visual observation is black with the test still running; the
+retrieved diagnostic records a durable abort. The preceding 5,988 FIFO writes
+and 102 successful presents do not establish copied texture pixels.
 
 Further SDK calls, replay, recognizable pixels, sustained execution, full
 input, audio and performance remain to validate. No fixed count of remaining

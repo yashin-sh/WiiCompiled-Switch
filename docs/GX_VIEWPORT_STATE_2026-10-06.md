@@ -2,8 +2,8 @@
 
 This bounded candidate addresses the [observed GXGetViewportv frontier](HARDWARE_RESULTS_2026-10-06_PIX_MODE_SYNC_VIEWPORT_FRONTIER.md)
 `0x801733E0`, output `0x80397B10`, dispatch 635096. The checked Mii draw setup
-also calls GXSetZScaleOffset `0x80173400`; that dependency is a static forecast,
-not an observed hardware return. Both new boundaries remain hardware-unaccepted.
+also calls GXSetZScaleOffset `0x80173400`; that dependency was a static forecast before the 2026-10-07 run. The [2026-10-07 run](HARDWARE_RESULTS_2026-10-07_VIEWPORT_MII_I4_LOAD_FRONTIER.md)
+accepts both observed returns through the later guarded Mii texture load.
 
 ## Preserved behavior
 
@@ -77,8 +77,9 @@ candidate source hashes are rechecked before transfer. Launch revision is
 `c209b1fb03d0d91df04697346ab56c6095966b96`.
 
 The user reports **a black screen with the test still running**. This is an
-intermediate visual observation. Fresh console reports, getter/depth return,
-final test outcome and recognizable pixels remain pending USB/MTP retrieval.
+intermediate visual observation. Fresh USB/MTP reports now establish getter
+and depth return before the distinct guarded I4 texture load. Raw guest
+outputs, final visible outcome and recognizable pixels remain unproven.
 The transfer establishes the launch transaction; it does not establish that
 these native calls returned or that the GPU produced game pixels.
 

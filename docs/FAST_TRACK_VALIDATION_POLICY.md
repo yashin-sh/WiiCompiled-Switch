@@ -361,3 +361,10 @@ entry and distinct third-load stop. The new complete RGB5A3 descriptor at
 bytes before any native work. The user's intermediate black/running observation
 and later durable abort are separate evidence; neither establishes game pixels.
 RGB5A3 return and other object identities remain unaccepted/guarded.
+
+The [10:16 RGB5A3 run](HARDWARE_RESULTS_2026-10-07_MII_I4_36X32_LOAD_FRONTIER.md)
+accepts RGB5A3 and intervening helper return through the checked unconditional
+caller sequence and distinct fourth-load stop. The new I4 36×32 descriptor at
+`0x80397CC0`, slot 0, requires all eight words and the full 640-byte physical
+MEM2 tiled range, including padding. Native logical width stays 36. The new
+return remains unaccepted; pixels and GPU completion require separate evidence.

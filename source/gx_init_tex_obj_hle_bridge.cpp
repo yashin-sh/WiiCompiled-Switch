@@ -58,6 +58,8 @@ constexpr std::uint32_t kObservedIa8TextureSize = 32u;
 // 8x8 texels per 32-byte tile: 4x8 tiles require exactly 1,024 bytes.
 constexpr std::uint32_t kObservedMiiI4LoadObj = 0x80397D80u;
 constexpr std::uint32_t kObservedSecondMiiI4LoadObj = 0x80397DC0u;
+// Next outer Mii pass: distinct captured object with the same tiled data.
+constexpr std::uint32_t kObservedNextPassMiiI4LoadObj = 0x80397F80u;
 constexpr std::uint32_t kObservedMiiI4Data = 0x109C1A40u;
 constexpr std::uint32_t kObservedMiiI4TextureSize = 1024u;
 
@@ -1839,7 +1841,7 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
         wrapS == 0u && wrapT == 0u && mipmap == 0u;
 
     const bool exactMiiI4Descriptor =
-        (obj == kObservedMiiI4LoadObj || obj == kObservedSecondMiiI4LoadObj) &&
+        (obj == kObservedMiiI4LoadObj || obj == kObservedSecondMiiI4LoadObj || obj == kObservedNextPassMiiI4LoadObj) &&
         tid == 0u &&
         word0 == 0x00000190u &&
         word1 == 0x00000000u &&

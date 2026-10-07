@@ -401,3 +401,13 @@ exact object `0x80397E00`, slot 0, requires all eight words and 128 readable
 physical MEM2 bytes at `0x109C1E80`; native dimensions stay 16×16. Retained
 copy/display-list reports are not fresh GPU/image evidence. New I4 return,
 GPU completion and recognizable game images remain unaccepted.
+
+The [16:17 CEST I4-16×16 run](HARDWARE_RESULTS_2026-10-07_MII_I4_32X64_NEXT_PASS_FRONTIER.md) accepts native load/helper
+return and completion of the prior Mii caller pass through an explicitly
+identified control-flow inference, the outer 512-byte descriptor stride,
+restored context and distinct next-pass stop. All 37 reports / 632,236 bytes
+are verified, thirteen changed / twenty-four retained. The new exact object
+`0x80397F80`, slot 0, uses the existing I4 32×64 tuple and complete 1,024-byte
+physical MEM2 range at `0x109C1A40`; shared data does not collapse native
+object identity. Retained copy/display-list reports are not fresh GPU/image
+evidence. New-object return and recognizable game pixels remain unaccepted.

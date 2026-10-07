@@ -1,5 +1,8 @@
 # Documentation index
 
+- [Second I4 return and RGB5A3 frontier](HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_LOAD_FRONTIER.md)
+- [Captured RGB5A3 load correction](GX_MII_RGB5A3_LOAD_2026-10-07.md)
+
 ## Architecture / runtime
 
 - [GX_VIEWPORT_STATE_2026-10-06.md](GX_VIEWPORT_STATE_2026-10-06.md) — guest viewport and bounded depth dependency; 22 suites, code-head CI/private build pass, SD readback verified, hardware pending

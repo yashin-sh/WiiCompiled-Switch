@@ -36,6 +36,7 @@ Exact final-head CI, merge and deployment evidence are tracked in
 [PR #321](https://github.com/yashin-sh/WiiCompiled-Switch/pull/321). Deployment
 requires all five workflows / six jobs at the final head; subsequent Markdown
 updates must leave every non-Markdown built input unchanged.
-The second-object return, GPU completion and recognizable pixels still need
-fresh hardware evidence. Private generated products, NROs and raw archives
+The [09:42 Netloader run](HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_LOAD_FRONTIER.md)
+now accepts second-object and intervening helper return before a distinct
+RGB5A3 load. GPU completion and recognizable pixels still need fresh evidence. Private generated products, NROs and raw archives
 remain local-only.

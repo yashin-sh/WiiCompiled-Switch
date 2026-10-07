@@ -32,22 +32,29 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest [I4 console run](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_LOAD_FRONTIER.md)
-accepts the first captured load at `0x80397D80` and its intervening Mii helper,
-then stops at guarded **GXLoadTexObj (`0x80170F2C`)**, second object
-`0x80397DC0`, slot 0, same I4 32×64 descriptor and physical payload.
-All 37 reports / 632,060 bytes are verified, 13 changed / 24 identical.
-The user confirms black then error; recognizable game pixels remain unproven.
+The latest [Mii console run](docs/HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_LOAD_FRONTIER.md)
+accepts both captured I4 loads and intervening helper/setup returns, then stops
+at guarded **GXLoadTexObj (`0x80170F2C`)**, third object `0x80397D40`, slot 0,
+**RGB5A3 44×32**, physical payload `0x109C0C40`. All 37 reports / 633,035
+bytes are verified, 13 changed / 24 retained. The user saw black with the test
+still running; the later diagnostic records a deliberate abort. Final visible
+outcome and recognizable game pixels remain unproven.
 
-The [second-object correction](docs/GX_MII_I4_SECOND_LOAD_2026-10-07.md) admits
-only the two captured identities while retaining the full descriptor/slot/
-1,024-byte range checks and distinct host objects sharing that payload.
-Targeted contracts pass 16 loads per mode, 1,076 headless / 1,084 rendered
-refusals. All 22 local suites, eight rejected mutants, SDK/synthetic/private
-builds pass; 71 strong functions and 48 unique scoped providers are verified.
-The 73,621,560-byte NRO has SHA-256 `fe2a28d9...`. Exact-head CI, merge and
-verified deployment are tracked in [PR #321](https://github.com/yashin-sh/WiiCompiled-Switch/pull/321);
-second return and game pixels still require fresh console evidence.
+The [RGB5A3 correction](docs/GX_MII_RGB5A3_LOAD_2026-10-07.md) admits only the
+captured identity, all eight words, slot 0 and full **2,816-byte** tiled range.
+Targeted contracts pass 18 loads per mode, 1,348 headless / 1,358 rendered
+refusals. All 22 local suites, twelve rejected mutants, SDK/synthetic/private
+builds pass; 71 strong functions and 48 scoped unique providers are verified.
+The 73,621,560-byte NRO has SHA-256 `4794cdc6...`. Exact-head CI, merge and
+verified deployment are tracked in [PR #322](https://github.com/yashin-sh/WiiCompiled-Switch/pull/322);
+RGB5A3 return and game pixels still require fresh console evidence.
+
+The [second I4 correction](docs/GX_MII_I4_SECOND_LOAD_2026-10-07.md) passes
+22 local suites, eight mutants, SDK/synthetic/private builds and all five
+final-head workflows / six jobs. [PR #321](https://github.com/yashin-sh/WiiCompiled-Switch/pull/321)
+is merged as `4da5100`; its verified 73,621,560-byte NRO, SHA-256
+`fe2a28d9...`, transfers with nxlink exit 0 at 09:42:22 UTC and now returns
+through the second observed load.
 
 The [first I4 candidate](docs/GX_MII_I4_LOAD_2026-10-07.md) passes 22 suites,
 six mutants, SDK/synthetic/private builds and five final-head workflows / six

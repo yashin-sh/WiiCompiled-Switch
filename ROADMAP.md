@@ -95,7 +95,7 @@
 - [x] Merge PR #329 (`19a2dd4`) after five final-head workflows / six jobs; verify complete SD readback and successful Netloader transfer at 16:48:04 CEST.
 - [x] Verify [37 reports / 631,804 bytes](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_RELOCATED_DATA_FRONTIER.md), fourteen changed / twenty-three retained. The first object's data is `0x109C1A20`; this run stops before the next-pass object, whose return remains unconfirmed.
 - [x] Implement and contract-test the [exact relocated first I4 tuple](docs/GX_MII_I4_RELOCATED_LOAD_2026-10-07.md): 35 loads per mode, 3,255 / 3,279 refusals, current-source refresh on the same native identity.
-- [ ] Finish 40 mutation checks, the 22-suite gate and final-head CI; deploy only after all gates pass.
+- [x] Reject all 40 compiled mutations and pass all 22 local suites; five final-head workflows / six actual jobs pass on `873495e`. Merge [PR #330](https://github.com/yashin-sh/WiiCompiled-Switch/pull/330) as `e72047d` and verify complete SD readback of NRO `a8718895...` at 17:24:56 CEST.
 - [ ] Establish relocated-source and next-pass object return on Switch; GPU completion and recognizable images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 

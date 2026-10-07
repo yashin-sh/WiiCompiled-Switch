@@ -50,8 +50,10 @@ fixtures across eleven identities pass 35 loads per mode and 3,255 / 3,279
 refusals, including current-source refresh on a stable native object.
 SDK/synthetic/private builds and lint pass, retaining 71 strong functions and
 48 scoped providers. NRO SHA-256 `a8718895...`,
-size 73,621,560 bytes. Forty mutation checks, 22 suites, final-head
-CI and verified deployment are required before the next console run.
+size 73,621,560 bytes. All 40 mutation checks and 22 suites pass. The five final-head workflows /
+six jobs pass on `873495e`; [PR #330](https://github.com/yashin-sh/WiiCompiled-Switch/pull/330) merges as `e72047d`. The exact NRO is copied
+and completely read back at 17:24:56 CEST. Relocated-source and next-pass
+return still require a fresh console run.
 
 The [earlier next-pass correction](docs/GX_MII_I4_32X64_NEXT_PASS_LOAD_2026-10-07.md)
 remains locally/CI validated and merged in PR #329. The preceding captured

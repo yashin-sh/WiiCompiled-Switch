@@ -27,8 +27,10 @@ Synthetic modes are `capture`, `capture-copies`, `capture-wide` and
 `capture-indexed`. `replay-check` asserts the red/blue/background workload;
 `replay-copies-check` asserts the copy/clear workload. Ordinary `replay` imposes
 no synthetic pixel assumptions. Invalid files are rejected before GPU creation.
-The PNG shows the rendered EFB; it does not include a separate surface-present
-blit or validate the Switch display backend.
+The PNG reads the texture selected for presentation, including `GXCopyDisp`
+before its optional EFB clear. It does not include the final surface scaling
+blit or validate the Switch display backend. Its dimensions follow that source
+texture, which can differ from the captured framebuffer dimensions.
 
 ## Opt-in Switch capture
 
@@ -150,7 +152,7 @@ independent-process GPU workloads compare byte-identical PNGs and exact pixels:
 
 - Red/blue triangles with a same-address texture update and cache invalidation.
 - EFB copy, regional clear, GPU copy sampling through the optimized raw submission
-  path, and destination retirement.
+  path, display copy before a full EFB clear, and destination retirement.
 - A 617×341 framebuffer requiring padded GPU readback rows.
 - Relocated little-endian indexed position and UV arrays.
 

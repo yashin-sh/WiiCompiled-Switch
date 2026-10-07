@@ -157,6 +157,12 @@ void initialize_gpu() {
 }
 replay::Bytes finish_frame() {
     using namespace aurora::webgpu;
+    // Read the image selected for presentation. GXCopyDisp(clear=true) clears
+    // the EFB after copying it; reading only the EFB would hide a valid image.
+    const auto presented = current_present_source();
+    check(static_cast<bool>(presented.texture), "no rendered presentation source");
+    width = presented.size.width;
+    height = presented.size.height;
     const auto rowBytes = ((width * 4 + 255) / 256) * 256;
     const wgpu::BufferDescriptor desc{
         .usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead,
@@ -166,7 +172,7 @@ replay::Bytes finish_frame() {
     auto encoder = g_device.CreateCommandEncoder();
     aurora::gfx::end_frame(encoder);
     aurora::gfx::render(encoder);
-    const wgpu::TexelCopyTextureInfo source{.texture = g_frameBuffer.texture};
+    const wgpu::TexelCopyTextureInfo source{.texture = presented.texture};
     const wgpu::TexelCopyBufferInfo destination{.layout = {.bytesPerRow = rowBytes, .rowsPerImage = height}, .buffer = staging};
     const wgpu::Extent3D extent{width, height, 1};
     encoder.CopyTextureToBuffer(&source, &destination, &extent);
@@ -336,9 +342,9 @@ int main(int argc, char** argv) {
             GXFlush();
             triangle(0.5f, true, false, copies);
             if (copies) {
-                GXSetDispCopySrc(0, 0, 640, 480);
-                GXSetDispCopyDst(640, 480);
-                GXCopyDisp(nullptr, GX_FALSE);
+                GXSetDispCopySrc(0, 0, width, height);
+                GXSetDispCopyDst(width, height);
+                GXCopyDisp(nullptr, GX_TRUE);
                 GXDestroyCopyTex(copyDestination.data());
                 aurora::gx::fifo::drain();
             }

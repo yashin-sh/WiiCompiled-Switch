@@ -1,4 +1,6 @@
 # Documentation index
+- [First relocated Mii I4 returned; second-object frontier](HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_RELOCATED_DATA_FRONTIER.md)
+- [Captured second relocated Mii I4 correction](GX_MII_I4_SECOND_RELOCATED_LOAD_2026-10-07.md)
 - [First Mii I4 load with relocated data; next-pass return unconfirmed](HARDWARE_RESULTS_2026-10-07_MII_I4_RELOCATED_DATA_FRONTIER.md)
 - [Captured relocated first Mii I4 source correction](GX_MII_I4_RELOCATED_LOAD_2026-10-07.md)
 - [I4 16×16 return and next Mii pass frontier](HARDWARE_RESULTS_2026-10-07_MII_I4_32X64_NEXT_PASS_FRONTIER.md)

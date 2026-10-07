@@ -61,7 +61,7 @@ constexpr std::uint32_t kObservedSecondMiiI4LoadObj = 0x80397DC0u;
 // Next outer Mii pass: distinct captured object with the same tiled data.
 constexpr std::uint32_t kObservedNextPassMiiI4LoadObj = 0x80397F80u;
 constexpr std::uint32_t kObservedMiiI4Data = 0x109C1A40u;
-// Another run captured only the first object with data 32 bytes earlier.
+// Two captured objects share a source 32 bytes earlier in another run.
 constexpr std::uint32_t kObservedRelocatedMiiI4Data = 0x109C1A20u;
 constexpr std::uint32_t kObservedMiiI4TextureSize = 1024u;
 
@@ -1849,7 +1849,8 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
         word1 == 0x00000000u &&
         word2 == 0x0000FC1Fu &&
         ((word3 == 0x0084E0D2u && data == kObservedMiiI4Data) ||
-         (obj == kObservedMiiI4LoadObj && word3 == 0x0084E0D1u &&
+         ((obj == kObservedMiiI4LoadObj || obj == kObservedSecondMiiI4LoadObj) &&
+          word3 == 0x0084E0D1u &&
           data == kObservedRelocatedMiiI4Data)) &&
         word4 == 0x00000000u &&
         word5 == 0x00000000u &&

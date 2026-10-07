@@ -34,9 +34,23 @@ the scoped audit verifies 48 unique providers across 235 host inputs,
 bytes**, SHA-256 `a87188951902f5836086eb47e834a171b44b666e1bd2558b77effb83ba52a5f1`. Original pins and private upstream
 patch bytes/ns mtimes stay preserved.
 
-Forty compiled mutation checks and all 22 local suites are required before
-deployment. Final-head CI, merge and complete SD readback are tracked with
-the development PR and issue #117. Subsequent Markdown-only changes preserve
+All 40 compiled mutations are rejected (compile exit 0; real SIGABRT -6),
+and all 22 local suites pass on the exact non-Markdown built inputs. Five
+final-head workflows / six actual jobs pass on
+`873495e4508a0cebab576199b6833b21fa9a41cb`.
+[PR #330](https://github.com/yashin-sh/WiiCompiled-Switch/pull/330) merges as
+`e72047d74f7cf98856250b3f6f66c147e9404a9a` at **17:24:26 CEST**
+(15:24:26 UTC); the fetched main tree equals the validated candidate. The
+exact NRO is copied to `sdmc:/switch/WiiCompiled-Switch-gx-mii-i4-relocated-load-rendered-discovery.nro`
+and its complete 73,621,560-byte/SHA-256 readback passes at **17:24:56 CEST**
+(15:24:56 UTC). Copying does not launch it. Issue #117 retains the evidence. Subsequent Markdown-only changes preserve
 all non-Markdown built inputs. New-source return, next-pass return, GPU
 completion and recognizable game pixels require a fresh hardware run.
 Private products remain excluded.
+
+The [subsequent console run](HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_RELOCATED_DATA_FRONTIER.md) accepts this first relocated-source
+load and intervening draw helper through the checked unconditional caller,
+fresh helper entry and restored later second-object stop. All 37 reports /
+632,567 bytes are verified, seven changed / thirty retained. The next guarded
+load is `0x80397DC0`, slot 0, with the same complete source tuple. That second
+return, next-pass return, GPU completion and recognizable pixels remain open.

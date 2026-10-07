@@ -211,6 +211,12 @@ Historical returns stay scoped to their observed source tuples. Only the
 new first-object tuple `word3=0x0084E0D1`, data `0x109C1A20`, 32×64, slot 0,
 is eligible for the current bounded correction; no pointer interval is inferred.
 
+The [second relocated-source frontier](HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_RELOCATED_DATA_FRONTIER.md) establishes first-load
+and helper return through the verified unconditional caller, fresh helper
+first-hit and restored second-load stop. The first/second descriptors share
+`0x109C1A20`, but require independent native identities. Only the newly
+captured second identity is added; next-pass/source variations remain unproven.
+
 ## Earlier frontiers — 2026-10-03
 
 The latest attributable real-Switch evidence is recorded in

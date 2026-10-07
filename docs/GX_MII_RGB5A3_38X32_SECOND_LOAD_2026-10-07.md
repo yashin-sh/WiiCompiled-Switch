@@ -22,8 +22,19 @@ host reuse, native width/format/order/failure and complete CPU/guest preservatio
 ASan/fatal UBSan/LSan contracts pass **26 valid loads per mode**,
 **2,436 headless / 2,454 rendered diagnosed refusals**. Synthetic fixtures contain no game data.
 
-Validation is in progress. Deployment requires all 22 local suites, rendered
-SDK compilation, full synthetic/private builds, native/provider audits, lint
-and all five final-head workflows / six actual jobs. New second-object return,
-GPU completion and recognizable images require fresh hardware evidence.
-Private products, NROs and raw archives stay excluded.
+All twenty-seven compiled mutations are rejected. Targeted contracts, rendered
+SDK compilation, full synthetic retention, lint and the immutable-image,
+network-disabled private Rendered Discovery build pass on code `63df50a`.
+The native ELF retains 71 required strong functions. Provider audits verify
+48 scoped unique providers across 235 host inputs, 19 Rust archives and seven
+named libraries. The private NRO contains **73,621,560 bytes**, SHA-256
+`ccbf256986521c3d31e0634994eb56e87ff1bb34f858cb9307ddf9d40f96ae6a`.
+Original dependency pins and upstream patch bytes/ns mtimes are preserved.
+
+The 22-suite local gate, five final-head workflows / six actual jobs, merge
+and full SD readback evidence are tracked in
+[PR #327](https://github.com/yashin-sh/WiiCompiled-Switch/pull/327).
+Deployment requires all of those gates; subsequent Markdown changes must
+leave every non-Markdown built input unchanged. New second-object return,
+GPU completion and recognizable game images remain unaccepted until fresh
+hardware evidence. Private products, NROs and raw archives stay excluded.

@@ -43,8 +43,13 @@ pixels remain unproven.
 The [second-object correction](docs/GX_MII_RGB5A3_38X32_SECOND_LOAD_2026-10-07.md)
 admits only the two captured identities, all eight words, slot 0 and full
 **2,560-byte** range, preserving width 38 and distinct native objects sharing
-the data. Nine fixtures cover four formats. Validation is in progress;
-new second return, GPU completion and recognizable pixels require fresh evidence.
+the data. Nine independent fixtures across four formats and three shared-data pairs pass
+26 valid loads per mode, 2,436 headless / 2,454 rendered refusals. Twenty-seven
+mutations are rejected; SDK/synthetic/private builds and lint pass, with 71
+strong functions and 48 scoped unique providers verified. The 73,621,560-byte
+NRO has SHA-256 `ccbf2569...`. The 22-suite local gate, final-head CI, merge
+and verified SD deployment are tracked in [PR #327](https://github.com/yashin-sh/WiiCompiled-Switch/pull/327).
+New second return, GPU completion and recognizable pixels require fresh evidence.
 
 The [first-38×32 correction](docs/GX_MII_RGB5A3_38X32_LOAD_2026-10-07.md)
 passes 22 suites, 25 mutations, SDK/synthetic/private builds and five final-head

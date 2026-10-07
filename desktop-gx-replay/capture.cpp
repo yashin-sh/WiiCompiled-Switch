@@ -238,8 +238,10 @@ void Recorder::memory(std::span<const std::uint8_t> data) {
     }
     ranges.push_back({data.data(), data.size()});
 }
-Recorder::Recorder(std::uint32_t w, std::uint32_t h) : width(w), height(h) {
+Recorder::Recorder(std::uint32_t w, std::uint32_t h) {
     require(w > 0 && w <= 1920 && h > 0 && h <= 1080, "invalid capture dimensions");
+    width = w;
+    height = h;
 }
 void Recorder::resolve_with(std::function<std::span<const std::uint8_t>(std::uint64_t, std::size_t)> fn) {
     resolver = std::move(fn);

@@ -34,6 +34,12 @@ Dependency pins and existing upstream patch bytes/ns mtimes are preserved.
 Final-head CI, merge and verified deployment evidence are tracked in
 [PR #324](https://github.com/yashin-sh/WiiCompiled-Switch/pull/324). Deployment
 requires all five workflows / six actual jobs at that final head; subsequent
-Markdown updates must leave every non-Markdown built input unchanged. Second-object return, GPU completion and recognizable images
-require fresh hardware evidence. Private products, NROs and raw archives stay
+Markdown updates must leave every non-Markdown built input unchanged. Second-object return is accepted by the subsequent checked run below; GPU
+completion and recognizable images still require separate hardware evidence. Private products, NROs and raw archives stay
 excluded.
+
+The [14:25 CEST console run](HARDWARE_RESULTS_2026-10-07_MII_RGB5A3_38X32_LOAD_FRONTIER.md)
+now accepts the second-object and intervening-helper return before a distinct
+RGB5A3 38×32 stop. All 37 reports / 632,811 bytes are checked, seven changed /
+thirty retained. No final visual observation, game pixels or GPU completion
+is established.

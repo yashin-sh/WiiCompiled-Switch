@@ -74,6 +74,12 @@ constexpr std::uint32_t kObservedSecondMiiSmallI4LoadObj = 0x80397D00u;
 constexpr std::uint32_t kObservedMiiSmallI4Data = 0x109C1780u;
 constexpr std::uint32_t kObservedMiiSmallI4TextureSize = 640u;
 
+// Sixth captured Mii load: RGB5A3 38x32 includes a partial 4x4 tile.
+// Ceil(38/4) x ceil(32/4) x 32 requires 2560 bytes; native width stays 38.
+constexpr std::uint32_t kObservedMiiSmallRgb5a3LoadObj = 0x80397C40u;
+constexpr std::uint32_t kObservedMiiSmallRgb5a3Data = 0x109C0200u;
+constexpr std::uint32_t kObservedMiiSmallRgb5a3TextureSize = 2560u;
+
 constexpr std::uint32_t kObservedLodObj = 0x9018E120u;
 constexpr std::uint32_t kObservedLodMinFilter = 1u;
 constexpr std::uint32_t kObservedLodMagFilter = 1u;
@@ -1874,10 +1880,26 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
         format == 0u && formatWord2 == 0u &&
         wrapS == 0u && wrapT == 0u && mipmap == 0u;
 
+    const bool exactMiiSmallRgb5a3Descriptor =
+        obj == kObservedMiiSmallRgb5a3LoadObj &&
+        tid == 0u &&
+        word0 == 0x00000190u &&
+        word1 == 0x00000000u &&
+        word2 == 0x00507C25u &&
+        word3 == 0x0084E010u &&
+        word4 == 0x00000000u &&
+        word5 == 0x00000005u &&
+        word6 == 0x00000000u &&
+        word7 == 0x00500202u &&
+        data == kObservedMiiSmallRgb5a3Data &&
+        width == 38u && height == 32u &&
+        format == 5u && formatWord2 == 5u &&
+        wrapS == 0u && wrapT == 0u && mipmap == 0u;
+
     // Unknown descriptors have no proven size. Every admitted descriptor
     // checks its own complete tiled range before allocating or calling Aurora.
-    const std::uint32_t textureSize = exactOriginalDescriptor ? kObservedTextureSize : (exactIa8Descriptor ? kObservedIa8TextureSize : (exactMiiI4Descriptor ? kObservedMiiI4TextureSize : (exactMiiRgb5a3Descriptor ? kObservedMiiRgb5a3TextureSize : (exactMiiSmallI4Descriptor ? kObservedMiiSmallI4TextureSize : 0u))));
-    if (!exactOriginalDescriptor && !exactIa8Descriptor && !exactMiiI4Descriptor && !exactMiiRgb5a3Descriptor && !exactMiiSmallI4Descriptor) {
+    const std::uint32_t textureSize = exactOriginalDescriptor ? kObservedTextureSize : (exactIa8Descriptor ? kObservedIa8TextureSize : (exactMiiI4Descriptor ? kObservedMiiI4TextureSize : (exactMiiRgb5a3Descriptor ? kObservedMiiRgb5a3TextureSize : (exactMiiSmallI4Descriptor ? kObservedMiiSmallI4TextureSize : (exactMiiSmallRgb5a3Descriptor ? kObservedMiiSmallRgb5a3TextureSize : 0u)))));
+    if (!exactOriginalDescriptor && !exactIa8Descriptor && !exactMiiI4Descriptor && !exactMiiRgb5a3Descriptor && !exactMiiSmallI4Descriptor && !exactMiiSmallRgb5a3Descriptor) {
         AbortLoadBoundary(
             "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR",
             cpu,

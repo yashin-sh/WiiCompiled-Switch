@@ -56,6 +56,16 @@ execute_process(
 if(NOT M3_CHECKED_FIFO_RESULT EQUAL 0)
     message(FATAL_ERROR "Could not prepare the checked Aurora FIFO source mirror")
 endif()
+option(MKW_RENDERED_FIFO_CAPTURE "Capture the first rendered frame locally" OFF)
+if(MKW_RENDERED_FIFO_CAPTURE)
+    execute_process(COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/prepare-replay-aurora.py"
+        "${M3_AURORA_ROOT}" "${A}" "${CMAKE_SOURCE_DIR}"
+        RESULT_VARIABLE capture_prepare_result)
+    if(NOT capture_prepare_result EQUAL 0)
+        message(FATAL_ERROR "Cannot prepare audited FIFO capture mirror")
+    endif()
+endif()
 # Reconfigure when any mirrored upstream input changes; unchanged files keep
 # their timestamps and do not trigger another full Aurora compilation.
 file(GLOB_RECURSE M3_AURORA_MIRROR_INPUTS CONFIGURE_DEPENDS "${M3_AURORA_ROOT}/lib/*")
@@ -149,3 +159,13 @@ target_compile_options(m3_aurora_gx PRIVATE
     -ffunction-sections
     -fdata-sections
 )
+
+if(MKW_RENDERED_FIFO_CAPTURE)
+    target_sources(m3_aurora_gx PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/../desktop-gx-replay/capture.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../desktop-gx-replay/aurora_capture.cpp")
+    target_include_directories(m3_aurora_gx BEFORE PUBLIC
+        "${A}/include" "${CMAKE_CURRENT_SOURCE_DIR}/../desktop-gx-replay")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/prepare-replay-aurora.py")
+endif()

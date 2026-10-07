@@ -20,6 +20,8 @@
 
 namespace {
 std::atomic_bool gpuError{false};
+std::uint32_t width = 256, height = 256;
+extern "C" void mkw_replay_set_size(unsigned, unsigned);
 void check(bool passed, const char* message) {
     if (!passed) {
         throw std::runtime_error(message);
@@ -57,14 +59,14 @@ void png(const char* path, const replay::Bytes& pixels) {
         integer(out, crc32(0, out.data() + start, bytes.size() + 4));
     };
     replay::Bytes header;
-    integer(header, 256);
-    integer(header, 256);
+    integer(header, width);
+    integer(header, height);
     header.insert(header.end(), {8, 6, 0, 0, 0});
     chunk("IHDR", header);
     replay::Bytes rows;
-    for (std::size_t y = 0; y < 256; ++y) {
+    for (std::size_t y = 0; y < height; ++y) {
         rows.push_back(0);
-        rows.insert(rows.end(), pixels.begin() + y * 1024, pixels.begin() + (y + 1) * 1024);
+        rows.insert(rows.end(), pixels.begin() + y * width * 4, pixels.begin() + (y + 1) * width * 4);
     }
     uLongf length = compressBound(rows.size());
     replay::Bytes compressed(length);
@@ -125,7 +127,7 @@ void initialize_gpu() {
     g_queue = device.GetQueue();
     g_backendType = wgpu::BackendType::Vulkan;
     g_graphicsConfig = {
-        .surfaceConfiguration = {.format = wgpu::TextureFormat::RGBA8Unorm, .width = 256, .height = 256},
+        .surfaceConfiguration = {.format = wgpu::TextureFormat::RGBA8Unorm, .width = width, .height = height},
         .depthFormat = wgpu::TextureFormat::Depth32Float,
         .msaaSamples = 1,
         .textureAnisotropy = 1,
@@ -133,7 +135,7 @@ void initialize_gpu() {
     };
     const wgpu::TextureDescriptor color{
         .usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::CopySrc | wgpu::TextureUsage::TextureBinding,
-        .size = {256, 256, 1},
+        .size = {width, height, 1},
         .format = wgpu::TextureFormat::RGBA8Unorm,
     };
     g_frameBuffer.texture = device.CreateTexture(&color);
@@ -151,17 +153,18 @@ void initialize_gpu() {
 }
 replay::Bytes finish_frame() {
     using namespace aurora::webgpu;
+    const auto rowBytes = ((width * 4 + 255) / 256) * 256;
     const wgpu::BufferDescriptor desc{
         .usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead,
-        .size = 256 * 1024,
+        .size = static_cast<std::uint64_t>(height) * rowBytes,
     };
     auto staging = g_device.CreateBuffer(&desc);
     auto encoder = g_device.CreateCommandEncoder();
     aurora::gfx::end_frame(encoder);
     aurora::gfx::render(encoder);
     const wgpu::TexelCopyTextureInfo source{.texture = g_frameBuffer.texture};
-    const wgpu::TexelCopyBufferInfo destination{.layout = {.bytesPerRow = 1024, .rowsPerImage = 256}, .buffer = staging};
-    const wgpu::Extent3D extent{256, 256, 1};
+    const wgpu::TexelCopyBufferInfo destination{.layout = {.bytesPerRow = rowBytes, .rowsPerImage = height}, .buffer = staging};
+    const wgpu::Extent3D extent{width, height, 1};
     encoder.CopyTextureToBuffer(&source, &destination, &extent);
     auto commands = encoder.Finish();
     g_queue.Submit(1, &commands);
@@ -173,7 +176,9 @@ replay::Bytes finish_frame() {
                                          UINT64_MAX);
     check(wait == wgpu::WaitStatus::Success && mapped && !gpuError, "GPU rendering/readback failed");
     const auto* data = static_cast<const std::uint8_t*>(staging.GetConstMappedRange());
-    replay::Bytes pixels(data, data + desc.size);
+    replay::Bytes pixels;
+    for (unsigned y = 0; y < height; ++y)
+        pixels.insert(pixels.end(), data + y * rowBytes, data + y * rowBytes + width * 4);
     staging.Unmap();
     return pixels;
 }
@@ -184,8 +189,8 @@ void setup() {
     GXLoadPosMtxImm(identity, GX_PNMTX0);
     GXSetCurrentMtx(GX_PNMTX0);
     GXSetProjection(ortho, GX_ORTHOGRAPHIC);
-    GXSetViewport(0, 0, 256, 256, 0, 1);
-    GXSetScissor(0, 0, 256, 256);
+    GXSetViewport(0, 0, width, height, 0, 1);
+    GXSetScissor(0, 0, width, height);
     GXSetCullMode(GX_CULL_NONE);
     GXSetZMode(GX_FALSE, GX_ALWAYS, GX_FALSE);
     GXSetBlendMode(GX_BM_NONE, GX_BL_ONE, GX_BL_ZERO, GX_LO_COPY);
@@ -202,7 +207,7 @@ void setup() {
     GXSetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
     aurora::gx::fifo::drain();
 }
-void triangle(float center, bool raw) {
+void triangle(float center, bool raw, bool indexed = false) {
     if (raw) {
         // Identical big-endian draw payload via the FIFO producer API. This
         // exercises a second producer without claiming a guest HLE integration.
@@ -217,9 +222,15 @@ void triangle(float center, bool raw) {
         }
     } else {
         GXBegin(GX_TRIANGLES, GX_VTXFMT0, 3);
+        unsigned index = 0;
         for (auto xy : {std::array<float, 2>{center, 0.7f}, {center - 0.4f, -0.7f}, {center + 0.4f, -0.7f}}) {
-            GXPosition3f32(xy[0], xy[1], 0);
-            GXTexCoord2f32(0.5f, 0.5f);
+            if (indexed) {
+                GXPosition1x8(index++);
+                GXTexCoord1x8(0);
+            } else {
+                GXPosition3f32(xy[0], xy[1], 0);
+                GXTexCoord2f32(0.5f, 0.5f);
+            }
         }
         GXEnd();
     }
@@ -234,16 +245,16 @@ void fill_texture(std::array<std::uint8_t, 64>& tex, bool blue) {
         tex[33 + i * 2] = blue ? 255 : 0;
     }
 }
-void check_scene(const replay::Bytes& pixels) {
+void check_scene(const replay::Bytes& pixels, bool copies = false) {
     const auto pixel = [&](int x, int y, int r, int g, int b) {
-        const auto offset = (y * 256 + x) * 4;
+        const auto offset = (y * width + x) * 4;
         if (pixels[offset] != r || pixels[offset + 1] != g || pixels[offset + 2] != b || pixels[offset + 3] != 255) {
             std::fprintf(stderr, "Pixel (%d,%d): expected %d,%d,%d,255; got %u,%u,%u,%u\n", x, y, r, g, b, pixels[offset], pixels[offset + 1], pixels[offset + 2], pixels[offset + 3]);
         }
         check(pixels[offset] == r && pixels[offset + 1] == g && pixels[offset + 2] == b && pixels[offset + 3] == 255, "synthetic pixel oracle failed");
     };
-    pixel(64, 128, 255, 0, 0);
-    pixel(192, 128, 0, 0, 255);
+    pixel(width / 4, height / 2, copies ? 64 : 255, copies ? 64 : 0, copies ? 64 : 0);
+    pixel(width * 3 / 4, height / 2, copies ? 255 : 0, 0, copies ? 0 : 255);
     pixel(8, 8, 64, 64, 64);
 }
 } // namespace
@@ -255,21 +266,38 @@ extern "C" void mkw_replay_log(const char* message) {
 int main(int argc, char** argv) {
     bool initialized = false;
     try {
-        check(argc == 4 && (std::string(argv[1]) == "capture" || std::string(argv[1]) == "replay" || std::string(argv[1]) == "replay-check"), "usage: mkw-gx-replay capture|replay|replay-check capture.mkwr output.png");
-        const bool capture = std::string(argv[1]) == "capture";
+        check(argc == 4 && (std::string(argv[1]) == "capture" || std::string(argv[1]) == "capture-copies" || std::string(argv[1]) == "capture-wide" || std::string(argv[1]) == "capture-indexed" || std::string(argv[1]) == "replay" || std::string(argv[1]) == "replay-check" || std::string(argv[1]) == "replay-copies-check"), "usage: mkw-gx-replay capture|replay|replay-check capture.mkwr output.png");
+        const bool indexed = std::string(argv[1]) == "capture-indexed";
+        const bool copies = std::string(argv[1]).find("copies") != std::string::npos;
+        const bool capture = std::string(argv[1]).starts_with("capture");
+        if (std::string(argv[1]) == "capture-wide") {
+            width = 617;
+            height = 341;
+        }
         std::unique_ptr<replay::Playback> playback;
         if (!capture) {
             // Parse and validate the whole file before allocating a GPU device.
             playback = std::make_unique<replay::Playback>(load(argv[2]));
+            width = playback->width;
+            height = playback->height;
         }
+        mkw_replay_set_size(width, height);
         initialize_gpu();
         initialized = true;
         replay::Bytes pixels;
         if (capture) {
-            replay::Recorder recorder;
-            std::array<std::uint8_t, 64> texture{};
+            replay::Recorder recorder(width, height);
+            std::array<std::uint8_t, 64> texture{}, copyDestination{};
             fill_texture(texture, false);
+            const std::array<float, 9> positions{-0.5f, 0.7f, 0.f, -0.9f, -0.7f, 0.f, -0.1f, -0.7f, 0.f};
+            const std::array<float, 2> uv{0.5f, 0.5f};
             recorder.memory(texture);
+            if (indexed) {
+                recorder.memory({reinterpret_cast<const std::uint8_t*>(positions.data()), sizeof(positions)});
+                recorder.memory({reinterpret_cast<const std::uint8_t*>(uv.data()), sizeof(uv)});
+            }
+            if (copies)
+                recorder.memory(copyDestination);
             replay::set_recorder(&recorder);
             setup();
             GXTexObj obj{};
@@ -278,24 +306,47 @@ int main(int argc, char** argv) {
             aurora::gx::fifo::drain();
             recorder.begin();
             check(aurora::gfx::begin_frame(), "Aurora begin_frame failed");
-            triangle(-0.5f, false);
+            if (indexed) {
+                GXSetVtxDesc(GX_VA_POS, GX_INDEX8);
+                GXSetVtxDesc(GX_VA_TEX0, GX_INDEX8);
+                GXSetArray(GX_VA_POS, positions.data(), sizeof(positions), 12, true);
+                GXSetArray(GX_VA_TEX0, uv.data(), sizeof(uv), 8, true);
+            }
+            triangle(-0.5f, false, indexed);
+            if (indexed) {
+                GXSetVtxDesc(GX_VA_POS, GX_DIRECT);
+                GXSetVtxDesc(GX_VA_TEX0, GX_DIRECT);
+            }
+            if (copies) {
+                GXSetCopyClear(GXColor{64, 64, 64, 255}, 0xffffff);
+                GXSetTexCopySrcRender(62, 126, 4, 4);
+                GXSetTexCopyDst(4, 4, GX_TF_RGB5A3, GX_FALSE);
+                GXCopyTex(copyDestination.data(), GX_TRUE);
+            }
             fill_texture(texture, true);
             GXInvalidateTexAll();
-            GXInitTexObj(&obj, texture.data(), 4, 4, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+            GXInitTexObj(&obj, copies ? copyDestination.data() : texture.data(), 4, 4, copies ? GX_TF_RGB5A3 : GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
             GXLoadTexObj(&obj, GX_TEXMAP0);
             // Flush pending native state, then use raw FIFO.
             GXFlush();
             triangle(0.5f, true);
+            if (copies) {
+                GXSetDispCopySrc(0, 0, 640, 480);
+                GXSetDispCopyDst(640, 480);
+                GXCopyDisp(nullptr, GX_FALSE);
+                GXDestroyCopyTex(copyDestination.data());
+                aurora::gx::fifo::drain();
+            }
+            check(replay::recording(), replay::failure());
             recorder.end();
             replay::set_recorder(nullptr);
             pixels = finish_frame();
-            check_scene(pixels);
+            check_scene(pixels, copies);
             save(argv[2], recorder.finish());
         } else {
             // GXInit establishes Aurora's non-FIFO defaults. Discard its queued
             // bytes: the capture includes the original initialization stream.
-            GXInit(nullptr, 0);
-            aurora::gx::fifo::clear_buffer();
+
             playback->run([&](replay::Kind kind, std::span<const std::uint8_t> bytes) {
                 if (kind == replay::Kind::Begin) {
                     check(aurora::gfx::begin_frame(), "Aurora begin_frame failed");
@@ -304,10 +355,12 @@ int main(int argc, char** argv) {
                     aurora::gx::fifo::drain();
                 } else if (kind == replay::Kind::End) {
                     pixels = finish_frame();
+                } else {
+                    replay::apply_direct(kind, bytes);
                 }
             });
-            if (std::string(argv[1]) == "replay-check") {
-                check_scene(pixels);
+            if (std::string(argv[1]).ends_with("check")) {
+                check_scene(pixels, copies);
             }
         }
         png(argv[3], pixels);

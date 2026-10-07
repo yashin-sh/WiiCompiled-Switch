@@ -162,3 +162,5 @@ Aurora GX -> Dawn/WebGPU -> Vulkan/NVK graphics chain, and repeated GPU
 presents are proven on Switch hardware. Native audio output, complete
 controller mapping, a visually correct Mario Kart Wii frame, and full
 playability are not yet proven.
+
+For the opt-in first-frame capture NRO, bounded format and private SD output, see [Desktop GX capture/replay](DESKTOP_GX_REPLAY.md).

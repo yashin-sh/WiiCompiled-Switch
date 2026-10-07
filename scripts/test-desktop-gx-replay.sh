@@ -28,3 +28,18 @@ mkdir -p "$OUT_ROOT"
 "$REPLAY" replay-check "$OUT_ROOT/scene.mkwr" "$OUT_ROOT/replayed.png"
 cmp "$OUT_ROOT/original.png" "$OUT_ROOT/replayed.png"
 echo "PASS: independent capture/replay processes produce byte-identical PNGs and pass red/blue/background pixel oracles"
+
+"$REPLAY" capture-copies "$OUT_ROOT/copies.mkwr" "$OUT_ROOT/copies-original.png"
+"$REPLAY" replay-copies-check "$OUT_ROOT/copies.mkwr" "$OUT_ROOT/copies-replayed.png"
+cmp "$OUT_ROOT/copies-original.png" "$OUT_ROOT/copies-replayed.png"
+echo "PASS: EFB copy, clear, GPU copy sampling and destination retirement survive replay"
+
+"$REPLAY" capture-wide "$OUT_ROOT/wide.mkwr" "$OUT_ROOT/wide-original.png"
+"$REPLAY" replay-check "$OUT_ROOT/wide.mkwr" "$OUT_ROOT/wide-replayed.png"
+cmp "$OUT_ROOT/wide-original.png" "$OUT_ROOT/wide-replayed.png"
+echo "PASS: variable framebuffer dimensions and padded GPU readback rows survive replay"
+
+"$REPLAY" capture-indexed "$OUT_ROOT/indexed.mkwr" "$OUT_ROOT/indexed-original.png"
+"$REPLAY" replay-check "$OUT_ROOT/indexed.mkwr" "$OUT_ROOT/indexed-replayed.png"
+cmp "$OUT_ROOT/indexed-original.png" "$OUT_ROOT/indexed-replayed.png"
+echo "PASS: indexed positions and UV arrays relocate and render the expected pixels"

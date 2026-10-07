@@ -75,7 +75,7 @@ add_library(replay_aurora STATIC
     "${A}/lib/dolphin/gx/GXPixel.cpp" "${A}/lib/dolphin/gx/GXTev.cpp"
     "${A}/lib/dolphin/gx/GXTexture.cpp" "${A}/lib/dolphin/gx/GXTransform.cpp"
     "${A}/lib/dolphin/gx/GXVert.cpp" "${A}/lib/dolphin/gx/GXAurora.cpp"
-    shim.cpp "${REPO_ROOT}/m3-aurora-gx-probe/source/probe_pipeline_cache.cpp")
+    aurora_capture.cpp shim.cpp "${REPO_ROOT}/m3-aurora-gx-probe/source/probe_pipeline_cache.cpp")
 target_include_directories(replay_aurora PUBLIC "${A}/include" "${A}/lib"
     "${REPO_ROOT}/m3-aurora-gx-probe/compat")
 target_compile_definitions(replay_aurora PUBLIC AURORA AURORA_ENABLE_GX TARGET_PC WEBGPU_DAWN)

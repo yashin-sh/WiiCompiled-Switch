@@ -2,13 +2,18 @@
 
 #include <algorithm>
 #include <cstring>
+#include <bit>
+#include <cmath>
+#include <cstdio>
 #include <stdexcept>
 #include <string>
 
 namespace replay {
 namespace {
 Recorder* active = nullptr;
-constexpr std::array<std::uint8_t, 8> Magic{'M', 'K', 'W', 'R', 'P', 'L', '1', 0};
+char captureFailure[256]{};
+void (*failureHandler)(const char*) noexcept = nullptr;
+constexpr std::array<std::uint8_t, 8> Magic{'M', 'K', 'W', 'R', 'P', 'L', '2', 0};
 void require(bool condition, const char* message) {
     if (!condition) {
         throw std::runtime_error(message);
@@ -93,7 +98,13 @@ void Decoder::relocate(Bytes& fifo, const Relocate& resolve) {
             } else if (reg == 0x60) {
                 vcdHi = value;
             } else if (reg >= 0x70 && reg <= 0x77) {
-                vat[reg - 0x70] = value;
+                vat[0][reg - 0x70] = value;
+            } else if (reg >= 0x80 && reg <= 0x87) {
+                vat[1][reg - 0x80] = value;
+            } else if (reg >= 0x90 && reg <= 0x97) {
+                vat[2][reg - 0x90] = value;
+            } else if (reg >= 0xB0 && reg <= 0xBF) {
+                arrayStride[reg - 0xB0] = value & 255;
             }
         } else if (opcode == 0x10) {
             const auto header = read(fifo, pos + 1, 4);
@@ -110,6 +121,7 @@ void Decoder::relocate(Bytes& fifo, const Relocate& resolve) {
                 pointer = pos + 3;
                 needed = read(fifo, pos + 11, 4);
                 require(needed > 0 && needed <= MaxBytes && read(fifo, pos + 15, 1) <= 1, "invalid array metadata");
+                arraySize[sub - 0x10] = needed;
             } else if (sub == 0x30) {
                 length = 37;
                 require(read(fifo, pos + 3, 1) < 8, "invalid texture slot");
@@ -124,6 +136,10 @@ void Decoder::relocate(Bytes& fifo, const Relocate& resolve) {
                 require(needed > 0 && needed <= 32768, "invalid palette size");
             } else if (sub == 0x32 || sub == 0x33) {
                 length = 7;
+            } else if (sub == 0x34) {
+                length = 11;
+                pointer = pos + 3;
+                needed = 1;
             } else if (sub == 0x35 || sub == 0x21) {
                 length = 3;
             } else if (sub == 0x20 || sub == 0x22) {
@@ -135,29 +151,71 @@ void Decoder::relocate(Bytes& fifo, const Relocate& resolve) {
             if (pointer) {
                 write(fifo, pointer, resolve(read(fifo, pointer, 8), needed), 8);
             }
+        } else if (opcode == 0x20 || opcode == 0x28 || opcode == 0x30 || opcode == 0x38) {
+            length = 5;
+            const auto value = read(fifo, pos + 1, 4);
+            const auto slot = 12 + (opcode - 0x20) / 8;
+            const auto offset = (value >> 16) * arrayStride[slot];
+            const auto size = (((value >> 12) & 15) + 1) * 4;
+            require(arrayStride[slot] && offset <= arraySize[slot] && size <= arraySize[slot] - offset, "invalid indexed XF resource");
         } else if (opcode >= 0x80 && opcode <= 0xBF) {
             const auto primitive = opcode & 0xF8;
-            require(primitive == 0x80 || primitive == 0x90 || primitive == 0x98 || primitive == 0xA0, "unsupported primitive");
-            const auto a = vat[opcode & 7];
-            require((vcdLo & 0x1FFF) == (1u << 9) && (vcdLo >> 15) == 0 && (vcdHi & ~3u) == 0, "unsupported vertex descriptor");
-            require((a & 0x1FF) == 9, "position must be XYZ/F32 with zero fraction");
-            std::size_t stride = 12;
-            const auto color = (vcdLo >> 13) & 3;
-            require(color <= 1, "indexed color is outside replay v1");
-            if (color) {
-                require(((a >> 13) & 0xF) == 11, "color must be RGBA8");
-                stride += 4;
-            }
-            require((vcdHi & 3) <= 1, "indexed UV is outside replay v1");
-            if (vcdHi & 3) {
-                require(((a >> 21) & 0x1FF) == 9, "UV must be ST/F32 with zero fraction");
-                stride += 8;
-            }
             const auto count = read(fifo, pos + 1, 2);
-            require(count >= 3 && count <= 4096 && (primitive != 0x80 || count % 4 == 0) && (primitive != 0x90 || count % 3 == 0), "invalid vertex count");
-            length = 3 + count * stride;
+            require(count > 0 && ((primitive != 0x80 && primitive != 0x88) || count % 4 == 0) && (primitive != 0x90 || count % 3 == 0) && (primitive != 0xA8 || count % 2 == 0) && (primitive != 0xB0 || count >= 2) && ((primitive != 0x98 && primitive != 0xA0) || count >= 3), "invalid vertex count");
+            const auto a = vat[0][opcode & 7], b = vat[1][opcode & 7], c = vat[2][opcode & 7];
+            const auto scalar = [&](unsigned type) -> unsigned {
+                require(type <= 4, "invalid scalar vertex format");
+                return type < 2 ? 1 : type < 4 ? 2
+                                               : 4;
+            };
+            struct Attribute {
+                unsigned mode, bytes, indices, slot;
+            };
+            std::vector<Attribute> attributes;
+            for (unsigned i = 0; i < 9; ++i)
+                if ((vcdLo >> i) & 1)
+                    attributes.push_back({1, 1, 1, 0});
+            require(((vcdLo >> 9) & 3) != 0, "missing vertex position");
+            attributes.push_back({(vcdLo >> 9) & 3, scalar((a >> 1) & 7) * (2 + (a & 1)), 1, 0});
+            const bool nbt = (a >> 9) & 1, nbt3 = nbt && (a >> 31);
+            attributes.push_back({(vcdLo >> 11) & 3, scalar((a >> 10) & 7) * (nbt && !nbt3 ? 9u : 3u), nbt3 ? 3u : 1u, 1});
+            constexpr unsigned colorBytes[]{2, 3, 4, 2, 3, 4};
+            for (unsigned i = 0; i < 2; ++i) {
+                const auto mode = (vcdLo >> (13 + i * 2)) & 3, type = (a >> (14 + i * 4)) & 7;
+                require(!mode || type < 6, "invalid color vertex format");
+                attributes.push_back({mode, mode ? colorBytes[type] : 0, 1, 2 + i});
+            }
+            for (unsigned i = 0; i < 8; ++i) {
+                const auto mode = (vcdHi >> (i * 2)) & 3;
+                const unsigned word = i == 0 ? a : i < 5 ? b
+                                                         : c;
+                const unsigned shift = i == 0 ? 21 : i < 5 ? (i - 1) * 9
+                                                           : 5 + (i - 5) * 9;
+                const auto type = (word >> (shift + 1)) & 7;
+                attributes.push_back({mode, mode ? scalar(type) * (1 + ((word >> shift) & 1)) : 0, 1, 4 + i});
+            }
+            auto cursor = pos + 3;
+            for (unsigned vertex = 0; vertex < count; ++vertex) {
+                for (const auto& attr : attributes) {
+                    if (attr.mode == 1) {
+                        // NBT3 means three separate indices; direct NBT stays 9 scalars.
+                        const auto size = attr.bytes * attr.indices;
+                        require(cursor <= fifo.size() && size <= fifo.size() - cursor, "truncated direct vertex");
+                        cursor += size;
+                    } else if (attr.mode >= 2) {
+                        require(arraySize[attr.slot] && arrayStride[attr.slot], "indexed vertex has no resource");
+                        for (unsigned i = 0; i < attr.indices; ++i) {
+                            const auto index = read(fifo, cursor, attr.mode - 1);
+                            cursor += attr.mode - 1;
+                            const auto offset = index * arrayStride[attr.slot];
+                            require(offset <= arraySize[attr.slot] && attr.bytes <= arraySize[attr.slot] - offset, "indexed vertex outside resource");
+                        }
+                    }
+                }
+            }
+            length = cursor - pos;
         } else {
-            throw std::runtime_error("unsupported FIFO opcode (including indexed XF and nested lists)");
+            throw std::runtime_error("unsupported FIFO opcode (including nested lists)");
         }
         require(length <= fifo.size() - pos, "truncated FIFO payload");
         pos += length;
@@ -172,24 +230,34 @@ void Recorder::append(Kind kind, Bytes payload) {
 }
 void Recorder::memory(std::span<const std::uint8_t> data) {
     require(!ended && !data.empty() && data.size() <= MaxBytes && ranges.size() < 64, "invalid capture memory registration");
+    const auto base = reinterpret_cast<std::uintptr_t>(data.data());
+    require(base <= UINTPTR_MAX - data.size(), "invalid resource address");
     for (const auto& range : ranges) {
-        require(range.data != data.data(), "duplicate capture memory registration");
+        const auto other = reinterpret_cast<std::uintptr_t>(range.data);
+        require(base + data.size() <= other || other + range.size <= base, "overlapping capture resources");
     }
     ranges.push_back({data.data(), data.size()});
 }
-void Recorder::drain(std::span<const std::uint8_t> data) {
-    require(!ended && !data.empty() && data.size() <= MaxBytes, "invalid capture drain");
-    Bytes fifo(data.begin(), data.end());
-    decoder.relocate(fifo, [&](std::uint64_t address, std::size_t needed) -> std::uint64_t {
-        for (std::size_t i = 0; i < ranges.size(); ++i) {
-            if (address == reinterpret_cast<std::uintptr_t>(ranges[i].data) && needed <= ranges[i].size) {
-                return i + 1;
-            }
+Recorder::Recorder(std::uint32_t w, std::uint32_t h) : width(w), height(h) {
+    require(w > 0 && w <= 1920 && h > 0 && h <= 1080, "invalid capture dimensions");
+}
+void Recorder::resolve_with(std::function<std::span<const std::uint8_t>(std::uint64_t, std::size_t)> fn) {
+    resolver = std::move(fn);
+}
+std::uint64_t Recorder::resource(std::uint64_t address, std::size_t needed) {
+    for (std::size_t i = 0; i < ranges.size(); ++i) {
+        if (address == reinterpret_cast<std::uintptr_t>(ranges[i].data)) {
+            require(needed <= ranges[i].size, "resource extent grew during capture");
+            return i + 1;
         }
-        throw std::runtime_error("FIFO references unregistered or undersized memory");
-    });
-    // Snapshot registered live data immediately before the consumer processes this
-    // batch, including data referenced by slots loaded in an earlier batch.
+    }
+    require(static_cast<bool>(resolver), "FIFO references unregistered memory");
+    auto data = resolver(address, needed);
+    require(reinterpret_cast<std::uintptr_t>(data.data()) == address && data.size() == needed, "unmapped capture resource");
+    memory(data);
+    return ranges.size();
+}
+void Recorder::snapshot() {
     for (std::size_t i = 0; i < ranges.size(); ++i) {
         require(total <= MaxBytes - 16 && ranges[i].size <= MaxBytes - total - 16, "capture memory exceeds bound");
         Bytes payload;
@@ -197,15 +265,46 @@ void Recorder::drain(std::span<const std::uint8_t> data) {
         payload.insert(payload.end(), ranges[i].data, ranges[i].data + ranges[i].size);
         append(Kind::Memory, std::move(payload));
     }
+}
+void Recorder::init() {
+    require(!initialized && !ended, "repeated GXInit is outside capture v2");
+    append(Kind::Init, {});
+    initialized = true;
+    decoder = {};
+}
+void Recorder::mapping(std::uint32_t policy) {
+    require(policy <= 2, "invalid viewport policy");
+    Bytes payload;
+    integer(payload, policy);
+    append(Kind::Mapping, std::move(payload));
+}
+void Recorder::copy(Kind kind, std::uint64_t destination, const CopyState& state) {
+    require(begun && initialized, "copy outside initialized frame");
+    Bytes payload(8);
+    for (auto word : state)
+        integer(payload, word);
+    validate_copy(kind, payload);
+    if (kind == Kind::CopyTex) {
+        write(payload, 0, resource(destination, texture_size(state[5], state[6], state[7])), 8);
+        snapshot();
+    }
+    append(kind, std::move(payload));
+}
+void Recorder::drain(std::span<const std::uint8_t> data) {
+    require(initialized && !ended && !data.empty() && data.size() <= MaxBytes, "invalid capture drain");
+    Bytes fifo(data.begin(), data.end());
+    decoder.relocate(fifo, [&](std::uint64_t address, std::size_t needed) { return resource(address, needed); });
+    // Snapshot live bytes at consumption, including earlier loaded slots.
+    snapshot();
     append(Kind::Fifo, std::move(fifo));
 }
 void Recorder::begin() {
-    require(!begun && !events.empty(), "capture needs initial state before one frame");
+    require(!begun && !ended, "capture accepts one frame");
     append(Kind::Begin, {});
     begun = true;
 }
 void Recorder::end() {
-    require(begun && !events.empty() && events.back().kind == Kind::Fifo, "frame must end after a FIFO batch");
+    require(begun && initialized && !events.empty() && (events.back().kind == Kind::Fifo || events.back().kind == Kind::CopyDisp || events.back().kind == Kind::CopyTex), "frame must end after rendering work");
     append(Kind::End, {});
     ended = true;
 }
@@ -214,8 +313,9 @@ Bytes Recorder::finish() const {
     Bytes result(Magic.begin(), Magic.end());
     result.insert(result.end(), WiiPin, WiiPin + 40);
     result.insert(result.end(), DawnPin, DawnPin + 40);
-    integer(result, 256);
-    integer(result, 256);
+    integer(result, width);
+    integer(result, height);
+    integer(result, checksum(result, Kind::Init));
     for (const auto& event : events) {
         integer(result, static_cast<std::uint32_t>(event.kind));
         integer(result, event.payload.size());
@@ -226,13 +326,16 @@ Bytes Recorder::finish() const {
 }
 
 Playback::Playback(std::span<const std::uint8_t> file) {
-    require(file.size() >= 96 && file.size() <= MaxBytes, "invalid replay size");
+    require(file.size() >= 100 && file.size() <= MaxBytes, "invalid replay size");
     require(std::equal(Magic.begin(), Magic.end(), file.begin()), "invalid replay magic/version");
     require(std::memcmp(file.data() + 8, WiiPin, 40) == 0 && std::memcmp(file.data() + 48, DawnPin, 40) == 0, "replay dependency pins differ");
-    require(read(file, 88, 4) == 256 && read(file, 92, 4) == 256, "unsupported framebuffer dimensions");
-    bool begun = false, ended = false, drewBatch = false;
+    require(read(file, 96, 4) == checksum(file.first(96), Kind::Init), "replay header checksum mismatch");
+    width = read(file, 88, 4);
+    height = read(file, 92, 4);
+    require(width > 0 && width <= 1920 && height > 0 && height <= 1080, "unsupported framebuffer dimensions");
+    bool begun = false, ended = false, drewBatch = false, initialized = false;
     std::size_t memoryBytes = 0;
-    for (std::size_t pos = 96; pos < file.size();) {
+    for (std::size_t pos = 100; pos < file.size();) {
         require(!ended, "unexpected trailing replay records");
         const auto kind = static_cast<Kind>(read(file, pos, 4));
         const auto size = read(file, pos + 4, 4);
@@ -255,7 +358,7 @@ Playback::Playback(std::span<const std::uint8_t> file) {
             // Keep stable allocations so pointers loaded by a previous batch live.
             std::copy(payload.begin() + 4, payload.end(), slot.begin());
         } else if (kind == Kind::Fifo) {
-            require(!payload.empty(), "empty replay FIFO record");
+            require(initialized && !payload.empty(), "FIFO before initialization or empty FIFO");
             decoder.relocate(payload, [&](std::uint64_t id, std::size_t needed) -> std::uint64_t {
                 const auto it = memory.find(static_cast<std::uint32_t>(id));
                 require(id > 0 && id <= 64 && it != memory.end() && needed <= it->second.size(), "unknown or undersized replay resource");
@@ -264,11 +367,28 @@ Playback::Playback(std::span<const std::uint8_t> file) {
             });
             drewBatch = begun;
         } else if (kind == Kind::Begin) {
-            require(!begun && !events.empty() && events.back().kind == Kind::Fifo && payload.empty(), "invalid frame begin");
+            require(!begun && payload.empty(), "invalid frame begin");
             begun = true;
         } else if (kind == Kind::End) {
-            require(begun && drewBatch && !events.empty() && events.back().kind == Kind::Fifo && payload.empty(), "invalid frame end");
+            require(begun && drewBatch && !events.empty() && (events.back().kind == Kind::Fifo || events.back().kind == Kind::CopyDisp || events.back().kind == Kind::CopyTex) && payload.empty(), "invalid frame end");
             ended = true;
+        } else if (kind == Kind::Init) {
+            require(!initialized && payload.empty(), "invalid GXInit event");
+            initialized = true;
+            decoder = {};
+        } else if (kind == Kind::Mapping) {
+            require(payload.size() == 4 && read(payload, 0, 4) <= 2, "invalid viewport mapping");
+        } else if (kind == Kind::CopyDisp || kind == Kind::CopyTex) {
+            require(begun && initialized, "copy outside initialized frame");
+            validate_copy(kind, payload);
+            const auto id = read(payload, 0, 8);
+            if (kind == Kind::CopyTex) {
+                const auto needed = texture_size(read(payload, 28, 4), read(payload, 32, 4), read(payload, 36, 4));
+                require(id > 0 && id <= 64 && memory.contains(id) && needed <= memory.at(id).size(), "unknown copy destination");
+            } else {
+                require(id == 0, "display copy must not contain pointer");
+            }
+            drewBatch = true;
         } else {
             throw std::runtime_error("unknown replay record kind");
         }
@@ -295,18 +415,88 @@ void Playback::run(const std::function<void(Kind, std::span<const std::uint8_t>)
                 return reinterpret_cast<std::uintptr_t>(live.at(static_cast<std::uint32_t>(id)).data());
             });
             consume(event.kind, fifo);
+        } else if (event.kind == Kind::CopyTex) {
+            auto payload = event.payload;
+            write(payload, 0, reinterpret_cast<std::uintptr_t>(live.at(read(payload, 0, 8)).data()), 8);
+            consume(event.kind, payload);
         } else {
-            consume(event.kind, {});
+            consume(event.kind, event.payload);
         }
     }
 }
+void set_failure_handler(void (*handler)(const char*) noexcept) {
+    failureHandler = handler;
+}
 void set_recorder(Recorder* recorder) {
     active = recorder;
+    if (recorder)
+        captureFailure[0] = 0;
+}
+bool recording() noexcept {
+    return active != nullptr;
+}
+const char* failure() noexcept {
+    return captureFailure;
+}
+void fail(const char* reason) noexcept {
+    if (active) {
+        std::snprintf(captureFailure, sizeof(captureFailure), "%s", reason);
+        active = nullptr;
+        if (failureHandler)
+            failureHandler(captureFailure);
+    }
+}
+template <class F>
+void observe(F&& fn) noexcept {
+    if (!active)
+        return;
+    try {
+        fn(*active);
+    } catch (const std::exception& error) {
+        fail(error.what());
+    } catch (...) {
+        fail("capture allocation/unknown failure");
+    }
+}
+void capture_mapping(std::uint32_t policy) noexcept {
+    observe([&](Recorder& recorder) { recorder.mapping(policy); });
+}
+void capture_copy(Kind kind, std::uint64_t destination, const CopyState& state) noexcept {
+    observe([&](Recorder& recorder) { recorder.copy(kind, destination, state); });
+}
+void validate_copy(Kind kind, std::span<const std::uint8_t> payload) {
+    require((kind == Kind::CopyDisp || kind == Kind::CopyTex) && payload.size() == 8 + CopyWords * 4, "invalid copy event");
+    const auto word = [&](unsigned i) { return static_cast<std::uint32_t>(read(payload, 8 + i * 4, 4)); };
+    for (auto i : {0, 8, 9, 15, 16, 55, 56, 57})
+        require(word(i) <= 1, "invalid copy boolean");
+    for (auto i : {1, 2, 3, 4, 5, 6})
+        require(word(i) <= 1920, "invalid copy rectangle");
+    require(word(3) > 0 && word(4) > 0 && word(5) > 0 && word(6) > 0, "empty copy rectangle");
+    require(word(10) <= 2 && word(11) <= 3 && word(12) <= 3 && word(13) <= 3 && word(53) <= 7 && word(54) <= 3, "invalid copy enum");
+    const auto scale = std::bit_cast<float>(word(14));
+    require(std::isfinite(scale) && scale > 0 && scale <= 4, "invalid copy scale");
+    for (unsigned i = 17; i < 41; ++i)
+        require(word(i) <= 15, "invalid copy sample");
+    for (unsigned i = 41; i < 48; ++i)
+        require(word(i) <= 63, "invalid copy filter");
+    for (unsigned i = 48; i < 52; ++i) {
+        const auto value = std::bit_cast<float>(word(i));
+        require(std::isfinite(value) && value >= 0 && value <= 1, "invalid clear color");
+    }
+    require(word(52) <= 0xffffff && (word(58) <= 255 || word(58) == UINT32_MAX), "invalid copy clear state");
+    if (kind == Kind::CopyTex)
+        texture_size(word(5), word(6), word(7));
+    else
+        require(word(7) == 6 && word(8) == 0 && word(9) == 0, "invalid display copy configuration");
 }
 } // namespace replay
 
-extern "C" void mkw_replay_capture_drain(const unsigned char* data, unsigned int size) {
-    if (replay::active) {
-        replay::active->drain({data, size});
-    }
+extern "C" void mkw_replay_capture_drain(const unsigned char* data, unsigned int size) noexcept {
+    replay::observe([&](replay::Recorder& recorder) { recorder.drain({data, size}); });
+}
+extern "C" void mkw_replay_capture_init() noexcept {
+    replay::observe([](replay::Recorder& recorder) { recorder.init(); });
+}
+extern "C" void mkw_replay_capture_unsupported(const char* reason) noexcept {
+    replay::fail(reason);
 }

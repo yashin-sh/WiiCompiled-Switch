@@ -18,6 +18,14 @@
 
 extern "C" void mkw_replay_log(const char* message);
 
+namespace {
+unsigned replayWidth = replayWidth, replayHeight = 256;
+}
+extern "C" void mkw_replay_set_size(unsigned width, unsigned height) {
+    replayWidth = width;
+    replayHeight = height;
+}
+
 namespace aurora {
 
 AuroraConfig g_config{};
@@ -71,11 +79,11 @@ namespace aurora::window {
 AuroraWindowSize get_window_size() {
     return {
         .width = 256,
-        .height = 256,
-        .fb_width = 256,
-        .fb_height = 256,
-        .native_fb_width = 256,
-        .native_fb_height = 256,
+        .height = replayHeight,
+        .fb_width = replayWidth,
+        .fb_height = replayHeight,
+        .native_fb_width = replayWidth,
+        .native_fb_height = replayHeight,
         .scale = 1.0f,
     };
 }
@@ -88,11 +96,11 @@ void set_present_surface_fill(bool) {}
 namespace aurora::vi {
 
 Vec2<uint32_t> configured_fb_size() noexcept {
-    return {256, 256};
+    return {replayWidth, replayHeight};
 }
 
 Vec2<uint32_t> visible_fb_size() noexcept {
-    return {256, 256};
+    return {replayWidth, replayHeight};
 }
 
 float present_aspect_correction() noexcept {

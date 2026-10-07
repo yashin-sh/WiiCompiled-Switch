@@ -17,6 +17,11 @@
 #include "webgpu/gpu.hpp"
 
 #include <switch.h>
+#if defined(MKW_RENDERED_FIFO_CAPTURE) && MKW_RENDERED_FIFO_CAPTURE
+extern "C" void mkw_switch_fifo_capture_start() noexcept;
+extern "C" void mkw_switch_fifo_capture_present(bool) noexcept;
+extern "C" void mkw_switch_fifo_capture_shutdown() noexcept;
+#endif
 
 #include <algorithm>
 #include <atomic>
@@ -369,6 +374,9 @@ bool present_frame_locked(bool clear) {
     aurora::gfx::after_submit();
 
     const bool presented = g_surface.Present();
+#if defined(MKW_RENDERED_FIFO_CAPTURE) && MKW_RENDERED_FIFO_CAPTURE
+    mkw_switch_fifo_capture_present(presented);
+#endif
     const bool hadWork =
         g_auroraFrameHadWork.load(std::memory_order_acquire);
 
@@ -466,10 +474,16 @@ extern "C" bool mkw_switch_renderer_initialize() noexcept {
         g_presentSuccesses.store(0u, std::memory_order_release);
         g_presentFailures.store(0u, std::memory_order_release);
         g_initialized = true;
+#if defined(MKW_RENDERED_FIFO_CAPTURE) && MKW_RENDERED_FIFO_CAPTURE
+        mkw_switch_fifo_capture_start();
+#endif
 
         if (!begin_frame_locked()) {
             g_initialized = false;
             report("RESULT=FAIL first-frame-begin\n");
+#if defined(MKW_RENDERED_FIFO_CAPTURE) && MKW_RENDERED_FIFO_CAPTURE
+            mkw_switch_fifo_capture_shutdown();
+#endif
             return false;
         }
 
@@ -492,6 +506,9 @@ extern "C" void mkw_switch_renderer_shutdown() noexcept {
     report("STAGE RENDERER_TEARDOWN begin frames=%llu\n",
            static_cast<unsigned long long>(g_presentedFrames));
 
+#if defined(MKW_RENDERED_FIFO_CAPTURE) && MKW_RENDERED_FIFO_CAPTURE
+    mkw_switch_fifo_capture_shutdown();
+#endif
     mkw_switch_gx_forget_copy_destinations();
     bool teardownSucceeded = true;
     try {

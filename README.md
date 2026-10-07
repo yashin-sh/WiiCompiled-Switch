@@ -32,34 +32,32 @@ scheduler/resource/render path through real FST/DVD/SZS/StaticR loading,
 TaskThread execution, real FIFO work, `GXCopyDisp`, repeated successful
 presents, and multiple Home Button/UI texture-object setup calls.
 
-The latest [Mii console run](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_RELOCATED_DATA_FRONTIER.md) reaches the **first
-GXLoadTexObj (`0x80170F2C`)**, object `0x80397D80`, slot 0, I4 32×64,
-with a different captured data source **`0x109C1A20`**. Its deliberate refusal
-occurs at dispatch 634566 / 126.826 seconds. All 37 reports / 631,804 bytes
-are verified, fourteen changed / twenty-three retained. The exact PR #329
-NRO transfers successfully at 16:48:04 CEST. Checked first-hit caller/base
-and absent subsequent draw-helper entry establish a first-load branch;
-**next-pass object `0x80397F80` return remains unconfirmed**. The higher
-counter does not establish later drawing. GPU completion and game pixels
-remain unproven.
+The latest [Mii console run](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_RELOCATED_DATA_FRONTIER.md) establishes the first
+relocated-source native I4 load and intervening draw-helper return through
+checked unconditional caller inference. It next stops at **GXLoadTexObj
+(`0x80170F2C`)**, object **`0x80397DC0`**, slot 0, I4 **32×64**,
+data **`0x109C1A20`**, at dispatch 633149 / 122.796 seconds. All 37 reports /
+632,567 bytes are verified, seven changed / thirty retained. The exact PR #330
+NRO transfers successfully at 17:30:50 CEST. Retained copy/display-list reports
+are not fresh GPU or pixel evidence. Second relocated-source and next-pass
+return, GPU completion and game pixels remain unconfirmed.
 
-The [relocated-source correction](docs/GX_MII_I4_RELOCATED_LOAD_2026-10-07.md) adds only this first
-object's exact eight-word tuple and the complete 1,024-byte range. The original
-source stays limited to its three observed identities. Twelve descriptor
-fixtures across eleven identities pass 35 loads per mode and 3,255 / 3,279
-refusals, including current-source refresh on a stable native object.
-SDK/synthetic/private builds and lint pass, retaining 71 strong functions and
-48 scoped providers. NRO SHA-256 `a8718895...`,
-size 73,621,560 bytes. All 40 mutation checks and 22 suites pass. The five final-head workflows /
-six jobs pass on `873495e`; [PR #330](https://github.com/yashin-sh/WiiCompiled-Switch/pull/330) merges as `e72047d`. The exact NRO is copied
-and completely read back at 17:24:56 CEST. Relocated-source and next-pass
-return still require a fresh console run.
+The [second relocated-source correction](docs/GX_MII_I4_SECOND_RELOCATED_LOAD_2026-10-07.md) adds only that
+observed identity to the existing exact eight-word source guard and complete
+1,024-byte range. Both source pairs retain independent native objects and
+refresh the current source on each load. The next-pass identity retains only
+its earlier captured source. Thirteen descriptors / eleven identities pass
+40 loads per mode and 3,527 / 3,553 refusals. SDK/synthetic/private builds and
+lint pass, retaining 71 strong functions and 48 scoped providers. NRO SHA-256
+`af9575be...`, size 73,621,560 bytes. All 42 mutation
+checks, 22 suites, final-head CI and verified deployment are required before
+the next console run.
 
-The [earlier next-pass correction](docs/GX_MII_I4_32X64_NEXT_PASS_LOAD_2026-10-07.md)
-remains locally/CI validated and merged in PR #329. The preceding captured
-source `0x109C1A40` established I4 16×16/prior-caller return in its own run;
-this different first-load tuple does not invalidate those scoped historical
-returns or establish acceptance of the new next-pass object.
+The [first relocated-source correction](docs/GX_MII_I4_RELOCATED_LOAD_2026-10-07.md)
+is merged and hardware-crossed for its first captured load/helper path. The
+[earlier next-pass correction](docs/GX_MII_I4_32X64_NEXT_PASS_LOAD_2026-10-07.md)
+is merged and locally/CI validated; this run has not reached its next-pass
+object. Earlier accepted returns remain scoped to their captured source tuples.
 
 The [second-38×32 correction](docs/GX_MII_RGB5A3_38X32_SECOND_LOAD_2026-10-07.md)
 passes 22 suites, 27 mutations, SDK/synthetic/private builds and five final-head

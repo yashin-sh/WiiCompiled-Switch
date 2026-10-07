@@ -96,7 +96,10 @@
 - [x] Verify [37 reports / 631,804 bytes](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_RELOCATED_DATA_FRONTIER.md), fourteen changed / twenty-three retained. The first object's data is `0x109C1A20`; this run stops before the next-pass object, whose return remains unconfirmed.
 - [x] Implement and contract-test the [exact relocated first I4 tuple](docs/GX_MII_I4_RELOCATED_LOAD_2026-10-07.md): 35 loads per mode, 3,255 / 3,279 refusals, current-source refresh on the same native identity.
 - [x] Reject all 40 compiled mutations and pass all 22 local suites; five final-head workflows / six actual jobs pass on `873495e`. Merge [PR #330](https://github.com/yashin-sh/WiiCompiled-Switch/pull/330) as `e72047d` and verify complete SD readback of NRO `a8718895...` at 17:24:56 CEST.
-- [ ] Establish relocated-source and next-pass object return on Switch; GPU completion and recognizable images remain open.
+- [x] Establish [first relocated-source load and helper return](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_RELOCATED_DATA_FRONTIER.md) through the pinned unconditional caller and fresh second-object stop; verify 37 reports / 632,567 bytes, seven changed / thirty retained.
+- [x] Implement and contract-test the [second relocated I4 object](docs/GX_MII_I4_SECOND_RELOCATED_LOAD_2026-10-07.md), slot 0, 32×64, data `0x109C1A20`: 40 loads per mode, 3,527 / 3,553 refusals, stable independent first/second native objects across source changes.
+- [ ] Finish 42 mutation checks, the 22-suite gate and final-head CI; deploy only after all gates pass.
+- [ ] Establish second relocated-source and next-pass object return on Switch; GPU completion and recognizable images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
 - [x] Complete the offline CI/scripts/runtime/documentation audit and pass the local workflow gates plus private rendered build; see [the audit record](docs/PORT_AUDIT_2026-10-03.md). Its separate console run accepts normal-path non-regression only.
@@ -133,14 +136,15 @@
 - [x] Hardware-accept Begin and at least one End return on the SU-corrected path, with later allocation and a new Sphere frontier; broader recording/replay validation remains open.
 - [ ] Visually confirm a recognizable Mario Kart Wii image; no such image is established by the existing present counters.
 
-The [latest console result](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_RELOCATED_DATA_FRONTIER.md) captures the first
-Mii I4 object `0x80397D80` with data `0x109C1A20`, 32×64, slot 0,
-at 126.826 seconds. All 37 reports / 631,804 bytes are verified, fourteen
-changed / twenty-three retained. Checked first-load caller/base and absent
-draw-helper entry leave next-pass return unconfirmed. Retained copy/display-list
-reports and present counters do not establish fresh pixels or GPU completion.
-The correction is limited to the captured first-object source tuple and its
-complete 1,024-byte range; broader address shifts remain unproven.
+The [latest console result](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_RELOCATED_DATA_FRONTIER.md) establishes first
+relocated-source I4 load and intervening draw-helper return, then stops at the
+second object `0x80397DC0`, slot 0, 32×64, data `0x109C1A20`, at
+122.796 seconds. All 37 reports / 632,567 bytes are verified, seven changed /
+thirty retained. The correction adds only this captured second identity while
+keeping source-specific identity guards and independent native cache objects.
+Second relocated-source and next-pass return, GPU completion and game pixels
+remain unconfirmed. Retained copy/display-list reports are not fresh image
+or GPU evidence; controller/audio and sustained gameplay remain open.
 
 The milestone checklists below retain earlier scope and history. Older pending texture-object tuples remain scheduler-dependent branches; they are not the latest accepted Discovery frontier.
 

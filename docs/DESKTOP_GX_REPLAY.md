@@ -14,8 +14,7 @@ or physical GPU. Initialize the WiiCompiled submodule first:
 ```sh
 git submodule update --init --recursive
 MKW_JOBS=4 bash scripts/build-desktop-gx-replay.sh
-VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.x86_64.json \
-    bash scripts/test-desktop-gx-replay.sh
+bash scripts/test-desktop-gx-replay.sh
 ```
 
 The build helper clones the exact public Dawn dependency when absent; it refuses
@@ -25,6 +24,10 @@ outputs live under ignored `.deps/desktop-gx-replay/`; override the build direct
 with `MKW_REPLAY_BUILD_ROOT`. Extra arguments go to CMake, including
 `FETCHCONTENT_SOURCE_DIR_FMT`, `FETCHCONTENT_SOURCE_DIR_XXHASH` and
 `FETCHCONTENT_SOURCE_DIR_TRACY` for existing public dependency sources.
+
+The test helper discovers the installed `lvp_icd*.json` manifest rather than
+assuming an architecture suffix. To select another driver, or resolve multiple
+installed manifests, set `VK_DRIVER_FILES` or `VK_ICD_FILENAMES` explicitly.
 
 Manual commands:
 

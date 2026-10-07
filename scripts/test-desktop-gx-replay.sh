@@ -7,6 +7,20 @@ readonly BUILD_ROOT="${MKW_REPLAY_BUILD_ROOT:-$ROOT_DIR/.deps/desktop-gx-replay}
 readonly OUT_ROOT="$BUILD_ROOT/synthetic-run"
 readonly REPLAY="$BUILD_ROOT/mkw-gx-replay"
 
+# Mesa distributions use either lvp_icd.json or an architecture-suffixed name.
+# Keep an explicit caller-selected driver; otherwise find the installed lavapipe
+# manifest instead of assuming this machine's filename exists on the CI runner.
+if [[ -z "${VK_ICD_FILENAMES:-}" && -z "${VK_DRIVER_FILES:-}" ]]; then
+    shopt -s nullglob
+    replay_icds=(/usr/share/vulkan/icd.d/lvp_icd*.json)
+    shopt -u nullglob
+    if ((${#replay_icds[@]} != 1)); then
+        echo "error: expected one installed lavapipe manifest; set VK_DRIVER_FILES or VK_ICD_FILENAMES explicitly" >&2
+        exit 1
+    fi
+    export VK_ICD_FILENAMES="${replay_icds[0]}"
+fi
+
 mkdir -p "$OUT_ROOT"
 "$BUILD_ROOT/replay-format-test"
 # Separate processes force resource pointer relocation and fresh renderer state.

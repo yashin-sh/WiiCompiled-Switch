@@ -306,3 +306,12 @@ a135beb201042b20f390c6695ca6b26768820fb4
 ```
 
 CI enforces the pin. New hardware blockers are mapped against that exact revision before any HLE behavior is added.
+
+## 2026-10-08 — First real frame captured and replayed
+
+The opt-in Switch recorder completed the initial RMCP01 frame. Desktop Aurora
+replay and GPU readback succeeded in two independent processes with identical
+PNGs: one untextured quad and uniformly black output. Later textured frames and
+recognizable game pixels remain unproven. Fresh runtime reports record 102
+successful presents before the guarded Mii I4 texture-load frontier.
+See the [scoped hardware result](HARDWARE_FIRST_FRAME_REPLAY_2026-10-08.md).

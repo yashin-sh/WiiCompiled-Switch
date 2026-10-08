@@ -2,8 +2,10 @@
 
 The desktop runner renders portable Aurora command captures with the same pinned
 GX/Dawn implementation as the Switch renderer. Four synthetic workloads verify
-independent-process replay. An opt-in Switch build records the first frame;
-a real RMCP01 capture and recognizable game pixels still need console evidence.
+independent-process replay. An opt-in Switch build records the first frame.
+A real RMCP01 first-frame capture now replays on desktop as a black, untextured
+quad; recognizable game pixels remain unproven. See the
+[hardware result](HARDWARE_FIRST_FRAME_REPLAY_2026-10-08.md).
 
 ## Desktop build and tests
 
@@ -143,7 +145,9 @@ blank: this is a fresh-start recorder, not a screenshot trigger for a later scen
 
 The format is Aurora-specific, not Dolphin `.dff`. Dolphin comparison requires a
 separate conversion/state model. Desktop Vulkan does not prove Switch NVK game
-pixels. A valid real game capture and its desktop image remain hardware-pending.
+pixels. The first real Switch capture validates producer-to-desktop replay,
+but contains no textured scene. Later-frame capture and game-image correctness
+remain pending.
 
 Local checks cover ASan, fatal UBSan and LeakSanitizer; all 162 truncations and
 162 single-byte corruptions of the minimal fixture; invalid lifecycle, memory,

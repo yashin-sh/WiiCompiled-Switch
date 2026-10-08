@@ -304,7 +304,7 @@ only when execution durably progresses beyond the tested target. See
 - [ ] Visually confirm the first Mario Kart Wii image and continue GX/game-state correctness
 - [x] Validate a Nintendo-data-free desktop Aurora capture/replay with resource relocation, ordered updates and independent-process PNG comparison — **local lavapipe PASS, red/blue/background pixel oracles and byte-identical PNGs**; [prototype scope](docs/DESKTOP_GX_REPLAY.md)
 - [x] Add opt-in first-frame Switch capture with GXInit, Aurora FIFO/direct-list consumption, native EFB copies, checked guest resources and explicit invalidation; validate synthetic copies/indexed arrays on desktop — [scope and build](docs/DESKTOP_GX_REPLAY.md)
-- [ ] Collect a valid RMCP01 Switch capture and validate its desktop replay image
+- [x] Collect a valid RMCP01 Switch first-frame capture and validate its desktop replay output — **complete stream, one untextured quad, reproducible black PNG; game-image correctness remains open**; [hardware result](docs/HARDWARE_FIRST_FRAME_REPLAY_2026-10-08.md)
 - [ ] Extend replay to later-frame checkpoints, cross-frame EFB resources, resource aliases/growth and remaining commands
 - [ ] shader/pipeline cache strategy
 - [ ] 720p handheld / 1080p docked policy

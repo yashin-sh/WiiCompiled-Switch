@@ -3,6 +3,8 @@
 - [Build and hardware diagnostics](BUILD.md)
 - [Status history moved from the README](STATUS_LOG.md)
 - [Desktop GX capture/replay prototype](DESKTOP_GX_REPLAY.md)
+- [Actual Switch surface-image diagnostic](SWITCH_FRAME_DUMP.md) — opt-in GPU readback and SD PNGs; hardware validation pending
+- [Report terminology](REPORT_TERMS.md) — definitions for reading detailed evidence
 - [Next-pass I4 36×32 correction](GX_MII_I4_36X32_NEXT_PASS_LOAD_2026-10-08.md) — exact observed identity; native return pending
 - [Next-pass RGB5A3 return and I4 36×32 frontier](HARDWARE_NEXT_PASS_RGB5A3_RETURN_2026-10-08.md) — scoped caller inference; initial black PNG unchanged
 - [First real Switch capture and desktop replay](HARDWARE_FIRST_FRAME_REPLAY_2026-10-08.md) — complete initial frame, reproducible black PNG; later textured frames pending

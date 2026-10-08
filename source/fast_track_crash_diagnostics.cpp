@@ -1,4 +1,7 @@
 #include <cstdint>
+#if defined(MKW_RENDERED_FRAME_DUMP) && MKW_RENDERED_FRAME_DUMP
+extern "C" void mkw_switch_frame_dump_checkpoint() noexcept;
+#endif
 
 #if (defined(MKW_LOCAL_FAST_TRACK) && MKW_LOCAL_FAST_TRACK) || \
     (defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK)
@@ -1519,6 +1522,9 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         }
         write_atomicish(kDispatchPath, buffer, size);
     }
+#if defined(MKW_RENDERED_FRAME_DUMP) && MKW_RENDERED_FRAME_DUMP && defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+    mkw_switch_frame_dump_checkpoint();
+#endif
 #else
     (void)kind;
     (void)target;

@@ -29,6 +29,7 @@ enable_language(ASM)
 option(MKW_DISCOVERY_SCAN_MODE
     "Record first-hit guest targets in the rendered local Discovery NRO"
     OFF)
+option(MKW_RENDERED_FRAME_DUMP "Save actual GPU surface pixels on SD (diagnostic only)" OFF)
 
 file(GLOB M3_FAST_TRACK_SOURCE_CPP CONFIGURE_DEPENDS
     "${M3_REPO_ROOT}/source/*.cpp"
@@ -137,7 +138,11 @@ target_link_options(mkw_switch_rendered_fast_track PRIVATE
 find_program(M3_ELF2NRO elf2nro REQUIRED)
 find_program(M3_NACPTOOL nacptool REQUIRED)
 
-if(MKW_RENDERED_FIFO_CAPTURE)
+if(MKW_RENDERED_FRAME_DUMP)
+    set(M3_NRO_BASENAME "WiiCompiled-Switch-local-rendered-frame-dump")
+    set(M3_NACP_TITLE "WiiCompiled-Switch Frame Dump")
+    set(M3_NACP_VERSION "0.0.14-frame-dump")
+elseif(MKW_RENDERED_FIFO_CAPTURE)
     set(M3_NRO_BASENAME "WiiCompiled-Switch-local-rendered-fifo-capture")
     set(M3_NACP_TITLE "WiiCompiled-Switch FIFO Capture")
     set(M3_NACP_VERSION "0.0.13-fifo-capture")
@@ -180,4 +185,7 @@ add_custom_target(mkw_switch_rendered_fast_track_nro
 
 if(MKW_RENDERED_FIFO_CAPTURE)
     target_compile_definitions(mkw_switch_rendered_fast_track PRIVATE MKW_RENDERED_FIFO_CAPTURE=1)
+endif()
+if(MKW_RENDERED_FRAME_DUMP)
+    target_compile_definitions(mkw_switch_rendered_fast_track PRIVATE MKW_RENDERED_FRAME_DUMP=1)
 endif()

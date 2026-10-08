@@ -23,8 +23,17 @@ case "${CAPTURE_MODE^^}" in
     *) echo "error: MKW_RENDERED_FIFO_CAPTURE must be ON/OFF or 1/0" >&2; exit 2 ;;
 esac
 readonly CAPTURE_MODE
+IMAGE_MODE="${MKW_RENDERED_FRAME_DUMP:-OFF}"
+case "${IMAGE_MODE^^}" in
+    ON|1) IMAGE_MODE=ON ;;
+    OFF|0) IMAGE_MODE=OFF ;;
+    *) echo "error: MKW_RENDERED_FRAME_DUMP must be ON/OFF or 1/0" >&2; exit 2 ;;
+esac
+readonly IMAGE_MODE
 readonly DISCOVERY_MODE
-if [[ "$CAPTURE_MODE" == "ON" ]]; then
+if [[ "$IMAGE_MODE" == "ON" ]]; then
+    readonly OUTPUT_BASENAME="WiiCompiled-Switch-local-rendered-frame-dump.nro"
+elif [[ "$CAPTURE_MODE" == "ON" ]]; then
     readonly OUTPUT_BASENAME="WiiCompiled-Switch-local-rendered-fifo-capture.nro"
 elif [[ "$DISCOVERY_MODE" == "ON" ]]; then
     readonly OUTPUT_BASENAME="WiiCompiled-Switch-local-rendered-discovery-scan.nro"
@@ -78,6 +87,7 @@ python3 "$ROOT_DIR/scripts/normalize-gcc-statefree-returns.py" "${normalize_path
 echo "[2/4] Preparing the hardware-proven Dawn/Aurora/NVK build environment..."
 MKW_JOBS="$JOBS" MKW_M3_BUILD_RENDERED_FAST_TRACK=ON \
     MKW_RENDERED_FIFO_CAPTURE="$CAPTURE_MODE" MKW_DISCOVERY_SCAN_MODE="$DISCOVERY_MODE" \
+    MKW_RENDERED_FRAME_DUMP="$IMAGE_MODE" \
     bash "$ROOT_DIR/scripts/build-m3-hle-fifo-aurora-probe.sh"
 
 DOCKER_SECURITY_ARGS=()
@@ -90,6 +100,7 @@ docker run --rm \
     "${DOCKER_SECURITY_ARGS[@]}" \
     -e MKW_M3_JOBS="$JOBS" \
     -e MKW_RENDERED_FIFO_CAPTURE="$CAPTURE_MODE" \
+    -e MKW_RENDERED_FRAME_DUMP="$IMAGE_MODE" \
     -e MKW_DISCOVERY_SCAN_MODE="$DISCOVERY_MODE" \
     -v "$MESA_DIR:/mesa:ro" \
     -v "$DAWN_DIR:/dawn" \
@@ -105,7 +116,8 @@ docker run --rm \
         cmake -S /dawn -B /build \
             -DM3_BUILD_RENDERED_FAST_TRACK=ON \
             -DMKW_DISCOVERY_SCAN_MODE="$MKW_DISCOVERY_SCAN_MODE" \
-            -DMKW_RENDERED_FIFO_CAPTURE="$MKW_RENDERED_FIFO_CAPTURE"
+            -DMKW_RENDERED_FIFO_CAPTURE="$MKW_RENDERED_FIFO_CAPTURE" \
+            -DMKW_RENDERED_FRAME_DUMP="$MKW_RENDERED_FRAME_DUMP"
         cmake --build /build --target mkw_switch_rendered_fast_track_nro -j"$MKW_M3_JOBS"
     '
 

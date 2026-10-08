@@ -22,6 +22,7 @@ if [[ -z "${VK_ICD_FILENAMES:-}" && -z "${VK_DRIVER_FILES:-}" ]]; then
 fi
 
 mkdir -p "$OUT_ROOT"
+"$BUILD_ROOT/frame-dump-gpu-contract" "$OUT_ROOT/frame-dump"
 "$BUILD_ROOT/replay-format-test"
 # Separate processes force resource pointer relocation and fresh renderer state.
 "$REPLAY" capture "$OUT_ROOT/scene.mkwr" "$OUT_ROOT/original.png"

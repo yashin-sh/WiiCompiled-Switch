@@ -2,6 +2,11 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-08: [first actual Switch GPU image](HARDWARE_SURFACE_FIRST_IMAGE_2026-10-08.md)
+decoded as opaque black. The latest-image replacement failed on SD at frame 30;
+the capture is partial, and the correction requires a console retest. The same run
+advances past the previous next-pass I4 load/helper to the next guarded identity.
+
 Experimental Nintendo Switch (Horizon OS / Atmosphère) homebrew porting layer for [WiiCompiled](https://github.com/patchzyy/Wiicompiled).
 
 ## Goal

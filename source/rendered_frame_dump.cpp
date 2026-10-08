@@ -13,6 +13,7 @@ namespace {
 constexpr const char* First = "sdmc:/switch/WiiCompiled-Switch/surface-first.png";
 constexpr const char* Latest = "sdmc:/switch/WiiCompiled-Switch/surface-latest.png";
 constexpr const char* Temporary = "sdmc:/switch/WiiCompiled-Switch/surface-image.tmp";
+constexpr const char* Backup = "sdmc:/switch/WiiCompiled-Switch/surface-image.tmp.previous";
 constexpr const char* Status = "sdmc:/switch/WiiCompiled-Switch/frame-dump-status.txt";
 std::mutex mutex;
 Image latest;
@@ -48,7 +49,7 @@ void reset() noexcept {
     frame = savedFrame = firstFrame = 0;
     lastError[0] = '\0';
     runId = static_cast<std::uint64_t>(std::chrono::steady_clock::now().time_since_epoch().count());
-    for (auto* path : {First, Latest, Temporary}) {
+    for (auto* path : {First, Latest, Temporary, Backup}) {
         // Never leave a previous run's image labelled as this run's output.
         if (std::remove(path) != 0 && errno != ENOENT) {
             fail("cannot retire previous image");

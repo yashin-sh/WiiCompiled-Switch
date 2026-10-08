@@ -5,11 +5,30 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdio>
+#include <cerrno>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <stdexcept>
 #include <string>
+
+namespace {
+bool failReplacement = false;
+bool failRestore = false;
+} // namespace
+extern "C" int __real_rename(const char*, const char*);
+extern "C" int __wrap_rename(const char* from, const char* to) {
+    // Switch SD rename refuses an existing destination, unlike POSIX rename.
+    if (std::filesystem::exists(to)) {
+        errno = EEXIST;
+        return -1;
+    }
+    if ((failReplacement && std::string(from) == "rollback.tmp") || (failRestore && std::string(from) == "rollback.tmp.previous")) {
+        errno = EIO;
+        return -1;
+    }
+    return __real_rename(from, to);
+}
 
 using namespace mkw::frame_dump;
 namespace {
@@ -71,9 +90,25 @@ int main() {
     std::filesystem::create_directory("destination-directory");
     rejected([&] { save("destination-directory", "failed.tmp", rgba); });
     assert(!std::filesystem::exists("failed.tmp"));
+    const auto original = read("rgba.png");
+    save("rollback.png", "rollback.tmp", rgba);
+    failReplacement = true;
+    rejected([&] { save("rollback.png", "rollback.tmp", rgba); });
+    failReplacement = false;
+    assert(read("rollback.png") == original);
+    assert(!std::filesystem::exists("rollback.tmp"));
+    assert(!std::filesystem::exists("rollback.tmp.previous"));
+    failReplacement = failRestore = true;
+    rejected([&] { save("rollback.png", "rollback.tmp", rgba); });
+    failReplacement = failRestore = false;
+    assert(read("rollback.tmp.previous") == original);
+    assert(!std::filesystem::exists("rollback.png") && !std::filesystem::exists("rollback.tmp"));
+    assert(__real_rename("rollback.tmp.previous", "rollback.png") == 0);
 
     std::filesystem::create_directories("sdmc:/switch/WiiCompiled-Switch");
+    std::ofstream("sdmc:/switch/WiiCompiled-Switch/surface-image.tmp.previous") << "retired backup";
     reset();
+    assert(!std::filesystem::exists("sdmc:/switch/WiiCompiled-Switch/surface-image.tmp.previous"));
     assert(enabled());
     completed(rgba, 1);
     const auto first = read("sdmc:/switch/WiiCompiled-Switch/surface-first.png");
@@ -91,6 +126,11 @@ int main() {
     mkw_switch_frame_dump_checkpoint();
     status = read("sdmc:/switch/WiiCompiled-Switch/frame-dump-status.txt");
     assert(status.find("status=COMPLETE\n") != std::string::npos && status.find("latest_png_frame=2\n") != std::string::npos);
+    completed(rgba, 30);
+    status = read("sdmc:/switch/WiiCompiled-Switch/frame-dump-status.txt");
+    assert(enabled() && status.find("latest_png_frame=30\n") != std::string::npos);
+    assert(read("sdmc:/switch/WiiCompiled-Switch/surface-latest.png") == first);
+    assert(!std::filesystem::exists("sdmc:/switch/WiiCompiled-Switch/surface-image.tmp.previous"));
     failure("injected GPU map timeout");
     assert(!enabled());
     mkw_switch_frame_dump_checkpoint();
@@ -101,5 +141,5 @@ int main() {
     std::filesystem::remove_all("sdmc:/switch/WiiCompiled-Switch");
     completed(rgba, 1);
     assert(!enabled());
-    std::puts("PASS: padded RGBA/BGRA, PNG extent, black/alpha statistics, atomic save failures, first/latest checkpoint and fresh-run retirement");
+    std::puts("PASS: padded RGBA/BGRA, PNG extent, black/alpha statistics, SD replacement rollback, first/latest checkpoint and fresh-run retirement");
 }

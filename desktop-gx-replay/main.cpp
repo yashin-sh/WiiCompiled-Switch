@@ -1,5 +1,6 @@
 #include "capture.hpp"
 #include "frame_dump_readback.hpp"
+#include "surface_presenter.hpp"
 #include "dawn/native/DawnNative.h"
 #include "dawn/webgpu_cpp.h"
 #include "dolphin/gx.h"
@@ -24,6 +25,8 @@ namespace aurora::gx::fifo {
 bool submit_raw_draw(GXPrimitive, GXVtxFmt, const std::uint8_t*, std::uint16_t, std::uint32_t);
 }
 namespace {
+std::unique_ptr<mkw::presentation::Presenter> outputPresenter;
+unsigned renderedFrames = 0;
 std::atomic_bool gpuError{false};
 std::uint32_t width = 256, height = 256;
 extern "C" void mkw_replay_set_size(unsigned, unsigned);
@@ -167,13 +170,22 @@ replay::Bytes finish_frame() {
     auto encoder = g_device.CreateCommandEncoder();
     aurora::gfx::end_frame(encoder);
     aurora::gfx::render(encoder);
+    const wgpu::TextureDescriptor outputDescriptor{
+        .usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::CopySrc,
+        .size = presented.size,
+        .format = wgpu::TextureFormat::RGBA8Unorm};
+    auto output = g_device.CreateTexture(&outputDescriptor);
+    if (!outputPresenter)
+        outputPresenter = std::make_unique<mkw::presentation::Presenter>(g_device, outputDescriptor.format);
+    outputPresenter->encode(encoder, presented.texture, output);
     mkw::frame_dump::Readback readback;
-    readback.encode(g_device, encoder, presented.texture);
+    readback.encode(g_device, encoder, output);
     auto commands = encoder.Finish();
     g_queue.Submit(1, &commands);
     aurora::gfx::after_submit();
     auto image = readback.finish(g_instance);
     check(!gpuError, "GPU rendering failed");
+    ++renderedFrames;
     return std::move(image.rgba);
 }
 void setup() {
@@ -231,7 +243,8 @@ void triangle(float center, bool raw, bool indexed = false, bool directSubmissio
     }
     aurora::gx::fifo::drain();
 }
-void fill_texture(std::array<std::uint8_t, 64>& tex, bool blue) {
+void fill_texture(std::span<std::uint8_t> tex, bool blue) {
+    check(tex.size() == 64u, "RGBA8 fixture needs one complete tile");
     // One 4x4 tiled RGBA8 block: AR plane followed by GB plane.
     for (std::size_t i = 0; i < 16; ++i) {
         tex[i * 2] = 255;
@@ -240,7 +253,7 @@ void fill_texture(std::array<std::uint8_t, 64>& tex, bool blue) {
         tex[33 + i * 2] = blue ? 255 : 0;
     }
 }
-void check_scene(const replay::Bytes& pixels, bool copies = false) {
+void check_scene(const replay::Bytes& pixels, bool copies = false, bool reversed = false, bool intensity = false) {
     const auto pixel = [&](int x, int y, int r, int g, int b) {
         const auto offset = (y * width + x) * 4;
         if (pixels[offset] != r || pixels[offset + 1] != g || pixels[offset + 2] != b || pixels[offset + 3] != 255) {
@@ -248,8 +261,8 @@ void check_scene(const replay::Bytes& pixels, bool copies = false) {
         }
         check(pixels[offset] == r && pixels[offset + 1] == g && pixels[offset + 2] == b && pixels[offset + 3] == 255, "synthetic pixel oracle failed");
     };
-    pixel(width / 4, height / 2, copies ? 64 : 255, copies ? 64 : 0, copies ? 64 : 0);
-    pixel(width * 3 / 4, height / 2, copies ? 255 : 0, 0, copies ? 0 : 255);
+    pixel(width / 4, height / 2, copies ? 64 : (reversed ? 0 : 255), copies ? 64 : (intensity ? 255 : 0), copies ? 64 : (reversed || intensity ? 255 : 0));
+    pixel(width * 3 / 4, height / 2, copies || reversed ? 255 : 0, 0, copies || reversed || intensity ? 0 : 255);
     pixel(8, 8, 64, 64, 64);
 }
 } // namespace
@@ -261,7 +274,10 @@ extern "C" void mkw_replay_log(const char* message) {
 int main(int argc, char** argv) {
     bool initialized = false;
     try {
-        check(argc == 4 && (std::string(argv[1]) == "capture" || std::string(argv[1]) == "capture-copies" || std::string(argv[1]) == "capture-wide" || std::string(argv[1]) == "capture-indexed" || std::string(argv[1]) == "replay" || std::string(argv[1]) == "replay-check" || std::string(argv[1]) == "replay-copies-check"), "usage: mkw-gx-replay capture|replay|replay-check capture.mkwr output.png");
+        check(argc == 4 && (std::string(argv[1]) == "capture-i4" || std::string(argv[1]) == "replay-i4-check" || std::string(argv[1]) == "capture-rgb5a3" || std::string(argv[1]) == "capture-sequence" || std::string(argv[1]) == "replay-sequence-check" || std::string(argv[1]) == "capture" || std::string(argv[1]) == "capture-copies" || std::string(argv[1]) == "capture-wide" || std::string(argv[1]) == "capture-indexed" || std::string(argv[1]) == "replay" || std::string(argv[1]) == "replay-check" || std::string(argv[1]) == "replay-copies-check"), "usage: mkw-gx-replay capture|replay|replay-check capture.mkwr output.png");
+        const bool i4 = std::string(argv[1]).find("i4") != std::string::npos;
+        const bool rgb5a3 = std::string(argv[1]) == "capture-rgb5a3";
+        const bool sequence = std::string(argv[1]).find("sequence") != std::string::npos;
         const bool indexed = std::string(argv[1]) == "capture-indexed";
         const bool copies = std::string(argv[1]).find("copies") != std::string::npos;
         const bool capture = std::string(argv[1]).starts_with("capture");
@@ -282,8 +298,23 @@ int main(int argc, char** argv) {
         replay::Bytes pixels;
         if (capture) {
             replay::Recorder recorder(width, height);
-            std::array<std::uint8_t, 64> texture{}, copyDestination{};
-            fill_texture(texture, false);
+            const auto textureFormat = i4 ? GX_TF_I4 : (rgb5a3 ? GX_TF_RGB5A3 : GX_TF_RGBA8);
+            const auto textureWidth = i4 ? 9u : (rgb5a3 ? 17u : 4u);
+            const auto textureHeight = i4 || rgb5a3 ? 9u : 4u;
+            std::vector<std::uint8_t> texture(i4 ? 128u : (rgb5a3 ? 480u : 64u));
+            std::array<std::uint8_t, 64> copyDestination{};
+            const auto fill = [&](bool second) {
+                if (i4)
+                    std::fill(texture.begin(), texture.end(), second ? 0 : 255);
+                else if (rgb5a3) {
+                    for (std::size_t at = 0; at < texture.size(); at += 2) {
+                        texture[at] = second ? 0x80 : 0xfc;
+                        texture[at + 1] = second ? 0x1f : 0;
+                    }
+                } else
+                    fill_texture(texture, second);
+            };
+            fill(false);
             const std::array<float, 9> positions{-0.5f, 0.7f, 0.f, -0.9f, -0.7f, 0.f, -0.1f, -0.7f, 0.f};
             const std::array<float, 2> uv{0.5f, 0.5f};
             recorder.memory(texture);
@@ -296,7 +327,7 @@ int main(int argc, char** argv) {
             replay::set_recorder(&recorder);
             setup();
             GXTexObj obj{};
-            GXInitTexObj(&obj, texture.data(), 4, 4, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+            GXInitTexObj(&obj, texture.data(), textureWidth, textureHeight, textureFormat, GX_CLAMP, GX_CLAMP, GX_FALSE);
             GXLoadTexObj(&obj, GX_TEXMAP0);
             aurora::gx::fifo::drain();
             recorder.begin();
@@ -318,9 +349,9 @@ int main(int argc, char** argv) {
                 GXSetTexCopyDst(4, 4, GX_TF_RGB5A3, GX_FALSE);
                 GXCopyTex(copyDestination.data(), GX_TRUE);
             }
-            fill_texture(texture, true);
+            fill(true);
             GXInvalidateTexAll();
-            GXInitTexObj(&obj, copies ? copyDestination.data() : texture.data(), 4, 4, copies ? GX_TF_RGB5A3 : GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+            GXInitTexObj(&obj, copies ? copyDestination.data() : texture.data(), copies ? 4u : textureWidth, copies ? 4u : textureHeight, copies ? GX_TF_RGB5A3 : textureFormat, GX_CLAMP, GX_CLAMP, GX_FALSE);
             GXLoadTexObj(&obj, GX_TEXMAP0);
             // Flush pending native state, then use raw FIFO.
             GXFlush();
@@ -333,11 +364,45 @@ int main(int argc, char** argv) {
                 aurora::gx::fifo::drain();
             }
             check(replay::recording(), replay::failure());
-            recorder.end();
-            replay::set_recorder(nullptr);
-            pixels = finish_frame();
-            check_scene(pixels, copies);
-            save(argv[2], recorder.finish());
+            if (sequence) {
+                GXSetDispCopySrc(0, 0, width, height);
+                GXSetDispCopyDst(width, height);
+                GXCopyDisp(nullptr, GX_TRUE);
+                aurora::gx::fifo::drain();
+                pixels = finish_frame();
+                check_scene(pixels);
+                recorder.frame();
+                recorder.begin();
+                check(aurora::gfx::begin_frame(), "second Aurora frame failed");
+                // Slot/VAT/projection/sampler state is retained, without GXInit.
+                triangle(-0.5f, false, false);
+                fill(false);
+                GXInvalidateTexAll();
+                GXInitTexObj(&obj, texture.data(), 4, 4, GX_TF_RGBA8, GX_CLAMP, GX_CLAMP, GX_FALSE);
+                GXLoadTexObj(&obj, GX_TEXMAP0);
+                GXFlush();
+                triangle(0.5f, true, false);
+                GXCopyDisp(nullptr, GX_TRUE);
+                aurora::gx::fifo::drain();
+                pixels = finish_frame();
+                check_scene(pixels, false, true);
+                recorder.frame();
+                const auto complete = recorder.checkpoint();
+                // A partially recorded third frame must not enter the saved prefix.
+                recorder.begin();
+                check(aurora::gfx::begin_frame(), "partial Aurora frame failed");
+                triangle(-0.5f, false, false);
+                check(recorder.checkpoint() == complete, "partial frame changed completed prefix");
+                replay::set_recorder(nullptr);
+                aurora::gfx::abort_frame();
+                save(argv[2], complete);
+            } else {
+                recorder.end();
+                replay::set_recorder(nullptr);
+                pixels = finish_frame();
+                check_scene(pixels, copies, false, i4);
+                save(argv[2], recorder.finish());
+            }
         } else {
             // GXInit establishes Aurora's non-FIFO defaults. Discard its queued
             // bytes: the capture includes the original initialization stream.
@@ -348,25 +413,29 @@ int main(int argc, char** argv) {
                 } else if (kind == replay::Kind::Fifo) {
                     aurora::gx::fifo::write_data(bytes.data(), bytes.size());
                     aurora::gx::fifo::drain();
-                } else if (kind == replay::Kind::End) {
+                } else if (kind == replay::Kind::End || kind == replay::Kind::Frame) {
                     pixels = finish_frame();
                 } else {
                     replay::apply_direct(kind, bytes);
                 }
             });
             if (std::string(argv[1]).ends_with("check")) {
-                check_scene(pixels, copies);
+                check_scene(pixels, copies, sequence, i4);
             }
         }
+        if (sequence)
+            check(renderedFrames == 2, "replay lost frame boundaries");
         png(argv[3], pixels);
+        outputPresenter.reset();
         aurora::gfx::shutdown();
         aurora::webgpu::shutdown();
-        std::puts("PASS: completed Aurora frame, GPU readback and PNG output");
+        std::printf("PASS: %u completed Aurora frame(s), selected-XFB presentation, GPU readback and PNG output\n", renderedFrames);
         return 0;
     } catch (const std::exception& error) {
         replay::set_recorder(nullptr);
         std::fprintf(stderr, "FAIL: %s\n", error.what());
         if (initialized) {
+            outputPresenter.reset();
             aurora::gfx::shutdown();
             aurora::webgpu::shutdown();
         }

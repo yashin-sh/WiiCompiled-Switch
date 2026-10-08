@@ -10,6 +10,11 @@ Execution stops at the next guarded I4 36×32 identity after the previous load/h
 Recognizable game rendering remains unproven. The initial FIFO capture remains
 identical to the preceding black desktop replay.
 
+The [texture-family, presentation and sequence-replay candidate](docs/GX_TEXTURE_FAMILY_PRESENT_REPLAY.md)
+removes object/source address admission for the bounded I4/RGB5A3 family, separates
+the persistent EFB from the surface, presents the selected XFB and records complete
+frame prefixes. Its synthetic checks pass; console validation is pending.
+
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.
 - [x] Transfer the exact display-list NRO with exit 0 at 2026-10-04 09:19:26 UTC; verify 29 reports / 534,803 bytes and the pending guest SU-state guard.

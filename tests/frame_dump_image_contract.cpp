@@ -110,7 +110,7 @@ int main() {
     reset();
     assert(!std::filesystem::exists("sdmc:/switch/WiiCompiled-Switch/surface-image.tmp.previous"));
     assert(enabled());
-    completed(rgba, 1);
+    completed(rgba, rgba, rgba, 1);
     const auto first = read("sdmc:/switch/WiiCompiled-Switch/surface-first.png");
     const auto blackSize = layout(2, 2);
     std::vector<std::uint8_t> black(blackSize.bufferBytes);
@@ -119,18 +119,21 @@ int main() {
             black[y * blackSize.rowBytes + x * 4 + 3] = 255;
     const auto opaqueBlack = unpack(blackSize, black, false);
     assert(opaqueBlack.uniform && !opaqueBlack.nonBlackPixels && !opaqueBlack.nonOpaquePixels);
-    completed(opaqueBlack, 2);
+    completed(opaqueBlack, rgba, opaqueBlack, 2);
     assert(read("sdmc:/switch/WiiCompiled-Switch/surface-first.png") == first);
     auto status = read("sdmc:/switch/WiiCompiled-Switch/frame-dump-status.txt");
     assert(status.find("frame=2\n") != std::string::npos && status.find("latest_png_frame=1\n") != std::string::npos);
     mkw_switch_frame_dump_checkpoint();
     status = read("sdmc:/switch/WiiCompiled-Switch/frame-dump-status.txt");
     assert(status.find("status=COMPLETE\n") != std::string::npos && status.find("latest_png_frame=2\n") != std::string::npos);
-    completed(rgba, 30);
+    completed(rgba, rgba, opaqueBlack, 30);
     status = read("sdmc:/switch/WiiCompiled-Switch/frame-dump-status.txt");
     assert(enabled() && status.find("latest_png_frame=30\n") != std::string::npos);
     assert(read("sdmc:/switch/WiiCompiled-Switch/surface-latest.png") == first);
     assert(!std::filesystem::exists("sdmc:/switch/WiiCompiled-Switch/surface-image.tmp.previous"));
+    assert(read("sdmc:/switch/WiiCompiled-Switch/display-copy-latest.png") == first);
+    assert(read("sdmc:/switch/WiiCompiled-Switch/efb-after-copy-latest.png") != first);
+    assert(status.find("display_latest_png_frame=30\n") != std::string::npos && status.find("efb_latest_png_frame=30\n") != std::string::npos);
     failure("injected GPU map timeout");
     assert(!enabled());
     mkw_switch_frame_dump_checkpoint();
@@ -139,7 +142,7 @@ int main() {
     assert(!std::filesystem::exists("sdmc:/switch/WiiCompiled-Switch/surface-first.png"));
     assert(!std::filesystem::exists("sdmc:/switch/WiiCompiled-Switch/surface-latest.png"));
     std::filesystem::remove_all("sdmc:/switch/WiiCompiled-Switch");
-    completed(rgba, 1);
+    completed(rgba, rgba, rgba, 1);
     assert(!enabled());
     std::puts("PASS: padded RGBA/BGRA, PNG extent, black/alpha statistics, SD replacement rollback, first/latest checkpoint and fresh-run retirement");
 }

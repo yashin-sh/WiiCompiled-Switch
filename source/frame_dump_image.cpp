@@ -97,6 +97,11 @@ std::vector<std::uint8_t> png(const Image& image) {
 }
 void save(const char* output, const char* temporary, const Image& image) {
     const auto bytes = png(image);
+    saveBytes(output, temporary, bytes);
+}
+void saveBytes(const char* output, const char* temporary, std::span<const std::uint8_t> bytes) {
+    if (bytes.empty())
+        throw std::runtime_error("cannot save empty diagnostic");
     const std::string backup = std::string(temporary) + ".previous";
     struct stat existing = {};
     const bool hadPrevious = ::stat(output, &existing) == 0;

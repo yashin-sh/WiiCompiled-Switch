@@ -1,25 +1,40 @@
 #if defined(MKW_RENDERED_FIFO_CAPTURE) && MKW_RENDERED_FIFO_CAPTURE
 #include "capture.hpp"
 #include "memory.h"
+#include "frame_dump_image.hpp"
 
 #include <cstdio>
+#include <chrono>
+#include <cerrno>
+#include <mutex>
+#include <string>
+#include <utility>
 #include <memory>
 #include <stdexcept>
 
 namespace {
 constexpr const char* Output = "sdmc:/switch/WiiCompiled-Switch/first-frame.mkwr";
 constexpr const char* Temporary = "sdmc:/switch/WiiCompiled-Switch/first-frame.mkwr.tmp";
+constexpr const char* Latest = "sdmc:/switch/WiiCompiled-Switch/latest-frames.mkwr";
 constexpr const char* Status = "sdmc:/switch/WiiCompiled-Switch/fifo-capture-status.txt";
 std::unique_ptr<replay::Recorder> recorder;
 bool attempted = false;
+std::mutex captureMutex;
+replay::Bytes lastComplete;
+std::uint64_t runId = 0, completedFrames = 0, savedFrame = 0;
+std::size_t savedBytes = 0;
+char failureReason[256]{};
 void status(const char* state, const char* reason = "", std::size_t bytes = 0) noexcept {
     if (auto* file = std::fopen(Status, "w")) {
-        std::fprintf(file, "status=%s\nreason=%s\nbytes=%zu\nframe=first-from-GXInit\nformat=MKWRPL2\nlimit_bytes=%zu\n", state, reason, bytes, replay::MaxBytes);
+        std::fprintf(file, "status=%s\nreason=%s\nbytes=%zu\nrun_id=%llu\nframe=prefix-from-GXInit\ncompleted_frames=%llu\nsaved_frame=%llu\nformat=MKWRPL3\nlimit_bytes=%zu\npartial_active_frame_captured=NO\n",
+                     state, reason, bytes, static_cast<unsigned long long>(runId),
+                     static_cast<unsigned long long>(completedFrames), static_cast<unsigned long long>(savedFrame), replay::MaxBytes);
         std::fclose(file);
     }
 }
 void invalid(const char* reason) noexcept {
-    status("INVALID", reason);
+    std::snprintf(failureReason, sizeof(failureReason), "%s", reason);
+    status("INVALID", reason, savedBytes);
 }
 std::span<const std::uint8_t> resolve(std::uint64_t pointer, std::size_t needed) {
     // Prove a host range belongs to an allocated guest region before reading it.
@@ -43,13 +58,18 @@ extern "C" void mkw_switch_fifo_capture_start() noexcept {
         return;
     }
     attempted = true;
-    std::remove(Output);
-    std::remove(Temporary);
+    runId = std::chrono::steady_clock::now().time_since_epoch().count();
+    const std::string backup = std::string(Temporary) + ".previous";
+    for (auto* path : {Output, Latest, Temporary, backup.c_str()}) {
+        if (std::remove(path) != 0 && errno != ENOENT) {
+            invalid("cannot retire previous capture");
+            return;
+        }
+    }
     replay::set_failure_handler(invalid);
     try {
         recorder = std::make_unique<replay::Recorder>(1280, 720);
         recorder->resolve_with(resolve);
-        recorder->begin();
         replay::set_recorder(recorder.get());
         status("RECORDING");
     } catch (const std::exception& error) {
@@ -58,42 +78,68 @@ extern "C" void mkw_switch_fifo_capture_start() noexcept {
         status("INVALID", "capture allocation failure");
     }
 }
-extern "C" void mkw_switch_fifo_capture_present(bool presented) noexcept {
-    if (!recorder)
+extern "C" void mkw_switch_fifo_capture_begin_frame() noexcept {
+    if (!recorder || !replay::recording())
         return;
-    if (!replay::recording()) {
-        recorder.reset();
-        return;
-    }
-    if (!presented) {
-        replay::fail("first present failed");
-        recorder.reset();
-        return;
-    }
     try {
-        recorder->end();
-        const auto bytes = recorder->finish();
-        replay::Playback validate(bytes);
-        auto* file = std::fopen(Temporary, "wb");
-        if (!file)
-            throw std::runtime_error("cannot open SD capture");
-        const bool written = std::fwrite(bytes.data(), 1, bytes.size(), file) == bytes.size();
-        const int closed = std::fclose(file);
-        if (!written || closed != 0 || std::rename(Temporary, Output) != 0) {
-            std::remove(Temporary);
-            throw std::runtime_error("cannot save complete SD capture");
-        }
-        status("COMPLETE", "", bytes.size());
-        replay::set_recorder(nullptr);
+        recorder->begin();
     } catch (const std::exception& error) {
         replay::fail(error.what());
     } catch (...) {
-        replay::fail("capture save failure");
+        replay::fail("capture begin allocation failure");
     }
-    recorder.reset();
+}
+namespace {
+void save_latest() {
+    if (lastComplete.empty() || savedFrame == completedFrames)
+        return;
+    mkw::frame_dump::saveBytes(Latest, Temporary, lastComplete);
+    savedFrame = completedFrames;
+    savedBytes = lastComplete.size();
+}
+} // namespace
+extern "C" void mkw_switch_fifo_capture_present(bool presented) noexcept {
+    std::scoped_lock lock(captureMutex);
+    if (!recorder || !replay::recording())
+        return;
+    if (!presented) {
+        replay::fail("present failed");
+        return;
+    }
+    try {
+        recorder->frame();
+        auto bytes = recorder->checkpoint();
+        replay::Playback validate(bytes);
+        lastComplete = std::move(bytes);
+        ++completedFrames;
+        if (completedFrames == 1u)
+            mkw::frame_dump::saveBytes(Output, Temporary, lastComplete);
+        if (completedFrames == 1u || completedFrames % 30u == 0u)
+            save_latest();
+        status("RECORDING", "", savedBytes);
+    } catch (const std::exception& error) {
+        replay::fail(error.what());
+    } catch (...) {
+        replay::fail("capture checkpoint allocation failure");
+    }
+}
+extern "C" void mkw_switch_fifo_capture_checkpoint() noexcept {
+    std::unique_lock lock(captureMutex, std::try_to_lock);
+    if (!lock || lastComplete.empty())
+        return;
+    try {
+        save_latest();
+        status(failureReason[0] ? "INVALID" : "COMPLETE", failureReason, savedBytes);
+    } catch (const std::exception& error) {
+        invalid(error.what());
+    } catch (...) {
+        invalid("capture save allocation failure");
+    }
 }
 extern "C" void mkw_switch_fifo_capture_shutdown() noexcept {
-    replay::fail("renderer stopped before first complete present");
+    mkw_switch_fifo_capture_checkpoint();
+    if (!completedFrames)
+        replay::fail("renderer stopped before first complete present");
     replay::set_recorder(nullptr);
     recorder.reset();
 }

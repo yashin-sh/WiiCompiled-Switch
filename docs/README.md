@@ -1,5 +1,7 @@
 # Documentation index
 
+- [Texture families, XFB presentation and later-frame replay](GX_TEXTURE_FAMILY_PRESENT_REPLAY.md) — address-independent bounded loading and state-preserving sequence candidate; console trial pending
+
 - [Validated Switch first/latest GPU images](HARDWARE_SURFACE_CHECKPOINT_2026-10-08.md) — frame 102 checkpoint and SD replacement pass; RGB remains black
 - [First actual Switch GPU image](HARDWARE_SURFACE_FIRST_IMAGE_2026-10-08.md) — preceding partial result; latest PNG replacement failed
 - [Build and hardware diagnostics](BUILD.md)

@@ -44,3 +44,17 @@ echo "PASS: variable framebuffer dimensions and padded GPU readback rows survive
 "$REPLAY" replay-check "$OUT_ROOT/indexed.mkwr" "$OUT_ROOT/indexed-replayed.png"
 cmp "$OUT_ROOT/indexed-original.png" "$OUT_ROOT/indexed-replayed.png"
 echo "PASS: indexed positions and UV arrays relocate and render the expected pixels"
+
+"$REPLAY" capture-sequence "$OUT_ROOT/sequence.mkwr" "$OUT_ROOT/sequence-original.png"
+"$REPLAY" replay-sequence-check "$OUT_ROOT/sequence.mkwr" "$OUT_ROOT/sequence-replayed.png"
+cmp "$OUT_ROOT/sequence-original.png" "$OUT_ROOT/sequence-replayed.png"
+echo "PASS: multi-frame prefix retains state and same-address texture updates; partial third frame excluded"
+
+"$REPLAY" capture-i4 "$OUT_ROOT/i4.mkwr" "$OUT_ROOT/i4-original.png"
+"$REPLAY" replay-i4-check "$OUT_ROOT/i4.mkwr" "$OUT_ROOT/i4-replayed.png"
+cmp "$OUT_ROOT/i4-original.png" "$OUT_ROOT/i4-replayed.png"
+echo "PASS: partial-tile I4 textures render white/black and refresh at the same address"
+"$REPLAY" capture-rgb5a3 "$OUT_ROOT/rgb5a3.mkwr" "$OUT_ROOT/rgb5a3-original.png"
+"$REPLAY" replay-check "$OUT_ROOT/rgb5a3.mkwr" "$OUT_ROOT/rgb5a3-replayed.png"
+cmp "$OUT_ROOT/rgb5a3-original.png" "$OUT_ROOT/rgb5a3-replayed.png"
+echo "PASS: partial-tile direct RGB5A3 textures render exact red/blue pixels"

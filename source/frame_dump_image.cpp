@@ -98,7 +98,7 @@ std::vector<std::uint8_t> png(const Image& image) {
 void save(const char* output, const char* temporary, const Image& image) {
     const auto bytes = png(image);
     const std::string backup = std::string(temporary) + ".previous";
-    struct stat existing{};
+    struct stat existing = {};
     const bool hadPrevious = ::stat(output, &existing) == 0;
     if ((hadPrevious && !S_ISREG(existing.st_mode)) || (!hadPrevious && errno != ENOENT))
         throw std::runtime_error("image destination is not an accessible regular file");

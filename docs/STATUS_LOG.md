@@ -2,6 +2,11 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-08: [corrected Switch first/latest image result](HARDWARE_SURFACE_CHECKPOINT_2026-10-08.md)
+validates SD replacement and the completed-frame checkpoint. First and last GPU
+images contain black RGB, with alpha 255 and 0 respectively; game rendering remains
+unproven. The texture refusal is unchanged from the preceding surface trial.
+
 2026-10-08: [first actual Switch GPU image](HARDWARE_SURFACE_FIRST_IMAGE_2026-10-08.md)
 decoded as opaque black. The latest-image replacement failed on SD at frame 30;
 the capture is partial, and the correction requires a console retest. The same run

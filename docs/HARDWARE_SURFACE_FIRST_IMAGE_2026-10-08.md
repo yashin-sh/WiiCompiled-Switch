@@ -1,5 +1,8 @@
 # First actual Switch GPU surface — 2026-10-08
 
+This is the preceding partial trial. The [corrected trial](HARDWARE_SURFACE_CHECKPOINT_2026-10-08.md)
+subsequently validates latest-image replacement and the stop checkpoint.
+
 The PR #335 diagnostic produced a complete, independently decoded first-frame
 PNG from the Aurora/NVK presentation surface: 1280×720, uniform RGBA `(0,0,0,255)`.
 This establishes actual opaque black GPU pixels for that completed frame.

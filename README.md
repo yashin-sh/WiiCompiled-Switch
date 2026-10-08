@@ -7,7 +7,7 @@ Experimental Nintendo Switch homebrew port of [WiiCompiled](https://github.com/p
 The game still shows a black screen; a recognizable Mario Kart Wii image and playability remain unproven.
 Real translated execution, observed boot-resource reads and the Aurora → Dawn/WebGPU → Vulkan/NVK presentation path run on Switch.
 The latest hardware run advances past the previous Mii texture load and stops at the next guarded load.
-The first actual Switch GPU surface is verified as opaque black; updating the latest PNG failed on SD. The [surface dump](docs/SWITCH_FRAME_DUMP.md) replacement correction needs a console retest. The first FIFO frame also replays black on desktop.
+The [Switch GPU surface dump](docs/SWITCH_FRAME_DUMP.md) is hardware-validated: first and last completed images are saved on SD, both with black RGB. The first FIFO frame also replays black on desktop; see the [image result](docs/HARDWARE_SURFACE_CHECKPOINT_2026-10-08.md).
 See [the roadmap](ROADMAP.md) for the current frontier and [the status log](docs/STATUS_LOG.md) for dated evidence.
 
 ## Quick build

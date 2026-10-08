@@ -1,10 +1,11 @@
 # Documentation index
 
-- [First actual Switch GPU image](HARDWARE_SURFACE_FIRST_IMAGE_2026-10-08.md) — opaque black first frame; latest PNG replacement failed, correction awaiting retest
+- [Validated Switch first/latest GPU images](HARDWARE_SURFACE_CHECKPOINT_2026-10-08.md) — frame 102 checkpoint and SD replacement pass; RGB remains black
+- [First actual Switch GPU image](HARDWARE_SURFACE_FIRST_IMAGE_2026-10-08.md) — preceding partial result; latest PNG replacement failed
 - [Build and hardware diagnostics](BUILD.md)
 - [Status history moved from the README](STATUS_LOG.md)
 - [Desktop GX capture/replay prototype](DESKTOP_GX_REPLAY.md)
-- [Actual Switch surface-image diagnostic](SWITCH_FRAME_DUMP.md) — first GPU image decoded; latest-image replacement awaits retest
+- [Actual Switch surface-image diagnostic](SWITCH_FRAME_DUMP.md) — first/latest readback and SD checkpoint hardware-validated
 - [Report terminology](REPORT_TERMS.md) — definitions for reading detailed evidence
 - [Next-pass I4 36×32 correction](GX_MII_I4_36X32_NEXT_PASS_LOAD_2026-10-08.md) — prior load/helper return supported by later caller progression
 - [Next-pass RGB5A3 return and I4 36×32 frontier](HARDWARE_NEXT_PASS_RGB5A3_RETURN_2026-10-08.md) — scoped caller inference; initial black PNG unchanged

@@ -17,6 +17,11 @@
 #include "webgpu/gpu.hpp"
 
 #include <switch.h>
+#if defined(MKW_RENDERED_FRAME_DUMP) && MKW_RENDERED_FRAME_DUMP
+#include "frame_dump_readback.hpp"
+#include "rendered_frame_dump.hpp"
+#include <memory>
+#endif
 #if defined(MKW_RENDERED_FIFO_CAPTURE) && MKW_RENDERED_FIFO_CAPTURE
 extern "C" void mkw_switch_fifo_capture_start() noexcept;
 extern "C" void mkw_switch_fifo_capture_present(bool) noexcept;
@@ -373,7 +378,43 @@ bool present_frame_locked(bool clear) {
     g_queue.Submit(1, &commands);
     aurora::gfx::after_submit();
 
+#if defined(MKW_RENDERED_FRAME_DUMP) && MKW_RENDERED_FRAME_DUMP
+    std::unique_ptr<mkw::frame_dump::Readback> readback;
+    if (mkw::frame_dump::enabled()) {
+        try {
+            readback = std::make_unique<mkw::frame_dump::Readback>();
+            // The final surface includes Aurora's presentation scaling. Copy
+            // after render, before Present may release the swapchain image.
+            // A separate submission prevents a failed diagnostic copy from
+            // invalidating the already submitted guest render commands.
+            auto copyEncoder = g_device.CreateCommandEncoder();
+            readback->encode(g_device, copyEncoder, g_currentSurfaceTexture);
+            auto copyCommands = copyEncoder.Finish();
+            g_queue.Submit(1, &copyCommands);
+        } catch (const std::exception& error) {
+            readback.reset();
+            mkw::frame_dump::failure(error.what());
+        } catch (...) {
+            readback.reset();
+            mkw::frame_dump::failure("readback allocation failure");
+        }
+    }
+#endif
+
     const bool presented = g_surface.Present();
+#if defined(MKW_RENDERED_FRAME_DUMP) && MKW_RENDERED_FRAME_DUMP
+    if (readback && presented) {
+        try {
+            mkw::frame_dump::completed(readback->finish(g_instance), g_presentedFrames + 1u);
+        } catch (const std::exception& error) {
+            mkw::frame_dump::failure(error.what());
+        } catch (...) {
+            mkw::frame_dump::failure("readback completion failure");
+        }
+    } else if (readback) {
+        mkw::frame_dump::failure("surface present failed");
+    }
+#endif
 #if defined(MKW_RENDERED_FIFO_CAPTURE) && MKW_RENDERED_FIFO_CAPTURE
     mkw_switch_fifo_capture_present(presented);
 #endif
@@ -432,6 +473,9 @@ extern "C" bool mkw_switch_renderer_initialize() noexcept {
     }
 
     init_report();
+#if defined(MKW_RENDERED_FRAME_DUMP) && MKW_RENDERED_FRAME_DUMP
+    mkw::frame_dump::reset();
+#endif
     report("WiiCompiled-Switch RMCP01 rendered fast-track\n");
     report("wiicompiled pin: a135beb201042b20f390c6695ca6b26768820fb4\n");
     report("dawn-switch pin: 77029ea85250c9bdddfc2f88034afb6b5356a031\n");
@@ -505,6 +549,9 @@ extern "C" void mkw_switch_renderer_shutdown() noexcept {
 
     report("STAGE RENDERER_TEARDOWN begin frames=%llu\n",
            static_cast<unsigned long long>(g_presentedFrames));
+#if defined(MKW_RENDERED_FRAME_DUMP) && MKW_RENDERED_FRAME_DUMP
+    mkw_switch_frame_dump_checkpoint();
+#endif
 
 #if defined(MKW_RENDERED_FIFO_CAPTURE) && MKW_RENDERED_FIFO_CAPTURE
     mkw_switch_fifo_capture_shutdown();

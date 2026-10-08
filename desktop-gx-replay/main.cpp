@@ -1,4 +1,5 @@
 #include "capture.hpp"
+#include "frame_dump_readback.hpp"
 #include "dawn/native/DawnNative.h"
 #include "dawn/webgpu_cpp.h"
 #include "dolphin/gx.h"
@@ -163,34 +164,17 @@ replay::Bytes finish_frame() {
     check(static_cast<bool>(presented.texture), "no rendered presentation source");
     width = presented.size.width;
     height = presented.size.height;
-    const auto rowBytes = ((width * 4 + 255) / 256) * 256;
-    const wgpu::BufferDescriptor desc{
-        .usage = wgpu::BufferUsage::CopyDst | wgpu::BufferUsage::MapRead,
-        .size = static_cast<std::uint64_t>(height) * rowBytes,
-    };
-    auto staging = g_device.CreateBuffer(&desc);
     auto encoder = g_device.CreateCommandEncoder();
     aurora::gfx::end_frame(encoder);
     aurora::gfx::render(encoder);
-    const wgpu::TexelCopyTextureInfo source{.texture = presented.texture};
-    const wgpu::TexelCopyBufferInfo destination{.layout = {.bytesPerRow = rowBytes, .rowsPerImage = height}, .buffer = staging};
-    const wgpu::Extent3D extent{width, height, 1};
-    encoder.CopyTextureToBuffer(&source, &destination, &extent);
+    mkw::frame_dump::Readback readback;
+    readback.encode(g_device, encoder, presented.texture);
     auto commands = encoder.Finish();
     g_queue.Submit(1, &commands);
     aurora::gfx::after_submit();
-    bool mapped = false;
-    const auto wait = g_instance.WaitAny(staging.MapAsync(
-                                             wgpu::MapMode::Read, 0, desc.size, wgpu::CallbackMode::WaitAnyOnly,
-                                             [&](wgpu::MapAsyncStatus status, wgpu::StringView) { mapped = status == wgpu::MapAsyncStatus::Success; }),
-                                         UINT64_MAX);
-    check(wait == wgpu::WaitStatus::Success && mapped && !gpuError, "GPU rendering/readback failed");
-    const auto* data = static_cast<const std::uint8_t*>(staging.GetConstMappedRange());
-    replay::Bytes pixels;
-    for (unsigned y = 0; y < height; ++y)
-        pixels.insert(pixels.end(), data + y * rowBytes, data + y * rowBytes + width * 4);
-    staging.Unmap();
-    return pixels;
+    auto image = readback.finish(g_instance);
+    check(!gpuError, "GPU rendering failed");
+    return std::move(image.rgba);
 }
 void setup() {
     GXInit(nullptr, 0);

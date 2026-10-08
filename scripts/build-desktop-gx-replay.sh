@@ -24,5 +24,5 @@ if [[ "$(git -C "$DAWN_ROOT" rev-parse HEAD)" != "$DAWN_PIN" ]]; then
 fi
 cmake -S "$ROOT_DIR/desktop-gx-replay" -B "$BUILD_ROOT" \
     -DCMAKE_BUILD_TYPE=Release -DMKW_DAWN_ROOT="$DAWN_ROOT" "$@"
-cmake --build "$BUILD_ROOT" --target mkw-gx-replay replay-format-test -j "$JOBS"
+cmake --build "$BUILD_ROOT" --target mkw-gx-replay replay-format-test frame-dump-gpu-contract -j "$JOBS"
 ctest --test-dir "$BUILD_ROOT" --output-on-failure

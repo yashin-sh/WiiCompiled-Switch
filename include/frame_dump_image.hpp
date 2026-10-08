@@ -1,0 +1,23 @@
+#pragma once
+
+#include <cstdint>
+#include <span>
+#include <vector>
+
+namespace mkw::frame_dump {
+struct Layout {
+    std::uint32_t width, height, rowBytes;
+    std::uint64_t bufferBytes;
+};
+struct Image {
+    Layout layout{};
+    std::vector<std::uint8_t> rgba;
+    std::uint64_t nonBlackPixels = 0, nonOpaquePixels = 0;
+    bool uniform = true;
+};
+// Readback is intentionally bounded to a single-sample 8-bit surface.
+Layout layout(std::uint32_t width, std::uint32_t height);
+Image unpack(Layout layout, std::span<const std::uint8_t> mapped, bool bgra);
+std::vector<std::uint8_t> png(const Image& image);
+void save(const char* output, const char* temporary, const Image& image);
+} // namespace mkw::frame_dump

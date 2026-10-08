@@ -164,3 +164,10 @@ controller mapping, a visually correct Mario Kart Wii frame, and full
 playability are not yet proven.
 
 For the opt-in first-frame capture NRO, bounded format and private SD output, see [Desktop GX capture/replay](DESKTOP_GX_REPLAY.md).
+
+## Inspect the actual Switch image
+
+Use the optional [surface-image diagnostic](SWITCH_FRAME_DUMP.md) to read the
+final NVK surface into first/latest PNGs on SD. It defaults to OFF and can run
+alongside first-frame FIFO recording. Its report distinguishes completed-frame
+readback from a later unsubmitted partial frame.

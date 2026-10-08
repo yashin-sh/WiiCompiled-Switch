@@ -1,3 +1,6 @@
+#if defined(MKW_RENDERED_FIFO_CAPTURE) && MKW_RENDERED_FIFO_CAPTURE
+extern "C" void mkw_switch_fifo_capture_checkpoint() noexcept;
+#endif
 #include <cstdint>
 #if defined(MKW_RENDERED_FRAME_DUMP) && MKW_RENDERED_FRAME_DUMP
 extern "C" void mkw_switch_frame_dump_checkpoint() noexcept;
@@ -1524,6 +1527,9 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
     }
 #if defined(MKW_RENDERED_FRAME_DUMP) && MKW_RENDERED_FRAME_DUMP && defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
     mkw_switch_frame_dump_checkpoint();
+#endif
+#if defined(MKW_RENDERED_FIFO_CAPTURE) && MKW_RENDERED_FIFO_CAPTURE
+    mkw_switch_fifo_capture_checkpoint();
 #endif
 #else
     (void)kind;

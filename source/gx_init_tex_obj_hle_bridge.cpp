@@ -3,6 +3,7 @@
 
 #include "abi_bridge.h"
 #include "memory.h"
+#include "gx_linear_texture_descriptor.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -53,45 +54,6 @@ constexpr std::uint32_t kObservedTextureSize = 0x000B9400u;
 constexpr std::uint32_t kObservedIa8LoadObj = 0x80384500u;
 constexpr std::uint32_t kObservedIa8Data = 0x00384540u;
 constexpr std::uint32_t kObservedIa8TextureSize = 32u;
-
-// Captured in the Mii draw helper after viewport/depth setup. I4 stores
-// 8x8 texels per 32-byte tile: 4x8 tiles require exactly 1,024 bytes.
-constexpr std::uint32_t kObservedMiiI4LoadObj = 0x80397D80u;
-constexpr std::uint32_t kObservedSecondMiiI4LoadObj = 0x80397DC0u;
-// Next outer Mii pass: distinct captured object with the same tiled data.
-constexpr std::uint32_t kObservedNextPassMiiI4LoadObj = 0x80397F80u;
-constexpr std::uint32_t kObservedSecondNextPassMiiI4LoadObj = 0x80397FC0u;
-constexpr std::uint32_t kObservedMiiI4Data = 0x109C1A40u;
-// Two captured objects share a source 32 bytes earlier in another run.
-constexpr std::uint32_t kObservedRelocatedMiiI4Data = 0x109C1A20u;
-constexpr std::uint32_t kObservedMiiI4TextureSize = 1024u;
-
-// Third captured Mii load: RGB5A3 uses 4x4 tiles of 32 bytes.
-// The complete 44x32 image occupies 11x8 tiles (2,816 bytes).
-constexpr std::uint32_t kObservedMiiRgb5a3LoadObj = 0x80397D40u;
-constexpr std::uint32_t kObservedNextPassMiiRgb5a3LoadObj = 0x80397F40u;
-constexpr std::uint32_t kObservedMiiRgb5a3Data = 0x109C0C40u;
-constexpr std::uint32_t kObservedMiiRgb5a3TextureSize = 2816u;
-
-// Fourth captured Mii load: I4 36x32 includes a partial right-edge tile.
-// Ceil(36/8) x ceil(32/8) x 32 requires 640 bytes, not 576 texel bytes.
-constexpr std::uint32_t kObservedMiiSmallI4LoadObj = 0x80397CC0u;
-constexpr std::uint32_t kObservedSecondMiiSmallI4LoadObj = 0x80397D00u;
-constexpr std::uint32_t kObservedNextPassMiiSmallI4LoadObj = 0x80397EC0u;
-constexpr std::uint32_t kObservedMiiSmallI4Data = 0x109C1780u;
-constexpr std::uint32_t kObservedMiiSmallI4TextureSize = 640u;
-
-// Sixth captured Mii load: RGB5A3 38x32 includes a partial 4x4 tile.
-// Ceil(38/4) x ceil(32/4) x 32 requires 2560 bytes; native width stays 38.
-constexpr std::uint32_t kObservedMiiSmallRgb5a3LoadObj = 0x80397C40u;
-constexpr std::uint32_t kObservedSecondMiiSmallRgb5a3LoadObj = 0x80397C80u;
-constexpr std::uint32_t kObservedMiiSmallRgb5a3Data = 0x109C0200u;
-constexpr std::uint32_t kObservedMiiSmallRgb5a3TextureSize = 2560u;
-
-// Captured I4 16x16 load: two by two 8x8 tiles of 32 bytes.
-constexpr std::uint32_t kObservedMiiTinyI4LoadObj = 0x80397E00u;
-constexpr std::uint32_t kObservedMiiTinyI4Data = 0x109C1E80u;
-constexpr std::uint32_t kObservedMiiTinyI4TextureSize = 128u;
 
 constexpr std::uint32_t kObservedLodObj = 0x9018E120u;
 constexpr std::uint32_t kObservedLodMinFilter = 1u;
@@ -1845,94 +1807,12 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
         format == 3u && formatWord2 == 3u &&
         wrapS == 0u && wrapT == 0u && mipmap == 0u;
 
-    const bool exactMiiI4Descriptor =
-        (obj == kObservedMiiI4LoadObj || obj == kObservedSecondMiiI4LoadObj ||
-         obj == kObservedNextPassMiiI4LoadObj || obj == kObservedSecondNextPassMiiI4LoadObj) &&
-        tid == 0u &&
-        word0 == 0x00000190u &&
-        word1 == 0x00000000u &&
-        word2 == 0x0000FC1Fu &&
-        ((word3 == 0x0084E0D2u && data == kObservedMiiI4Data) ||
-         ((obj == kObservedMiiI4LoadObj || obj == kObservedSecondMiiI4LoadObj) &&
-          word3 == 0x0084E0D1u &&
-          data == kObservedRelocatedMiiI4Data)) &&
-        word4 == 0x00000000u &&
-        word5 == 0x00000000u &&
-        word6 == 0x00000000u &&
-        word7 == 0x00200102u &&
-        width == 32u && height == 64u &&
-        format == 0u && formatWord2 == 0u &&
-        wrapS == 0u && wrapT == 0u && mipmap == 0u;
-
-    const bool exactMiiRgb5a3Descriptor =
-        (obj == kObservedMiiRgb5a3LoadObj || obj == kObservedNextPassMiiRgb5a3LoadObj) &&
-        tid == 0u &&
-        word0 == 0x00000190u &&
-        word1 == 0x00000000u &&
-        word2 == 0x00507C2Bu &&
-        word3 == 0x0084E062u &&
-        word4 == 0x00000000u &&
-        word5 == 0x00000005u &&
-        word6 == 0x00000000u &&
-        word7 == 0x00580202u &&
-        data == kObservedMiiRgb5a3Data &&
-        width == 44u && height == 32u &&
-        format == 5u && formatWord2 == 5u &&
-        wrapS == 0u && wrapT == 0u && mipmap == 0u;
-
-    const bool exactMiiSmallI4Descriptor =
-        (obj == kObservedMiiSmallI4LoadObj || obj == kObservedSecondMiiSmallI4LoadObj ||
-         obj == kObservedNextPassMiiSmallI4LoadObj) &&
-        tid == 0u &&
-        word0 == 0x00000190u &&
-        word1 == 0x00000000u &&
-        word2 == 0x00007C23u &&
-        word3 == 0x0084E0BCu &&
-        word4 == 0x00000000u &&
-        word5 == 0x00000000u &&
-        word6 == 0x00000000u &&
-        word7 == 0x00140102u &&
-        data == kObservedMiiSmallI4Data &&
-        width == 36u && height == 32u &&
-        format == 0u && formatWord2 == 0u &&
-        wrapS == 0u && wrapT == 0u && mipmap == 0u;
-
-    const bool exactMiiSmallRgb5a3Descriptor =
-        (obj == kObservedMiiSmallRgb5a3LoadObj || obj == kObservedSecondMiiSmallRgb5a3LoadObj) &&
-        tid == 0u &&
-        word0 == 0x00000190u &&
-        word1 == 0x00000000u &&
-        word2 == 0x00507C25u &&
-        word3 == 0x0084E010u &&
-        word4 == 0x00000000u &&
-        word5 == 0x00000005u &&
-        word6 == 0x00000000u &&
-        word7 == 0x00500202u &&
-        data == kObservedMiiSmallRgb5a3Data &&
-        width == 38u && height == 32u &&
-        format == 5u && formatWord2 == 5u &&
-        wrapS == 0u && wrapT == 0u && mipmap == 0u;
-
-    const bool exactMiiTinyI4Descriptor =
-        obj == kObservedMiiTinyI4LoadObj &&
-        tid == 0u &&
-        word0 == 0x00000190u &&
-        word1 == 0x00000000u &&
-        word2 == 0x00003C0Fu &&
-        word3 == 0x0084E0F4u &&
-        word4 == 0x00000000u &&
-        word5 == 0x00000000u &&
-        word6 == 0x00000000u &&
-        word7 == 0x00040102u &&
-        data == kObservedMiiTinyI4Data &&
-        width == 16u && height == 16u &&
-        format == 0u && formatWord2 == 0u &&
-        wrapS == 0u && wrapT == 0u && mipmap == 0u;
-
-    // Unknown descriptors have no proven size. Every admitted descriptor
-    // checks its own complete tiled range before allocating or calling Aurora.
-    const std::uint32_t textureSize = exactOriginalDescriptor ? kObservedTextureSize : (exactIa8Descriptor ? kObservedIa8TextureSize : (exactMiiI4Descriptor ? kObservedMiiI4TextureSize : (exactMiiRgb5a3Descriptor ? kObservedMiiRgb5a3TextureSize : (exactMiiSmallI4Descriptor ? kObservedMiiSmallI4TextureSize : (exactMiiSmallRgb5a3Descriptor ? kObservedMiiSmallRgb5a3TextureSize : (exactMiiTinyI4Descriptor ? kObservedMiiTinyI4TextureSize : 0u))))));
-    if (!exactOriginalDescriptor && !exactIa8Descriptor && !exactMiiI4Descriptor && !exactMiiRgb5a3Descriptor && !exactMiiSmallI4Descriptor && !exactMiiSmallRgb5a3Descriptor && !exactMiiTinyI4Descriptor) {
+    const std::uint32_t familyBytes = obj != 0u && (obj & 3u) == 0u
+                                          ? mkw::gx::linearTextureBytes({word0, word1, word2, word3, word4, word5, word6, word7}, tid)
+                                          : 0u;
+    const std::uint32_t textureSize = exactOriginalDescriptor ? kObservedTextureSize
+                                                              : (exactIa8Descriptor ? kObservedIa8TextureSize : familyBytes);
+    if (!exactOriginalDescriptor && !exactIa8Descriptor && !familyBytes) {
         AbortLoadBoundary(
             "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR",
             cpu,

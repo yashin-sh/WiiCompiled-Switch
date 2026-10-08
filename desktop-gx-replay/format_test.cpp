@@ -38,6 +38,34 @@ int main() {
     unsigned calls = 0;
     playback.run([&](replay::Kind, auto) { ++calls; });
     check(calls == 5);
+    replay::Recorder sequence;
+    sequence.init();
+    rejects([&] { sequence.checkpoint(); });
+    sequence.begin();
+    sequence.drain(replay::Bytes{0});
+    sequence.frame();
+    const auto firstPrefix = sequence.checkpoint();
+    check(firstPrefix[6] == '3');
+    replay::Playback firstFrame(firstPrefix);
+    sequence.begin();
+    sequence.drain(replay::Bytes{0});
+    check(sequence.checkpoint() == firstPrefix);
+    sequence.frame();
+    const auto prefix = sequence.checkpoint();
+    unsigned frames = 0;
+    replay::Playback(prefix).run([&](replay::Kind kind, auto) { frames += kind == replay::Kind::End || kind == replay::Kind::Frame; });
+    check(frames == 2);
+    sequence.begin();
+    sequence.drain(replay::Bytes{0});
+    check(sequence.checkpoint() == prefix);
+    for (std::size_t size = 0; size < prefix.size(); ++size)
+        rejects([&] { replay::Playback truncated{std::span(prefix).first(size)}; });
+    for (std::size_t pos = 0; pos < prefix.size(); ++pos) {
+        auto changed = prefix;
+        changed[pos] ^= 0x80;
+        rejects([&] { replay::Playback corrupt(changed); });
+    }
+    std::puts("PASS: v2/v3 lifecycle, multi-frame boundaries and immutable completed prefix before a partial frame");
     for (std::size_t size = 0; size < good.size(); ++size) {
         rejects([&] { replay::Playback p{std::span(good).first(size)}; });
     }

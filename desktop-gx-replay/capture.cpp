@@ -269,7 +269,7 @@ void Recorder::snapshot() {
     }
 }
 void Recorder::init() {
-    require(!initialized && !ended, "repeated GXInit is outside capture v2");
+    require(!initialized && !ended, "repeated GXInit is outside the initialized capture prefix");
     append(Kind::Init, {});
     initialized = true;
     decoder = {};
@@ -281,7 +281,7 @@ void Recorder::mapping(std::uint32_t policy) {
     append(Kind::Mapping, std::move(payload));
 }
 void Recorder::copy(Kind kind, std::uint64_t destination, const CopyState& state) {
-    require(begun && initialized, "copy outside initialized frame");
+    require(frameOpen && initialized, "copy outside initialized frame");
     Bytes payload(8);
     for (auto word : state)
         integer(payload, word);
@@ -307,27 +307,48 @@ void Recorder::drain(std::span<const std::uint8_t> data) {
     append(Kind::Fifo, std::move(fifo));
 }
 void Recorder::begin() {
-    require(!begun && !ended, "capture accepts one frame");
+    require(!frameOpen && !ended, "capture frame already open or ended");
     append(Kind::Begin, {});
-    begun = true;
+    frameOpen = true;
 }
 void Recorder::end() {
-    require(begun && initialized && !events.empty() && (events.back().kind == Kind::Fifo || events.back().kind == Kind::CopyDisp || events.back().kind == Kind::CopyTex), "frame must end after rendering work");
+    require(frameOpen && initialized && !events.empty() && (events.back().kind == Kind::Fifo || events.back().kind == Kind::CopyDisp || events.back().kind == Kind::CopyTex), "frame must end after rendering work");
     append(Kind::End, {});
     ended = true;
+    frameOpen = false;
+}
+void Recorder::frame() {
+    require(frameOpen && initialized && !events.empty() &&
+                (events.back().kind == Kind::Fifo || events.back().kind == Kind::CopyDisp || events.back().kind == Kind::CopyTex),
+            "frame must complete after rendering work");
+    append(Kind::Frame, {});
+    sequence = true;
+    frameOpen = false;
+    completedEvents = events.size();
+}
+Bytes Recorder::checkpoint() const {
+    require(completedEvents != 0, "no completed frame checkpoint");
+    return encode(completedEvents, true);
 }
 Bytes Recorder::finish() const {
     require(ended, "incomplete capture cannot be saved");
+    return encode(events.size(), false);
+}
+Bytes Recorder::encode(std::size_t count, bool closeLastFrame) const {
     Bytes result(Magic.begin(), Magic.end());
+    if (sequence)
+        result[6] = '3';
     result.insert(result.end(), WiiPin, WiiPin + 40);
     result.insert(result.end(), DawnPin, DawnPin + 40);
     integer(result, width);
     integer(result, height);
     integer(result, checksum(result, Kind::Init));
-    for (const auto& event : events) {
-        integer(result, static_cast<std::uint32_t>(event.kind));
+    for (std::size_t i = 0; i < count; ++i) {
+        const auto& event = events[i];
+        const auto kind = closeLastFrame && i + 1u == count ? Kind::End : event.kind;
+        integer(result, static_cast<std::uint32_t>(kind));
         integer(result, event.payload.size());
-        integer(result, checksum(event.payload, event.kind));
+        integer(result, checksum(event.payload, kind));
         result.insert(result.end(), event.payload.begin(), event.payload.end());
     }
     return result;
@@ -335,13 +356,17 @@ Bytes Recorder::finish() const {
 
 Playback::Playback(std::span<const std::uint8_t> file) {
     require(file.size() >= 100 && file.size() <= MaxBytes, "invalid replay size");
-    require(std::equal(Magic.begin(), Magic.end(), file.begin()), "invalid replay magic/version");
+    const bool sequence = file[6] == '3';
+    auto magic = Magic;
+    if (sequence)
+        magic[6] = '3';
+    require(std::equal(magic.begin(), magic.end(), file.begin()), "invalid replay magic/version");
     require(std::memcmp(file.data() + 8, WiiPin, 40) == 0 && std::memcmp(file.data() + 48, DawnPin, 40) == 0, "replay dependency pins differ");
     require(read(file, 96, 4) == checksum(file.first(96), Kind::Init), "replay header checksum mismatch");
     width = read(file, 88, 4);
     height = read(file, 92, 4);
     require(width > 0 && width <= 1920 && height > 0 && height <= 1080, "unsupported framebuffer dimensions");
-    bool begun = false, ended = false, drewBatch = false, initialized = false;
+    bool begun = false, ended = false, drewBatch = false, initialized = false, sawFrame = false;
     std::size_t memoryBytes = 0;
     for (std::size_t pos = 100; pos < file.size();) {
         require(!ended, "unexpected trailing replay records");
@@ -375,11 +400,15 @@ Playback::Playback(std::span<const std::uint8_t> file) {
             });
             drewBatch = begun;
         } else if (kind == Kind::Begin) {
-            require(!begun && payload.empty(), "invalid frame begin");
-            begun = true;
-        } else if (kind == Kind::End) {
+            require(!begun && (!sawFrame || sequence) && payload.empty(), "invalid frame begin");
+            begun = sawFrame = true;
+            drewBatch = false;
+        } else if (kind == Kind::End || kind == Kind::Frame) {
             require(begun && drewBatch && !events.empty() && (events.back().kind == Kind::Fifo || events.back().kind == Kind::CopyDisp || events.back().kind == Kind::CopyTex) && payload.empty(), "invalid frame end");
-            ended = true;
+            require(kind != Kind::Frame || sequence, "frame boundary requires replay v3");
+            ended = kind == Kind::End;
+            begun = false;
+            drewBatch = false;
         } else if (kind == Kind::Init) {
             require(!initialized && payload.empty(), "invalid GXInit event");
             initialized = true;

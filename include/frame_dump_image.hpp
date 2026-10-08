@@ -20,4 +20,5 @@ Layout layout(std::uint32_t width, std::uint32_t height);
 Image unpack(Layout layout, std::span<const std::uint8_t> mapped, bool bgra);
 std::vector<std::uint8_t> png(const Image& image);
 void save(const char* output, const char* temporary, const Image& image);
+void saveBytes(const char* output, const char* temporary, std::span<const std::uint8_t> bytes);
 } // namespace mkw::frame_dump

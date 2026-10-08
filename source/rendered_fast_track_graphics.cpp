@@ -2,6 +2,8 @@
 
 #include "rendered_fast_track_graphics.hpp"
 #include "switch_texture_copy_lifetime.hpp"
+#include "surface_presenter.hpp"
+#include <memory>
 
 #include "abi_bridge.h"
 #include "memory.h"
@@ -25,10 +27,12 @@
 #if defined(MKW_RENDERED_FIFO_CAPTURE) && MKW_RENDERED_FIFO_CAPTURE
 extern "C" void mkw_switch_fifo_capture_start() noexcept;
 extern "C" void mkw_switch_fifo_capture_present(bool) noexcept;
+extern "C" void mkw_switch_fifo_capture_begin_frame() noexcept;
 extern "C" void mkw_switch_fifo_capture_shutdown() noexcept;
 #endif
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <cstdarg>
@@ -65,6 +69,7 @@ std::mutex g_rendererMutex;
 FILE* g_report = nullptr;
 bool g_mountedSdmcHere = false;
 bool g_initialized = false;
+std::unique_ptr<mkw::presentation::Presenter> g_presenter;
 uint64_t g_presentedFrames = 0;
 std::atomic_bool g_loggedFirstFifoWrite{false};
 std::atomic_bool g_loggedFirstFifoWork{false};
@@ -296,6 +301,20 @@ bool create_dawn_objects() {
         .maxTextureDimension2D = limits.maxTextureDimension2D,
     };
 
+    const wgpu::TextureDescriptor colorDescriptor{
+        .label = "RMCP01 persistent EFB color",
+        .usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopySrc,
+        .size = {1280, 720, 1},
+        .format = surfaceConfig.format,
+    };
+    auto& efb = aurora::webgpu::g_frameBuffer;
+    efb = {};
+    efb.texture = g_device.CreateTexture(&colorDescriptor);
+    efb.view = efb.texture.CreateView();
+    efb.size = colorDescriptor.size;
+    efb.format = colorDescriptor.format;
+    g_presenter = std::make_unique<mkw::presentation::Presenter>(g_device, surfaceConfig.format);
+
     const wgpu::TextureDescriptor depthDescriptor{
         .label = "RMCP01 rendered fast-track depth",
         .usage =
@@ -335,21 +354,15 @@ bool begin_frame_locked() {
 
     g_currentSurfaceTexture = surfaceTexture.texture;
 
-    auto& frameBuffer = aurora::webgpu::g_frameBuffer;
-    frameBuffer = {};
-    frameBuffer.texture = g_currentSurfaceTexture;
-    frameBuffer.view = frameBuffer.texture.CreateView();
-    frameBuffer.size = {1280, 720, 1};
-    frameBuffer.format =
-        aurora::webgpu::g_graphicsConfig.surfaceConfiguration.format;
-
     if (!aurora::gfx::begin_frame()) {
         report("FRAME BEGIN FAIL aurora::gfx::begin_frame\n");
-        frameBuffer = {};
         g_currentSurfaceTexture = {};
         return false;
     }
 
+#if defined(MKW_RENDERED_FIFO_CAPTURE) && MKW_RENDERED_FIFO_CAPTURE
+    mkw_switch_fifo_capture_begin_frame();
+#endif
     g_auroraFrameHadWork.store(false, std::memory_order_release);
     g_auroraFrameActive.store(true, std::memory_order_release);
     return true;
@@ -369,33 +382,41 @@ bool present_frame_locked(bool clear) {
     }
 
     GXCopyDisp(nullptr, clear ? GX_TRUE : GX_FALSE);
+    const auto displayCopy = aurora::webgpu::current_present_source();
 
     wgpu::CommandEncoder encoder = g_device.CreateCommandEncoder();
     aurora::gfx::end_frame(encoder);
     aurora::gfx::render(encoder);
+    g_presenter->encode(encoder, displayCopy.texture, g_currentSurfaceTexture);
 
     wgpu::CommandBuffer commands = encoder.Finish();
     g_queue.Submit(1, &commands);
     aurora::gfx::after_submit();
 
 #if defined(MKW_RENDERED_FRAME_DUMP) && MKW_RENDERED_FRAME_DUMP
-    std::unique_ptr<mkw::frame_dump::Readback> readback;
+    std::array<std::unique_ptr<mkw::frame_dump::Readback>, 3> readbacks;
     if (mkw::frame_dump::enabled()) {
         try {
-            readback = std::make_unique<mkw::frame_dump::Readback>();
+
             // The final surface includes Aurora's presentation scaling. Copy
             // after render, before Present may release the swapchain image.
             // A separate submission prevents a failed diagnostic copy from
             // invalidating the already submitted guest render commands.
             auto copyEncoder = g_device.CreateCommandEncoder();
-            readback->encode(g_device, copyEncoder, g_currentSurfaceTexture);
+            const std::array textures{g_currentSurfaceTexture, displayCopy.texture, aurora::webgpu::g_frameBuffer.texture};
+            for (std::size_t i = 0; i < textures.size(); ++i) {
+                readbacks[i] = std::make_unique<mkw::frame_dump::Readback>();
+                readbacks[i]->encode(g_device, copyEncoder, textures[i]);
+            }
             auto copyCommands = copyEncoder.Finish();
             g_queue.Submit(1, &copyCommands);
         } catch (const std::exception& error) {
-            readback.reset();
+            for (auto it = readbacks.rbegin(); it != readbacks.rend(); ++it)
+                it->reset();
             mkw::frame_dump::failure(error.what());
         } catch (...) {
-            readback.reset();
+            for (auto it = readbacks.rbegin(); it != readbacks.rend(); ++it)
+                it->reset();
             mkw::frame_dump::failure("readback allocation failure");
         }
     }
@@ -403,15 +424,19 @@ bool present_frame_locked(bool clear) {
 
     const bool presented = g_surface.Present();
 #if defined(MKW_RENDERED_FRAME_DUMP) && MKW_RENDERED_FRAME_DUMP
-    if (readback && presented) {
+    if (readbacks[0] && presented) {
         try {
-            mkw::frame_dump::completed(readback->finish(g_instance), g_presentedFrames + 1u);
+            // Error scopes are nested on the device; finish in reverse encode order.
+            auto efb = readbacks[2]->finish(g_instance);
+            auto display = readbacks[1]->finish(g_instance);
+            auto surface = readbacks[0]->finish(g_instance);
+            mkw::frame_dump::completed(std::move(surface), std::move(display), std::move(efb), g_presentedFrames + 1u);
         } catch (const std::exception& error) {
             mkw::frame_dump::failure(error.what());
         } catch (...) {
             mkw::frame_dump::failure("readback completion failure");
         }
-    } else if (readback) {
+    } else if (readbacks[0]) {
         mkw::frame_dump::failure("surface present failed");
     }
 #endif
@@ -424,7 +449,6 @@ bool present_frame_locked(bool clear) {
     // Aurora has completed this frame before Present returns. Release the
     // consumed surface state even on failure so a later call begins a frame
     // instead of reusing Aurora's already-unmapped staging buffers.
-    aurora::webgpu::g_frameBuffer = {};
     g_currentSurfaceTexture = {};
     g_auroraFrameActive.store(false, std::memory_order_release);
 
@@ -563,6 +587,7 @@ extern "C" void mkw_switch_renderer_shutdown() noexcept {
             aurora::gfx::abort_frame();
         }
 
+        g_presenter.reset();
         aurora::webgpu::g_frameBuffer = {};
         g_currentSurfaceTexture = {};
         aurora::gfx::shutdown();

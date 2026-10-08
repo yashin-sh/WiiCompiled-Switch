@@ -19,7 +19,8 @@ enum class Kind : std::uint32_t { Memory = 1,
                                   Init = 5,
                                   CopyDisp = 6,
                                   CopyTex = 7,
-                                  Mapping = 8 };
+                                  Mapping = 8,
+                                  Frame = 9 };
 struct Event {
     Kind kind;
     Bytes payload;
@@ -57,8 +58,11 @@ class Recorder {
     std::uint64_t resource(std::uint64_t address, std::size_t needed);
     void snapshot();
     std::size_t total = 100;
-    bool begun = false;
     bool ended = false;
+    bool frameOpen = false;
+    std::size_t completedEvents = 0;
+    bool sequence = false;
+    Bytes encode(std::size_t count, bool closeLastFrame) const;
     void append(Kind kind, Bytes payload);
 
   public:
@@ -72,6 +76,9 @@ class Recorder {
     void drain(std::span<const std::uint8_t> data);
     void begin();
     void end();
+    // A completed GPU frame, retaining GX/decoder/resource state for the next.
+    void frame();
+    Bytes checkpoint() const;
     Bytes finish() const;
 };
 

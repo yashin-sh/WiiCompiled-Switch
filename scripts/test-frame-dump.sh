@@ -12,6 +12,17 @@ trap 'rm -rf "$TEST_DIR"' EXIT
     "$ROOT_DIR/source/rendered_frame_dump.cpp" "$ROOT_DIR/tests/frame_dump_image_contract.cpp" \
     -Wl,--wrap=rename -o "$TEST_DIR/contract"
 (cd "$TEST_DIR" && ./contract)
+"${MKW_HOST_CXX:-clang++}" -std=c++20 -O2 -Wall -Wextra -Werror \
+    -fsanitize=address,undefined -fno-sanitize-recover=all \
+    -DMKW_RENDERED_FIFO_CAPTURE=1 -I"$ROOT_DIR/desktop-gx-replay" -I"$ROOT_DIR/include" \
+    -isystem "$ROOT_DIR/third_party/WiiCompiled/runtime/include" \
+    "$ROOT_DIR/tests/fifo_capture_contract.cpp" "$ROOT_DIR/source/rendered_fifo_capture.cpp" \
+    "$ROOT_DIR/desktop-gx-replay/capture.cpp" "$ROOT_DIR/source/frame_dump_image.cpp" \
+    -o "$TEST_DIR/fifo-contract"
+for scenario in partial invalid failed-present; do
+    mkdir "$TEST_DIR/$scenario"
+    (cd "$TEST_DIR/$scenario" && ../fifo-contract "$scenario")
+done
 python3 - "$TEST_DIR" <<'PY'
 import struct
 import sys

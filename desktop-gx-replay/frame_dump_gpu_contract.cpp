@@ -1,4 +1,5 @@
 #include "frame_dump_readback.hpp"
+#include "surface_presenter.hpp"
 
 #include <atomic>
 #include <cassert>
@@ -86,6 +87,61 @@ int main(int argc, char** argv) {
             const auto cleared = black.finish(instance);
             require(cleared.uniform && !cleared.nonBlackPixels && !cleared.nonOpaquePixels, "GPU render-before-copy black/alpha oracle failed");
         }
+        // Regression: EFB clearing must not replace the selected XFB image.
+        // Fabricated quadrants include zero alpha, scaling and both channel orders.
+        for (auto format : {wgpu::TextureFormat::RGBA8Unorm, wgpu::TextureFormat::BGRA8Unorm,
+                            wgpu::TextureFormat::RGBA8UnormSrgb, wgpu::TextureFormat::BGRA8UnormSrgb}) {
+            const wgpu::TextureDescriptor srcDesc{
+                .usage = wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst,
+                .size = {16, 8, 1},
+                .format = format};
+            const wgpu::TextureDescriptor dstDesc{
+                .usage = wgpu::TextureUsage::RenderAttachment | wgpu::TextureUsage::CopySrc,
+                .size = {32, 16, 1},
+                .format = format};
+            const auto source = device.CreateTexture(&srcDesc);
+            const auto destination = device.CreateTexture(&dstDesc);
+            std::array<std::uint8_t, 16 * 8 * 4> colors{};
+            for (unsigned y = 0; y < 8; ++y)
+                for (unsigned x = 0; x < 16; ++x) {
+                    const auto at = (y * 16 + x) * 4;
+                    colors[at] = x < 8 && y < 4 ? 255 : 0;
+                    colors[at + 1] = x >= 8 && y < 4 ? 255 : 0;
+                    colors[at + 2] = y >= 4 ? 255 : 0;
+                    if (format == wgpu::TextureFormat::BGRA8Unorm || format == wgpu::TextureFormat::BGRA8UnormSrgb)
+                        std::swap(colors[at], colors[at + 2]);
+                }
+            const wgpu::TexelCopyTextureInfo upload{.texture = source};
+            const wgpu::TexelCopyBufferLayout rows{.bytesPerRow = 16 * 4, .rowsPerImage = 8};
+            const wgpu::Extent3D extent{16, 8, 1};
+            queue.WriteTexture(&upload, colors.data(), colors.size(), &rows, &extent);
+            mkw::presentation::Presenter presenter(device, format);
+            auto encoder = device.CreateCommandEncoder();
+            presenter.encode(encoder, source, destination);
+            std::array<mkw::frame_dump::Readback, 3> stages;
+            for (auto& stage : stages)
+                stage.encode(device, encoder, destination);
+            const auto commands = encoder.Finish();
+            queue.Submit(1, &commands);
+            // Match the Switch's three nested diagnostic error scopes.
+            const auto afterCopy = stages[2].finish(instance);
+            const auto display = stages[1].finish(instance);
+            const auto image = stages[0].finish(instance);
+            require(image.rgba == display.rgba && image.rgba == afterCopy.rgba, "nested readbacks lost pixels or error-scope order");
+            require(image.nonBlackPixels > 0 && image.nonOpaquePixels == 0, "XFB present lost RGB or opaque display alpha");
+            for (const auto point : {std::array<unsigned, 5>{4, 4, 255, 0, 0}, {28, 4, 0, 255, 0}, {4, 12, 0, 0, 255}, {28, 12, 0, 0, 255}}) {
+                const auto at = (point[1] * 32 + point[0]) * 4;
+                require(image.rgba[at] == point[2] && image.rgba[at + 1] == point[3] && image.rgba[at + 2] == point[4], "XFB orientation/scaling/channel oracle failed");
+            }
+            bool refused = false;
+            try {
+                presenter.encode(device.CreateCommandEncoder(), destination, destination);
+            } catch (const std::runtime_error&) {
+                refused = true;
+            }
+            require(refused, "aliased presentation was accepted");
+        }
+        std::puts("PASS: selected XFB RGB survives scaling, channel order, zero source alpha and opaque presentation");
         const wgpu::TextureDescriptor textureDescriptor{.usage = wgpu::TextureUsage::CopySrc, .size = {4, 4, 1}, .format = wgpu::TextureFormat::RGBA8Unorm};
         auto destroyed = device.CreateTexture(&textureDescriptor);
         destroyed.Destroy();

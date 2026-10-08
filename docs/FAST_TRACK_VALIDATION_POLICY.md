@@ -10,6 +10,13 @@ to reduce repeated builds and console round trips, as described in
 `RMCP01_DISCOVERY_SCAN.md`. A batch changes implementation scope, not the proof
 required to call each boundary hardware-crossed.
 
+The user authorized replacing texture-address lists with validated
+I4/RGB5A3 descriptor families and complete memory ranges, then comparing image
+stages and replaying later frames. Within the audited sampler/format/size family,
+new object or source addresses no longer require a separate address admission.
+Other formats, sampler states and unvalidated semantics still stop. Synthetic
+family coverage is distinct from actual returns observed on the console.
+
 The audit also identified two places where the proof standard must be stricter:
 public CI does not build the private RMCP01 rendered target, and a dispatch
 counter alone does not prove that a native bridge executed successfully and

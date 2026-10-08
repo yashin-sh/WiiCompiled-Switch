@@ -69,6 +69,7 @@ constexpr std::uint32_t kObservedMiiI4TextureSize = 1024u;
 // Third captured Mii load: RGB5A3 uses 4x4 tiles of 32 bytes.
 // The complete 44x32 image occupies 11x8 tiles (2,816 bytes).
 constexpr std::uint32_t kObservedMiiRgb5a3LoadObj = 0x80397D40u;
+constexpr std::uint32_t kObservedNextPassMiiRgb5a3LoadObj = 0x80397F40u;
 constexpr std::uint32_t kObservedMiiRgb5a3Data = 0x109C0C40u;
 constexpr std::uint32_t kObservedMiiRgb5a3TextureSize = 2816u;
 
@@ -1863,7 +1864,7 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
         wrapS == 0u && wrapT == 0u && mipmap == 0u;
 
     const bool exactMiiRgb5a3Descriptor =
-        obj == kObservedMiiRgb5a3LoadObj &&
+        (obj == kObservedMiiRgb5a3LoadObj || obj == kObservedNextPassMiiRgb5a3LoadObj) &&
         tid == 0u &&
         word0 == 0x00000190u &&
         word1 == 0x00000000u &&

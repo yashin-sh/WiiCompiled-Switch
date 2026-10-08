@@ -6,6 +6,10 @@ The latest run accepts the second next-pass Mii I4 load/helper return and
 exposes a new RGB5A3 44×32 object. All HLE validation gates pass on the executed
 candidate; recognizable game pixels remain unproven. See the
 [current hardware result](docs/HARDWARE_SECOND_NEXT_PASS_I4_RETURN_2026-10-08.md).
+The [bounded RGB5A3 correction](docs/GX_MII_RGB5A3_NEXT_PASS_LOAD_2026-10-08.md)
+passes 22 local suites, five mutation checks, all six workflows / seven jobs
+and the private rendered build. Its SD copy is verified; fresh native-return
+validation awaits launch.
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.

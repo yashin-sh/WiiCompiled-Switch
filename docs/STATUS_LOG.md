@@ -324,3 +324,10 @@ its native/helper return through the checked caller sequence, then stops at
 an unadmitted RGB5A3 44×32 object. Runtime invariants and 102 successful
 presents remain coherent; the initial capture/PNG is unchanged. See the
 [hardware result](HARDWARE_SECOND_NEXT_PASS_I4_RETURN_2026-10-08.md).
+
+## 2026-10-08 — Next-pass RGB5A3 candidate validated
+
+The [observed 44×32 RGB5A3 correction](GX_MII_RGB5A3_NEXT_PASS_LOAD_2026-10-08.md)
+passes all 22 local suites, five focused mutations, six GitHub workflows / seven
+jobs and the private rendered/capture build. The complete SD copy is verified.
+It has not been launched; native return and visual progress remain pending.

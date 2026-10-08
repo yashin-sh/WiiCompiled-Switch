@@ -27,7 +27,14 @@ only fabricated data.
 
 Targeted ASan/fatal UBSan/LSan contracts pass: 44 loads per mode,
 4,078 headless and 4,108 rendered diagnosed refusals. Existing depth-LOD
-contracts also pass. Public CI, the private build and a fresh hardware run
-are required before accepting the new
+contracts also pass. All 22 local suites and five focused mutation checks pass.
+All six GitHub workflows / seven jobs pass on code
+`c4066f9baa9bc4156b899fac35e67105bb1695dc`, including desktop replay pixel oracles.
+The private offline rendered/capture build, 65-bridge SDK syntax gate,
+scoped provider audit and final ELF retention pass. All nine original private
+upstream patches preserve bytes and nanosecond mtimes.
+
+The candidate is copied to the SD with complete readback verification but has
+not been launched. A fresh Switch run is required before accepting the new
 native return. Recognizable game pixels and later-frame replay remain unproven.
 Raw diagnostics, captures, images, private products and their metadata stay local.

@@ -187,5 +187,12 @@ if(MKW_RENDERED_FIFO_CAPTURE)
     target_compile_definitions(mkw_switch_rendered_fast_track PRIVATE MKW_RENDERED_FIFO_CAPTURE=1)
 endif()
 if(MKW_RENDERED_FRAME_DUMP)
-    target_compile_definitions(mkw_switch_rendered_fast_track PRIVATE MKW_RENDERED_FRAME_DUMP=1)
+    # This diagnostic does not change generated game code. Keep its switch
+    # local to the four integration sources instead of rebuilding all shards.
+    set_property(SOURCE
+        "${M3_REPO_ROOT}/source/frame_dump_readback.cpp"
+        "${M3_REPO_ROOT}/source/rendered_frame_dump.cpp"
+        "${M3_REPO_ROOT}/source/rendered_fast_track_graphics.cpp"
+        "${M3_REPO_ROOT}/source/fast_track_crash_diagnostics.cpp"
+        APPEND PROPERTY COMPILE_DEFINITIONS MKW_RENDERED_FRAME_DUMP=1)
 endif()

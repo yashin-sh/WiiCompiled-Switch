@@ -331,3 +331,12 @@ The [observed 44×32 RGB5A3 correction](GX_MII_RGB5A3_NEXT_PASS_LOAD_2026-10-08.
 passes all 22 local suites, five focused mutations, six GitHub workflows / seven
 jobs and the private rendered/capture build. The complete SD copy is verified.
 It has not been launched; native return and visual progress remain pending.
+
+## 2026-10-08 — Next-pass RGB5A3 return
+
+The corrected RGB5A3 native load, draw helper and intervening state calls return
+through the checked caller sequence. All 38 reports are verified, thirteen changed
+and twenty-five retained. The new guarded stop is I4 36×32 object `0x80397EC0`,
+slot 0, source `0x109C1780`. Runtime invariants and 102 successful presents remain
+coherent; the initial black capture/PNG is unchanged. See the
+[hardware result](HARDWARE_NEXT_PASS_RGB5A3_RETURN_2026-10-08.md).

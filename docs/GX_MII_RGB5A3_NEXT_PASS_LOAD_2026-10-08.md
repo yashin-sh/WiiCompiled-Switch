@@ -34,7 +34,8 @@ The private offline rendered/capture build, 65-bridge SDK syntax gate,
 scoped provider audit and final ELF retention pass. All nine original private
 upstream patches preserve bytes and nanosecond mtimes.
 
-The candidate is copied to the SD with complete readback verification but has
-not been launched. A fresh Switch run is required before accepting the new
-native return. Recognizable game pixels and later-frame replay remain unproven.
+A fresh Switch run accepts the observed native/helper return through the
+checked unconditional caller sequence and distinct later I4 36×32 stop.
+See the [hardware result](HARDWARE_NEXT_PASS_RGB5A3_RETURN_2026-10-08.md).
+Recognizable game pixels and later-frame replay remain unproven.
 Raw diagnostics, captures, images, private products and their metadata stay local.

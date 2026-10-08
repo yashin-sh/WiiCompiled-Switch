@@ -49,9 +49,12 @@ A black result is evidence about that completed surface. A nonblack result
 shows actual RGB content but does not establish that the game image is correct.
 Neither captures the later partially recorded Mii scene or proves physical
 scanout, input, sound or playability. Readbacks and SD writes add diagnostic cost;
-these runs are not performance measurements. The [first console trial](HARDWARE_SURFACE_FIRST_IMAGE_2026-10-08.md)
-verified an opaque black first surface, but failed when replacing the latest PNG.
-The replacement correction still needs a console retest.
+these runs are not performance measurements. The [corrected console trial](HARDWARE_SURFACE_CHECKPOINT_2026-10-08.md)
+validates first/latest image saving and a checkpoint at frame 102. Both images
+have black RGB; the first has alpha 255 and the last alpha 0. The retained alpha
+is reported separately from RGB and does not establish the cause of black output.
+The [preceding trial](HARDWARE_SURFACE_FIRST_IMAGE_2026-10-08.md) failed when
+replacing the latest PNG; that SD replacement failure is resolved.
 Game-derived images and raw diagnostics remain local and excluded from Git/CI.
 
 ## Public reproduction

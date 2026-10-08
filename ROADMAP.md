@@ -2,10 +2,11 @@
 
 ## Current checkpoint — 2026-10-08
 
-The [first actual GPU surface capture](docs/HARDWARE_SURFACE_FIRST_IMAGE_2026-10-08.md)
-is independently decoded as opaque black. Updating the latest image failed on SD;
-the replacement correction needs a console retest. The same run advances past the
-next-pass I4 36×32 native load/helper and stops at the next guarded identity.
+The [corrected GPU surface capture](docs/HARDWARE_SURFACE_CHECKPOINT_2026-10-08.md)
+saves the first and last completed frames on Switch. Both independently decoded
+1280×720 images have black RGB; the first is opaque and the last has zero alpha.
+The latest-image replacement and diagnosed-stop checkpoint are hardware-validated.
+Execution stops at the next guarded I4 36×32 identity after the previous load/helper.
 Recognizable game rendering remains unproven. The initial FIFO capture remains
 identical to the preceding black desktop replay.
 

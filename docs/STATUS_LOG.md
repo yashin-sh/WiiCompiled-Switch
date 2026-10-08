@@ -315,3 +315,12 @@ PNGs: one untextured quad and uniformly black output. Later textured frames and
 recognizable game pixels remain unproven. Fresh runtime reports record 102
 successful presents before the guarded Mii I4 texture-load frontier.
 See the [scoped hardware result](HARDWARE_FIRST_FRAME_REPLAY_2026-10-08.md).
+
+## 2026-10-08 — Second next-pass I4 return
+
+The bounded second next-pass Mii I4 correction passes local contracts,
+required HLE CI and the private rendered build. A fresh Switch run accepts
+its native/helper return through the checked caller sequence, then stops at
+an unadmitted RGB5A3 44×32 object. Runtime invariants and 102 successful
+presents remain coherent; the initial capture/PNG is unchanged. See the
+[hardware result](HARDWARE_SECOND_NEXT_PASS_I4_RETURN_2026-10-08.md).

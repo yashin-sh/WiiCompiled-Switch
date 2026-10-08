@@ -7,7 +7,7 @@ Experimental Nintendo Switch homebrew port of [WiiCompiled](https://github.com/p
 Real translated RMCP01 execution, boot-resource loading, GX FIFO work and repeated Aurora → Dawn/WebGPU → Vulkan/NVK presents are hardware-proven.
 A recognizable Mario Kart Wii image and full playability remain unproven; recent runs are black and stop at guarded HLE boundaries.
 The first real Switch frame is captured and replayed on desktop: one untextured quad, with a black PNG.
-The latest run records 102 successful presents, then stops at a guarded Mii I4 texture load; later textured-frame replay remains pending.
+The latest run records 102 successful presents and crosses the second next-pass Mii I4 load, then stops at a guarded RGB5A3 44×32 object; later textured-frame replay remains pending.
 See [the roadmap](ROADMAP.md) for the current frontier and [the status log](docs/STATUS_LOG.md) for dated evidence.
 
 ## Quick build

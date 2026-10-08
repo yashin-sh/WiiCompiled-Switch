@@ -43,9 +43,13 @@ All payload fixtures use fabricated patterns, without game data.
 
 The targeted ASan/fatal UBSan/LSan contract passes in both modes: 42 loads,
 3,804 headless refusals and 3,832 rendered refusals. The existing depth-LOD
-contracts also pass. Public CI and the private rendered build must pass on this
-candidate before deployment. The new second-object return and recognizable
-game pixels remain hardware-pending. First-frame replay still covers only the
-initial untextured quad; later-frame checkpoint support is unchanged.
+contracts also pass. All 22 local suites, five focused mutations, the private
+rendered build and all six public workflows / seven jobs pass on code
+`bc909cec6df5fe5514285993637698e998051bab`. The
+[fresh hardware result](HARDWARE_SECOND_NEXT_PASS_I4_RETURN_2026-10-08.md)
+accepts the observed second-object/helper return by explicit caller inference
+and exposes a new RGB5A3 44×32 object. Recognizable game pixels remain unproven.
+First-frame replay still covers only the initial untextured quad; later-frame
+checkpoint support is unchanged.
 
 Raw reports, captures, images, private products and product metadata stay local.

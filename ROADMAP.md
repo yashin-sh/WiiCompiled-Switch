@@ -1,6 +1,11 @@
 # Roadmap
 
-## Current checkpoint — 2026-10-06
+## Current checkpoint — 2026-10-08
+
+The latest run accepts the second next-pass Mii I4 load/helper return and
+exposes a new RGB5A3 44×32 object. All HLE validation gates pass on the executed
+candidate; recognizable game pixels remain unproven. See the
+[current hardware result](docs/HARDWARE_SECOND_NEXT_PASS_I4_RETURN_2026-10-08.md).
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.

@@ -35,6 +35,7 @@ enum class Texture { Rgb,
                      SecondMiiSmallRgb5a3,
                      MiiTinyI4,
                      NextPassMiiI4,
+                     SecondNextPassMiiI4,
                      RelocatedMiiI4,
                      SecondRelocatedMiiI4 };
 struct Fixture {
@@ -53,6 +54,8 @@ constexpr Fixture GetFixture(Texture texture) {
         return {0x80397dc0u, 0x109c1a40u, 32u, 64u, 0u, 4u * 8u * 32u, true};
     case Texture::NextPassMiiI4:
         return {0x80397f80u, 0x109c1a40u, 32u, 64u, 0u, 4u * 8u * 32u, true};
+    case Texture::SecondNextPassMiiI4:
+        return {0x80397fc0u, 0x109c1a40u, 32u, 64u, 0u, 4u * 8u * 32u, true};
     case Texture::RelocatedMiiI4:
         return {0x80397d80u, 0x109c1a20u, 32u, 64u, 0u, 4u * 8u * 32u, true};
     case Texture::SecondRelocatedMiiI4:
@@ -86,7 +89,7 @@ std::size_t resolvedLength = 0;
 bool nullHostPointer = false;
 bool throwOnInit = false;
 #if MKW_LOCAL_RENDERED_FAST_TRACK
-std::array<GXTexObj*, 11> previousHosts{};
+std::array<GXTexObj*, 12> previousHosts{};
 #endif
 GXTexObj* currentHost = nullptr;
 const void* currentData = nullptr;
@@ -142,7 +145,8 @@ void InitMemory(std::uint32_t ia8Bytes = 32u, std::uint32_t rgbBytes = rgbSize,
                 std::uint32_t secondSmallRgb5a3DescriptorBytes = 64u,
                 std::uint32_t tinyI4Bytes = 128u, std::uint32_t tinyI4DescriptorBytes = 64u,
                 std::uint32_t nextPassI4DescriptorBytes = 64u,
-                bool relocatedI4 = false) {
+                bool relocatedI4 = false,
+                std::uint32_t secondNextPassI4DescriptorBytes = 64u) {
     Memory::Config config;
     config.regions.push_back({"ia8-object", ia8Obj, descriptorBytes});
     config.regions.push_back({"rgb-object", rgbObj, 64u});
@@ -156,6 +160,7 @@ void InitMemory(std::uint32_t ia8Bytes = 32u, std::uint32_t rgbBytes = rgbSize,
     const auto smallRgb5a3 = GetFixture(Texture::MiiSmallRgb5a3);
     const auto secondSmallRgb5a3 = GetFixture(Texture::SecondMiiSmallRgb5a3);
     const auto nextPassI4 = GetFixture(Texture::NextPassMiiI4);
+    const auto secondNextPassI4 = GetFixture(Texture::SecondNextPassMiiI4);
     const auto tinyI4 = GetFixture(Texture::MiiTinyI4);
     if (i4DescriptorBytes)
         config.regions.push_back({"i4-object", i4.object, i4DescriptorBytes});
@@ -179,6 +184,8 @@ void InitMemory(std::uint32_t ia8Bytes = 32u, std::uint32_t rgbBytes = rgbSize,
         config.regions.push_back({"small-rgb5a3-physical-mem2-data", smallRgb5a3.data, smallRgb5a3Bytes});
     if (nextPassI4DescriptorBytes)
         config.regions.push_back({"next-pass-i4-object", nextPassI4.object, nextPassI4DescriptorBytes});
+    if (secondNextPassI4DescriptorBytes)
+        config.regions.push_back({"second-next-pass-i4-object", secondNextPassI4.object, secondNextPassI4DescriptorBytes});
     if (tinyI4DescriptorBytes)
         config.regions.push_back({"tiny-i4-object", tinyI4.object, tinyI4DescriptorBytes});
     if (tinyI4Bytes)
@@ -214,6 +221,8 @@ void InitMemory(std::uint32_t ia8Bytes = 32u, std::uint32_t rgbBytes = rgbSize,
         WriteDescriptor(Texture::SecondMiiSmallRgb5a3);
     if (nextPassI4DescriptorBytes >= 32u)
         WriteDescriptor(Texture::NextPassMiiI4);
+    if (secondNextPassI4DescriptorBytes >= 32u)
+        WriteDescriptor(Texture::SecondNextPassMiiI4);
     if (tinyI4DescriptorBytes >= 32u)
         WriteDescriptor(Texture::MiiTinyI4);
 }
@@ -435,23 +444,23 @@ int main() {
     assert(stage == nullptr && nativeCalls == 0u);
     ExpectAbort(MakeCpu(ia8Obj), "GX_LOAD_TEX_OBJ_GUEST_UNMAPPED", 0u);
     InitMemory();
-    for (auto texture : {Texture::Rgb, Texture::Ia8, Texture::MiiI4, Texture::SecondMiiI4, Texture::MiiRgb5a3, Texture::MiiSmallI4, Texture::SecondMiiSmallI4, Texture::MiiSmallRgb5a3, Texture::SecondMiiSmallRgb5a3, Texture::MiiTinyI4, Texture::NextPassMiiI4,
-                         Texture::Rgb, Texture::Ia8, Texture::MiiI4, Texture::SecondMiiI4, Texture::MiiRgb5a3, Texture::MiiSmallI4, Texture::SecondMiiSmallI4, Texture::MiiSmallRgb5a3, Texture::SecondMiiSmallRgb5a3, Texture::MiiTinyI4, Texture::NextPassMiiI4})
+    for (auto texture : {Texture::Rgb, Texture::Ia8, Texture::MiiI4, Texture::SecondMiiI4, Texture::MiiRgb5a3, Texture::MiiSmallI4, Texture::SecondMiiSmallI4, Texture::MiiSmallRgb5a3, Texture::SecondMiiSmallRgb5a3, Texture::MiiTinyI4, Texture::NextPassMiiI4, Texture::SecondNextPassMiiI4,
+                         Texture::Rgb, Texture::Ia8, Texture::MiiI4, Texture::SecondMiiI4, Texture::MiiRgb5a3, Texture::MiiSmallI4, Texture::SecondMiiSmallI4, Texture::MiiSmallRgb5a3, Texture::SecondMiiSmallRgb5a3, Texture::MiiTinyI4, Texture::NextPassMiiI4, Texture::SecondNextPassMiiI4})
         CheckLoad(texture);
     for (std::uint32_t tid = 0u; tid < 8u; ++tid)
         CheckLoad(Texture::Ia8, tid);
     // Each descriptor word/object variation and unapproved map must still stop.
     InitMemory();
-    for (auto texture : {Texture::Rgb, Texture::Ia8, Texture::MiiI4, Texture::SecondMiiI4, Texture::MiiRgb5a3, Texture::MiiSmallI4, Texture::SecondMiiSmallI4, Texture::MiiSmallRgb5a3, Texture::SecondMiiSmallRgb5a3, Texture::MiiTinyI4, Texture::NextPassMiiI4}) {
+    for (auto texture : {Texture::Rgb, Texture::Ia8, Texture::MiiI4, Texture::SecondMiiI4, Texture::MiiRgb5a3, Texture::MiiSmallI4, Texture::SecondMiiSmallI4, Texture::MiiSmallRgb5a3, Texture::SecondMiiSmallRgb5a3, Texture::MiiTinyI4, Texture::NextPassMiiI4, Texture::SecondNextPassMiiI4}) {
         CheckDescriptorRefusals(texture);
     }
     for (auto bytes : {0u, 31u}) {
         InitMemory(bytes);
         ExpectAbort(MakeCpu(ia8Obj), "GX_LOAD_TEX_OBJ_DATA_UNMAPPED", 32u);
     }
-    for (auto bytes : {0u, 512u, 1023u}) {
+    for (auto bytes : {0u, 512u, 992u, 1023u}) {
         InitMemory(32u, rgbSize, 64u, bytes);
-        for (auto texture : {Texture::MiiI4, Texture::SecondMiiI4, Texture::NextPassMiiI4})
+        for (auto texture : {Texture::MiiI4, Texture::SecondMiiI4, Texture::NextPassMiiI4, Texture::SecondNextPassMiiI4})
             ExpectAbort(MakeCpu(GetFixture(texture).object), "GX_LOAD_TEX_OBJ_DATA_UNMAPPED", 1024u);
     }
     for (auto bytes : {0u, 31u}) {
@@ -508,13 +517,19 @@ int main() {
         InitMemory(32u, rgbSize, 64u, 1024u, 64u, 64u, 2816u, 64u, 640u, 64u, 64u, 2560u, 64u, 64u, 128u, 64u, bytes);
         ExpectAbort(MakeCpu(GetFixture(Texture::NextPassMiiI4).object), "GX_LOAD_TEX_OBJ_GUEST_UNMAPPED", 0u);
     }
+    for (auto bytes : {0u, 31u}) {
+        InitMemory(32u, rgbSize, 64u, 1024u, 64u, 64u, 2816u, 64u, 640u,
+                   64u, 64u, 2560u, 64u, 64u, 128u, 64u, 64u, false, bytes);
+        ExpectAbort(MakeCpu(GetFixture(Texture::SecondNextPassMiiI4).object),
+                    "GX_LOAD_TEX_OBJ_GUEST_UNMAPPED", 0u);
+    }
     InitMemory(32u, rgbSize - 1u);
     ExpectAbort(MakeCpu(rgbObj), "GX_LOAD_TEX_OBJ_DATA_UNMAPPED", rgbSize);
     InitMemory(32u, rgbSize, 31u);
     ExpectAbort(MakeCpu(ia8Obj), "GX_LOAD_TEX_OBJ_GUEST_UNMAPPED", 0u);
     InitMemory();
 #if MKW_LOCAL_RENDERED_FAST_TRACK
-    for (auto texture : {Texture::Rgb, Texture::Ia8, Texture::MiiI4, Texture::SecondMiiI4, Texture::MiiRgb5a3, Texture::MiiSmallI4, Texture::SecondMiiSmallI4, Texture::MiiSmallRgb5a3, Texture::SecondMiiSmallRgb5a3, Texture::MiiTinyI4, Texture::NextPassMiiI4}) {
+    for (auto texture : {Texture::Rgb, Texture::Ia8, Texture::MiiI4, Texture::SecondMiiI4, Texture::MiiRgb5a3, Texture::MiiSmallI4, Texture::SecondMiiSmallI4, Texture::MiiSmallRgb5a3, Texture::SecondMiiSmallRgb5a3, Texture::MiiTinyI4, Texture::NextPassMiiI4, Texture::SecondNextPassMiiI4}) {
         const auto f = GetFixture(texture);
         nullHostPointer = true;
         ExpectAbort(MakeCpu(f.object), "GX_LOAD_TEX_OBJ_DATA_POINTER_NULL", f.size);
@@ -548,7 +563,7 @@ int main() {
     CheckDescriptorRefusals(Texture::SecondRelocatedMiiI4);
     // The new source is captured for this pair only. The next-pass identity
     // must not silently inherit its new word3/data tuple.
-    for (auto texture : {Texture::NextPassMiiI4}) {
+    for (auto texture : {Texture::NextPassMiiI4, Texture::SecondNextPassMiiI4}) {
         const auto object = GetFixture(texture).object;
         std::memcpy(Memory::GetPointer(object, 32u),
                     Memory::GetPointer(GetFixture(Texture::RelocatedMiiI4).object, 32u), 32u);
@@ -590,8 +605,8 @@ int main() {
     KnownNativeCpuCall<0x80170f2cu>::Invoke(nullptr);
     assert(stage == previousStage);
     Memory::Reset();
-    assert(validCalls == 40u);
-    assert(diagnosedAborts == (MKW_LOCAL_RENDERED_FAST_TRACK ? 3553u : 3527u));
+    assert(validCalls == 42u);
+    assert(diagnosedAborts == (MKW_LOCAL_RENDERED_FAST_TRACK ? 3832u : 3804u));
     std::printf("PASS: texture-load valid=%u diagnosed-aborts=%u rendered=%d\n", validCalls,
                 diagnosedAborts, MKW_LOCAL_RENDERED_FAST_TRACK);
 }

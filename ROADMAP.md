@@ -2,11 +2,12 @@
 
 ## Current checkpoint — 2026-10-08
 
-The latest run accepts the next-pass Mii RGB5A3 native-load/helper return and
-exposes an unadmitted I4 36×32 object. All validation gates pass on the executed
-candidate; recognizable game pixels remain unproven. See the
-[current hardware result](docs/HARDWARE_NEXT_PASS_RGB5A3_RETURN_2026-10-08.md).
-The initial capture and desktop PNG remain identical to the preceding black frame.
+The [first actual GPU surface capture](docs/HARDWARE_SURFACE_FIRST_IMAGE_2026-10-08.md)
+is independently decoded as opaque black. Updating the latest image failed on SD;
+the replacement correction needs a console retest. The same run advances past the
+next-pass I4 36×32 native load/helper and stops at the next guarded identity.
+Recognizable game rendering remains unproven. The initial FIFO capture remains
+identical to the preceding black desktop replay.
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.

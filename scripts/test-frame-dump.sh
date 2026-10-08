@@ -10,7 +10,7 @@ trap 'rm -rf "$TEST_DIR"' EXIT
     -DMKW_LOCAL_RENDERED_FAST_TRACK=1 -DMKW_RENDERED_FRAME_DUMP=1 \
     -I"$ROOT_DIR/include" "$ROOT_DIR/source/frame_dump_image.cpp" \
     "$ROOT_DIR/source/rendered_frame_dump.cpp" "$ROOT_DIR/tests/frame_dump_image_contract.cpp" \
-    -o "$TEST_DIR/contract"
+    -Wl,--wrap=rename -o "$TEST_DIR/contract"
 (cd "$TEST_DIR" && ./contract)
 python3 - "$TEST_DIR" <<'PY'
 import struct

@@ -1,8 +1,12 @@
 #include "frame_dump_image.hpp"
 
 #include <algorithm>
+#include <cerrno>
 #include <cstdio>
+#include <cstring>
 #include <stdexcept>
+#include <string>
+#include <sys/stat.h>
 
 namespace mkw::frame_dump {
 namespace {
@@ -93,14 +97,38 @@ std::vector<std::uint8_t> png(const Image& image) {
 }
 void save(const char* output, const char* temporary, const Image& image) {
     const auto bytes = png(image);
+    const std::string backup = std::string(temporary) + ".previous";
+    struct stat existing = {};
+    const bool hadPrevious = ::stat(output, &existing) == 0;
+    if ((hadPrevious && !S_ISREG(existing.st_mode)) || (!hadPrevious && errno != ENOENT))
+        throw std::runtime_error("image destination is not an accessible regular file");
+    if (::stat(backup.c_str(), &existing) == 0 || errno != ENOENT)
+        throw std::runtime_error("previous-image backup already exists or is inaccessible");
     auto* file = std::fopen(temporary, "wb");
     if (!file)
         throw std::runtime_error("cannot open temporary image");
     const bool written = std::fwrite(bytes.data(), 1, bytes.size(), file) == bytes.size();
     const bool closed = std::fclose(file) == 0;
-    if (!written || !closed || std::rename(temporary, output) != 0) {
+    if (!written || !closed) {
         std::remove(temporary);
-        throw std::runtime_error("cannot save complete image");
+        throw std::runtime_error("cannot write and close complete image");
     }
+    // Switch SD rename does not replace an existing file. Keep the last good
+    // image in a sibling backup until the complete temporary image is installed.
+    if (hadPrevious && std::rename(output, backup.c_str()) != 0) {
+        const int error = errno;
+        std::remove(temporary);
+        throw std::runtime_error(std::string("cannot back up previous image: ") + std::strerror(error));
+    }
+    if (std::rename(temporary, output) != 0) {
+        const int error = errno;
+        const bool restored = !hadPrevious || std::rename(backup.c_str(), output) == 0;
+        std::remove(temporary);
+        if (!restored)
+            throw std::runtime_error("cannot install image; previous image retained in .previous backup");
+        throw std::runtime_error(std::string("cannot install complete image: ") + std::strerror(error));
+    }
+    if (hadPrevious && std::remove(backup.c_str()) != 0)
+        throw std::runtime_error("image installed but previous-image backup cleanup failed");
 }
 } // namespace mkw::frame_dump

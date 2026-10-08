@@ -137,7 +137,11 @@ target_link_options(mkw_switch_rendered_fast_track PRIVATE
 find_program(M3_ELF2NRO elf2nro REQUIRED)
 find_program(M3_NACPTOOL nacptool REQUIRED)
 
-if(MKW_DISCOVERY_SCAN_MODE)
+if(MKW_RENDERED_FIFO_CAPTURE)
+    set(M3_NRO_BASENAME "WiiCompiled-Switch-local-rendered-fifo-capture")
+    set(M3_NACP_TITLE "WiiCompiled-Switch FIFO Capture")
+    set(M3_NACP_VERSION "0.0.13-fifo-capture")
+elseif(MKW_DISCOVERY_SCAN_MODE)
     set(M3_NRO_BASENAME "WiiCompiled-Switch-local-rendered-discovery-scan")
     set(M3_NACP_TITLE "WiiCompiled-Switch Discovery Scan")
     set(M3_NACP_VERSION "0.0.12-discovery-scan")
@@ -173,3 +177,7 @@ add_custom_command(
 add_custom_target(mkw_switch_rendered_fast_track_nro
     DEPENDS "${M3_NRO}"
 )
+
+if(MKW_RENDERED_FIFO_CAPTURE)
+    target_compile_definitions(mkw_switch_rendered_fast_track PRIVATE MKW_RENDERED_FIFO_CAPTURE=1)
+endif()

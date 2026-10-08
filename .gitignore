@@ -20,6 +20,10 @@
 *.wbfs
 *.rvz
 *.wad
+# Replay captures may embed user-owned textures, palettes and vertex data.
+*.mkwr
+*.mkwr.tmp
+*.dff
 prod.keys
 title.keys
 keys.txt

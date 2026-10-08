@@ -164,3 +164,9 @@ echo "  CXX source/fast_track_crash_diagnostics.cpp (Discovery mode)"
 "$CXX_TOOL" "${common_flags[@]}"     -DMKW_DISCOVERY_SCAN_MODE=1     "$ROOT_DIR/source/fast_track_crash_diagnostics.cpp"
 
 echo "PASS: all rendered HLE branches and Discovery diagnostics compile against pinned WiiCompiled/Aurora headers"
+
+echo "Opt-in capture: portable recorder and Switch SD integration"
+"$CXX_TOOL" "${common_flags[@]}" -DMKW_RENDERED_FIFO_CAPTURE=1 \
+    -I"$ROOT_DIR/desktop-gx-replay" "$ROOT_DIR/source/rendered_fifo_capture.cpp"
+"$CXX_TOOL" "${common_flags[@]}" -I"$ROOT_DIR/desktop-gx-replay" \
+    "$ROOT_DIR/desktop-gx-replay/capture.cpp"

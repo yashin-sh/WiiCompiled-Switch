@@ -33,14 +33,15 @@ readonly JOBS="${MKW_JOBS:-4}"
 readonly VULKAN_ARCHIVE="$MESA_DIR/builddir-switch/src/nouveau/vulkan/libvulkan.a"
 RENDERED_MODE="${MKW_M3_BUILD_RENDERED_FAST_TRACK:-OFF}"
 DISCOVERY_MODE="${MKW_DISCOVERY_SCAN_MODE:-OFF}"
-for mode in RENDERED_MODE DISCOVERY_MODE; do
+CAPTURE_MODE="${MKW_RENDERED_FIFO_CAPTURE:-OFF}"
+for mode in RENDERED_MODE DISCOVERY_MODE CAPTURE_MODE; do
     case "${!mode}" in
         ON|1) printf -v "$mode" %s ON ;;
         OFF|0) printf -v "$mode" %s OFF ;;
         *) echo "error: $mode must be ON/OFF or 1/0" >&2; exit 2 ;;
     esac
 done
-readonly RENDERED_MODE DISCOVERY_MODE
+readonly RENDERED_MODE DISCOVERY_MODE CAPTURE_MODE
 
 need() {
     if ! command -v "$1" >/dev/null 2>&1; then
@@ -307,6 +308,7 @@ docker run --rm \
     -e MKW_M3_JOBS="$JOBS" \
     -e MESA_SWITCH_RUST_TARGET="$RUST_TARGET" \
     -e MKW_M3_BUILD_RENDERED_FAST_TRACK="$RENDERED_MODE" \
+    -e MKW_RENDERED_FIFO_CAPTURE="$CAPTURE_MODE" \
     -e MKW_DISCOVERY_SCAN_MODE="$DISCOVERY_MODE" \
     -v "$MESA_DIR:/mesa:ro" \
     -v "$DAWN_DIR:/dawn" \
@@ -426,6 +428,7 @@ EOF
             -DM3_REPO_ROOT=/repo \
             -DM3_BUILD_RENDERED_FAST_TRACK="$MKW_M3_BUILD_RENDERED_FAST_TRACK" \
             -DMKW_DISCOVERY_SCAN_MODE="$MKW_DISCOVERY_SCAN_MODE" \
+            -DMKW_RENDERED_FIFO_CAPTURE="$MKW_RENDERED_FIFO_CAPTURE" \
             -DDAWN_SWITCH_NVK_ROOT=/mesa \
             -DDAWN_SWITCH_NVK_LIBRARY=/mesa/builddir-switch/src/nouveau/vulkan/libvulkan.a \
             "-DDAWN_SWITCH_EXTRA_LIBRARIES=$extra_libs"

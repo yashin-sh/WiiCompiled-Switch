@@ -11,6 +11,7 @@ trap 'rm -rf "$TEST_DIR"' EXIT
 # Real bridges and Aurora signatures; forwarding sinks observe the CPU ABI.
 # No guest-memory, frame/FIFO or GPU implementation is supplied at this link.
 for rendered in 0 1; do
+    echo "CXX: TEV scalar contract (rendered=$rendered)"
     "$HOST_CXX" -std=c++20 -O2 -Wall -Wextra -Werror \
         -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer \
         -DTARGET_PC -DMKW_LOCAL_FUNCTION_EXECUTION=1 \
@@ -27,6 +28,7 @@ for rendered in 0 1; do
         "$ROOT_DIR/source/gx_set_tev_alpha_op_hle_bridge.cpp" \
         "$ROOT_DIR/source/gx_set_tev_swap_mode_hle_bridge.cpp" \
         -o "$TEST_DIR/contract-$rendered"
+    echo "RUN: TEV scalar contract (rendered=$rendered)"
     "$TEST_DIR/contract-$rendered"
     echo "PASS: GX TEV scalar batch contract (rendered=$rendered)"
 done

@@ -1,6 +1,15 @@
 # Roadmap
 
-## Current checkpoint — 2026-10-06
+## Current checkpoint — 2026-10-08
+
+The latest run accepts the second next-pass Mii I4 load/helper return and
+exposes a new RGB5A3 44×32 object. All HLE validation gates pass on the executed
+candidate; recognizable game pixels remain unproven. See the
+[current hardware result](docs/HARDWARE_SECOND_NEXT_PASS_I4_RETURN_2026-10-08.md).
+The [bounded RGB5A3 correction](docs/GX_MII_RGB5A3_NEXT_PASS_LOAD_2026-10-08.md)
+passes 22 local suites, five mutation checks, all six workflows / seven jobs
+and the private rendered build. Its SD copy is verified; fresh native-return
+validation awaits launch.
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.
@@ -98,7 +107,8 @@
 - [x] Reject all 40 compiled mutations and pass all 22 local suites; five final-head workflows / six actual jobs pass on `873495e`. Merge [PR #330](https://github.com/yashin-sh/WiiCompiled-Switch/pull/330) as `e72047d` and verify complete SD readback of NRO `a8718895...` at 17:24:56 CEST.
 - [x] Establish [first relocated-source load and helper return](docs/HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_RELOCATED_DATA_FRONTIER.md) through the pinned unconditional caller and fresh second-object stop; verify 37 reports / 632,567 bytes, seven changed / thirty retained.
 - [x] Implement and contract-test the [second relocated I4 object](docs/GX_MII_I4_SECOND_RELOCATED_LOAD_2026-10-07.md), slot 0, 32×64, data `0x109C1A20`: 40 loads per mode, 3,527 / 3,553 refusals, stable independent first/second native objects across source changes.
-- [ ] Finish 42 mutation checks, the 22-suite gate and final-head CI; deploy only after all gates pass.
+- [x] Reject all 42 compiled mutations and pass all 22 local suites; five final-head workflows / six actual jobs pass on `f8b8283`. Merge [PR #331](https://github.com/yashin-sh/WiiCompiled-Switch/pull/331) as `265839d`.
+- [ ] Copy exact NRO `af9575be...` to SD and verify its complete byte/SHA-256 readback; the Switch's USB/MTP connection is currently unavailable.
 - [ ] Establish second relocated-source and next-pass object return on Switch; GPU completion and recognizable images remain open.
 - [ ] Resolve subsequent observed calls and establish recognizable game pixels.
 
@@ -301,6 +311,10 @@ only when execution durably progresses beyond the tested target. See
 - [x] Render first native Switch clear frame
 - [x] Reach first real RMCP01 GPU present through pinned FIFO → Aurora → Dawn/NVK
 - [ ] Visually confirm the first Mario Kart Wii image and continue GX/game-state correctness
+- [x] Validate a Nintendo-data-free desktop Aurora capture/replay with resource relocation, ordered updates and independent-process PNG comparison — **local lavapipe PASS, red/blue/background pixel oracles and byte-identical PNGs**; [prototype scope](docs/DESKTOP_GX_REPLAY.md)
+- [x] Add opt-in first-frame Switch capture with GXInit, Aurora FIFO/direct-list consumption, native EFB copies, checked guest resources and explicit invalidation; validate synthetic copies/indexed arrays on desktop — [scope and build](docs/DESKTOP_GX_REPLAY.md)
+- [x] Collect a valid RMCP01 Switch first-frame capture and validate its desktop replay output — **complete stream, one untextured quad, reproducible black PNG; game-image correctness remains open**; [hardware result](docs/HARDWARE_FIRST_FRAME_REPLAY_2026-10-08.md)
+- [ ] Extend replay to later-frame checkpoints, cross-frame EFB resources, resource aliases/growth and remaining commands
 - [ ] shader/pipeline cache strategy
 - [ ] 720p handheld / 1080p docked policy
 

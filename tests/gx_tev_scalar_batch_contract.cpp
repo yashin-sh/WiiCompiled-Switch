@@ -62,7 +62,9 @@ void ExpectStage(Operation operation) {
     assert(stage && std::strcmp(stage, For(operation).stage) == 0);
     assert(stageCalls == previousStageCalls + 1u);
 }
-CpuContext MakeCpu(const Args& args) {
+// Keep the large deterministic context generator out of the exhaustive loops.
+// Avoid duplicating its byte-initialization loop in the sanitized case matrix.
+[[gnu::noinline]] CpuContext MakeCpu(const Args& args) {
     CpuContext cpu;
     auto* bytes = reinterpret_cast<unsigned char*>(&cpu);
     for (std::size_t i = 0; i < sizeof(cpu); ++i)

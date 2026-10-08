@@ -1,4 +1,12 @@
 # Documentation index
+
+- [Build and hardware diagnostics](BUILD.md)
+- [Status history moved from the README](STATUS_LOG.md)
+- [Desktop GX capture/replay prototype](DESKTOP_GX_REPLAY.md)
+- [First real Switch capture and desktop replay](HARDWARE_FIRST_FRAME_REPLAY_2026-10-08.md) — complete initial frame, reproducible black PNG; later textured frames pending
+- [Second next-pass Mii I4 return and RGB5A3 frontier](HARDWARE_SECOND_NEXT_PASS_I4_RETURN_2026-10-08.md) — scoped caller inference; first-frame PNG unchanged
+- [Next-pass Mii RGB5A3 correction](GX_MII_RGB5A3_NEXT_PASS_LOAD_2026-10-08.md) — exact observed 44×32 object; native return pending
+- [Second next-pass Mii I4 correction](GX_MII_I4_SECOND_NEXT_PASS_LOAD_2026-10-08.md) — exact captured identity; observed native/helper return accepted
 - [First relocated Mii I4 returned; second-object frontier](HARDWARE_RESULTS_2026-10-07_MII_I4_SECOND_RELOCATED_DATA_FRONTIER.md)
 - [Captured second relocated Mii I4 correction](GX_MII_I4_SECOND_RELOCATED_LOAD_2026-10-07.md)
 - [First Mii I4 load with relocated data; next-pass return unconfirmed](HARDWARE_RESULTS_2026-10-07_MII_I4_RELOCATED_DATA_FRONTIER.md)

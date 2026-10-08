@@ -1,0 +1,53 @@
+name: desktop-gx-replay
+
+on:
+  pull_request:
+    paths:
+      - 'desktop-gx-replay/**'
+      - 'scripts/*desktop-gx-replay.sh'
+      - 'scripts/prepare-replay-aurora.py'
+      - 'scripts/prepare-checked-aurora-fifo.py'
+      - '.github/workflows/desktop-replay.yml'
+      - 'third_party/WiiCompiled'
+  push:
+    branches: [main]
+    paths:
+      - 'desktop-gx-replay/**'
+      - 'scripts/*desktop-gx-replay.sh'
+      - 'scripts/prepare-replay-aurora.py'
+      - 'scripts/prepare-checked-aurora-fifo.py'
+      - '.github/workflows/desktop-replay.yml'
+      - 'third_party/WiiCompiled'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MKW_JOBS: '2'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          submodules: true
+          persist-credentials: false
+      - name: Install desktop dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ python3 zlib1g-dev mesa-vulkan-drivers libvulkan1
+      - name: Validate portable format under sanitizers
+        run: |
+          g++ -std=c++20 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all \
+            desktop-gx-replay/capture.cpp desktop-gx-replay/format_test.cpp -o /tmp/replay-format-test
+          /tmp/replay-format-test
+      - name: Build pinned desktop Aurora and Dawn
+        run: bash scripts/build-desktop-gx-replay.sh
+      - name: Render and compare independent synthetic capture/replay
+        run: bash scripts/test-desktop-gx-replay.sh

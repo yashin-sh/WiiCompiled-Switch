@@ -35,6 +35,11 @@ echo "PASS: independent capture/replay processes produce byte-identical PNGs and
 cmp "$OUT_ROOT/copies-original.png" "$OUT_ROOT/copies-replayed.png"
 echo "PASS: EFB copy, clear, optimized direct draw, GPU copy sampling and destination retirement survive replay"
 
+"$REPLAY" capture-direct-copies "$OUT_ROOT/direct-copies.mkwr" "$OUT_ROOT/direct-copies-original.png"
+"$REPLAY" replay-direct-copies-check "$OUT_ROOT/direct-copies.mkwr" "$OUT_ROOT/direct-copies-replayed.png"
+cmp "$OUT_ROOT/direct-copies-original.png" "$OUT_ROOT/direct-copies-replayed.png"
+echo "PASS: RGBA8 snapshot copy uses CopySrc, survives clear and replay, and preserves sampled red pixels"
+
 "$REPLAY" capture-wide "$OUT_ROOT/wide.mkwr" "$OUT_ROOT/wide-original.png"
 "$REPLAY" replay-check "$OUT_ROOT/wide.mkwr" "$OUT_ROOT/wide-replayed.png"
 cmp "$OUT_ROOT/wide-original.png" "$OUT_ROOT/wide-replayed.png"

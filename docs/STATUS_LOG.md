@@ -2,6 +2,21 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-09: [matrix-30 and snapshot usage candidate](GX_TEX_COORD_SNAPSHOT_2026-10-09.md)
+forwards the exact newly observed Gen2 matrix and adds `CopySrc` to the
+checked snapshot descriptor. Both-mode guards and 36 actual pinned native
+packets pass. The new exact RGBA8 GPU test fails with the old descriptor
+and passes after correction; the full existing desktop suite also passes.
+Private-build, complete CI and console gates remain pending.
+
+2026-10-09: [depth-texture console result](HARDWARE_Z_TEXTURE_TEX_COORD_2026-10-09.md)
+accepts the observed disable/Z8/zero-bias return through later dispatches.
+All 39 reports / 837,530 bytes pass independent USB verification; eighteen
+change and twenty-one are retained. The terminal guard is texture-coordinate
+generation with matrix 30. Dawn separately rejects a texture-copy source
+without `CopySrc` and its command buffer. Captures remain disabled; no new
+screen or pixel observation is attributed.
+
 2026-10-09: [normal-matrix/depth-texture trial](HARDWARE_NORMAL_Z_TEXTURE_2026-10-09.md)
 records the normal-matrix helper and later dispatches before a `GXSetZTexture`
 diagnostic stop. Captures remain disabled; no new screen observation or pixel

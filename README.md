@@ -6,8 +6,8 @@ Experimental Nintendo Switch homebrew port of [WiiCompiled](https://github.com/p
 
 A recognizable Wiimote safety page is now captured on Switch and reproduced by desktop FIFO replay. Later checkpoints remain black; menu progression, steady performance and playability are unproven.
 Real translated execution, observed boot-resource reads and the Aurora → Dawn/WebGPU → Vulkan/NVK presentation path run on Switch.
-With captures disabled and diagnostic SD writes sampled, early startup reaches 7.5–9.3 Hz before later stalls. The capture-enabled trial retains 90 replayable frames. Subsequent capture-disabled runs accept the KD post-resume request and the projection getter. The scissor-origin helper now returns; the latest stop is light-object loading, whose conversion is under validation.
-The [latest image and replay evidence](docs/HARDWARE_NONBLACK_REPLAY_2026-10-09.md) records the recognizable boot page and black later checkpoint; the [latest progress report](docs/HARDWARE_SCISSOR_LIGHT_2026-10-09.md) accepts scissor-origin return and identifies the light-object boundary.
+With captures disabled and diagnostic SD writes sampled, early startup reaches 7.5–9.3 Hz before later stalls. The capture-enabled trial retains 90 replayable frames. Subsequent capture-disabled runs accept the KD post-resume request and the projection getter. The scissor-origin and light-object helpers now return. The latest trial shows the Wiimote warning page, then stops at normal-matrix loading; its bridge is under validation.
+The [latest image and replay evidence](docs/HARDWARE_NONBLACK_REPLAY_2026-10-09.md) records the recognizable boot page and black later checkpoint; the [latest progress report](docs/HARDWARE_LIGHT_NORMAL_MATRIX_2026-10-09.md) accepts light-object return and identifies the normal-matrix stop.
 See [the roadmap](ROADMAP.md) for the current frontier and [the status log](docs/STATUS_LOG.md) for dated evidence.
 
 ## Quick build

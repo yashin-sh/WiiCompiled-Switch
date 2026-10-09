@@ -19,8 +19,11 @@ unproven. The [next run](docs/HARDWARE_SCISSOR_LIGHT_2026-10-09.md) accepts the
 observed scissor helper returning, then stops at GXLoadLightObjImm. The light
 bridge converts the full guest object and covers all eight light IDs. A source-owned
 registry supports future missing direct targets without changing the ABI header;
-the light candidate's private build and all published checks now pass. Its hardware
-return remains pending.
+the light candidate's private build and all published checks pass. The
+[latest trial](docs/HARDWARE_LIGHT_NORMAL_MATRIX_2026-10-09.md) records light entry
+and subsequent dispatches before a normal-matrix loading stop. The operator sees
+the Wiimote warning page, then a crash. A generic immediate normal-matrix bridge
+is under validation; its hardware return and later screen progression remain pending.
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.

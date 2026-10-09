@@ -1,6 +1,7 @@
 # Documentation index
 
-- [Latest console trial and capture control](HARDWARE_CAPTURE_CONTROL_2026-10-09.md) — operator reports boot images/low FPS; saved black checkpoints and replay budget failure
+- [Measured capture-disabled startup](HARDWARE_PRESENT_RATE_2026-10-09.md) — Wiimote warning then black, about 1.18 Hz; diagnostic SD sampling correction pending hardware
+- [Previous console trial and capture control](HARDWARE_CAPTURE_CONTROL_2026-10-09.md) — operator reports boot images/low FPS; saved black checkpoints and replay budget failure
 - [Texture families, XFB presentation and later-frame replay](GX_TEXTURE_FAMILY_PRESENT_REPLAY.md) — address-independent loading crossed the prior guard; follow-up capture/control trial pending
 
 - [Validated Switch first/latest GPU images](HARDWARE_SURFACE_CHECKPOINT_2026-10-08.md) — frame 102 checkpoint and SD replacement pass; RGB remains black

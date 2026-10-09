@@ -4,10 +4,10 @@ Experimental Nintendo Switch homebrew port of [WiiCompiled](https://github.com/p
 
 ## Status
 
-An operator now reports visible boot images on Switch, with very low frame rate. The retained GPU checkpoints remain black; recognizable captured game content, steady performance and playability are unproven.
+The operator sees the Wiimote warning page, then black. With image/FIFO capture disabled, measured startup presentation averages about 1.18 Hz; recognizable captured game content, steady performance and playability are unproven.
 Real translated execution, observed boot-resource reads and the Aurora → Dawn/WebGPU → Vulkan/NVK presentation path run on Switch.
-The descriptor-based loader advances beyond the former Mii texture guard. A diagnostic control and present-rate measurement are being prepared for the next trial.
-The [latest console evidence](docs/HARDWARE_CAPTURE_CONTROL_2026-10-09.md) separates that observation from saved frame-1/90 pixels and the FIFO budget failure; the [previous frame-102 checkpoint](docs/HARDWARE_SURFACE_CHECKPOINT_2026-10-08.md) remains recorded.
+The descriptor-based loader advances beyond the former Mii texture guard. The next candidate limits recurring diagnostic SD writes; its hardware impact and the later black screen remain unresolved.
+The [latest measured trial](docs/HARDWARE_PRESENT_RATE_2026-10-09.md) confirms captures were disabled; the [previous capture trial](docs/HARDWARE_CAPTURE_CONTROL_2026-10-09.md) records black checkpoints and a FIFO budget failure.
 See [the roadmap](ROADMAP.md) for the current frontier and [the status log](docs/STATUS_LOG.md) for dated evidence.
 
 ## Quick build

@@ -49,6 +49,21 @@ int main(int argc, char** argv) {
     assert(argc == 2);
     const std::string mode = argv[1];
     std::filesystem::create_directories("sdmc:/switch/WiiCompiled-Switch");
+    if (mode == "disabled") {
+        std::ofstream("sdmc:/switch/WiiCompiled-Switch/first-frame.mkwr") << "previous capture";
+        std::ofstream("sdmc:/switch/WiiCompiled-Switch/render-captures-disabled.flag");
+        mkw_switch_fifo_capture_start();
+        mkw_switch_fifo_capture_begin_frame();
+        mkw_replay_capture_init();
+        work();
+        mkw_switch_fifo_capture_present(true);
+        mkw_switch_fifo_capture_shutdown();
+        assert(read("first-frame.mkwr") == "previous capture");
+        assert(read("fifo-capture-status.txt").find("status=DISABLED\n") != std::string::npos);
+        assert(!std::filesystem::exists("sdmc:/switch/WiiCompiled-Switch/latest-frames.mkwr"));
+        std::puts("PASS: SD capture disable marker preserves prior files and keeps hooks inactive");
+        return 0;
+    }
     mkw_switch_fifo_capture_start();
     mkw_switch_fifo_capture_begin_frame();
     mkw_replay_capture_init();
@@ -56,6 +71,27 @@ int main(int argc, char** argv) {
     mkw_switch_fifo_capture_present(true);
     assert(frames(read("first-frame.mkwr")) == 1 && frames(read("latest-frames.mkwr")) == 1);
     const auto first = read("first-frame.mkwr");
+    if (mode == "flush-failure" || mode == "flush-present-failure") {
+        for (unsigned i = 0; i < 3; ++i) {
+            mkw_switch_fifo_capture_begin_frame();
+            work();
+            mkw_switch_fifo_capture_present(true);
+        }
+        assert(frames(read("latest-frames.mkwr")) == 1);
+        mkw_switch_fifo_capture_begin_frame();
+        work();
+        if (mode == "flush-failure")
+            mkw_replay_capture_unsupported("injected failure before a fifth complete frame");
+        else
+            mkw_switch_fifo_capture_present(false);
+        assert(frames(read("latest-frames.mkwr")) == 4);
+        assert(read("first-frame.mkwr") == first);
+        const auto status = read("fifo-capture-status.txt");
+        assert(status.find("status=INVALID\n") != std::string::npos && status.find("saved_frame=4\n") != std::string::npos);
+        mkw_switch_fifo_capture_shutdown();
+        std::puts("PASS: capture failure saves the last completed prefix without a later present or normal shutdown");
+        return 0;
+    }
     mkw_switch_fifo_capture_begin_frame();
     work();
     if (mode == "partial") {

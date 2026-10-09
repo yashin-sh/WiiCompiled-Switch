@@ -31,6 +31,10 @@ void chunk(std::vector<std::uint8_t>& out, const char* type, std::span<const std
     integer(out, crc(std::span(out).subspan(start)));
 }
 } // namespace
+bool captureDisabled() noexcept {
+    struct stat marker = {};
+    return ::stat("sdmc:/switch/WiiCompiled-Switch/render-captures-disabled.flag", &marker) == 0;
+}
 Layout layout(std::uint32_t width, std::uint32_t height) {
     if (!width || !height || width > 2048u || height > 2048u)
         throw std::runtime_error("image dimensions outside 1..2048");

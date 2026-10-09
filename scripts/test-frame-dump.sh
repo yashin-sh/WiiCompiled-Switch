@@ -19,7 +19,7 @@ trap 'rm -rf "$TEST_DIR"' EXIT
     "$ROOT_DIR/tests/fifo_capture_contract.cpp" "$ROOT_DIR/source/rendered_fifo_capture.cpp" \
     "$ROOT_DIR/desktop-gx-replay/capture.cpp" "$ROOT_DIR/source/frame_dump_image.cpp" \
     -o "$TEST_DIR/fifo-contract"
-for scenario in partial invalid failed-present; do
+for scenario in partial invalid failed-present flush-failure flush-present-failure disabled; do
     mkdir "$TEST_DIR/$scenario"
     (cd "$TEST_DIR/$scenario" && ../fifo-contract "$scenario")
 done

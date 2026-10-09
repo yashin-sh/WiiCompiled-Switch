@@ -3,8 +3,9 @@
 The desktop runner renders portable Aurora command captures with the same pinned
 GX/Dawn implementation as the Switch renderer. Seven synthetic workloads verify
 independent-process replay. An opt-in Switch build records a completed prefix
-from GXInit, including successive frames. Console validation of that new sequence
-recorder is pending.
+from GXInit, including successive frames. The [console trial](HARDWARE_CAPTURE_CONTROL_2026-10-09.md) reached its budget
+after four frames with only one saved; the revised deduplication/failure save
+requires a new trial.
 A real RMCP01 first-frame capture now replays on desktop as a black, untextured
 quad; recognizable game pixels remain unproven. See the
 [hardware result](HARDWARE_FIRST_FRAME_REPLAY_2026-10-08.md).
@@ -57,13 +58,13 @@ The capture arms before the renderer opens its first frame. It requires exactly
 one `GXInit`; FIFO work before initialization or another initialization makes
 the capture invalid. Each successful present marks a completed frame and
 validates its prefix. The first file is retained; the latest prefix is saved on
-frame 1, every 30 presents and at a diagnosed unsupported dispatch or shutdown.
+frame 1, every 30 presents and at a diagnosed unsupported dispatch, capture failure or shutdown.
 Saving uses the complete-write/backup/rollback path shared with PNGs. Previous
 capture files are retired when recording starts.
 
 Read these private SD files under `/switch/WiiCompiled-Switch/`:
 
-- `fifo-capture-status.txt`: `RECORDING`, `COMPLETE` or `INVALID`, with a reason.
+- `fifo-capture-status.txt`: `RECORDING`, `COMPLETE`, `INVALID` or `DISABLED`, with a reason.
 - `first-frame.mkwr`: retained complete first frame.
 - `latest-frames.mkwr`: state-preserving prefix through `saved_frame`; the
   current partially recorded frame is excluded. The status gives the unique run
@@ -76,11 +77,19 @@ commands, unmapped memory, unsupported resources or exhausted budget therefore
 produce an explicit diagnostic rather than a misleading replay file. Shutdown
 before the first complete present reports an incomplete capture.
 
-The budget is 8 MiB and 64 resources for the entire sequence, including repeated
-snapshots and command overhead. It is not a demonstrated RMCP01 sequence budget.
+The budget is 8 MiB and 64 resources for the entire sequence, including changed
+snapshots and command overhead. Unchanged bytes reuse their last serialized
+snapshot; they do not consume another resource-sized record. It is not a demonstrated RMCP01 sequence budget.
 After an invalidation, a labelled earlier complete prefix can remain on SD;
 `INVALID` never establishes complete coverage of the current run. Capture adds RAM copies
 and SD writes to an experimental build; its console timing remains unmeasured.
+
+Create `switch/WiiCompiled-Switch/render-captures-disabled.flag` on SD before
+launching to disable both FIFO and GPU image capture at startup in the same NRO.
+Both controllers report `DISABLED`, leave earlier files intact and perform no
+snapshot/readback work. Remove the marker before the next diagnostic launch to
+restore capture. The marker is not polled to change an active run. Normal builds
+already default to capture OFF. See [image/control details](SWITCH_FRAME_DUMP.md).
 
 ## Capture boundary and lifetime
 
@@ -100,8 +109,8 @@ for a GPU copy. This preserves the pinned implementation's first-frame cache
 identity. Successive frames replay from initialization, retaining GPU resources,
 GX state and pointer identities; this is not an arbitrary mid-game checkpoint.
 
-Each drain snapshots all registered live ranges, including resources loaded in
-previous batches. Pointers become IDs; playback allocates fresh stable storage
+Each drain compares all registered live ranges, including resources loaded in
+previous batches, and emits a new snapshot only when bytes differ. Pointers become IDs; playback allocates fresh stable storage
 and applies snapshots in order. Desktop producers register memory explicitly;
 the Switch producer uses the checked guest resolver. Overlapping registrations,
 interior references and growth of an already registered range are refused rather

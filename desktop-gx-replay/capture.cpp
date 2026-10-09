@@ -261,11 +261,18 @@ std::uint64_t Recorder::resource(std::uint64_t address, std::size_t needed) {
 }
 void Recorder::snapshot() {
     for (std::size_t i = 0; i < ranges.size(); ++i) {
+        auto& range = ranges[i];
+        // Refer to the last serialized event, avoiding a second resource-sized
+        // cache. Later frame mutations remain separate ordered Memory records.
+        if (range.snapshotEvent != ~std::size_t{0} &&
+            std::equal(range.data, range.data + range.size, events[range.snapshotEvent].payload.begin() + 4))
+            continue;
         require(total <= MaxBytes - 16 && ranges[i].size <= MaxBytes - total - 16, "capture memory exceeds bound");
         Bytes payload;
         integer(payload, i + 1);
         payload.insert(payload.end(), ranges[i].data, ranges[i].data + ranges[i].size);
         append(Kind::Memory, std::move(payload));
+        range.snapshotEvent = events.size() - 1u;
     }
 }
 void Recorder::init() {

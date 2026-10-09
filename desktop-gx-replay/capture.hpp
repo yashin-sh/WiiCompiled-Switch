@@ -48,6 +48,7 @@ class Recorder {
     struct Range {
         const std::uint8_t* data;
         std::size_t size;
+        std::size_t snapshotEvent = ~std::size_t{0};
     };
     std::vector<Range> ranges;
     std::vector<Event> events;

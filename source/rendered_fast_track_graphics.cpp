@@ -71,6 +71,8 @@ bool g_mountedSdmcHere = false;
 bool g_initialized = false;
 std::unique_ptr<mkw::presentation::Presenter> g_presenter;
 uint64_t g_presentedFrames = 0;
+std::chrono::steady_clock::time_point g_presentRateStart{};
+std::uint64_t g_presentRateFrame = 0;
 std::atomic_bool g_loggedFirstFifoWrite{false};
 std::atomic_bool g_loggedFirstFifoWork{false};
 std::atomic_uint64_t g_fifoWriteCalls{0};
@@ -463,6 +465,29 @@ bool present_frame_locked(bool clear) {
     ++g_presentedFrames;
     ++g_gxFrameCount;
 
+    // Sample actual completed presents without extra GPU waits. These windows
+    // include guest execution/loading/stalls and are not a steady-state benchmark.
+    const auto now = std::chrono::steady_clock::now();
+    if (!g_presentRateFrame) {
+        g_presentRateFrame = g_presentedFrames;
+        g_presentRateStart = now;
+    } else {
+        const auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now - g_presentRateStart).count();
+        if (milliseconds >= 5000) {
+            const auto frames = g_presentedFrames - g_presentRateFrame;
+            bool readbackEnabled = false;
+#if defined(MKW_RENDERED_FRAME_DUMP) && MKW_RENDERED_FRAME_DUMP
+            readbackEnabled = mkw::frame_dump::enabled();
+#endif
+            report("PERF RMCP01_PRESENT frames_total=%llu window_frames=%llu window_ms=%lld present_hz=%.3f readback_enabled=%u\n",
+                   static_cast<unsigned long long>(g_presentedFrames), static_cast<unsigned long long>(frames),
+                   static_cast<long long>(milliseconds), static_cast<double>(frames) * 1000.0 / milliseconds,
+                   readbackEnabled ? 1u : 0u);
+            g_presentRateFrame = g_presentedFrames;
+            g_presentRateStart = now;
+        }
+    }
+
     if (g_presentedFrames == 1) {
         report("PASS FIRST_RMCP01_GX_PRESENT hadWork=%u\n",
                hadWork ? 1u : 0u);
@@ -521,6 +546,7 @@ extern "C" bool mkw_switch_renderer_initialize() noexcept {
         g_auroraFrameActive.store(false, std::memory_order_release);
         g_auroraFrameHadWork.store(false, std::memory_order_release);
         g_presentedFrames = 0;
+        g_presentRateFrame = 0;
         g_gxFrameCount = 0;
         g_loggedFirstFifoWrite.store(false, std::memory_order_release);
         g_loggedFirstFifoWork.store(false, std::memory_order_release);

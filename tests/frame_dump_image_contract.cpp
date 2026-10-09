@@ -138,9 +138,26 @@ int main() {
     assert(!enabled());
     mkw_switch_frame_dump_checkpoint();
     assert(read("sdmc:/switch/WiiCompiled-Switch/frame-dump-status.txt").find("reason=injected GPU map timeout\n") != std::string::npos);
+    std::ofstream("sdmc:/switch/WiiCompiled-Switch/render-captures-disabled.flag");
+    reset();
+    assert(!enabled() && captureDisabled());
+    completed(rgba, rgba, rgba, 1);
+    assert(read("sdmc:/switch/WiiCompiled-Switch/surface-first.png") == first);
+    assert(read("sdmc:/switch/WiiCompiled-Switch/frame-dump-status.txt").find("status=DISABLED\n") != std::string::npos);
+    std::filesystem::remove("sdmc:/switch/WiiCompiled-Switch/render-captures-disabled.flag");
     reset();
     assert(!std::filesystem::exists("sdmc:/switch/WiiCompiled-Switch/surface-first.png"));
     assert(!std::filesystem::exists("sdmc:/switch/WiiCompiled-Switch/surface-latest.png"));
+    completed(opaqueBlack, opaqueBlack, opaqueBlack, 1);
+    completed(rgba, rgba, opaqueBlack, 2); // transient colored frame between periodic saves
+    completed(opaqueBlack, opaqueBlack, opaqueBlack, 30);
+    assert(read("sdmc:/switch/WiiCompiled-Switch/surface-first-nonblack.png") == first);
+    assert(read("sdmc:/switch/WiiCompiled-Switch/display-copy-first-nonblack.png") == first);
+    assert(read("sdmc:/switch/WiiCompiled-Switch/surface-latest.png") != first);
+    status = read("sdmc:/switch/WiiCompiled-Switch/frame-dump-status.txt");
+    assert(status.find("first_nonblack_png_frame=2\n") != std::string::npos && status.find("display_first_nonblack_png_frame=2\n") != std::string::npos);
+    reset();
+    assert(!std::filesystem::exists("sdmc:/switch/WiiCompiled-Switch/surface-first-nonblack.png"));
     std::filesystem::remove_all("sdmc:/switch/WiiCompiled-Switch");
     completed(rgba, rgba, rgba, 1);
     assert(!enabled());

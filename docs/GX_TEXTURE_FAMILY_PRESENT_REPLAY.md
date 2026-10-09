@@ -1,8 +1,10 @@
 # Texture descriptors, XFB presentation and frame sequences
 
-This candidate addresses three sources of repeated console iteration. Console
-validation of the new code is pending. The preceding accepted result is the
-[frame-102 black surface checkpoint](HARDWARE_SURFACE_CHECKPOINT_2026-10-08.md).
+This candidate addresses three sources of repeated console iteration. The
+[console trial](HARDWARE_CAPTURE_CONTROL_2026-10-09.md) crosses the former Mii
+guard and records paired black images with opaque final presentation. The
+operator reports visible boot images/low FPS; those images are absent from the
+retained PNGs. The revised capture/control still requires a console trial.
 
 ## Load descriptors rather than address identities
 
@@ -65,8 +67,9 @@ and red/blue pixels in independent producer/replay processes.
 The [sequence recorder](DESKTOP_GX_REPLAY.md) captures from exactly one `GXInit`
 through successive completed presents, retaining GX/decoder/resource state.
 Version 3 adds an intermediate frame boundary; version 2 stays readable.
-The first frame is retained, while a latest prefix is refreshed periodically and
-at a diagnosed stop. The current partially recorded frame is excluded.
+The first frame is retained, while a latest prefix is refreshed periodically,
+at a diagnosed stop and when capture fails. Unchanged memory ranges reuse their
+last serialized snapshot; changed bytes remain ordered memory events. The current partially recorded frame is excluded.
 
 The whole sequence remains bounded to 8 MiB and 64 resources. Unsupported
 commands, resource growth/aliases, repeated initialization or budget exhaustion

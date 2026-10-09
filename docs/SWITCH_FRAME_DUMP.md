@@ -29,6 +29,8 @@ On the SD, `switch/WiiCompiled-Switch/` contains:
   before surface scaling/opaque presentation alpha.
 - `efb-after-copy-latest.png`: EFB after the optional clear, explicitly not a
   pre-clear EFB snapshot. A cleared EFB can coexist with a valid colored XFB.
+- `surface-first-nonblack.png` / `display-copy-first-nonblack.png`: first completed
+  RGB content in each stage, retained even if it occurs between periodic saves.
 - `frame-dump-status.txt`: unique run ID, readback frame, image-file frame,
   dimensions, row stride, nonblack RGB pixels, nonopaque pixels and uniformity.
 
@@ -39,13 +41,28 @@ guest frame. `latest_png_frame` identifies the actual image on disk; it may lag
 `frame` while execution continues. An abrupt native fault or power loss may leave
 the last periodic image. A missing image or FAILED state never counts as success.
 
+## Compare capture cost
+
+Create `switch/WiiCompiled-Switch/render-captures-disabled.flag` on SD before
+launching the diagnostic NRO. Both controllers write a fresh `DISABLED` status,
+keep earlier files intact and skip GPU readbacks/FIFO snapshots. Remove the
+marker before a diagnostic launch to restore capture. It is sampled only at
+startup, so the same renderer can be compared without rebuilding generated code.
+
+`rendered-fast-track-graphics.txt` reports completed-present frequency over
+windows of at least five seconds, with frame count, elapsed host milliseconds
+and current readback state. No extra GPU wait is added. Loading, guest work and
+stalls are included; these rates are not a steady-state gameplay benchmark.
+Keep Discovery unchanged for the initial comparison. Performance with captures
+disabled is pending hardware measurement.
+
 ## Meaning and limits
 
 `COMPLETE` means GPU mapping and complete PNG writing succeeded for the reported
 completed frame. RGBA/BGRA channel order and 256-byte row padding are handled;
 sRGB bytes and alpha are preserved. PNGs are uncompressed to avoid adding a
-Switch codec dependency. Each dimension is bounded to 2048; there are five
-retained image files. Replacement writes a complete temporary image, moves the
+Switch codec dependency. Each dimension is bounded to 2048; there are five base
+image files and up to two additional first-nonblack files. Replacement writes a complete temporary image, moves the
 previous image to a `.previous` backup, installs the new image and removes the
 backup. A failed installation restores the old image; if restoration itself
 fails, that backup is retained and capture fails. This accommodates SD rename
@@ -59,8 +76,11 @@ A black result is evidence about that completed surface. A nonblack result
 shows actual RGB content but does not establish that the game image is correct.
 Neither captures the later partially recorded Mii scene or proves physical
 scanout, input, sound or playability. Readbacks and SD writes add diagnostic cost;
-these runs are not performance measurements. The new paired stages and selected-
-XFB presentation pass still require a console trial. The preceding [corrected console trial](HARDWARE_SURFACE_CHECKPOINT_2026-10-08.md)
+these runs are not performance measurements. The [paired-stage trial](HARDWARE_CAPTURE_CONTROL_2026-10-09.md) records black
+frame-1/90 pixels with opaque final surface alpha, while the operator reports
+boot images/low FPS absent from those retained files. The live status reached
+102 before manual exit without a final save. The first-nonblack/control additions
+require another console trial. The preceding [corrected console trial](HARDWARE_SURFACE_CHECKPOINT_2026-10-08.md)
 validates first/latest image saving and a checkpoint at frame 102. Both images
 have black RGB; the first has alpha 255 and the last alpha 0. The retained alpha
 is reported separately from RGB and does not establish the cause of black output.

@@ -2,6 +2,13 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-09: [texture-family/selected-XFB console trial](HARDWARE_CAPTURE_CONTROL_2026-10-09.md)
+advances beyond the former Mii load guard. The operator reports visible boot images
+and low FPS. Saved frame-1/90 pixels remain black; manual exit precedes a final
+frame-102 checkpoint. FIFO recording exhausts its budget after four frames, with
+only the first prefix saved. Capture/control corrections and a measured trial
+are pending.
+
 2026-10-08: [corrected Switch first/latest image result](HARDWARE_SURFACE_CHECKPOINT_2026-10-08.md)
 validates SD replacement and the completed-frame checkpoint. First and last GPU
 images contain black RGB, with alpha 255 and 0 respectively; game rendering remains

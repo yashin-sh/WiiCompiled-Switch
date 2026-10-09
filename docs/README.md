@@ -1,6 +1,7 @@
 # Documentation index
 
-- [Texture families, XFB presentation and later-frame replay](GX_TEXTURE_FAMILY_PRESENT_REPLAY.md) — address-independent bounded loading and state-preserving sequence candidate; console trial pending
+- [Latest console trial and capture control](HARDWARE_CAPTURE_CONTROL_2026-10-09.md) — operator reports boot images/low FPS; saved black checkpoints and replay budget failure
+- [Texture families, XFB presentation and later-frame replay](GX_TEXTURE_FAMILY_PRESENT_REPLAY.md) — address-independent loading crossed the prior guard; follow-up capture/control trial pending
 
 - [Validated Switch first/latest GPU images](HARDWARE_SURFACE_CHECKPOINT_2026-10-08.md) — frame 102 checkpoint and SD replacement pass; RGB remains black
 - [First actual Switch GPU image](HARDWARE_SURFACE_FIRST_IMAGE_2026-10-08.md) — preceding partial result; latest PNG replacement failed

@@ -12,6 +12,8 @@
 #include <memory>
 #include <stdexcept>
 
+extern "C" void mkw_switch_fifo_capture_checkpoint() noexcept;
+
 namespace {
 constexpr const char* Output = "sdmc:/switch/WiiCompiled-Switch/first-frame.mkwr";
 constexpr const char* Temporary = "sdmc:/switch/WiiCompiled-Switch/first-frame.mkwr.tmp";
@@ -20,6 +22,16 @@ constexpr const char* Status = "sdmc:/switch/WiiCompiled-Switch/fifo-capture-sta
 std::unique_ptr<replay::Recorder> recorder;
 bool attempted = false;
 std::mutex captureMutex;
+thread_local bool captureLockHeld = false;
+struct CaptureLockScope {
+    bool previous = std::exchange(captureLockHeld, true);
+    ~CaptureLockScope() {
+        captureLockHeld = previous;
+    }
+    void release() noexcept {
+        captureLockHeld = previous;
+    }
+};
 replay::Bytes lastComplete;
 std::uint64_t runId = 0, completedFrames = 0, savedFrame = 0;
 std::size_t savedBytes = 0;
@@ -35,6 +47,9 @@ void status(const char* state, const char* reason = "", std::size_t bytes = 0) n
 void invalid(const char* reason) noexcept {
     std::snprintf(failureReason, sizeof(failureReason), "%s", reason);
     status("INVALID", reason, savedBytes);
+    // Raw-drain failures can persist the last complete prefix immediately.
+    // If present owns the lock, it retries after releasing that lock below.
+    mkw_switch_fifo_capture_checkpoint();
 }
 std::span<const std::uint8_t> resolve(std::uint64_t pointer, std::size_t needed) {
     // Prove a host range belongs to an allocated guest region before reading it.
@@ -59,6 +74,10 @@ extern "C" void mkw_switch_fifo_capture_start() noexcept {
     }
     attempted = true;
     runId = std::chrono::steady_clock::now().time_since_epoch().count();
+    if (mkw::frame_dump::captureDisabled()) {
+        status("DISABLED", "render-captures-disabled.flag present");
+        return;
+    }
     const std::string backup = std::string(Temporary) + ".previous";
     for (auto* path : {Output, Latest, Temporary, backup.c_str()}) {
         if (std::remove(path) != 0 && errno != ENOENT) {
@@ -99,11 +118,15 @@ void save_latest() {
 }
 } // namespace
 extern "C" void mkw_switch_fifo_capture_present(bool presented) noexcept {
-    std::scoped_lock lock(captureMutex);
+    std::unique_lock lock(captureMutex);
+    CaptureLockScope scope;
     if (!recorder || !replay::recording())
         return;
     if (!presented) {
         replay::fail("present failed");
+        lock.unlock();
+        scope.release();
+        mkw_switch_fifo_capture_checkpoint();
         return;
     }
     try {
@@ -122,11 +145,19 @@ extern "C" void mkw_switch_fifo_capture_present(bool presented) noexcept {
     } catch (...) {
         replay::fail("capture checkpoint allocation failure");
     }
+    lock.unlock();
+    scope.release();
+    if (!replay::recording())
+        mkw_switch_fifo_capture_checkpoint();
 }
 extern "C" void mkw_switch_fifo_capture_checkpoint() noexcept {
+    // Never try_lock a non-recursive mutex already owned by this thread.
+    if (captureLockHeld)
+        return;
     std::unique_lock lock(captureMutex, std::try_to_lock);
     if (!lock || lastComplete.empty())
         return;
+    CaptureLockScope scope;
     try {
         save_latest();
         status(failureReason[0] ? "INVALID" : "COMPLETE", failureReason, savedBytes);
@@ -137,6 +168,8 @@ extern "C" void mkw_switch_fifo_capture_checkpoint() noexcept {
     }
 }
 extern "C" void mkw_switch_fifo_capture_shutdown() noexcept {
+    if (!recorder)
+        return;
     mkw_switch_fifo_capture_checkpoint();
     if (!completedFrames)
         replay::fail("renderer stopped before first complete present");

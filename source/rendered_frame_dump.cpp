@@ -15,12 +15,15 @@ constexpr const char* Latest = "sdmc:/switch/WiiCompiled-Switch/surface-latest.p
 constexpr const char* DisplayFirst = "sdmc:/switch/WiiCompiled-Switch/display-copy-first.png";
 constexpr const char* DisplayLatest = "sdmc:/switch/WiiCompiled-Switch/display-copy-latest.png";
 constexpr const char* EfbLatest = "sdmc:/switch/WiiCompiled-Switch/efb-after-copy-latest.png";
+constexpr const char* NonBlackFirst = "sdmc:/switch/WiiCompiled-Switch/surface-first-nonblack.png";
+constexpr const char* DisplayNonBlackFirst = "sdmc:/switch/WiiCompiled-Switch/display-copy-first-nonblack.png";
 constexpr const char* Temporary = "sdmc:/switch/WiiCompiled-Switch/surface-image.tmp";
 constexpr const char* Backup = "sdmc:/switch/WiiCompiled-Switch/surface-image.tmp.previous";
 constexpr const char* Status = "sdmc:/switch/WiiCompiled-Switch/frame-dump-status.txt";
 std::mutex mutex;
 Image latest, display, efb;
 std::uint64_t runId = 0, frame = 0, savedFrame = 0, firstFrame = 0, displaySavedFrame = 0, efbSavedFrame = 0, displayFirstFrame = 0;
+std::uint64_t nonBlackFirstFrame = 0, displayNonBlackFirstFrame = 0;
 bool active = false;
 char lastError[256]{};
 void status(const char* state, const char* reason = "") noexcept {
@@ -32,6 +35,8 @@ void status(const char* state, const char* reason = "") noexcept {
                      static_cast<unsigned long long>(latest.nonBlackPixels), static_cast<unsigned long long>(latest.nonOpaquePixels), latest.uniform ? 1u : 0u);
         std::fprintf(file, "display_first_png_frame=%llu\ndisplay_latest_png_frame=%llu\nefb_latest_png_frame=%llu\nefb_phase=after GXCopyDisp clear; not a pre-clear EFB image\npresentation_policy=selected XFB RGB scaled to surface; opaque alpha\n",
                      static_cast<unsigned long long>(displayFirstFrame), static_cast<unsigned long long>(displaySavedFrame), static_cast<unsigned long long>(efbSavedFrame));
+        std::fprintf(file, "first_nonblack_png_frame=%llu\ndisplay_first_nonblack_png_frame=%llu\n",
+                     static_cast<unsigned long long>(nonBlackFirstFrame), static_cast<unsigned long long>(displayNonBlackFirstFrame));
         for (const auto& item : {std::pair{"display", &display}, std::pair{"efb", &efb}})
             std::fprintf(file, "%s_width=%u\n%s_height=%u\n%s_nonblack_rgb_pixels=%llu\n%s_nonopaque_pixels=%llu\n%s_uniform=%u\n",
                          item.first, item.second->layout.width, item.first, item.second->layout.height,
@@ -69,9 +74,14 @@ void reset() noexcept {
     display = {};
     efb = {};
     frame = savedFrame = firstFrame = displaySavedFrame = efbSavedFrame = displayFirstFrame = 0;
+    nonBlackFirstFrame = displayNonBlackFirstFrame = 0;
     lastError[0] = '\0';
     runId = static_cast<std::uint64_t>(std::chrono::steady_clock::now().time_since_epoch().count());
-    for (auto* path : {First, Latest, DisplayFirst, DisplayLatest, EfbLatest, Temporary, Backup}) {
+    if (captureDisabled()) {
+        status("DISABLED", "render-captures-disabled.flag present");
+        return;
+    }
+    for (auto* path : {First, Latest, DisplayFirst, DisplayLatest, EfbLatest, NonBlackFirst, DisplayNonBlackFirst, Temporary, Backup}) {
         // Never leave a previous run's image labelled as this run's output.
         if (std::remove(path) != 0 && errno != ENOENT) {
             fail("cannot retire previous image");
@@ -105,6 +115,14 @@ void completed(Image surface, Image displayCopy, Image efbAfterCopy, std::uint64
         if (!displayFirstFrame) {
             save(DisplayFirst, Temporary, display);
             displayFirstFrame = frame;
+        }
+        if (!nonBlackFirstFrame && latest.nonBlackPixels) {
+            save(NonBlackFirst, Temporary, latest);
+            nonBlackFirstFrame = frame;
+        }
+        if (!displayNonBlackFirstFrame && display.nonBlackPixels) {
+            save(DisplayNonBlackFirst, Temporary, display);
+            displayNonBlackFirstFrame = frame;
         }
         // Retain the exact latest completed pixels of all three stages in RAM.
         // Checkpoint on a diagnosed stop saves frames between these intervals.

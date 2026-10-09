@@ -99,6 +99,30 @@ int main() {
     }
     rejects([&] { replay::Recorder r; r.init(); r.drain(command); });
     rejects([&] { replay::Recorder r; r.init(); r.memory(std::span(texture).first(32)); r.drain(command); });
+    // Repeated unchanged resources previously exhausted 8 MiB after a handful
+    // of frames. Keep one ordered snapshot until the actual bytes change.
+    replay::Bytes stable(1024 * 1024, 17);
+    replay::Recorder bounded;
+    bounded.init();
+    bounded.memory(stable);
+    bounded.begin();
+    for (unsigned i = 0; i < 16; ++i)
+        bounded.drain(replay::Bytes{0});
+    bounded.frame();
+    const auto stablePrefix = bounded.checkpoint();
+    check(stablePrefix.size() < stable.size() + 1024);
+    bounded.begin();
+    stable[12345] = 91;
+    bounded.drain(replay::Bytes{0});
+    bounded.frame();
+    const auto changedPrefix = bounded.checkpoint();
+    check(changedPrefix.size() > stablePrefix.size() + stable.size());
+    stable[12345] = 37;
+    bounded.begin();
+    bounded.drain(replay::Bytes{0});
+    check(bounded.checkpoint() == changedPrefix);
+    replay::Playback(changedPrefix).run([](auto, auto) {});
+    std::puts("PASS: unchanged 1 MiB resources do not exhaust the capture budget; mutations and partial-prefix isolation remain ordered");
     replay::Recorder resourceRecorder;
     resourceRecorder.init();
     resourceRecorder.memory(texture);

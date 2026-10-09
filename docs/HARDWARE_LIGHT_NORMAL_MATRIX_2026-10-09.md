@@ -47,6 +47,8 @@ The sanitizer contracts pass: 1,008 complete normal-matrix packets, the existing
 864 light packets, headless/refusal cases and registry priority/probe checks.
 Merging also requires the private rendered build, SDK syntax, scoped native
 provider/retention checks and every published check on the exact PR HEAD to
-succeed. No normal-matrix hardware return, later menu or playability is claimed.
+succeed. The [following trial](HARDWARE_NORMAL_Z_TEXTURE_2026-10-09.md) accepts the
+observed normal-matrix return, then stops at depth-texture configuration. Later
+menus and playability remain unproven.
 
 Raw reports, generated game code, NROs and captures remain local.

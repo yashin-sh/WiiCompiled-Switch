@@ -2,6 +2,13 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-09: [normal-matrix/depth-texture trial](HARDWARE_NORMAL_Z_TEXTURE_2026-10-09.md)
+records the normal-matrix helper and later dispatches before a `GXSetZTexture`
+diagnostic stop. Captures remain disabled; no new screen observation or pixel
+capture is attributed. The new bridge covers the native depth operation/format/
+bias encoding, with executable writer and BP decoder contracts. Private build
+and complete CI are required before merging; hardware return remains pending.
+
 2026-10-09: [light/normal-matrix trial](HARDWARE_LIGHT_NORMAL_MATRIX_2026-10-09.md)
 records light entry followed by later dispatches, then deliberately aborts at
 `GXLoadNrmMtxImm`. The operator sees the Wiimote warning page and a crash.

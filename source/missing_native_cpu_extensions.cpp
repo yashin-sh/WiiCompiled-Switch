@@ -9,6 +9,7 @@ using NativeCpuExtension = void (*)(CpuContext*) noexcept;
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 extern "C" void mkw_switch_hle_gx_load_light_obj_imm(CpuContext*) noexcept;
 extern "C" void mkw_switch_hle_gx_load_nrm_mtx_imm(CpuContext*) noexcept;
+extern "C" void mkw_switch_hle_gx_set_z_texture(CpuContext*) noexcept;
 #endif
 
 extern "C" NativeCpuExtension mkw_switch_find_missing_native_cpu_extension(
@@ -20,6 +21,8 @@ extern "C" NativeCpuExtension mkw_switch_find_missing_native_cpu_extension(
         return mkw_switch_hle_gx_load_light_obj_imm;
     case 0x80173188u:
         return mkw_switch_hle_gx_load_nrm_mtx_imm;
+    case 0x801720c0u:
+        return mkw_switch_hle_gx_set_z_texture;
     default:
         break;
     }

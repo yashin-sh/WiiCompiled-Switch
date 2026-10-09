@@ -105,16 +105,7 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* re
     assert(write(proofFd, "P", 1) == 1);
 }
 #if MKW_LOCAL_RENDERED_FAST_TRACK
-// Actual pinned Aurora object definition and five native function bodies.
-#include "pinned-light-object.inc"
-#define GX_WRITE_U8(value) Emit(1, static_cast<std::uint8_t>(value))
-#define GX_WRITE_U32(value) Emit(4, static_cast<std::uint32_t>(value))
-#define GX_WRITE_F32(value) Emit(4, std::bit_cast<std::uint32_t>(value))
-#define CHECK(condition, ...) assert(condition)
-extern "C" {
-#include "pinned-light-native.inc"
-#include "pinned-normal-native.inc"
-}
+#include "gx_native_extensions_fixture.inc"
 #endif
 int main() {
     Memory::Config config;

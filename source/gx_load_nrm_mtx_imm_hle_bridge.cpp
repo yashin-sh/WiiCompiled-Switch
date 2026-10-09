@@ -29,10 +29,10 @@ extern "C" void mkw_switch_hle_gx_load_nrm_mtx_imm(CpuContext* cpu) noexcept {
         Refuse("GX_LOAD_NRM_INVALID_MATRIX", cpu);
     // Pinned HLE reads a full guest 3x4 matrix. Native GX emits its upper-left
     // 3x3, excluding the translation column, at XF normal-matrix address 0x400.
-    float matrix[12];
+    float matrix[3][4];
     for (unsigned i = 0; i < 12; ++i)
-        matrix[i] = std::bit_cast<float>(Memory::Read32(address + i * 4u));
-    GXLoadNrmMtxImm(reinterpret_cast<float (*)[4]>(matrix), id);
+        matrix[i / 4u][i % 4u] = std::bit_cast<float>(Memory::Read32(address + i * 4u));
+    GXLoadNrmMtxImm(matrix, id);
 #else
     Refuse("GX_LOAD_NRM_REQUIRES_RENDERER", cpu);
 #endif

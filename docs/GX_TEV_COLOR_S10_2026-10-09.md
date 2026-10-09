@@ -35,3 +35,7 @@ The separate private rendered/capture build, SDK syntax, scoped provider and
 ELF-retention audits, and all published checks on the exact PR HEAD must pass
 before merge. The resulting NRO must be checked by complete SD readback before
 the next console trial. Hardware acceptance remains pending that fresh run.
+
+The initial public SDK jobs hit Docker Hub rate limits before compilation.
+The [CI image correction](CI_MERGE_POLICY_2026-10-09.md#sdk-image-availability)
+pins a byte-verified cached copy of the official image; all checks still run.

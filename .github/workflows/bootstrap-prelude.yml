@@ -2,6 +2,7 @@ name: bootstrap-register-prelude
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:

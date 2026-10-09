@@ -1,5 +1,6 @@
 # Documentation index
 
+- [Every check must be green before merging](CI_MERGE_POLICY_2026-10-09.md) — repaired historical rollups, complete check gate and enforced main protection
 - [Scissor origin returned; light-object boundary](HARDWARE_SCISSOR_LIGHT_2026-10-09.md) — scoped return, native light conversion and direct-call extension registry
 - [Projection getter returned; scissor-origin boundary](HARDWARE_PROJECTION_SCISSOR_2026-10-09.md) — checked caller progression; scissor-origin return accepted by the subsequent trial
 

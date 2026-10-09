@@ -2,6 +2,7 @@ name: fast-track-startup
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:

@@ -58,10 +58,18 @@ Every blocker-driven change should pass these stages in order:
      input, and audio behavior remains hardware-driven.
 4. **Nintendo-data-free validation**
    - add or update narrow synthetic/link coverage where practical;
-   - require the five repository workflows to pass on the exact candidate
-     revision (the exact PR HEAD when a PR is used):
-     `lint`, `fast-track-startup`, `bootstrap-register-prelude`,
-     `stateful-translated-sequence`, and `build-switch`;
+   - require every published check on the exact PR HEAD to complete with
+     `SUCCESS`, including duplicate contexts, external status checks and checks
+     outside the mandatory set. Cancelled, skipped, neutral, failed, pending,
+     missing and unreadable checks block merging;
+   - paginate the full GitHub status rollup. Selecting the latest passing run of
+     each workflow is insufficient;
+   - the eight mandatory GitHub Actions checks are `lint`, `gx-contracts`, `nro`,
+     `synthetic-fast-track`, `synthetic-bootstrap-prelude`, `synthetic-sequence`,
+     `synthetic-replay` and `all-checks-green`;
+   - use `python3 scripts/github_ci_gate.py --pr <number> --wait --merge`.
+     It re-reads all checks and PR HEAD before requesting a merge pinned to that
+     commit, with no administrator bypass;
    - `build-switch` must additionally syntax-compile every
      `source/*_hle_bridge.cpp` that contains a
      `MKW_LOCAL_RENDERED_FAST_TRACK` branch with that branch enabled, using
@@ -74,7 +82,7 @@ Every blocker-driven change should pass these stages in order:
      exact candidate revision, or build the same rendered/Discovery CMake
      target directly in the validated prepared tree, recording dependency
      pins, mode, command and candidate source hashes locally;
-   - this is a required sixth gate for rendered RMCP01 work because the public
+   - this is a separate required gate for rendered RMCP01 work because the public
      CI graph does not include the local game-derived product or the complete
      Aurora/Dawn/NVK rendered target.
 6. **Real-Switch validation**
@@ -320,9 +328,11 @@ separate host/static evidence and were not exercised by that console run.
 
 ## Governance note
 
-The five public workflow checks are currently a project process rule. They do
-not replace the private rendered-build gate, and branch settings should not be
-assumed to enforce the full validation policy automatically.
+GitHub branch protection on `main` requires all eight Actions checks, a branch
+up to date with `main`, and enforcement for administrators. The aggregate gate
+checks every visible context on the commit, including additional checks. The
+private rendered-build gate remains required for renderer changes. See the
+[merge-policy correction and audit](CI_MERGE_POLICY_2026-10-09.md).
 
 
 ## Earlier console result — TEV colors crossed (2026-10-03)

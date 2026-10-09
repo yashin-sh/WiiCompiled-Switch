@@ -48,7 +48,9 @@ A source-owned extension registry handles only missing direct-call targets,
 after the existing native and translated constexpr paths. Known calls retain
 priority and avoid the lookup. Unknown targets keep their diagnostic stop;
 indirect dispatch is unchanged. Future additions to this registry need no ABI
-header edit. Incremental rebuild savings still require measurement.
+header edit. A comparison of native Ninja dependency plans confirms that changing the
+registry adds one source compilation and no generated-shard rebuild. It does
+not measure a wall-clock speedup.
 
 The public contract executes the actual five pinned Aurora function bodies and
 compares their complete FIFO bytes with an independent guest-word fixture. It
@@ -57,8 +59,10 @@ quiet NaNs, infinities and subnormals, plus CPU/memory canaries and diagnosed
 refusals before output. A separate dispatch contract checks both fast-path
 priorities and exactly one runtime-options invocation for extensions. The probe
 registry is separately compiled without translated headers or execution flags
-and exposes no execution handlers. The existing
-build workflow runs these contracts; no new workflow is introduced. Private build,
-exact-code CI and the light operation's hardware return remain pending.
+and exposes no execution handlers. The existing build workflow runs these contracts. Light candidate code `c2d862a` passes the
+private rendered build, SDK syntax and scoped provider/retention checks. Its
+complete published CI rollup is now 12/12 successful after interrupted runs were
+[rerun](CI_MERGE_POLICY_2026-10-09.md). The light operation's hardware return
+remains pending.
 
 Raw reports, game translations, NROs and image/replay data remain local.

@@ -22,6 +22,8 @@ PATTERNS = (
     "scripts/test-frame-dump.sh",
     "scripts/*desktop-gx-replay.sh",
     "scripts/prepare-replay-aurora.py",
+    "scripts/prepare-replay-runtime.py",
+    "patches/wiicompiled/m3-wiicompiled-switch-build.patch",
     "scripts/prepare-checked-aurora-fifo.py",
     "scripts/ci_desktop_replay_needed.py",
     ".github/workflows/desktop-replay.yml",

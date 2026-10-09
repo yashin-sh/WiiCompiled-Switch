@@ -250,6 +250,8 @@ class GateContracts(unittest.TestCase):
             "source/nw4r_lyt_draw_quad_hle_bridge.cpp",
             "tests/lyt_draw_quad_contract.cpp",
             "scripts/test-lyt-draw-quad.sh",
+            "scripts/prepare-replay-runtime.py",
+            "patches/wiicompiled/m3-wiicompiled-switch-build.patch",
             "source/rendered_fifo_capture.cpp",
             "include/surface_presenter.hpp",
             "third_party/WiiCompiled",

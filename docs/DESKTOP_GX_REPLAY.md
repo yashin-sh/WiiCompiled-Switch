@@ -207,3 +207,10 @@ Textured and vertex-colored quads must cover eight additional interior pixel
 samples and preserve the background. Separate capture/replay processes must
 produce identical PNGs. Alpha packet semantics are covered by
 `bash scripts/test-lyt-draw-quad.sh`; selected-XFB output has opaque alpha.
+
+Runtime headers for the production bridge come from a separate build mirror:
+`scripts/prepare-replay-runtime.py` extracts original pinned Git blobs and
+applies the public Switch integration patch there. Clean CI and locally patched
+checkouts therefore use the same adapted headers; the source checkout and its
+local integration changes are preserved. Runtime-mirror and patch changes
+select the full replay CI suite.

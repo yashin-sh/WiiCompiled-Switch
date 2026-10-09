@@ -37,6 +37,11 @@ flushes, preservation canaries and pre-output refusals. Unrelated registry
 providers have abort-only link seams in this scoped test; their separate
 contracts retain their actual native writers and decoders.
 
+The replay harness prepares a runtime-header build mirror from original pinned
+Git blobs and the public Switch patch, preserving the original checkout and
+its local integration edits. This corrects the initial clean-CI failure where
+unadapted runtime headers entered the Switch Memory slice.
+
 The desktop GPU suite links this production bridge and real checked Memory
 slice into the existing Aurora replay harness. New textured and vertex-colored
 quad scenes execute the actual native setters, display-list decoder and GPU

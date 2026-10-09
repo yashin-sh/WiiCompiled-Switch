@@ -74,6 +74,12 @@ inline void ApplyRuntimeCallOptions(std::uint32_t target, CpuContext* cpu) noexc
 #endif
 }
 
+// Source-owned additions for missing direct targets only. Existing native and
+// translated constexpr paths keep their priority and avoid this lookup.
+using MkwSwitchNativeCpuExtension = void (*)(CpuContext*) noexcept;
+extern "C" MkwSwitchNativeCpuExtension mkw_switch_find_missing_native_cpu_extension(
+    std::uint32_t target) noexcept;
+
 inline constexpr std::uint32_t kPpcAllNonvolatileFprMask = 0xFFFFC000u;
 
 template <std::uint32_t Target>
@@ -394,6 +400,12 @@ inline void InvokeDirectCpu(CpuContext* cpu) {
     if constexpr (KnownTranslatedCpuCall<Target>::kAvailable) {
         ApplyRuntimeCallOptions(Target, cpu);
         DispatchKnownTranslatedCpuTargetStatic<Target>(cpu);
+        return;
+    }
+
+    if (const auto extension = mkw_switch_find_missing_native_cpu_extension(Target)) {
+        ApplyRuntimeCallOptions(Target, cpu);
+        extension(cpu);
         return;
     }
 

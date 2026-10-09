@@ -46,6 +46,7 @@ jobs:
           bash scripts/test-diagnostic-sd-budget.sh
           bash scripts/test-ios-kd-request.sh
           bash scripts/test-gx-projection-vector.sh
+          bash scripts/test-gx-light-object.sh
           bash scripts/test-gx-scalar-batch.sh
           bash scripts/test-gx-indirect-batch.sh
           bash scripts/test-gx-chan-amb-color.sh

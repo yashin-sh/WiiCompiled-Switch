@@ -1,5 +1,7 @@
 # Documentation index
 
+- [Sampled SD diagnostics and KD post-resume stop](HARDWARE_KD_POST_RESUME_2026-10-09.md) — early 7.5–9.3 Hz, later stalls and a diagnosed fifth KD request; phase correction pending console
+
 - [Measured capture-disabled startup](HARDWARE_PRESENT_RATE_2026-10-09.md) — Wiimote warning then black, about 1.18 Hz; diagnostic SD sampling correction pending hardware
 - [Previous console trial and capture control](HARDWARE_CAPTURE_CONTROL_2026-10-09.md) — operator reports boot images/low FPS; saved black checkpoints and replay budget failure
 - [Texture families, XFB presentation and later-frame replay](GX_TEXTURE_FAMILY_PRESENT_REPLAY.md) — address-independent loading crossed the prior guard; follow-up capture/control trial pending

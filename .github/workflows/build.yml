@@ -44,6 +44,7 @@ jobs:
       - name: Execute GX, memory and host-context contracts
         run: |
           bash scripts/test-diagnostic-sd-budget.sh
+          bash scripts/test-ios-kd-request.sh
           bash scripts/test-gx-scalar-batch.sh
           bash scripts/test-gx-indirect-batch.sh
           bash scripts/test-gx-chan-amb-color.sh

@@ -17,6 +17,13 @@ new object or source addresses no longer require a separate address admission.
 Other formats, sampler states and unvalidated semantics still stop. Synthetic
 family coverage is distinct from actual returns observed on the console.
 
+The observed fifth KD request now uses the pinned process-wide Boot →
+PostResumeProbe → Ready state across bounded live-handle allocation and close.
+Only the already attributed request commands and buffer shapes are admitted;
+unknown nodes/commands still stop. Alternative handle lifetimes and Ready-phase
+repeats have executable synthetic coverage and require distinct console evidence
+before being described as observed hardware returns.
+
 The audit also identified two places where the proof standard must be stricter:
 public CI does not build the private RMCP01 rendered target, and a dispatch
 counter alone does not prove that a native bridge executed successfully and

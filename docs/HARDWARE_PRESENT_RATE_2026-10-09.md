@@ -55,3 +55,7 @@ identity; recovery copies and the cleanup manifest stay private.
 Executed-product identity, report retrieval checksums, raw diagnostics and private
 NRO backups are excluded from public source. The earlier captured-pixel result
 remains in the [preceding trial](HARDWARE_CAPTURE_CONTROL_2026-10-09.md).
+
+The [subsequent sampled-SD trial](HARDWARE_KD_POST_RESUME_2026-10-09.md) records
+faster early windows and a new diagnosed KD post-resume stop. Its differing
+endpoints and durations are documented separately.

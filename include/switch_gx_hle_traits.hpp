@@ -16,6 +16,7 @@ extern "C" void mkw_switch_hle_gx_set_viewport(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_get_viewport(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_z_scale_offset(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_scissor(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_scissor_box_offset(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_load_pos_mtx_imm(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_load_tex_mtx_imm(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_current_mtx(CpuContext* cpu) noexcept;
@@ -176,6 +177,15 @@ struct KnownNativeCpuCall<0x80173430u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_scissor(cpu);
+    }
+};
+
+// Scissor-origin offset uses the same native GX and best-effort GXData state.
+template <>
+struct KnownNativeCpuCall<0x801734E0u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_scissor_box_offset(cpu);
     }
 };
 

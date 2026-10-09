@@ -2,6 +2,13 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-09: [projection/scissor-origin run](HARDWARE_PROJECTION_SCISSOR_2026-10-09.md)
+accepts projection-getter return through checked caller progression, then stops
+at GXSetScissorBoxOffset(0,0). Captures are disabled; no new pixels or visual
+observation are attributed. The existing viewport suite now validates the
+representable scissor-origin family and pinned BP output. Remaining build and
+hardware gates are pending.
+
 2026-10-09: [capture-disabled KD/projection trial](HARDWARE_KD_PROJECTION_2026-10-09.md)
 accepts the post-resume request and close on handle 2004, then diagnoses
 GXGetProjectionv at about 61 seconds. No new pixels are attributed with captures

@@ -6,8 +6,8 @@ Experimental Nintendo Switch homebrew port of [WiiCompiled](https://github.com/p
 
 A recognizable Wiimote safety page is now captured on Switch and reproduced by desktop FIFO replay. Later checkpoints remain black; menu progression, steady performance and playability are unproven.
 Real translated execution, observed boot-resource reads and the Aurora → Dawn/WebGPU → Vulkan/NVK presentation path run on Switch.
-With captures disabled and diagnostic SD writes sampled, early startup reaches 7.5–9.3 Hz before later stalls. The capture-enabled trial retains 90 replayable frames. A subsequent capture-disabled run accepts the KD post-resume request and next stops at the projection-vector getter; the shared projection save/restore correction awaits validation.
-The [latest image and replay evidence](docs/HARDWARE_NONBLACK_REPLAY_2026-10-09.md) records the recognizable boot page and black later checkpoint; the [latest progress report](docs/HARDWARE_KD_PROJECTION_2026-10-09.md) accepts the KD correction and identifies the projection boundary.
+With captures disabled and diagnostic SD writes sampled, early startup reaches 7.5–9.3 Hz before later stalls. The capture-enabled trial retains 90 replayable frames. Subsequent capture-disabled runs accept the KD post-resume request and the projection getter. The latest stop is the scissor-origin offset; its native/guest-state correction awaits validation.
+The [latest image and replay evidence](docs/HARDWARE_NONBLACK_REPLAY_2026-10-09.md) records the recognizable boot page and black later checkpoint; the [latest progress report](docs/HARDWARE_PROJECTION_SCISSOR_2026-10-09.md) accepts projection-getter return and identifies the scissor-origin boundary.
 See [the roadmap](ROADMAP.md) for the current frontier and [the status log](docs/STATUS_LOG.md) for dated evidence.
 
 ## Quick build

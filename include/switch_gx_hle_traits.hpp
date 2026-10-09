@@ -10,6 +10,8 @@ extern "C" void mkw_switch_hle_gx_init(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_draw_done(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_pix_mode_sync(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_projectionv(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_get_projectionv(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_viewport(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_get_viewport(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_z_scale_offset(CpuContext* cpu) noexcept;
@@ -116,6 +118,23 @@ struct KnownNativeCpuCall<0x8017301Cu> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_projection(cpu);
+    }
+};
+
+// Projection-vector save/restore used by the same EGG state wrapper. Both
+// boundaries share the matrix setter's pinned seven-float shadow.
+template <>
+struct KnownNativeCpuCall<0x80173080u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_projectionv(cpu);
+    }
+};
+template <>
+struct KnownNativeCpuCall<0x801730CCu> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_get_projectionv(cpu);
     }
 };
 

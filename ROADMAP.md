@@ -10,9 +10,11 @@ steady performance remain unproven.
 
 The preceding [sampled-SD trial](docs/HARDWARE_KD_POST_RESUME_2026-10-09.md)
 reaches 7.5–9.3 Hz early with captures disabled before stopping at the fifth KD
-request after resume. The phase/live-handle correction runs the earlier resume
-and close sequence in the latest trial, but that fifth request is not reached.
-Console acceptance still needs a capture-disabled run of the same candidate.
+request after resume. The subsequent [capture-disabled run](docs/HARDWARE_KD_PROJECTION_2026-10-09.md)
+accepts the fifth post-resume probe and close, then stops at GXGetProjectionv.
+The correction maintains the shared projection shadow and implements the getter
+and the vector setter in the same caller. Local contracts pass; private build,
+exact-head CI and console acceptance remain pending.
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.

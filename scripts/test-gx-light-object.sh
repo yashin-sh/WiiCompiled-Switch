@@ -26,11 +26,17 @@ signature = "void GXLoadNrmMtxImm(const void* mtx_, u32 id)"
 source = (root / "third_party/WiiCompiled/aurora-main/lib/dolphin/gx/GXTev.cpp").read_text()
 signature = "void GXSetZTexture(GXZTexOp op, GXTexFmt fmt, u32 bias)"
 (test / "pinned-z-texture-native.inc").write_text(signature + " {" + source.split(signature + " {", 1)[1].split("\n}", 1)[0] + "\n}\n")
+signature = "void GXSetTevColorS10(GXTevRegID id, GXColorS10 color)"
+(test / "pinned-tev-s10-native.inc").write_text(signature + " {" + source.split(signature + " {", 1)[1].split("\n}", 1)[0] + "\n}\n")
 source = (root / "third_party/WiiCompiled/aurora-main/lib/dolphin/gx/__gx.h").read_text()
 (test / "pinned-gx-data.inc").write_text("struct __GXData_struct {" + source.split("struct __GXData_struct {", 1)[1].split("\n};", 1)[0] + "\n};\n")
+(test / "pinned-set-reg-field.inc").write_text("#define SET_REG_FIELD" + source.split("#define SET_REG_FIELD", 1)[1].split("\n\n", 1)[0] + "\n")
 source = (root / "third_party/WiiCompiled/aurora-main/lib/gx/command_processor.cpp").read_text()
 cases = ["case 0xF4: {", "case 0xF5: {"]
 (test / "pinned-z-texture-decode.inc").write_text("\n".join(case + source.split(case, 1)[1].split("\n  }", 1)[0] + "\n}" for case in cases))
+start = source.index("  case 0xE0:\n")
+end = source.index("  // Indirect texture matrices", start)
+(test / "pinned-tev-s10-decode.inc").write_text(source[start:end])
 for signature, name in [("inline static u32 bp_get(u32 reg, u32 size, u32 shift)", "pinned-bp-get.inc"),
                         ("static inline void mark_pipeline_state_dirty() noexcept", "pinned-pipeline-dirty.inc")]:
     suffix = source.split(signature + " {", 1)[1]
@@ -47,11 +53,12 @@ flags=(-std=c++20 -O2 -Wall -Wextra -Werror "-fsanitize=address,undefined" -fno-
     -isystem "$ROOT_DIR/third_party/WiiCompiled/runtime/src/hle/gx"
     -isystem "$ROOT_DIR/third_party/WiiCompiled/aurora-main/include")
 for rendered in 0 1; do
-    for contract in gx_light_object gx_normal_matrix gx_z_texture; do
+    for contract in gx_light_object gx_normal_matrix gx_z_texture gx_tev_color_s10; do
         "$HOST_CXX" "${flags[@]}" -DMKW_LOCAL_RENDERED_FAST_TRACK="$rendered" \
             "$ROOT_DIR/tests/${contract}_contract.cpp" "$ROOT_DIR/source/memory_switch_slice.cpp" \
             "$ROOT_DIR/source/missing_native_cpu_extensions.cpp" "$ROOT_DIR/source/gx_load_light_obj_hle_bridge.cpp" \
-            "$ROOT_DIR/source/gx_load_nrm_mtx_imm_hle_bridge.cpp" "$ROOT_DIR/source/gx_set_z_texture_hle_bridge.cpp" -o "$TEST_DIR/$contract-$rendered"
+            "$ROOT_DIR/source/gx_load_nrm_mtx_imm_hle_bridge.cpp" "$ROOT_DIR/source/gx_set_z_texture_hle_bridge.cpp" \
+            "$ROOT_DIR/source/gx_set_tev_color_s10_hle_bridge.cpp" -o "$TEST_DIR/$contract-$rendered"
         "$TEST_DIR/$contract-$rendered"
     done
 done

@@ -12,8 +12,10 @@ __GXData_struct* __gx = &nativeState;
         Emit(4, static_cast<std::uint32_t>(value)); \
     } while (false)
 #define CHECK(condition, ...) assert(condition)
+#include "pinned-set-reg-field.inc"
 extern "C" {
 #include "pinned-light-native.inc"
 #include "pinned-normal-native.inc"
 #include "pinned-z-texture-native.inc"
+#include "pinned-tev-s10-native.inc"
 }

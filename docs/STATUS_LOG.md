@@ -2,6 +2,13 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-09: [signed TEV color bridge](GX_TEV_COLOR_S10_2026-10-09.md)
+adds the missing direct target through the source-owned extension registry.
+All four IDs and complete eight-byte guest inputs are checked before native
+output. ASan/UBSan passes 196,610 pinned writer/decoder packets and both-mode
+refusals. The private build, exact-HEAD CI and fresh console trial are the
+remaining gates; the observed color payload is still unknown.
+
 2026-10-09: [matrix-30 console result](HARDWARE_TEX_COORD_TEV_S10_2026-10-09.md)
 accepts Gen2 return through checked caller progression and reaches
 `GXSetTevColorS10`, ID 1 / pointer `0x80398E80`, at 53.437 seconds. All 39

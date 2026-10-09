@@ -40,7 +40,7 @@ published exact-HEAD checks pass. The
 the matrix-30 return through checked caller progression. The previous Dawn
 validation errors are absent from the new graphics report. The next direct
 boundary is `GXSetTevColorS10`, ID 1 / pointer `0x80398E80`; its component
-values are not recorded. Later pixels and playability remain pending.
+values are not recorded. The [new signed-color bridge](docs/GX_TEV_COLOR_S10_2026-10-09.md) checks all four IDs and complete signed guest input before native emission; 196,610 writer/decoder cases pass. Its private build, exact-HEAD CI and fresh console trial remain required. Later pixels and playability remain pending.
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.

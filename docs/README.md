@@ -1,5 +1,6 @@
 # Documentation index
 
+- [Signed TEV color bridge](GX_TEV_COLOR_S10_2026-10-09.md) — checked signed guest conversion; 196,610 pinned native writer/decoder cases
 - [Matrix-30 return; signed TEV color stop](HARDWARE_TEX_COORD_TEV_S10_2026-10-09.md) — 39 reports independently verified; prior Dawn validation error absent, S10 payload unknown
 - [Observed matrix and snapshot copy correction](GX_TEX_COORD_SNAPSHOT_2026-10-09.md) — bounded matrix-30 forwarding, pinned native packets and reproduced GPU copy regression
 - [Depth-texture return; texture-coordinate refusal](HARDWARE_Z_TEXTURE_TEX_COORD_2026-10-09.md) — 39 reports independently verified; matrix-30 guard and Dawn copy-source usage error

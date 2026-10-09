@@ -79,8 +79,12 @@ scanout, input, sound or playability. Readbacks and SD writes add diagnostic cos
 these runs are not performance measurements. The [paired-stage trial](HARDWARE_CAPTURE_CONTROL_2026-10-09.md) records black
 frame-1/90 pixels with opaque final surface alpha, while the operator reports
 boot images/low FPS absent from those retained files. The live status reached
-102 before manual exit without a final save. The first-nonblack/control additions
-require another console trial. The preceding [corrected console trial](HARDWARE_SURFACE_CHECKPOINT_2026-10-08.md)
+102 before manual exit without a final save. The subsequent
+[first-nonblack trial](HARDWARE_NONBLACK_REPLAY_2026-10-09.md) retains the recognizable
+Wiimote safety page at frame 4 in both selected-copy and presented-surface PNGs.
+Its live status reaches 98, while the retained periodic PNG/replay checkpoint
+ends at 90 and remains black. The first-nonblack retention is now hardware-proven;
+the pending KD post-resume request and later rendering still need another run. The preceding [corrected console trial](HARDWARE_SURFACE_CHECKPOINT_2026-10-08.md)
 validates first/latest image saving and a checkpoint at frame 102. Both images
 have black RGB; the first has alpha 255 and the last alpha 0. The retained alpha
 is reported separately from RGB and does not establish the cause of black output.

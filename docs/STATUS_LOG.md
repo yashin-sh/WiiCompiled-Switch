@@ -2,6 +2,12 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-09: [capture-disabled startup measurement](HARDWARE_PRESENT_RATE_2026-10-09.md)
+confirms both capture controllers were disabled. Eight present windows average
+about 1.18 Hz; the operator sees the Wiimote warning page, then black. No terminal
+blocker is recorded. Recurring diagnostic SD writes are now sampled, with hardware
+impact pending. Forty old project NROs were backed up, verified and removed.
+
 2026-10-09: [texture-family/selected-XFB console trial](HARDWARE_CAPTURE_CONTROL_2026-10-09.md)
 advances beyond the former Mii load guard. The operator reports visible boot images
 and low FPS. Saved frame-1/90 pixels remain black; manual exit precedes a final

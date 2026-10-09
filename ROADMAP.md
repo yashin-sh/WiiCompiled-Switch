@@ -2,19 +2,19 @@
 
 ## Current checkpoint — 2026-10-09
 
-The [texture-family/selected-XFB trial](docs/HARDWARE_CAPTURE_CONTROL_2026-10-09.md)
-advances beyond the former Mii identity guard. The operator reports visible boot
-images and very low frame rate. Saved frame-1/90 images remain black; the live
-status reached frame 102 before manual exit without a final checkpoint. The
-selected-copy/EFB files at frame 90 have zero alpha, while the final surface is
-opaque. This does not validate recognizable captured game content or playability.
+The [capture-disabled trial](docs/HARDWARE_PRESENT_RATE_2026-10-09.md) shows
+about 1.18 completed presentations per second during observed startup, including
+loading and stalls. The operator sees the Wiimote warning page, then black.
+Both capture controllers are disabled; no new pixels or replay are attributed to
+this run. There are 94 successful presents, no present failures and no recorded
+terminal blocker. The cause of the later black screen remains unresolved.
 
-FIFO recording exhausted its 8 MiB budget after four completed frames; only the
-first prefix was saved. That frame replays with pixels identical to its Switch
-selected copy. The follow-up avoids unchanged memory snapshots, saves the last
-complete prefix on failure, retains the first nonblack images, and adds a startup
-capture-disable control plus measured present windows. Console validation of the
-follow-up and a performance comparison remain pending.
+The next candidate retains bounded startup evidence and limits recurring
+post-main SD snapshots to once per second, with immediate terminal reports.
+Its effect on hardware speed is pending. The [previous capture trial](docs/HARDWARE_CAPTURE_CONTROL_2026-10-09.md)
+advanced beyond the former Mii identity guard, but saved black checkpoints and
+exhausted the FIFO budget; revised nonblack retention and replay capture still
+need a console run with captures enabled. Playability remains unproven.
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.

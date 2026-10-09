@@ -138,6 +138,9 @@ std::uint64_t g_post_main_trace_entries = 0u;
 std::uint64_t g_post_video_trace_entries = 0u;
 bool g_post_video_trace_started = false;
 std::uint64_t g_last_heartbeat_tick = 0u;
+bool g_have_heartbeat_tick = false;
+std::uint64_t g_last_post_main_snapshot_tick = 0u;
+bool g_have_post_main_snapshot_tick = false;
 std::uint64_t g_rksystem_run_dispatch_count = 0u;
 std::uint64_t g_staticr_dispatch_count = 0u;
 std::uint64_t g_vi_wait_for_retrace_dispatch_count = 0u;
@@ -977,13 +980,27 @@ extern "C" void mkw_switch_note_translated_dispatch(
 
     const bool phase_target =
         post_main_dispatch && is_durable_post_main_phase_target(target);
+    const std::uint64_t now = armGetSystemTick();
+    const std::uint64_t frequency = armGetSystemTickFreq();
+    // Scheduler and GX phase targets recur thousands of times. Synchronizing
+    // a multi-kilobyte SD report at each hit can dominate guest execution.
+    // Retain the bounded startup evidence, then sample at most once per second
+    // across all targets. Terminal blocker/exception reports remain immediate.
+    const bool post_main_snapshot_due =
+        frequency != 0u &&
+        (!g_have_post_main_snapshot_tick ||
+         (now >= g_last_post_main_snapshot_tick &&
+          now - g_last_post_main_snapshot_tick >= frequency));
     const bool durable_post_main_snapshot =
         post_main_dispatch &&
-        (g_post_main_dispatch_count <= kDurableEarlyPostMainDispatches || phase_target);
+        (g_post_main_dispatch_count <= kDurableEarlyPostMainDispatches ||
+         post_main_snapshot_due);
     if (durable_post_main_snapshot) {
+        g_last_post_main_snapshot_tick = now;
+        g_have_post_main_snapshot_tick = true;
         write_liveness_record(
             kPostMainLastDispatchPath,
-            "WiiCompiled-Switch durable post-main translated dispatch",
+            "WiiCompiled-Switch sampled post-main translated dispatch (startup then <=1 Hz)",
             target,
             cpu);
     }
@@ -992,13 +1009,13 @@ extern "C" void mkw_switch_note_translated_dispatch(
         append_post_video_trace(target, cpu);
     }
 
-    const std::uint64_t now = armGetSystemTick();
-    const std::uint64_t frequency = armGetSystemTickFreq();
     const bool heartbeat_due =
-        g_last_heartbeat_tick == 0u || frequency == 0u ||
-        now - g_last_heartbeat_tick >= frequency;
+        !g_have_heartbeat_tick ||
+        (frequency != 0u && now >= g_last_heartbeat_tick &&
+         now - g_last_heartbeat_tick >= frequency);
     if (heartbeat_due || target == kPalMainAddress || first_post_main_dispatch) {
         g_last_heartbeat_tick = now;
+        g_have_heartbeat_tick = true;
         write_liveness_record(
             kHeartbeatPath,
             "WiiCompiled-Switch translated liveness heartbeat",

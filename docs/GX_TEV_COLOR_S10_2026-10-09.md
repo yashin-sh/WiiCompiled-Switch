@@ -31,10 +31,21 @@ The suite retains light, normal-matrix, depth-texture, dispatch priority and
 public-probe contracts. The decoder uses a small state seam; it proves these
 register effects, without claiming GPU pixels or a console return.
 
-The separate private rendered/capture build, SDK syntax, scoped provider and
-ELF-retention audits, and all published checks on the exact PR HEAD must pass
-before merge. The resulting NRO must be checked by complete SD readback before
-the next console trial. Hardware acceptance remains pending that fresh run.
+Candidate `d5f24b9` passes the separate private rendered/capture build and SDK
+syntax for all 70 rendered source files. Scoped audit verifies 82 unique
+providers across 272 explicit link inputs; the ELF retains 100 strong functions
+and three GX state objects. Original private patch bytes and nanosecond mtimes
+are preserved. The full paginated exact-HEAD rollup has eight completed,
+successful checks. [PR #350](https://github.com/yashin-sh/WiiCompiled-Switch/pull/350)
+merged into `main` as `25a95c4` at 21:27:30 UTC through the mandatory merge gate.
+
+The exact NRO is 74,432,568 bytes, SHA-256
+`c554d17150415e34fd1976567d1c00568a5281c1904a81dc051f962f4e06ea62`.
+It is copied to `sdmc:/switch/WiiCompiled-Switch-tev-color-s10-d5f24b9.nro`;
+complete byte/SHA readback passes at 21:27:45 UTC. The preceding owned candidate
+is backed up with its recorded hash before removal. The capture-disabled startup
+marker is independently reread. The next console trial and hardware acceptance
+remain pending Netloader readiness.
 
 The initial public SDK jobs hit Docker Hub rate limits before compilation.
 The [CI image correction](CI_MERGE_POLICY_2026-10-09.md#sdk-image-availability)

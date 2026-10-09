@@ -6,8 +6,11 @@ Archived from the project README on 2026-10-07. This preserves the dated evidenc
 adds the missing direct target through the source-owned extension registry.
 All four IDs and complete eight-byte guest inputs are checked before native
 output. ASan/UBSan passes 196,610 pinned writer/decoder packets and both-mode
-refusals. The private build, exact-HEAD CI and fresh console trial are the
-remaining gates; the observed color payload is still unknown.
+refusals. Candidate `d5f24b9` passes the private rendered build, 70-file SDK
+syntax, 82 scoped providers / 100 retained functions and all eight published
+exact-HEAD checks. PR #350 merges as `25a95c4`; full SD readback verifies the
+74,432,568-byte NRO at 21:27:45 UTC. Fresh console execution remains pending;
+the observed color payload is still unknown.
 
 2026-10-09: [matrix-30 console result](HARDWARE_TEX_COORD_TEV_S10_2026-10-09.md)
 accepts Gen2 return through checked caller progression and reaches

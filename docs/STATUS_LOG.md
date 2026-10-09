@@ -2,6 +2,14 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-09: [recognizable Switch image and desktop replay](HARDWARE_NONBLACK_REPLAY_2026-10-09.md)
+retain the Wiimote safety page at frame 4 in both selected-copy and final-surface
+PNGs. Desktop replay reproduces that page and validates the complete saved
+90-frame prefix; frame 90 remains black. The later KD post-resume request is
+not reached. The next run disables captures on the same validated candidate.
+Three additional old project copies/transfer aliases were verified, archived and
+removed, leaving the current candidate.
+
 2026-10-09: [sampled diagnostic SD writes trial](HARDWARE_KD_POST_RESUME_2026-10-09.md)
 records early 7.5–9.3 Hz, later stalls and a 2.968 Hz window average with captures
 disabled. A fresh terminal report stops at the fifth KD request, command 2 after

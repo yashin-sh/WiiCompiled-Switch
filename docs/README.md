@@ -1,5 +1,7 @@
 # Documentation index
 
+- [Recognizable Switch image and desktop replay](HARDWARE_NONBLACK_REPLAY_2026-10-09.md) — Wiimote safety page retained at frame 4, 90-frame replay validated; later black interval and KD acceptance remain open
+
 - [Sampled SD diagnostics and KD post-resume stop](HARDWARE_KD_POST_RESUME_2026-10-09.md) — early 7.5–9.3 Hz, later stalls and a diagnosed fifth KD request; phase correction pending console
 
 - [Measured capture-disabled startup](HARDWARE_PRESENT_RATE_2026-10-09.md) — Wiimote warning then black, about 1.18 Hz; diagnostic SD sampling correction pending hardware

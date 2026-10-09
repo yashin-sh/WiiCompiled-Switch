@@ -65,3 +65,6 @@ exceptions. A separate fixture executes the actual pinned Aurora function body
 and independently checks all emitted command bytes, register state and canaries
 in 12,435 cases. Final private build/provider checks and the console trial remain
 pending. Raw reports, game data, private NROs and recovery archives stay local.
+
+The [subsequent trial](HARDWARE_SCISSOR_LIGHT_2026-10-09.md) accepts the observed
+scissor helper returning and exposes light-object loading as the next boundary.

@@ -2,6 +2,12 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-09: [scissor/light trial](HARDWARE_SCISSOR_LIGHT_2026-10-09.md) accepts
+the observed scissor helper returning, then stops at native light loading. Captures
+remain disabled; no new pixels are attributed. The candidate converts the full
+light object and covers all eight IDs, with actual pinned FIFO contracts and a
+source-owned missing-direct-call registry. Private/CI/hardware gates are pending.
+
 2026-10-09: [projection/scissor-origin run](HARDWARE_PROJECTION_SCISSOR_2026-10-09.md)
 accepts projection-getter return through checked caller progression, then stops
 at GXSetScissorBoxOffset(0,0). Captures are disabled; no new pixels or visual

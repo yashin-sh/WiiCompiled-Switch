@@ -274,12 +274,13 @@ extern "C" void mkw_replay_log(const char* message) {
 int main(int argc, char** argv) {
     bool initialized = false;
     try {
-        check(argc == 4 && (std::string(argv[1]) == "capture-i4" || std::string(argv[1]) == "replay-i4-check" || std::string(argv[1]) == "capture-rgb5a3" || std::string(argv[1]) == "capture-sequence" || std::string(argv[1]) == "replay-sequence-check" || std::string(argv[1]) == "capture" || std::string(argv[1]) == "capture-copies" || std::string(argv[1]) == "capture-wide" || std::string(argv[1]) == "capture-indexed" || std::string(argv[1]) == "replay" || std::string(argv[1]) == "replay-check" || std::string(argv[1]) == "replay-copies-check"), "usage: mkw-gx-replay capture|replay|replay-check capture.mkwr output.png");
+        check(argc == 4 && (std::string(argv[1]) == "capture-i4" || std::string(argv[1]) == "replay-i4-check" || std::string(argv[1]) == "capture-rgb5a3" || std::string(argv[1]) == "capture-sequence" || std::string(argv[1]) == "replay-sequence-check" || std::string(argv[1]) == "capture" || std::string(argv[1]) == "capture-copies" || std::string(argv[1]) == "capture-direct-copies" || std::string(argv[1]) == "replay-direct-copies-check" || std::string(argv[1]) == "capture-wide" || std::string(argv[1]) == "capture-indexed" || std::string(argv[1]) == "replay" || std::string(argv[1]) == "replay-check" || std::string(argv[1]) == "replay-copies-check"), "usage: mkw-gx-replay capture|replay|replay-check capture.mkwr output.png");
         const bool i4 = std::string(argv[1]).find("i4") != std::string::npos;
         const bool rgb5a3 = std::string(argv[1]) == "capture-rgb5a3";
         const bool sequence = std::string(argv[1]).find("sequence") != std::string::npos;
         const bool indexed = std::string(argv[1]) == "capture-indexed";
         const bool copies = std::string(argv[1]).find("copies") != std::string::npos;
+        const bool directCopies = std::string(argv[1]).find("direct-copies") != std::string::npos;
         const bool capture = std::string(argv[1]).starts_with("capture");
         if (std::string(argv[1]) == "capture-wide") {
             width = 617;
@@ -326,6 +327,12 @@ int main(int argc, char** argv) {
                 recorder.memory(copyDestination);
             replay::set_recorder(&recorder);
             setup();
+            if (directCopies) {
+                // Alpha-bearing EFB and matching RGBA8 dimensions select the
+                // exact texture-copy path rather than conversion/alpha blits.
+                GXSetPixelFmt(GX_PF_RGBA6_Z24, GX_ZC_LINEAR);
+                GXSetCopyFilter(GX_FALSE, nullptr, GX_FALSE, nullptr);
+            }
             GXTexObj obj{};
             GXInitTexObj(&obj, texture.data(), textureWidth, textureHeight, textureFormat, GX_CLAMP, GX_CLAMP, GX_FALSE);
             GXLoadTexObj(&obj, GX_TEXMAP0);
@@ -344,14 +351,18 @@ int main(int argc, char** argv) {
                 GXSetVtxDesc(GX_VA_TEX0, GX_DIRECT);
             }
             if (copies) {
+                if (directCopies)
+                    AuroraSetViewportPolicy(AURORA_VIEWPORT_NATIVE);
                 GXSetCopyClear(GXColor{64, 64, 64, 255}, 0xffffff);
                 GXSetTexCopySrcRender(62, 126, 4, 4);
-                GXSetTexCopyDst(4, 4, GX_TF_RGB5A3, GX_FALSE);
+                GXSetTexCopyDst(4, 4, directCopies ? GX_TF_RGBA8 : GX_TF_RGB5A3, GX_FALSE);
                 GXCopyTex(copyDestination.data(), GX_TRUE);
+                if (directCopies)
+                    AuroraSetViewportPolicy(AURORA_VIEWPORT_FIT);
             }
             fill(true);
             GXInvalidateTexAll();
-            GXInitTexObj(&obj, copies ? copyDestination.data() : texture.data(), copies ? 4u : textureWidth, copies ? 4u : textureHeight, copies ? GX_TF_RGB5A3 : textureFormat, GX_CLAMP, GX_CLAMP, GX_FALSE);
+            GXInitTexObj(&obj, copies ? copyDestination.data() : texture.data(), copies ? 4u : textureWidth, copies ? 4u : textureHeight, copies ? (directCopies ? GX_TF_RGBA8 : GX_TF_RGB5A3) : textureFormat, GX_CLAMP, GX_CLAMP, GX_FALSE);
             GXLoadTexObj(&obj, GX_TEXMAP0);
             // Flush pending native state, then use raw FIFO.
             GXFlush();

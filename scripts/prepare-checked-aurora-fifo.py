@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare checked display-list writes and float scalars in a build-only mirror."""
+"""Prepare checked FIFO writes, scalars and copy textures in a build mirror."""
 
 import argparse
 import hashlib
@@ -9,6 +9,21 @@ from pathlib import Path
 FIFO_SHA256 = "6070d40ebda0c909cc5356eaa241e42f2980069c294b41bcf8d1f4c74c5dd17c"
 
 VERT_SHA256 = "0f1f91b132507547a65a34c6acc7b4425748ca5ea5542360270e8908ea6eaecc"
+COMMON_SHA256 = "8569fa8facd4f5062730e5011db87b4591129225c72956991fc4b7592cdec6e1"
+
+
+def checked_common(text: str) -> str:
+    if hashlib.sha256(text.encode()).hexdigest() != COMMON_SHA256:
+        raise ValueError("pinned Aurora copy renderer changed; re-audit required")
+    needle = (
+        '      .label = "GX Copy Source Snapshot",\n'
+        "      .usage = wgpu::TextureUsage::TextureBinding | wgpu::TextureUsage::CopyDst,"
+    )
+    if text.count(needle) != 1:
+        raise ValueError("copy source snapshot descriptor is ambiguous")
+    # The snapshot is both a copy destination and an exact-copy source;
+    # shader-sampled paths also retain their existing TextureBinding usage.
+    return text.replace(needle, needle[:-1] + " | wgpu::TextureUsage::CopySrc,")
 
 
 def checked_vert(text: str) -> str:
@@ -60,6 +75,9 @@ def prepare(source: Path, destination: Path) -> None:
     ):
         raise ValueError("the build mirror must be outside the original Aurora tree")
     replacements = {
+        source / "lib/gfx/common.cpp": checked_common(
+            (source / "lib/gfx/common.cpp").read_text()
+        ).encode(),
         source / "lib/gx/fifo.hpp": checked_fifo(
             (source / "lib/gx/fifo.hpp").read_text()
         ).encode(),

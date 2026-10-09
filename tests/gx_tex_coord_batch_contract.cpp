@@ -64,8 +64,8 @@ CpuContext MakeCpu(std::uint32_t coord, std::uint32_t r4 = 0u,
     cpu.gpr[6] = r6;
     return cpu;
 }
-CpuContext GenCpu(std::uint32_t coord) {
-    auto cpu = MakeCpu(coord, 1u, 4u, 60u);
+CpuContext GenCpu(std::uint32_t coord, std::uint32_t matrix = 60u) {
+    auto cpu = MakeCpu(coord, 1u, 4u, matrix);
     cpu.gpr[7] = 0u;
     cpu.gpr[8] = 125u;
     return cpu;
@@ -286,7 +286,7 @@ extern "C" void GXSetTexCoordGen2(GXTexCoordID coord, GXTexGenType type, GXTexGe
                                   u32 mtx, GXBool normalize, u32 postMtx) {
     CheckNative(genTarget);
     assert(coord == static_cast<GXTexCoordID>(expectedCpu.gpr[3]));
-    assert(type == GX_TG_MTX2x4 && src == GX_TG_TEX0 && mtx == GX_IDENTITY);
+    assert(type == GX_TG_MTX2x4 && src == GX_TG_TEX0 && mtx == expectedCpu.gpr[6]);
     assert(normalize == GX_FALSE && postMtx == GX_PTIDENTITY);
 }
 extern "C" void mkw_switch_report_unsupported_translated_dispatch(
@@ -337,6 +337,19 @@ int main() {
         InitFull();
         auto cpu = GenCpu(coord);
         InvokeAndCheck<genTarget>(cpu, regions); // Gen2 has no guest mirror.
+    }
+    auto observed = GenCpu(0u, 30u);
+    InvokeAndCheck<genTarget>(observed, regions);
+    // The new admission is exactly coordinate 0 / matrix 30. Neither high
+    // words nor neighboring matrix slots may alias the accepted value.
+    for (auto matrix : {0u, 29u, 31u, 33u, 57u, 61u, 0x1001eu, 0xffffffffu})
+        ExpectAbort<genTarget>(GenCpu(0u, matrix), "GX_SET_TEX_COORD_GEN2_UNPROVEN_ARGS");
+    for (std::uint32_t coord = 1; coord < 8u; ++coord)
+        ExpectAbort<genTarget>(GenCpu(coord, 30u), "GX_SET_TEX_COORD_GEN2_UNPROVEN_ARGS");
+    for (auto reg : {4u, 5u, 7u, 8u}) {
+        auto invalid = observed;
+        invalid.gpr[reg] ^= 1u;
+        ExpectAbort<genTarget>(invalid, "GX_SET_TEX_COORD_GEN2_UNPROVEN_ARGS");
     }
 
     // No mirror backing is required for a valid native invocation.

@@ -17,7 +17,8 @@ namespace {
 constexpr std::uint32_t kGxSetTexCoordGen2Address = 0x8016E37Cu;
 constexpr std::uint32_t kObservedType = 1u;
 constexpr std::uint32_t kObservedSrc = 4u;
-constexpr std::uint32_t kObservedMtx = 60u;
+constexpr std::uint32_t kIdentityMtx = 60u;
+constexpr std::uint32_t kObservedTextureMtx = 30u;
 constexpr std::uint32_t kObservedNormalize = 0u;
 constexpr std::uint32_t kObservedPostMtx = 125u;
 
@@ -48,7 +49,7 @@ extern "C" void mkw_switch_hle_gx_set_tex_coord_gen2(CpuContext* cpu) noexcept {
     if (dst >= 8u ||
         type != kObservedType ||
         src != kObservedSrc ||
-        mtx != kObservedMtx ||
+        (mtx != kIdentityMtx && !(dst == 0u && mtx == kObservedTextureMtx)) ||
         normalize != kObservedNormalize ||
         postMtx != kObservedPostMtx) {
         AbortUnproven(cpu);
@@ -59,7 +60,7 @@ extern "C" void mkw_switch_hle_gx_set_tex_coord_gen2(CpuContext* cpu) noexcept {
         static_cast<GXTexCoordID>(dst),
         GX_TG_MTX2x4,
         GX_TG_TEX0,
-        GX_IDENTITY,
+        mtx,
         GX_FALSE,
         GX_PTIDENTITY);
 #endif

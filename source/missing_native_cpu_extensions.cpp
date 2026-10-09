@@ -11,6 +11,7 @@ extern "C" void mkw_switch_hle_gx_load_light_obj_imm(CpuContext*) noexcept;
 extern "C" void mkw_switch_hle_gx_load_nrm_mtx_imm(CpuContext*) noexcept;
 extern "C" void mkw_switch_hle_gx_set_z_texture(CpuContext*) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_color_s10(CpuContext*) noexcept;
+extern "C" void mkw_switch_hle_lyt_draw_quad(CpuContext*) noexcept;
 #endif
 
 extern "C" NativeCpuExtension mkw_switch_find_missing_native_cpu_extension(
@@ -18,6 +19,8 @@ extern "C" NativeCpuExtension mkw_switch_find_missing_native_cpu_extension(
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
     switch (target) {
+    case 0x80084d20u:
+        return mkw_switch_hle_lyt_draw_quad;
     case 0x80170320u:
         return mkw_switch_hle_gx_load_light_obj_imm;
     case 0x80173188u:

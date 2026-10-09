@@ -97,3 +97,18 @@ add_executable(replay-format-test format_test.cpp)
 target_link_libraries(replay-format-test PRIVATE replay_capture)
 enable_testing()
 add_test(NAME replay-format COMMAND replay-format-test)
+
+# Compile the production bridge and real checked Memory slice, with synthetic
+# guest backing and frame ownership supplied only by the scene fixture.
+add_library(replay_lyt_bridge STATIC lyt_quad_scene.cpp
+    "${REPO_ROOT}/source/nw4r_lyt_draw_quad_hle_bridge.cpp"
+    "${REPO_ROOT}/source/memory_switch_slice.cpp")
+target_include_directories(replay_lyt_bridge PRIVATE
+    "${REPO_ROOT}/ci-rendered-compile-seams" "${REPO_ROOT}/local-rendered-fast-track/seams"
+    "${REPO_ROOT}/include"
+    "${REPO_ROOT}/third_party/WiiCompiled/runtime/include"
+    "${REPO_ROOT}/third_party/WiiCompiled/runtime/src/hle/gx")
+target_compile_definitions(replay_lyt_bridge PRIVATE MKW_LOCAL_FUNCTION_EXECUTION=1 MKW_LOCAL_RENDERED_FAST_TRACK=1)
+target_compile_options(replay_lyt_bridge PRIVATE -include "${REPO_ROOT}/include/devkita64_gcc_compat.hpp")
+target_link_libraries(replay_lyt_bridge PUBLIC replay_aurora)
+target_link_libraries(mkw-gx-replay PRIVATE replay_lyt_bridge)

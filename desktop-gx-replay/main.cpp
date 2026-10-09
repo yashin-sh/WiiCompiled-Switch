@@ -253,7 +253,7 @@ void fill_texture(std::span<std::uint8_t> tex, bool blue) {
         tex[33 + i * 2] = blue ? 255 : 0;
     }
 }
-void check_scene(const replay::Bytes& pixels, bool copies = false, bool reversed = false, bool intensity = false) {
+void check_scene(const replay::Bytes& pixels, bool copies = false, bool reversed = false, bool intensity = false, bool quads = false) {
     const auto pixel = [&](int x, int y, int r, int g, int b) {
         const auto offset = (y * width + x) * 4;
         if (pixels[offset] != r || pixels[offset + 1] != g || pixels[offset + 2] != b || pixels[offset + 3] != 255) {
@@ -264,6 +264,14 @@ void check_scene(const replay::Bytes& pixels, bool copies = false, bool reversed
     pixel(width / 4, height / 2, copies ? 64 : (reversed ? 0 : 255), copies ? 64 : (intensity ? 255 : 0), copies ? 64 : (reversed || intensity ? 255 : 0));
     pixel(width * 3 / 4, height / 2, copies || reversed ? 255 : 0, 0, copies || reversed || intensity ? 0 : 255);
     pixel(8, 8, 64, 64, 64);
+    if (quads) {
+        for (int y : {height / 4, height * 3 / 4}) {
+            pixel(width / 8, y, 255, 0, 0);
+            pixel(width * 3 / 8, y, 255, 0, 0);
+            pixel(width * 5 / 8, y, 0, 0, 255);
+            pixel(width * 7 / 8, y, 0, 0, 255);
+        }
+    }
 }
 } // namespace
 
@@ -271,13 +279,17 @@ extern "C" void mkw_replay_log(const char* message) {
     std::fputs(message, stderr);
 }
 
+void draw_lyt_quad(float center, bool colors, bool blue);
+
 int main(int argc, char** argv) {
     bool initialized = false;
     try {
-        check(argc == 4 && (std::string(argv[1]) == "capture-i4" || std::string(argv[1]) == "replay-i4-check" || std::string(argv[1]) == "capture-rgb5a3" || std::string(argv[1]) == "capture-sequence" || std::string(argv[1]) == "replay-sequence-check" || std::string(argv[1]) == "capture" || std::string(argv[1]) == "capture-copies" || std::string(argv[1]) == "capture-direct-copies" || std::string(argv[1]) == "replay-direct-copies-check" || std::string(argv[1]) == "capture-wide" || std::string(argv[1]) == "capture-indexed" || std::string(argv[1]) == "replay" || std::string(argv[1]) == "replay-check" || std::string(argv[1]) == "replay-copies-check"), "usage: mkw-gx-replay capture|replay|replay-check capture.mkwr output.png");
+        check(argc == 4 && (std::string(argv[1]) == "capture-lyt-quads" || std::string(argv[1]) == "replay-lyt-quads-check" || std::string(argv[1]) == "capture-lyt-colors" || std::string(argv[1]) == "replay-lyt-colors-check" || std::string(argv[1]) == "capture-i4" || std::string(argv[1]) == "replay-i4-check" || std::string(argv[1]) == "capture-rgb5a3" || std::string(argv[1]) == "capture-sequence" || std::string(argv[1]) == "replay-sequence-check" || std::string(argv[1]) == "capture" || std::string(argv[1]) == "capture-copies" || std::string(argv[1]) == "capture-direct-copies" || std::string(argv[1]) == "replay-direct-copies-check" || std::string(argv[1]) == "capture-wide" || std::string(argv[1]) == "capture-indexed" || std::string(argv[1]) == "replay" || std::string(argv[1]) == "replay-check" || std::string(argv[1]) == "replay-copies-check"), "usage: mkw-gx-replay capture|replay|replay-check capture.mkwr output.png");
         const bool i4 = std::string(argv[1]).find("i4") != std::string::npos;
         const bool rgb5a3 = std::string(argv[1]) == "capture-rgb5a3";
         const bool sequence = std::string(argv[1]).find("sequence") != std::string::npos;
+        const bool lyt = std::string(argv[1]).find("lyt-") != std::string::npos;
+        const bool lytColors = std::string(argv[1]).find("lyt-colors") != std::string::npos;
         const bool indexed = std::string(argv[1]) == "capture-indexed";
         const bool copies = std::string(argv[1]).find("copies") != std::string::npos;
         const bool directCopies = std::string(argv[1]).find("direct-copies") != std::string::npos;
@@ -327,6 +339,13 @@ int main(int argc, char** argv) {
                 recorder.memory(copyDestination);
             replay::set_recorder(&recorder);
             setup();
+            if (lytColors) {
+                GXSetNumChans(1);
+                GXSetChanCtrl(GX_COLOR0A0, GX_DISABLE, GX_SRC_REG, GX_SRC_VTX,
+                              GX_LIGHT_NULL, GX_DF_NONE, GX_AF_NONE);
+                GXSetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR0A0);
+                GXSetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
+            }
             if (directCopies) {
                 // Alpha-bearing EFB and matching RGBA8 dimensions select the
                 // exact texture-copy path rather than conversion/alpha blits.
@@ -345,7 +364,10 @@ int main(int argc, char** argv) {
                 GXSetArray(GX_VA_POS, positions.data(), sizeof(positions), 12, true);
                 GXSetArray(GX_VA_TEX0, uv.data(), sizeof(uv), 8, true);
             }
-            triangle(-0.5f, false, indexed);
+            if (lyt)
+                draw_lyt_quad(-0.5f, lytColors, false);
+            else
+                triangle(-0.5f, false, indexed);
             if (indexed) {
                 GXSetVtxDesc(GX_VA_POS, GX_DIRECT);
                 GXSetVtxDesc(GX_VA_TEX0, GX_DIRECT);
@@ -366,7 +388,10 @@ int main(int argc, char** argv) {
             GXLoadTexObj(&obj, GX_TEXMAP0);
             // Flush pending native state, then use raw FIFO.
             GXFlush();
-            triangle(0.5f, true, false, copies);
+            if (lyt)
+                draw_lyt_quad(0.5f, lytColors, true);
+            else
+                triangle(0.5f, true, false, copies);
             if (copies) {
                 GXSetDispCopySrc(0, 0, width, height);
                 GXSetDispCopyDst(width, height);
@@ -411,7 +436,7 @@ int main(int argc, char** argv) {
                 recorder.end();
                 replay::set_recorder(nullptr);
                 pixels = finish_frame();
-                check_scene(pixels, copies, false, i4);
+                check_scene(pixels, copies, false, i4, lyt);
                 save(argv[2], recorder.finish());
             }
         } else {
@@ -431,7 +456,7 @@ int main(int argc, char** argv) {
                 }
             });
             if (std::string(argv[1]).ends_with("check")) {
-                check_scene(pixels, copies, sequence, i4);
+                check_scene(pixels, copies, sequence, i4, lyt);
             }
         }
         if (sequence)

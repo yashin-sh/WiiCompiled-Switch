@@ -198,3 +198,12 @@ private rendered build and deployment details remain local.
 Game captures can contain copyrighted textures, palettes and vertex data.
 Captures, temporary capture files, private NROs, game-derived PNGs and raw reports
 remain local and excluded from publication. No CI artifact upload is configured.
+
+The synthetic suite also runs `capture-lyt-quads` / `replay-lyt-quads-check`
+and `capture-lyt-colors` / `replay-lyt-colors-check`. These scenes link the
+production Switch DrawQuad bridge, real checked Memory slice and Aurora native
+setters/display-list decoder, with synthetic guest backing and frame ownership.
+Textured and vertex-colored quads must cover eight additional interior pixel
+samples and preserve the background. Separate capture/replay processes must
+produce identical PNGs. Alpha packet semantics are covered by
+`bash scripts/test-lyt-draw-quad.sh`; selected-XFB output has opaque alpha.

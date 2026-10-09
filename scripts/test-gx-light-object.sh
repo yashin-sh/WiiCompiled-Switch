@@ -58,7 +58,8 @@ for rendered in 0 1; do
             "$ROOT_DIR/tests/${contract}_contract.cpp" "$ROOT_DIR/source/memory_switch_slice.cpp" \
             "$ROOT_DIR/source/missing_native_cpu_extensions.cpp" "$ROOT_DIR/source/gx_load_light_obj_hle_bridge.cpp" \
             "$ROOT_DIR/source/gx_load_nrm_mtx_imm_hle_bridge.cpp" "$ROOT_DIR/source/gx_set_z_texture_hle_bridge.cpp" \
-            "$ROOT_DIR/source/gx_set_tev_color_s10_hle_bridge.cpp" -o "$TEST_DIR/$contract-$rendered"
+            "$ROOT_DIR/source/gx_set_tev_color_s10_hle_bridge.cpp" \
+            "$ROOT_DIR/tests/lyt_quad_unexercised_fixture.cpp" -o "$TEST_DIR/$contract-$rendered"
         "$TEST_DIR/$contract-$rendered"
     done
 done

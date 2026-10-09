@@ -2,6 +2,12 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-09: [capture-disabled KD/projection trial](HARDWARE_KD_PROJECTION_2026-10-09.md)
+accepts the post-resume request and close on handle 2004, then diagnoses
+GXGetProjectionv at about 61 seconds. No new pixels are attributed with captures
+disabled. Shared matrix/vector projection state and the save/restore pair now
+pass local rendered/headless contracts; remaining gates and hardware are pending.
+
 2026-10-09: [recognizable Switch image and desktop replay](HARDWARE_NONBLACK_REPLAY_2026-10-09.md)
 retain the Wiimote safety page at frame 4 in both selected-copy and final-surface
 PNGs. Desktop replay reproduces that page and validates the complete saved

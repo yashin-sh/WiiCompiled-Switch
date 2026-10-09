@@ -62,3 +62,7 @@ leaving the current project candidate alongside unrelated homebrew. Future
 Netloader transfers use the candidate's SD basename to avoid recreating the old
 alias. Raw reports, game images, FIFO files, recovery archives and private NROs
 remain local and excluded from the public repository.
+
+The subsequent [capture-disabled trial](HARDWARE_KD_PROJECTION_2026-10-09.md)
+accepts the formerly blocking KD post-resume probe and close, then reaches the
+projection-vector getter. It does not attribute new image or replay files.

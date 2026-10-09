@@ -4,10 +4,10 @@ Experimental Nintendo Switch homebrew port of [WiiCompiled](https://github.com/p
 
 ## Status
 
-An operator reports the Wiimote warning page, then black. With captures disabled and diagnostic SD writes sampled, early startup reaches 7.5–9.3 Hz before later stalls; recognizable captured game content, steady performance and playability are unproven.
+A recognizable Wiimote safety page is now captured on Switch and reproduced by desktop FIFO replay. Later checkpoints remain black; menu progression, steady performance and playability are unproven.
 Real translated execution, observed boot-resource reads and the Aurora → Dawn/WebGPU → Vulkan/NVK presentation path run on Switch.
-The descriptor-based loader advances beyond the former Mii texture guard. The latest run stops at a KD request after scheduler resume. The next candidate mirrors its pinned phase and live handle lifetime; console acceptance remains pending.
-The [latest console evidence](docs/HARDWARE_KD_POST_RESUME_2026-10-09.md) records the measured windows and exact KD stop; the [previous capture trial](docs/HARDWARE_CAPTURE_CONTROL_2026-10-09.md) records black checkpoints and a FIFO budget failure.
+With captures disabled and diagnostic SD writes sampled, early startup reaches 7.5–9.3 Hz before later stalls. The latest capture-enabled trial retains 90 replayable frames but ends before the pending KD post-resume request; its correction still needs console acceptance.
+The [latest image and replay evidence](docs/HARDWARE_NONBLACK_REPLAY_2026-10-09.md) records the recognizable boot page and black later checkpoint; the [preceding diagnostic trial](docs/HARDWARE_KD_POST_RESUME_2026-10-09.md) identifies the KD stop.
 See [the roadmap](ROADMAP.md) for the current frontier and [the status log](docs/STATUS_LOG.md) for dated evidence.
 
 ## Quick build
@@ -24,7 +24,7 @@ The public output is `WiiCompiled-Switch.nro`; the local rendered output is `Wii
 
 ## Limits
 
-- Graphics: successful presents are proven; game pixels, later resources and complete GX behavior are still under validation.
+- Graphics: recognizable boot-screen pixels and desktop replay are proven; later rendering and complete GX behavior remain under validation.
 - DVD/filesystem: real FST and boot-resource reads work on the observed path; broader semantics are incomplete.
 - IOS/network: only observed boot-time KD request sequences are supported; online play is unimplemented.
 - Input: partial controller support; complete mapping and per-button hardware validation remain open.

@@ -84,3 +84,8 @@ immediate refusals before mutation. Public CI includes these contracts.
 The corrected KD request, its return to the caller and the next rendering stage
 still require the exact rebuilt candidate on Switch. Raw reports, private NROs,
 product fingerprints and recovery archives stay excluded from public source.
+
+The subsequent [capture-enabled trial](HARDWARE_NONBLACK_REPLAY_2026-10-09.md)
+retains recognizable boot pixels and a replayable 90-frame prefix. It completes
+the earlier resume/close sequence but does not reach the fifth request; acceptance
+of the new post-resume transition remains pending.

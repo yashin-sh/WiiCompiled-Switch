@@ -2,19 +2,17 @@
 
 ## Current checkpoint — 2026-10-09
 
-The [sampled-SD console trial](docs/HARDWARE_KD_POST_RESUME_2026-10-09.md)
-reaches 7.5–9.3 completed presentations per second early, then slows. The measured
-windows average 2.968 Hz including stalls; they are not gameplay FPS. Both
-captures remain disabled. The sampled report records 102 successful presents,
-zero failures and coherent runtime state. A fresh terminal report stops at the
-fifth KD request, command 2 after resume, at about 50 seconds.
+The [latest capture-enabled trial](docs/HARDWARE_NONBLACK_REPLAY_2026-10-09.md)
+preserves a recognizable Wiimote safety page at frame 4 on Switch and reproduces
+it through desktop Aurora replay. A complete 90-frame prefix remains within the
+capture budget; frame 90 is black on both platforms. Later menus, gameplay and
+steady performance remain unproven.
 
-The next candidate mirrors the pinned pending-to-ready scheduler phase and live
-request-handle lifetime, with complete buffer checks and unknown commands still
-stopping. Its console return and later rendering remain pending. The previous
-operator report identifies a Wiimote warning page followed by black; captured
-recognizable game content and playability remain unproven. Revised nonblack
-retention and replay capture still need an enabled-capture console trial.
+The preceding [sampled-SD trial](docs/HARDWARE_KD_POST_RESUME_2026-10-09.md)
+reaches 7.5–9.3 Hz early with captures disabled before stopping at the fifth KD
+request after resume. The phase/live-handle correction runs the earlier resume
+and close sequence in the latest trial, but that fifth request is not reached.
+Console acceptance still needs a capture-disabled run of the same candidate.
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.

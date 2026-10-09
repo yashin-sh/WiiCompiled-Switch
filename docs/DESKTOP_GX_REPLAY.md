@@ -3,12 +3,14 @@
 The desktop runner renders portable Aurora command captures with the same pinned
 GX/Dawn implementation as the Switch renderer. Seven synthetic workloads verify
 independent-process replay. An opt-in Switch build records a completed prefix
-from GXInit, including successive frames. The [console trial](HARDWARE_CAPTURE_CONTROL_2026-10-09.md) reached its budget
-after four frames with only one saved; the revised deduplication/failure save
-requires a new trial.
-A real RMCP01 first-frame capture now replays on desktop as a black, untextured
-quad; recognizable game pixels remain unproven. See the
-[hardware result](HARDWARE_FIRST_FRAME_REPLAY_2026-10-08.md).
+from GXInit, including successive frames. The [latest console trial](HARDWARE_NONBLACK_REPLAY_2026-10-09.md)
+saves and successfully replays 90 complete frames within the capture budget.
+A derived four-frame prefix reproduces the recognizable Wiimote safety page;
+frame 90 remains black on both platforms. Frame-4 RGB closely agrees with the
+Switch selected copy, with small differences; the comparison is not bit-exact.
+Later rendering and playability remain unproven. The [preceding trial](HARDWARE_CAPTURE_CONTROL_2026-10-09.md)
+exhausted its budget after four frames with only one saved, before deduplication
+and first-nonblack retention were corrected.
 
 ## Desktop build and tests
 

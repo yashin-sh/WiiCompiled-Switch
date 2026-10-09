@@ -35,7 +35,11 @@ identical PNGs and pass the sampled-red and cleared-background pixel oracles.
 The complete existing desktop suite also passes, including converted copies,
 indexed vertices, wide readback, multi-frame updates and partial-tile formats.
 
-Local contracts and GPU regression pass. Every published exact-HEAD CI check,
-SDK syntax, the separate private rendered build and provider/retention audits
-are still required before merge/deployment. The new Gen2 return, absence of
-Dawn errors on Switch and later game pixels require a fresh console trial.
+Candidate `662c388` passes local contracts, GPU regression, all eight published
+exact-HEAD CI checks, SDK syntax, the separate private rendered build and
+provider/retention audits. It merged in
+[PR #349](https://github.com/yashin-sh/WiiCompiled-Switch/pull/349).
+The [subsequent console trial](HARDWARE_TEX_COORD_TEV_S10_2026-10-09.md)
+accepts the observed matrix-30 return through checked caller progression.
+The preceding Dawn validation errors are absent from its fresh graphics report;
+the next boundary is signed TEV color loading. Later game pixels remain unproven.

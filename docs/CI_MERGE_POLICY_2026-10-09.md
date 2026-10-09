@@ -55,3 +55,20 @@ non-success conclusions, external statuses, missing/queued checks, failures afte
 the first hundred contexts, API/pagination errors and HEAD changes during the
 merge check. Only the current gate job can omit itself; that CI mode cannot merge.
 GitHub CI and the merge command must pass before this correction is merged.
+
+## SDK image availability
+
+The S10 candidate exposed repeated Docker Hub anonymous rate-limit failures
+before any compilation in the four SDK-container jobs. Those jobs now use
+`mirror.gcr.io/devkitpro/devkita64` pinned to upstream index digest
+`sha256:1fc388c3a0d34bd2045a6dadcb1020e069d5f876a187fd705de14b4440c00282`.
+The official Docker Hub manifest and cached manifest were compared byte for
+byte, and the full cached image pull succeeded. All existing compilation,
+contracts and artifact checks remain required.
+
+[Google's cache documentation](https://docs.cloud.google.com/artifact-registry/docs/pull-cached-dockerhub-images)
+explains the public Docker Hub cache and its availability limits. Explicitly
+pinning this image keeps CI fail-closed if the cache loses that digest; updating
+the SDK requires a new upstream identity check and complete CI validation.
+The separate private rendered gate still uses its existing offline immutable
+image and cannot be replaced by a successful public container job.

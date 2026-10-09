@@ -22,7 +22,7 @@ sig = "void GXCallDisplayList(const void* data, u32 nbytes)"
 source = (root / "third_party/WiiCompiled/aurora-main/lib/dolphin/gx/__gx.h").read_text()
 (test / "pinned-gx-data.inc").write_text("struct __GXData_struct {" + source.split("struct __GXData_struct {", 1)[1].split("\n};", 1)[0] + "\n};\n")
 PYTHON
-flags=(-std=c++20 -O2 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer
+flags=(-std=c++20 -O2 -Wall -Wextra -Werror "-fsanitize=address,undefined" -fno-sanitize-recover=all -fno-omit-frame-pointer
     -DTARGET_PC -DAURORA -DMKW_LOCAL_FUNCTION_EXECUTION=1
     -include "$ROOT_DIR/include/devkita64_gcc_compat.hpp"
     -I"$ROOT_DIR/ci-rendered-compile-seams" -I"$ROOT_DIR/local-rendered-fast-track/seams"

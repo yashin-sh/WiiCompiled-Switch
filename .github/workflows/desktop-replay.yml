@@ -2,42 +2,8 @@ name: desktop-gx-replay
 
 on:
   pull_request:
-    paths:
-      - 'desktop-gx-replay/**'
-      - 'include/frame_dump*'
-      - 'include/rendered_frame_dump.hpp'
-      - 'include/surface_presenter.hpp'
-      - 'source/frame_dump*'
-      - 'source/rendered_frame_dump.cpp'
-      - 'source/surface_presenter.cpp'
-      - 'source/rendered_fifo_capture.cpp'
-      - 'tests/frame_dump*'
-      - 'tests/fifo_capture_contract.cpp'
-      - 'scripts/test-frame-dump.sh'
-      - 'scripts/*desktop-gx-replay.sh'
-      - 'scripts/prepare-replay-aurora.py'
-      - 'scripts/prepare-checked-aurora-fifo.py'
-      - '.github/workflows/desktop-replay.yml'
-      - 'third_party/WiiCompiled'
   push:
     branches: [main]
-    paths:
-      - 'desktop-gx-replay/**'
-      - 'include/frame_dump*'
-      - 'include/rendered_frame_dump.hpp'
-      - 'include/surface_presenter.hpp'
-      - 'source/frame_dump*'
-      - 'source/rendered_frame_dump.cpp'
-      - 'source/surface_presenter.cpp'
-      - 'source/rendered_fifo_capture.cpp'
-      - 'tests/frame_dump*'
-      - 'tests/fifo_capture_contract.cpp'
-      - 'scripts/test-frame-dump.sh'
-      - 'scripts/*desktop-gx-replay.sh'
-      - 'scripts/prepare-replay-aurora.py'
-      - 'scripts/prepare-checked-aurora-fifo.py'
-      - '.github/workflows/desktop-replay.yml'
-      - 'third_party/WiiCompiled'
 
 permissions:
   contents: read
@@ -57,18 +23,33 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           submodules: true
+          fetch-depth: 0
           persist-credentials: false
+      - name: Detect relevant replay changes
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python3 scripts/ci_desktop_replay_needed.py --base "$BASE_SHA" --head "$HEAD_SHA" >> "$GITHUB_OUTPUT"
+      - name: Record unchanged replay scope
+        if: steps.scope.outputs.needed == 'false'
+        run: echo "No replay inputs changed; the full replay suite is required whenever its inputs change." >> "$GITHUB_STEP_SUMMARY"
       - name: Install desktop dependencies
+        if: steps.scope.outputs.needed == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake g++ python3 zlib1g-dev mesa-vulkan-drivers libvulkan1
       - name: Validate portable format under sanitizers
+        if: steps.scope.outputs.needed == 'true'
         run: |
           MKW_HOST_CXX=g++ bash scripts/test-frame-dump.sh
           g++ -std=c++20 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=all \
             desktop-gx-replay/capture.cpp desktop-gx-replay/format_test.cpp -o /tmp/replay-format-test
           /tmp/replay-format-test
       - name: Build pinned desktop Aurora and Dawn
+        if: steps.scope.outputs.needed == 'true'
         run: bash scripts/build-desktop-gx-replay.sh
       - name: Render and compare independent synthetic capture/replay
+        if: steps.scope.outputs.needed == 'true'
         run: bash scripts/test-desktop-gx-replay.sh

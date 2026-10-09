@@ -2,6 +2,12 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-09: [merge-policy correction](CI_MERGE_POLICY_2026-10-09.md) restores
+all visible checks on PRs #339, #341, #344 and #345 through eighteen reruns.
+The new gate checks the complete exact-HEAD rollup; main requires all eight
+Actions checks and enforces protection for administrators. Competing development
+push/PR runs are removed without removing validation suites.
+
 2026-10-09: [scissor/light trial](HARDWARE_SCISSOR_LIGHT_2026-10-09.md) accepts
 the observed scissor helper returning, then stops at native light loading. Captures
 remain disabled; no new pixels are attributed. The candidate converts the full

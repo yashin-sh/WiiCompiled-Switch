@@ -2,6 +2,7 @@ name: lint
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
@@ -170,3 +171,6 @@ jobs:
           fi
 
           echo "Changed first-party C/C++ lines are clang-formatted"
+
+      - name: Merge gate contracts
+        run: python3 -m unittest discover -s tests -p 'test_github_ci_gate.py' -v

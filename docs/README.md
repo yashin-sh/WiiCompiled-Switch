@@ -1,5 +1,6 @@
 # Documentation index
 
+- [Matrix-30 return; signed TEV color stop](HARDWARE_TEX_COORD_TEV_S10_2026-10-09.md) — 39 reports independently verified; prior Dawn validation error absent, S10 payload unknown
 - [Observed matrix and snapshot copy correction](GX_TEX_COORD_SNAPSHOT_2026-10-09.md) — bounded matrix-30 forwarding, pinned native packets and reproduced GPU copy regression
 - [Depth-texture return; texture-coordinate refusal](HARDWARE_Z_TEXTURE_TEX_COORD_2026-10-09.md) — 39 reports independently verified; matrix-30 guard and Dawn copy-source usage error
 - [Every check must be green before merging](CI_MERGE_POLICY_2026-10-09.md) — repaired historical rollups, complete check gate and enforced main protection

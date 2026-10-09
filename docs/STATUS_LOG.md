@@ -2,6 +2,14 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-09: [matrix-30 console result](HARDWARE_TEX_COORD_TEV_S10_2026-10-09.md)
+accepts Gen2 return through checked caller progression and reaches
+`GXSetTevColorS10`, ID 1 / pointer `0x80398E80`, at 53.437 seconds. All 39
+reports / 837,688 bytes pass independent USB verification; nineteen change
+and twenty are retained. The preceding Dawn validation errors are absent
+from the new graphics report. Captures remain disabled; actual S10 components
+and new screen pixels are not recorded.
+
 2026-10-09: [matrix-30 and snapshot usage candidate](GX_TEX_COORD_SNAPSHOT_2026-10-09.md)
 forwards the exact newly observed Gen2 matrix and adds `CopySrc` to the
 checked snapshot descriptor. Both-mode guards and 36 actual pinned native

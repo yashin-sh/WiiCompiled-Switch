@@ -31,12 +31,16 @@ observed disable/Z8/zero-bias return is accepted by the
 [next USB result](docs/HARDWARE_Z_TEXTURE_TEX_COORD_2026-10-09.md). The new
 translated guard refuses `GXSetTexCoordGen2(0,1,4,30,0,125)`. The same run
 reports a Dawn texture-copy source missing `CopySrc` and an invalid command
-buffer. Both require follow-up; later pixels and playability remain pending.
-The [bounded next candidate](docs/GX_TEX_COORD_SNAPSHOT_2026-10-09.md)
+buffer. The [bounded correction](docs/GX_TEX_COORD_SNAPSHOT_2026-10-09.md)
 forwards matrix 30 only for the observed tuple and adds the missing snapshot
 copy-source usage in the checked build mirror. Both-mode guards, 36 native
-packets and the complete desktop GPU suite pass; private build, CI and
-fresh console acceptance are pending.
+packets, the complete desktop GPU suite, the private build and all eight
+published exact-HEAD checks pass. The
+[fresh console result](docs/HARDWARE_TEX_COORD_TEV_S10_2026-10-09.md) accepts
+the matrix-30 return through checked caller progression. The previous Dawn
+validation errors are absent from the new graphics report. The next direct
+boundary is `GXSetTevColorS10`, ID 1 / pointer `0x80398E80`; its component
+values are not recorded. Later pixels and playability remain pending.
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.

@@ -55,7 +55,9 @@ compares their complete FIFO bytes with an independent guest-word fixture. It
 covers all IDs, unaligned and end-of-region objects, distinct colors, signed zero,
 quiet NaNs, infinities and subnormals, plus CPU/memory canaries and diagnosed
 refusals before output. A separate dispatch contract checks both fast-path
-priorities and exactly one runtime-options invocation for extensions. The existing
+priorities and exactly one runtime-options invocation for extensions. The probe
+registry is separately compiled without translated headers or execution flags
+and exposes no execution handlers. The existing
 build workflow runs these contracts; no new workflow is introduced. Private build,
 exact-code CI and the light operation's hardware return remain pending.
 

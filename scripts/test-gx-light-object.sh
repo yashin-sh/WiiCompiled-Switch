@@ -38,3 +38,10 @@ for rendered in 0 1; do
 done
 "$HOST_CXX" "${flags[@]}" "$ROOT_DIR/tests/missing_native_extension_priority_contract.cpp" -o "$TEST_DIR/priority"
 "$TEST_DIR/priority"
+
+# Compile the probe implementation independently of all translated headers/flags.
+"$HOST_CXX" -std=c++20 -O2 -Wall -Wextra -Werror "-fsanitize=address,undefined" \
+    -c "$ROOT_DIR/source/missing_native_cpu_extensions.cpp" -o "$TEST_DIR/probe.o"
+"$HOST_CXX" "${flags[@]}" "$ROOT_DIR/tests/missing_native_extension_probe_contract.cpp" \
+    "$TEST_DIR/probe.o" -o "$TEST_DIR/probe"
+"$TEST_DIR/probe"

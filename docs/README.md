@@ -1,5 +1,6 @@
 # Documentation index
 
+- [Depth-texture return; texture-coordinate refusal](HARDWARE_Z_TEXTURE_TEX_COORD_2026-10-09.md) — 39 reports independently verified; matrix-30 guard and Dawn copy-source usage error
 - [Every check must be green before merging](CI_MERGE_POLICY_2026-10-09.md) — repaired historical rollups, complete check gate and enforced main protection
 - [Normal matrix returned; depth-texture stop](HARDWARE_NORMAL_Z_TEXTURE_2026-10-09.md) — observed matrix return; native BP writer and decoder contracts
 - [Light returned; normal-matrix stop](HARDWARE_LIGHT_NORMAL_MATRIX_2026-10-09.md) — warning page then diagnostic abort; complete native XF matrix packet contract

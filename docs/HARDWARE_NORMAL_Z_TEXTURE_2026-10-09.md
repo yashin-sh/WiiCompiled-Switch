@@ -49,6 +49,9 @@ fixture declarations are shared among the three tests. Their existing 864 light
 and 1,008 matrix packets, registry priority, probe and refusal checks pass.
 Merging requires the private rendered build, SDK syntax, scoped provider and
 retention audits, and every published exact-HEAD CI check to succeed. Depth-
-texture return and later screen progression remain pending hardware results.
+texture return was subsequently accepted for the observed disable tuple by the
+[next USB result](HARDWARE_Z_TEXTURE_TEX_COORD_2026-10-09.md), which records a
+matrix-30 texture-coordinate refusal and a separate Dawn copy-source usage
+error. Add/replace pixels and later screen progression remain unproven.
 
 Raw diagnostic reports, game data and private NROs remain local.

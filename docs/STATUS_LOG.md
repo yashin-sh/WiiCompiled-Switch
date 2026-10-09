@@ -2,6 +2,12 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-09: [sampled diagnostic SD writes trial](HARDWARE_KD_POST_RESUME_2026-10-09.md)
+records early 7.5–9.3 Hz, later stalls and a 2.968 Hz window average with captures
+disabled. A fresh terminal report stops at the fifth KD request, command 2 after
+resume. The bounded live-handle and scheduler-phase correction awaits console
+acceptance; no new pixel or visual observation is attributed to this run.
+
 2026-10-09: [capture-disabled startup measurement](HARDWARE_PRESENT_RATE_2026-10-09.md)
 confirms both capture controllers were disabled. Eight present windows average
 about 1.18 Hz; the operator sees the Wiimote warning page, then black. No terminal

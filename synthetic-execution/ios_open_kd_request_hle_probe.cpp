@@ -2,11 +2,9 @@
 
 #if defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK
 
-// Mapping/link-only coverage. Hardware proves the exact PAL IOS_Open request,
-// first IOS_Ioctl KD command-2 boundary, fd-2001 command-1 suspend, fd-2002
-// command-0x0F generated-user-id boundary, fd-2003 command-3 resume boundary,
-// and the hardware-proven fd-2000/fd-2001/fd-2002/fd-2003 IOS_Close mappings;
-// public CI deliberately does not fabricate guest buffers or a game call.
+// Mapping/link coverage for the three public IOS entry points. Executable
+// Nintendo-data-free contracts separately exercise live handle lifetime,
+// full buffer checks and the pinned KD scheduler phase across close/reopen.
 static_assert(KnownNativeCpuCall<0x801938F8u>::kAvailable);
 static_assert(KnownNativeCpuCall<0x80194290u>::kAvailable);
 static_assert(KnownNativeCpuCall<0x80193AD8u>::kAvailable);

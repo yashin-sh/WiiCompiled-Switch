@@ -4,10 +4,10 @@ Experimental Nintendo Switch homebrew port of [WiiCompiled](https://github.com/p
 
 ## Status
 
-The operator sees the Wiimote warning page, then black. With image/FIFO capture disabled, measured startup presentation averages about 1.18 Hz; recognizable captured game content, steady performance and playability are unproven.
+An operator reports the Wiimote warning page, then black. With captures disabled and diagnostic SD writes sampled, early startup reaches 7.5–9.3 Hz before later stalls; recognizable captured game content, steady performance and playability are unproven.
 Real translated execution, observed boot-resource reads and the Aurora → Dawn/WebGPU → Vulkan/NVK presentation path run on Switch.
-The descriptor-based loader advances beyond the former Mii texture guard. The next candidate limits recurring diagnostic SD writes; its hardware impact and the later black screen remain unresolved.
-The [latest measured trial](docs/HARDWARE_PRESENT_RATE_2026-10-09.md) confirms captures were disabled; the [previous capture trial](docs/HARDWARE_CAPTURE_CONTROL_2026-10-09.md) records black checkpoints and a FIFO budget failure.
+The descriptor-based loader advances beyond the former Mii texture guard. The latest run stops at a KD request after scheduler resume. The next candidate mirrors its pinned phase and live handle lifetime; console acceptance remains pending.
+The [latest console evidence](docs/HARDWARE_KD_POST_RESUME_2026-10-09.md) records the measured windows and exact KD stop; the [previous capture trial](docs/HARDWARE_CAPTURE_CONTROL_2026-10-09.md) records black checkpoints and a FIFO budget failure.
 See [the roadmap](ROADMAP.md) for the current frontier and [the status log](docs/STATUS_LOG.md) for dated evidence.
 
 ## Quick build

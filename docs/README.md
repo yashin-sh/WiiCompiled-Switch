@@ -1,5 +1,7 @@
 # Documentation index
 
+- [Projection getter returned; scissor-origin boundary](HARDWARE_PROJECTION_SCISSOR_2026-10-09.md) — checked caller progression; scissor-origin family under validation
+
 - [KD accepted and projection-vector boundary](HARDWARE_KD_PROJECTION_2026-10-09.md) — post-resume probe/close accepted; shared projection save/restore candidate under validation
 
 - [Recognizable Switch image and desktop replay](HARDWARE_NONBLACK_REPLAY_2026-10-09.md) — Wiimote safety page retained at frame 4, 90-frame replay validated; later black interval and KD acceptance remain open

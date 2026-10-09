@@ -2,6 +2,7 @@
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 #include "abi_bridge.h"
 #include <cstdlib>
+#include <bit>
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
 #include "gx_internal.h"
 #include "runtime_log.h"
@@ -170,4 +171,33 @@ extern "C" void mkw_switch_hle_gx_set_z_scale_offset(CpuContext* cpu) noexcept {
     Refuse("GX_Z_SCALE_OFFSET_REQUIRES_RENDERER", 0x80173400u, cpu);
 #endif
 }
+extern "C" void mkw_switch_hle_gx_set_scissor_box_offset(CpuContext* cpu) noexcept {
+    if (!cpu)
+        return;
+    mkw_switch_set_fast_track_stage("RMCP01_GX_SET_SCISSOR_BOX_OFFSET");
+#if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
+    const auto x = std::bit_cast<std::int32_t>(cpu->gpr[3]);
+    const auto y = std::bit_cast<std::int32_t>(cpu->gpr[4]);
+    // The biased offset occupies a 10-bit half-pixel field. Admit its full
+    // nonwrapping range, including odd values with pinned quantization.
+    if (x < -342 || x > 1705 || y < -342 || y > 1705)
+        Refuse("GX_SCISSOR_BOX_OFFSET_UNPROVEN_RANGE", 0x801734E0u, cpu);
+    try {
+        GXSetScissorBoxOffset(x, y);
+    } catch (...) {
+        Refuse("GX_SCISSOR_BOX_OFFSET_NATIVE_EXCEPTION", 0x801734E0u, cpu);
+    }
+    // Pinned GX__SetScissorBoxOffset: native call first, then best-effort
+    // publication. Keep unsigned address wrap and swallowed memory errors.
+    try {
+        const auto gd = Memory::Read32(kGXDataPtrAddr);
+        if (gd)
+            Memory::Write16(gd + 2u, 0);
+    } catch (...) {
+    }
+#else
+    Refuse("GX_SCISSOR_BOX_OFFSET_REQUIRES_RENDERER", 0x801734E0u, cpu);
+#endif
+}
+
 #endif

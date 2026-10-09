@@ -16,6 +16,8 @@ root, test = map(Path, sys.argv[1:])
 source = (root / "third_party/WiiCompiled/aurora-main/lib/dolphin/gx/GXTransform.cpp").read_text()
 body = "void GXSetZScaleOffset(f32 scale, f32 offset) {" + source.split("void GXSetZScaleOffset(f32 scale, f32 offset) {", 1)[1].split("\n}", 1)[0] + "\n}\n"
 (test / "pinned-z-scale-offset.inc").write_text(body)
+body = "void GXSetScissorBoxOffset(s32 x_off, s32 y_off) {" + source.split("void GXSetScissorBoxOffset(s32 x_off, s32 y_off) {", 1)[1].split("\n}", 1)[0] + "\n}\n"
+(test / "pinned-scissor-offset.inc").write_text(body)
 source = (root / "third_party/WiiCompiled/runtime/include/memory_access.h").read_text()
 body = "std::uint32_t PinnedSingleBits(double value) {" + source.split("MKW_MEMORY_FORCE_INLINE uint32_t ConvertPpcDoubleToSingleBits(double value) {", 1)[1].split("\n}", 1)[0] + "\n}\n"
 (test / "pinned-single-bits.inc").write_text(body)

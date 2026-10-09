@@ -71,3 +71,9 @@ unmapped, zero and wrapping ranges and uninitialized memory, verifying unchanged
 CPU, memory, shadow and native-call count. ASan/UBSan pass in rendered and headless
 modes. Public CI runs this contract. The private rendered build, final provider
 checks and the corrected projection pair's console trial remain pending.
+
+The subsequent [projection trial](HARDWARE_PROJECTION_SCISSOR_2026-10-09.md)
+accepts getter return through checked caller progression before the next
+scissor-origin stop. The vector setter remains conditional and unproven on
+hardware. Its private build, provider/retention checks and exact-head public CI
+passed before that trial.

@@ -41,7 +41,7 @@ const char* stage = nullptr;
 unsigned stages = 0, nativeCalls = 0, setters = 0, getters = 0, depth = 0;
 bool throwing = false;
 int proofFd = -1;
-unsigned reports = 0;
+unsigned reports = 0, refusalNativeCount = 0, offsets = 0;
 const char* reason = nullptr;
 std::uint32_t refusalTarget = 0;
 Snapshot Capture() {
@@ -132,6 +132,7 @@ void Refusal(std::uint32_t target, const char* value, bool nativeError = false) 
     Save();
     expected = Capture();
     beforeNative = expected;
+    refusalNativeCount = nativeCalls;
     int fd[2];
     assert(pipe(fd) == 0);
     const auto child = fork();
@@ -146,6 +147,8 @@ void Refusal(std::uint32_t target, const char* value, bool nativeError = false) 
         throwing = nativeError;
         if (target == 0x801733E0u)
             KnownNativeCpuCall<0x801733E0u>::Invoke(&cpu);
+        else if (target == 0x801734E0u)
+            KnownNativeCpuCall<0x801734E0u>::Invoke(&cpu);
         else
             KnownNativeCpuCall<0x80173400u>::Invoke(&cpu);
         _exit(90);
@@ -193,6 +196,22 @@ void Refusal(std::uint32_t target, const char* value, bool nativeError = false) 
     Check(expected);
     assert(nativeCalls == count + 1 && std::strcmp(stage, "RMCP01_GX_SET_Z_SCALE_OFFSET") == 0);
     ++depth;
+}
+[[maybe_unused]] void Offset(std::int32_t x, std::int32_t y) {
+    cpu.gpr[3] = std::bit_cast<std::uint32_t>(x);
+    cpu.gpr[4] = std::bit_cast<std::uint32_t>(y);
+    Save();
+    expected = Capture();
+    beforeNative = expected;
+    const auto count = nativeCalls;
+    const auto pointer = Memory::Contains(kGXDataPtrAddr, 4) ? Memory::Read32(kGXDataPtrAddr) : 0;
+    if (pointer && Memory::Contains(pointer + 2u, 2))
+        ExpectedBytes(pointer + 2u, 0, 2);
+    KnownNativeCpuCall<0x801734E0u>::Invoke(&cpu);
+    CheckCpu();
+    Check(expected);
+    assert(nativeCalls == count + 1 && std::strcmp(stage, "RMCP01_GX_SET_SCISSOR_BOX_OFFSET") == 0);
+    ++offsets;
 }
 } // namespace
 namespace GuestFlat {
@@ -248,10 +267,19 @@ extern "C" void GXSetZScaleOffset(float scale, float offset) {
     if (throwing)
         throw std::runtime_error("native fixture");
 }
+extern "C" void GXSetScissorBoxOffset(std::int32_t x, std::int32_t y) {
+    CheckCpu();
+    Check(beforeNative);
+    assert(x == std::bit_cast<std::int32_t>(saved.gpr[3]) && y == std::bit_cast<std::int32_t>(saved.gpr[4]));
+    ++nativeCalls;
+    if (throwing)
+        throw std::runtime_error("native offset fixture");
+}
 extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* value, std::uint32_t target, CpuContext* context) noexcept {
     assert(proofFd >= 0 && reports++ == 0 && context == &cpu && target == refusalTarget && std::strcmp(value, reason) == 0);
     CheckCpu();
     Check(expected);
+    assert(nativeCalls == refusalNativeCount + (throwing ? 1u : 0u));
     assert(write(proofFd, "R", 1) == 1);
 }
 extern "C" [[noreturn]] void __real_abort();
@@ -285,6 +313,7 @@ int main() {
     KnownNativeCpuCall<0x801733B4u>::Invoke(nullptr);
     KnownNativeCpuCall<0x801733E0u>::Invoke(nullptr);
     KnownNativeCpuCall<0x80173400u>::Invoke(nullptr);
+    KnownNativeCpuCall<0x801734E0u>::Invoke(nullptr);
     assert(stages == oldStages && nativeCalls == oldNative);
     Check(before);
 #if MKW_LOCAL_RENDERED_FAST_TRACK
@@ -367,6 +396,44 @@ int main() {
         Depth(1, 0);
     }
     Init();
+    for (int value = -342; value <= 1705; ++value) {
+        Offset(value, 0);
+        Offset(0, value);
+    }
+    for (auto x : {-342, -341, -1, 0, 1, 1704, 1705})
+        for (auto y : {-342, -341, -1, 0, 1, 1704, 1705})
+            Offset(x, y);
+    for (auto pointer : {0u, 0xdeadbeefu, gd + 1u}) {
+        Init();
+        Memory::Write32(kGXDataPtrAddr, pointer);
+        Offset(0, 0);
+    }
+    for (unsigned length : {2u, 3u, 4u}) {
+        Memory::Config cfg;
+        cfg.regions = {{"ptr", kGXDataPtrAddr, 4}, {"short-gd", gd, length}};
+        Memory::Init(cfg);
+        Memory::Write32(kGXDataPtrAddr, gd);
+        Offset(0, 0);
+    }
+    {
+        Memory::Config cfg;
+        cfg.regions = {{"ptr", kGXDataPtrAddr, 4}, {"wrapped-flag", 0, 4}};
+        Memory::Init(cfg);
+        Memory::Write32(kGXDataPtrAddr, 0xfffffffeu);
+        Offset(0, 0);
+    }
+    Init();
+    for (int value : {-343, 1706, INT32_MIN, INT32_MAX})
+        for (bool second : {false, true}) {
+            cpu.gpr[3] = second ? 0u : std::bit_cast<std::uint32_t>(value);
+            cpu.gpr[4] = second ? std::bit_cast<std::uint32_t>(value) : 0u;
+            Refusal(0x801734E0u, "GX_SCISSOR_BOX_OFFSET_UNPROVEN_RANGE");
+        }
+    cpu.gpr[3] = cpu.gpr[4] = 0;
+    Refusal(0x801734E0u, "GX_SCISSOR_BOX_OFFSET_NATIVE_EXCEPTION", true);
+    Memory::Reset();
+    Offset(0, 0);
+    Init();
     Refusal(0x80173400u, "GX_Z_SCALE_OFFSET_NATIVE_EXCEPTION", true);
     Memory::Config broken;
     broken.regions = {{"offscreen", offList, 12}, {"short-node", node, 8}, {"output", out, 24}};
@@ -380,14 +447,15 @@ int main() {
     Memory::Reset();
     ++g_gxFrameCount;
     Get(out, Capture());
-    std::printf("PASS: viewport setters=%u getters=%u depth=%u native refusal=1\n", setters, getters, depth);
+    std::printf("PASS: viewport setters=%u getters=%u depth=%u offsets=%u native refusal=1\n", setters, getters, depth, offsets);
 #else
     Set({0, 0, 128, 128, 0, 1});
     Refusal(0x801733E0u, "GX_GET_VIEWPORT_REQUIRES_RENDERER");
     Refusal(0x80173400u, "GX_Z_SCALE_OFFSET_REQUIRES_RENDERER");
+    Refusal(0x801734E0u, "GX_SCISSOR_BOX_OFFSET_REQUIRES_RENDERER");
     Memory::Reset();
     Refusal(0x801733E0u, "GX_GET_VIEWPORT_REQUIRES_RENDERER");
-    std::puts("PASS: viewport headless setter preserved; diagnosed refusals=3");
+    std::puts("PASS: viewport headless setter preserved; diagnosed refusals=4");
 #endif
     Memory::Reset();
 }

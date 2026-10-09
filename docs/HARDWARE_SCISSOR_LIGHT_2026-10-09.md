@@ -62,7 +62,7 @@ registry is separately compiled without translated headers or execution flags
 and exposes no execution handlers. The existing build workflow runs these contracts. Light candidate code `c2d862a` passes the
 private rendered build, SDK syntax and scoped provider/retention checks. Its
 complete published CI rollup is now 12/12 successful after interrupted runs were
-[rerun](CI_MERGE_POLICY_2026-10-09.md). The light operation's hardware return
-remains pending.
+[rerun](CI_MERGE_POLICY_2026-10-09.md). The [next trial](HARDWARE_LIGHT_NORMAL_MATRIX_2026-10-09.md) records light entry
+and later dispatches, accepting the observed return before a normal-matrix stop.
 
 Raw reports, game translations, NROs and image/replay data remain local.

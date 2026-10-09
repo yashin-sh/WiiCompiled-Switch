@@ -2,6 +2,13 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-09: [light/normal-matrix trial](HARDWARE_LIGHT_NORMAL_MATRIX_2026-10-09.md)
+records light entry followed by later dispatches, then deliberately aborts at
+`GXLoadNrmMtxImm`. The operator sees the Wiimote warning page and a crash.
+Captures remain disabled. The new bridge converts a complete guest matrix for
+Aurora's normal-matrix FIFO path; sanitizer packet contracts pass, with private
+build/complete-CI gates required before merge and hardware return still pending.
+
 2026-10-09: [merge-policy correction](CI_MERGE_POLICY_2026-10-09.md) restores
 all visible checks on PRs #339, #341, #344 and #345 through eighteen reruns.
 The new gate checks the complete exact-HEAD rollup; main requires all eight

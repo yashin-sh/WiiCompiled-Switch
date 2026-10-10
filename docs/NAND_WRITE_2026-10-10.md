@@ -44,4 +44,16 @@ assertion-rejected. The published gx-contracts job includes the
 new production contract. No private game bytes, NROs or raw archives are
 published; unchanged graphics proofs retain their original source provenance.
 
-Its exact private build, complete successful CI rollup and corrected console execution remain pending.
+Candidate `06fe994` passes the separate exact-source private rendered-build gate and all eight published checks in the complete paginated rollup. [PR #375](https://github.com/yashin-sh/WiiCompiled-Switch/pull/375) merges at 2026-10-10T18:18:46Z as `2b3652e`. The 74,440,760-byte NRO passes complete SD byte/SHA readback. The capture-disabled marker is independently reread. Every older owned project NRO is backed up, size/SHA verified and removed, leaving only the current project candidate. Corrected console execution remains pending.
+
+The immutable offline build validates 73 rendered HLE source files, synthetic
+input variants, the libnx backend, Discovery and opt-in capture paths, plus
+the retained NANDCheck SDK probe and owned-write backend syntax. No generated caller shard is recompiled.
+The scoped link scan finds 88 unique providers across
+275 explicit inputs; the final ELF retains 106 strong functions
+and three GX state objects. Nine private patch bytes and nanosecond mtimes
+remain preserved. Unchanged GPU proofs retain their original provenance.
+The private NRO SHA-256 is `11d2c6ea33ffb29c95d8cec9842daecaba2b8dee30b532d76b0261aca0ca1515`.
+Complete SD readback verifies `sdmc:/switch/WiiCompiled-Switch-nand-write-06fe994.nro` at
+2026-10-10T18:19:01.290753+00:00. Private payloads, diagnostic archives,
+mutation copies, NROs and cleanup receipts remain excluded.

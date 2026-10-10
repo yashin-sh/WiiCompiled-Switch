@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cstdio>
 int main() {
+    assert(!mkw_switch_find_missing_native_cpu_extension(0x80084d20));
     assert(!mkw_switch_find_missing_native_cpu_extension(0x80170320));
     assert(!mkw_switch_find_missing_native_cpu_extension(0x80173188));
     assert(!mkw_switch_find_missing_native_cpu_extension(0x801720c0));

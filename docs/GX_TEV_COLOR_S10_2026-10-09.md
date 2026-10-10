@@ -44,8 +44,12 @@ The exact NRO is 74,432,568 bytes, SHA-256
 It is copied to `sdmc:/switch/WiiCompiled-Switch-tev-color-s10-d5f24b9.nro`;
 complete byte/SHA readback passes at 21:27:45 UTC. The preceding owned candidate
 is backed up with its recorded hash before removal. The capture-disabled startup
-marker is independently reread. The next console trial and hardware acceptance
-remain pending Netloader readiness.
+marker is independently reread. Netloader transfers this exact NRO with exit 0 at 23:02:39 UTC on October 9
+(01:02:39 CEST on October 10), sending 27,194,858 compressed bytes / 2,285
+blocks. The [fresh USB result](HARDWARE_TEV_S10_DRAW_QUAD_2026-10-10.md)
+verifies all 39 reports and accepts the observed material path’s three S10
+returns through checked caller progression. The next boundary is DrawQuad;
+actual color components and later game pixels remain unrecorded.
 
 The initial public SDK jobs hit Docker Hub rate limits before compilation.
 The [CI image correction](CI_MERGE_POLICY_2026-10-09.md#sdk-image-availability)

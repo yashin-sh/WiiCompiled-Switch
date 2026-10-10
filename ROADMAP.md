@@ -36,11 +36,14 @@ forwards matrix 30 only for the observed tuple and adds the missing snapshot
 copy-source usage in the checked build mirror. Both-mode guards, 36 native
 packets, the complete desktop GPU suite, the private build and all eight
 published exact-HEAD checks pass. The
-[fresh console result](docs/HARDWARE_TEX_COORD_TEV_S10_2026-10-09.md) accepts
-the matrix-30 return through checked caller progression. The previous Dawn
-validation errors are absent from the new graphics report. The next direct
-boundary is `GXSetTevColorS10`, ID 1 / pointer `0x80398E80`; its component
-values are not recorded. The [new signed-color bridge](docs/GX_TEV_COLOR_S10_2026-10-09.md) checks all four IDs and complete signed guest input before native emission; 196,610 writer/decoder cases pass. Its private build and all eight exact-HEAD checks pass; PR #350 is merged and the NRO is verified by full SD readback. Its fresh console trial remains pending. Later pixels and playability remain pending.
+[fresh S10 console result](docs/HARDWARE_TEV_S10_DRAW_QUAD_2026-10-10.md) accepts
+IDs 1, 2 and 3 through checked material/outer caller progression and records
+`DrawQuad` (`0x80084D20`) as the next boundary. All 39 reports / 839,914 bytes
+match an independent second USB read; no new Dawn error is present. Captures
+remain disabled. The [quad bridge](docs/LYT_DRAW_QUAD_2026-10-10.md) validates
+layout and full guest inputs before emitting bounded direct packets. Its fresh
+GPU scenes pass textured/color coverage and independent replay; later hardware
+return, game pixels and playability remain pending.
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.

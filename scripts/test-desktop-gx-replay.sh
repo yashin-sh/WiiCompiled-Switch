@@ -63,3 +63,10 @@ echo "PASS: partial-tile I4 textures render white/black and refresh at the same 
 "$REPLAY" replay-check "$OUT_ROOT/rgb5a3.mkwr" "$OUT_ROOT/rgb5a3-replayed.png"
 cmp "$OUT_ROOT/rgb5a3-original.png" "$OUT_ROOT/rgb5a3-replayed.png"
 echo "PASS: partial-tile direct RGB5A3 textures render exact red/blue pixels"
+
+for quad_mode in quads colors; do
+    "$REPLAY" "capture-lyt-$quad_mode" "$OUT_ROOT/lyt-$quad_mode.mkwr" "$OUT_ROOT/lyt-$quad_mode-original.png"
+    "$REPLAY" "replay-lyt-$quad_mode-check" "$OUT_ROOT/lyt-$quad_mode.mkwr" "$OUT_ROOT/lyt-$quad_mode-replayed.png"
+    cmp "$OUT_ROOT/lyt-$quad_mode-original.png" "$OUT_ROOT/lyt-$quad_mode-replayed.png"
+done
+echo "PASS: production LYT bridge, native borrowed display-list decoding, textured/color quads and coverage pixel oracles survive independent replay"

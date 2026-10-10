@@ -2,6 +2,16 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-10 (CEST): [fresh signed-color trial](HARDWARE_TEV_S10_DRAW_QUAD_2026-10-10.md)
+verifies 39 reports / 839,914 bytes twice over USB and rereads the exact S10
+NRO from SD. Checked material/outer caller progression accepts S10 IDs 1, 2
+and 3; the new stop is DrawQuad (`0x80084D20`) at dispatch 653128 / 58.737 s.
+No fresh Dawn errors or exception report are present. Captures remain disabled;
+new game pixels are unproven. The [quad bridge](LYT_DRAW_QUAD_2026-10-10.md)
+adds bounded packets and full pre-output range/layout checks; fresh textured
+and colored GPU scenes pass independent capture/replay and coverage oracles.
+Private build, complete CI and the next console trial are pending.
+
 2026-10-09: [signed TEV color bridge](GX_TEV_COLOR_S10_2026-10-09.md)
 adds the missing direct target through the source-owned extension registry.
 All four IDs and complete eight-byte guest inputs are checked before native

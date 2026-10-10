@@ -34,9 +34,14 @@ by those runs. The new host contract is part of the published gx-contracts
 check. Renderer/GPU inputs are unchanged; prior GPU proofs retain their
 original provenance rather than being described as fresh NAND validation.
 
-The exact candidate's separate private rendered build and complete successful
-published check rollup are required before merge/deployment. Corrected
-NANDCheck execution on Switch remains pending. Each deployment also backs up
-and verifies older owned NROs before removing them after the current NRO's
-complete SD readback, as required by AGENTS.md. Private payloads, callers,
+Candidate `b848972` passes the separate exact-source private rendered-build gate and all eight published checks in the complete paginated rollup. [PR #369](https://github.com/yashin-sh/WiiCompiled-Switch/pull/369) merges at 2026-10-10T15:11:35Z as `50618fd`. The 74,436,664-byte NRO passes full SD byte/SHA readback; the capture-disabled marker is independently reread. Every older owned project NRO is backed up, size/SHA verified and removed. Corrected console execution remains pending.
+
+The offline immutable-image build recompiles the translated callers affected
+by the NAND trait header and validates all rendered HLE SDK paths plus an
+explicit NANDCheck specialization probe. The scoped link scan retains its
+85 unique providers and 103 strong functions plus three GX state objects.
+Nine original private patch bytes and nanosecond mtimes remain preserved.
+The private NRO SHA-256 is `d7a39816163a65c8b03cbfbbdd21cfeb9cbdb30a861ea7fca5b8958131121af6`.
+Its complete SD readback verifies `sdmc:/switch/WiiCompiled-Switch-nand-check-b848972.nro` at
+2026-10-10T15:11:51.843781+00:00. Cleanup receipts, payloads, callers,
 NROs, mutation copies and diagnostic archives remain excluded.

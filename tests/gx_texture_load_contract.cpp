@@ -44,6 +44,7 @@ enum class Texture { Rgb,
 struct Fixture {
     std::uint32_t object, data, width, height, format, size;
     bool disableEdgeLod;
+    bool repeat = false;
 };
 constexpr Fixture GetFixture(Texture texture) {
     switch (texture) {
@@ -106,6 +107,7 @@ std::uint16_t currentWidth = 0;
 std::uint16_t currentHeight = 0;
 GXTexFmt currentFormat = GX_TF_I4;
 GXBool currentEdgeLod = GX_FALSE;
+GXTexWrapMode currentWrapS = GX_CLAMP, currentWrapT = GX_CLAMP;
 std::uint32_t expectedMap = 0u;
 struct HostRegion {
     std::uint32_t base;
@@ -136,7 +138,7 @@ void WriteDescriptorFixture(const Fixture& f) {
     const auto tileType = f.format == 0u ? 1u : 2u;
     // Independent tiled field encoding; no game texture payload is used.
     const std::array<std::uint32_t, 8> words{
-        (1u << 4u) | (4u << 5u) | (f.disableEdgeLod ? 1u << 8u : 0u), 0u,
+        (1u << 4u) | (4u << 5u) | (f.disableEdgeLod ? 1u << 8u : 0u) | (f.repeat ? 5u : 0u), 0u,
         (f.width - 1u) | ((f.height - 1u) << 10u) | (f.format << 20u),
         f.data >> 5u, 0u, f.format, 0u, ((blocks & 0x7fffu) << 16u) | (tileType << 8u) | 2u};
     for (std::uint32_t i = 0; i < words.size(); ++i) {
@@ -331,6 +333,8 @@ void CheckFixtureLoad(const Fixture& f, std::uint32_t tid = 0u, [[maybe_unused]]
     assert(currentData == Memory::GetPointer(data, size));
     assert(currentWidth == f.width && currentHeight == f.height);
     assert(currentFormat == static_cast<GXTexFmt>(f.format));
+    assert(currentWrapS == (f.repeat ? GX_REPEAT : GX_CLAMP));
+    assert(currentWrapT == (f.repeat ? GX_REPEAT : GX_CLAMP));
     assert(currentEdgeLod == (f.disableEdgeLod ? GX_FALSE : GX_TRUE));
     if (hostIndex < previousHosts.size()) {
         auto*& previous = previousHosts[hostIndex];
@@ -370,11 +374,11 @@ void CheckFamily() {
     std::uint32_t identity = 0x80401000u;
     // Sources and objects absent from the hardware-address lists. Exercise
     // whole and partial tiles, small/large extents and all native binding slots.
-    for (auto format : {0u, 5u}) {
-        for (auto dims : {std::pair{1u, 1u}, {4u, 7u}, {8u, 8u}, {9u, 9u}, {36u, 32u}, {511u, 17u}, {1024u, 64u}}) {
+    for (auto format : {0u, 3u, 5u}) {
+        for (auto dims : {std::pair{1u, 1u}, {4u, 7u}, {8u, 8u}, {9u, 9u}, {36u, 32u}, {32u, 32u}, {511u, 17u}, {1024u, 64u}}) {
             const auto tile = format == 0u ? 8u : 4u;
             Fixture f{identity, 0x10500000u + (identity - 0x80401000u) * 16u, dims.first, dims.second, format,
-                      ((dims.first + tile - 1u) / tile) * ((dims.second + tile - 1u) / tile) * 32u, true};
+                      ((dims.first + tile - 1u) / tile) * ((dims.second + tile - 1u) / tile) * 32u, true, format == 3u};
             identity += 128u;
             InitFamily(f, f.size + 32u);
             for (std::uint32_t slot = 0; slot < 8u; ++slot)
@@ -404,6 +408,22 @@ void CheckFamily() {
             InitFamily(f, f.size);
             ExpectAbort(MakeCpu(f.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
         }
+    }
+    Fixture observed{0x80398eb8u, 0x1114f2a0u, 32u, 32u, 3u, 2048u, true, true};
+    InitFamily(observed, observed.size);
+    const std::array<std::uint32_t, 8> captured{0x195u, 0u, 0x00307c1fu, 0x0088a795u, 0u, 3u, 0u, 0x00400202u};
+    for (std::uint32_t word = 0; word < captured.size(); ++word)
+        assert(Memory::Read32(observed.object + word * 4u) == captured[word]);
+    for (std::uint32_t slot = 0; slot < 8u; ++slot)
+        CheckFixtureLoad(observed, slot);
+    for (std::uint32_t word = 0; word < captured.size(); ++word) {
+        for (std::uint32_t bit = 0; bit < 32u; ++bit) {
+            if ((word == 2u && bit < 20u) || (word == 3u && bit < 24u))
+                continue;
+            WriteWord(observed.object + word * 4u, captured[word] ^ (1u << bit));
+            ExpectAbort(MakeCpu(observed.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+        }
+        WriteWord(observed.object + word * 4u, captured[word]);
     }
     Fixture wrapped{identity, 0x10600000u, 1024u, 512u, 5u, 32768u * 32u, true};
     InitFamily(wrapped, wrapped.size);
@@ -484,7 +504,9 @@ extern "C" void GXInitTexObj(GXTexObj* obj, const void* data, u16 width, u16 hei
     assert(nativeCalls++ == 0u);
     if (throwOnInit)
         throw std::runtime_error("test GX init failure");
-    assert(s == GX_CLAMP && t == GX_CLAMP && mip == GX_FALSE);
+    assert(mip == GX_FALSE);
+    currentWrapS = s;
+    currentWrapT = t;
     currentHost = obj;
     currentData = data;
     currentWidth = width;

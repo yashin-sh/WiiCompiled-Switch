@@ -70,3 +70,8 @@ for quad_mode in quads colors; do
     cmp "$OUT_ROOT/lyt-$quad_mode-original.png" "$OUT_ROOT/lyt-$quad_mode-replayed.png"
 done
 echo "PASS: production LYT bridge, native borrowed display-list decoding, textured/color quads and coverage pixel oracles survive independent replay"
+
+"$REPLAY" capture-ia8-repeat "$OUT_ROOT/ia8-repeat.mkwr" "$OUT_ROOT/ia8-repeat-original.png"
+"$REPLAY" replay-ia8-repeat-check "$OUT_ROOT/ia8-repeat.mkwr" "$OUT_ROOT/ia8-repeat-replayed.png"
+cmp "$OUT_ROOT/ia8-repeat-original.png" "$OUT_ROOT/ia8-repeat-replayed.png"
+echo "PASS: IA8 linear repeat on both axes, outside-range UVs and same-address refresh survive independent replay"

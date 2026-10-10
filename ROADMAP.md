@@ -46,8 +46,14 @@ GPU scenes pass textured/color coverage and independent replay. Candidate
 `380fbc4` passes the private build and all eight complete-rollup checks;
 [PR #352](https://github.com/yashin-sh/WiiCompiled-Switch/pull/352) is merged and the exact NRO passes full SD readback.
 The exact candidate transfers via nxlink with exit 0 at 2026-10-10 08:38:11 UTC
-after gate/hash revalidation. DrawQuad hardware return, later game pixels and
-playability await the trial outcome and durable USB reports.
+after gate/hash revalidation. The [fresh result](docs/HARDWARE_DRAW_QUAD_IA8_REPEAT_2026-10-10.md)
+verifies 39 reports / 840,193 bytes twice and accepts the observed DrawQuad
+return before an IA8/repeat descriptor refusal. The
+[correction](docs/GX_IA8_REPEAT_2026-10-10.md) checks full IA8 spans and forwards
+validated wrap modes; outside-range UV, same-address refresh and independent
+GPU replay pass. Private-build/complete-CI gates are required before merge.
+The operator still sees Wiimote, black and a crash; later pixels/playability
+remain unproven.
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.

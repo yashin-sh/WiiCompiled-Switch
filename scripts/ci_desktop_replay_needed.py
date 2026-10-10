@@ -7,6 +7,10 @@ import subprocess
 
 PATTERNS = (
     "desktop-gx-replay/**",
+    "include/gx_linear_texture_descriptor.hpp",
+    "source/gx_init_tex_obj_hle_bridge.cpp",
+    "tests/gx_texture_load_contract.cpp",
+    "scripts/test-gx-texture-load.sh",
     "include/frame_dump*",
     "include/rendered_frame_dump.hpp",
     "include/surface_presenter.hpp",

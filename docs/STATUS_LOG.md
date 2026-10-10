@@ -13,7 +13,10 @@ fresh outside-range UV GPU/refresh/replay oracles pass; a clamp mutant fails.
 Candidate `e2aa724` passes the private build, 71 SDK HLE files, 85 scoped
 providers / 103 retained functions, and all eight completed exact-HEAD checks.
 PR #355 merges as `9a711ca`. Full SD readback and the
-capture-disabled marker verify the corrected NRO; its console trial is pending.
+capture-disabled marker verify the corrected NRO. It launches via nxlink with
+exit 0 at 2026-10-10 12:51:41 CEST (10:51:41 UTC), after gate/hash revalidation
+(27,196,817 compressed bytes / 2,286 blocks). Trial outcome and independent USB
+report verification remain pending.
 
 2026-10-10 (CEST): [fresh signed-color trial](HARDWARE_TEV_S10_DRAW_QUAD_2026-10-10.md)
 verifies 39 reports / 839,914 bytes twice over USB and rereads the exact S10

@@ -44,6 +44,14 @@ The private NRO is 74,436,664 bytes, SHA-256
 `sdmc:/switch/WiiCompiled-Switch-ia8-repeat-e2aa724.nro` at
 2026-10-10T09:03:48.461544+00:00; the capture-disabled marker is
 independently reread. The prior owned quad candidate is backed up and verified
-before removal. The next corrected console run, subsequent game pixels and
-playability remain pending. Private game data, translated callers, NROs and
-raw reports are excluded from publication.
+before removal.
+
+The exact candidate launches through nxlink with exit 0 on 2026-10-10 at
+12:51:41 CEST (10:51:41.660925 UTC): 27,196,817 compressed bytes / 2,286 blocks.
+The transmitted basename matches the verified SD candidate. Its complete
+hash, private gate and complete published code-HEAD rollup are rechecked
+before launch. Runtime captures remain disabled via the checked SD marker.
+Durable IA8 load return evidence awaits the trial outcome and independent USB
+report verification; subsequent game pixels and playability remain unproven.
+Private game data, translated callers, NROs and raw reports are excluded from
+publication.

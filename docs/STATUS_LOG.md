@@ -14,7 +14,9 @@ the full existing suite passes. Candidate `102bb13` passes the private
 build, 71 SDK HLE files, 85 scoped providers, 103 retained functions and all
 eight completed exact-HEAD checks. PR #360 merges as `744908f`;
 full SD readback and the capture-disabled marker verify the corrected NRO.
-Its console trial remains pending.
+The exact NRO launches through nxlink with exit 0 at 2026-10-10 14:42:15 CEST
+(27,196,610 compressed bytes / 2,286 blocks), after hash/gate revalidation;
+durable USB reports remain pending.
 
 2026-10-10: [IA8 trial result](HARDWARE_IA8_CLAMP_2026-10-10.md) verifies
 39 reports / 839,522 bytes twice and the full SD candidate. DrawQuad entry

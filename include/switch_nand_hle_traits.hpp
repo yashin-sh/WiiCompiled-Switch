@@ -3,6 +3,7 @@
 #include "abi_bridge.h"
 #include "horizon_runtime_services.hpp"
 #include "memory.h"
+#include "switch_nand_check_hle_traits.hpp"
 #include "switch_nand_runtime.hpp"
 
 #include <cctype>

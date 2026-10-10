@@ -10,8 +10,11 @@ tuple is not separately witnessed returning. No fresh Dawn error appears,
 and captures remain disabled. The [clamp correction](GX_IA8_CLAMP_2026-10-10.md)
 passes 485 valid bridge loads per mode, full-span/field guards, fresh GPU
 clamp/refresh/replay and the full existing suite. Both inverted sampler
-variants fail their pixel oracles. Private-build and complete-CI gates remain
-required before merge/deployment.
+variants fail their pixel oracles. Candidate `9fcb11e` passes the private
+build, 71 SDK HLE files, 85 scoped providers, 103 retained functions and all
+eight completed exact-HEAD checks. PR #358 merges as `349e9a5`;
+full SD readback and the capture-disabled marker verify the corrected NRO.
+Its console trial remains pending.
 
 2026-10-10: [DrawQuad hardware result](HARDWARE_DRAW_QUAD_IA8_REPEAT_2026-10-10.md)
 verifies 39 reports / 840,193 bytes twice and the complete SD NRO. One quad

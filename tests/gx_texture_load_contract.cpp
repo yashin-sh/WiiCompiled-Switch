@@ -374,11 +374,12 @@ void CheckFamily() {
     std::uint32_t identity = 0x80401000u;
     // Sources and objects absent from the hardware-address lists. Exercise
     // whole and partial tiles, small/large extents and all native binding slots.
-    for (auto format : {0u, 3u, 5u}) {
+    for (auto mode : {std::pair{0u, false}, {3u, false}, {3u, true}, {5u, false}}) {
+        const auto format = mode.first;
         for (auto dims : {std::pair{1u, 1u}, {4u, 7u}, {8u, 8u}, {9u, 9u}, {36u, 32u}, {32u, 32u}, {511u, 17u}, {1024u, 64u}}) {
             const auto tile = format == 0u ? 8u : 4u;
             Fixture f{identity, 0x10500000u + (identity - 0x80401000u) * 16u, dims.first, dims.second, format,
-                      ((dims.first + tile - 1u) / tile) * ((dims.second + tile - 1u) / tile) * 32u, true, format == 3u};
+                      ((dims.first + tile - 1u) / tile) * ((dims.second + tile - 1u) / tile) * 32u, true, mode.second};
             identity += 128u;
             InitFamily(f, f.size + 32u);
             for (std::uint32_t slot = 0; slot < 8u; ++slot)
@@ -410,20 +411,38 @@ void CheckFamily() {
         }
     }
     Fixture observed{0x80398eb8u, 0x1114f2a0u, 32u, 32u, 3u, 2048u, true, true};
-    InitFamily(observed, observed.size);
-    const std::array<std::uint32_t, 8> captured{0x195u, 0u, 0x00307c1fu, 0x0088a795u, 0u, 3u, 0u, 0x00400202u};
-    for (std::uint32_t word = 0; word < captured.size(); ++word)
-        assert(Memory::Read32(observed.object + word * 4u) == captured[word]);
-    for (std::uint32_t slot = 0; slot < 8u; ++slot)
-        CheckFixtureLoad(observed, slot);
-    for (std::uint32_t word = 0; word < captured.size(); ++word) {
-        for (std::uint32_t bit = 0; bit < 32u; ++bit) {
-            if ((word == 2u && bit < 20u) || (word == 3u && bit < 24u))
-                continue;
-            WriteWord(observed.object + word * 4u, captured[word] ^ (1u << bit));
-            ExpectAbort(MakeCpu(observed.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+    for (bool repeat : {true, false}) {
+        observed.repeat = repeat;
+        observed.data = repeat ? 0x1114f2a0u : 0x1114f2c0u;
+        InitFamily(observed, observed.size);
+        const std::array<std::uint32_t, 8> captured{repeat ? 0x195u : 0x190u, 0u, 0x00307c1fu,
+                                                    repeat ? 0x0088a795u : 0x0088a796u, 0u, 3u, 0u, 0x00400202u};
+        for (std::uint32_t word = 0; word < captured.size(); ++word)
+            assert(Memory::Read32(observed.object + word * 4u) == captured[word]);
+        for (std::uint32_t slot = 0; slot < 8u; ++slot)
+            CheckFixtureLoad(observed, slot);
+        for (std::uint32_t word = 0; word < captured.size(); ++word) {
+            for (std::uint32_t bit = 0; bit < 32u; ++bit) {
+                if ((word == 2u && bit < 20u) || (word == 3u && bit < 24u))
+                    continue;
+                WriteWord(observed.object + word * 4u, captured[word] ^ (1u << bit));
+                ExpectAbort(MakeCpu(observed.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+            }
+            WriteWord(observed.object + word * 4u, captured[word]);
         }
-        WriteWord(observed.object + word * 4u, captured[word]);
+    }
+    // Switching the sampler on one object must refresh the existing native
+    // allocation, in both directions, rather than retaining the first mode.
+    auto* previous = currentHost;
+    for (bool repeat : {true, false, true}) {
+        observed.repeat = repeat;
+        WriteDescriptorFixture(observed);
+        CheckFixtureLoad(observed);
+#if MKW_LOCAL_RENDERED_FAST_TRACK
+        assert(currentHost == previous);
+#else
+        (void)previous;
+#endif
     }
     Fixture wrapped{identity, 0x10600000u, 1024u, 512u, 5u, 32768u * 32u, true};
     InitFamily(wrapped, wrapped.size);
@@ -432,7 +451,7 @@ void CheckFamily() {
 void CheckDescriptorRefusals(Texture texture) {
     const auto fixture = GetFixture(texture);
     const auto object = fixture.object;
-    const bool family = fixture.format == 0u || fixture.format == 5u;
+    const bool family = fixture.format == 0u || fixture.format == 3u || fixture.format == 5u;
     for (std::uint32_t word = 0; word < 8u; ++word) {
         const auto value = Memory::Read32(object + 4u * word);
         for (std::uint32_t bit = 0; bit < 32u; ++bit) {

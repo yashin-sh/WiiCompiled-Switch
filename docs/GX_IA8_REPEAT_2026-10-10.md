@@ -51,7 +51,9 @@ The exact candidate launches through nxlink with exit 0 on 2026-10-10 at
 The transmitted basename matches the verified SD candidate. Its complete
 hash, private gate and complete published code-HEAD rollup are rechecked
 before launch. Runtime captures remain disabled via the checked SD marker.
-Durable IA8 load return evidence awaits the trial outcome and independent USB
-report verification; subsequent game pixels and playability remain unproven.
+The [fresh USB result](HARDWARE_IA8_CLAMP_2026-10-10.md) independently verifies
+39 reports / 839,522 bytes and the full SD candidate, and reaches a different
+IA8/clamp refusal after DrawQuad. The prior repeat tuple is not separately
+witnessed returning; subsequent game pixels and playability remain unproven.
 Private game data, translated callers, NROs and raw reports are excluded from
 publication.

@@ -1,6 +1,6 @@
 # Roadmap
 
-## Current checkpoint — 2026-10-09
+## Current checkpoint — 2026-10-10
 
 The [latest capture-enabled trial](docs/HARDWARE_NONBLACK_REPLAY_2026-10-09.md)
 preserves a recognizable Wiimote safety page at frame 4 on Switch and reproduces
@@ -54,8 +54,13 @@ validated wrap modes; outside-range UV, same-address refresh and independent
 GPU replay pass. Candidate `e2aa724` passes the private build and all
 eight complete-rollup checks; PR #355 merges and the corrected NRO passes
 full SD readback. The exact corrected candidate launches via nxlink with exit
-0 at 2026-10-10 12:51:41 CEST (10:51:41 UTC); durable IA8 return evidence awaits
-the trial outcome and independent USB reports.
+0 at 2026-10-10 12:51:41 CEST (10:51:41 UTC). The
+[fresh USB result](docs/HARDWARE_IA8_CLAMP_2026-10-10.md) verifies 39 reports /
+839,522 bytes twice and the complete SD NRO. Another observed quad return
+precedes a different IA8/clamp refusal; the prior repeat tuple is not
+separately witnessed returning. The [clamp correction](docs/GX_IA8_CLAMP_2026-10-10.md)
+passes production bridge contracts and fresh clamp/repeat GPU oracles.
+Private-build and complete-CI gates are required before merge.
 The operator still sees Wiimote, black and a crash; later pixels/playability
 remain unproven.
 

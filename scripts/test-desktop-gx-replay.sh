@@ -75,3 +75,8 @@ echo "PASS: production LYT bridge, native borrowed display-list decoding, textur
 "$REPLAY" replay-ia8-repeat-check "$OUT_ROOT/ia8-repeat.mkwr" "$OUT_ROOT/ia8-repeat-replayed.png"
 cmp "$OUT_ROOT/ia8-repeat-original.png" "$OUT_ROOT/ia8-repeat-replayed.png"
 echo "PASS: IA8 linear repeat on both axes, outside-range UVs and same-address refresh survive independent replay"
+
+"$REPLAY" capture-ia8-clamp "$OUT_ROOT/ia8-clamp.mkwr" "$OUT_ROOT/ia8-clamp-original.png"
+"$REPLAY" replay-ia8-clamp-check "$OUT_ROOT/ia8-clamp.mkwr" "$OUT_ROOT/ia8-clamp-replayed.png"
+cmp "$OUT_ROOT/ia8-clamp-original.png" "$OUT_ROOT/ia8-clamp-replayed.png"
+echo "PASS: IA8 linear clamp on both axes, outside-range UVs and same-address refresh survive independent replay"

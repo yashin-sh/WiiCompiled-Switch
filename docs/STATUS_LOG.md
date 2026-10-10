@@ -2,6 +2,17 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-10: [IA8 trial result](HARDWARE_IA8_CLAMP_2026-10-10.md) verifies
+39 reports / 839,522 bytes twice and the full SD candidate. DrawQuad entry
+at dispatch 652758 and a later material guard at 652880 support one quad
+return. The new stop is 32 × 32 IA8/clamp at 57.832 seconds; the prior repeat
+tuple is not separately witnessed returning. No fresh Dawn error appears,
+and captures remain disabled. The [clamp correction](GX_IA8_CLAMP_2026-10-10.md)
+passes 485 valid bridge loads per mode, full-span/field guards, fresh GPU
+clamp/refresh/replay and the full existing suite. Both inverted sampler
+variants fail their pixel oracles. Private-build and complete-CI gates remain
+required before merge/deployment.
+
 2026-10-10: [DrawQuad hardware result](HARDWARE_DRAW_QUAD_IA8_REPEAT_2026-10-10.md)
 verifies 39 reports / 840,193 bytes twice and the complete SD NRO. One quad
 return is accepted through later caller progression; a 32 × 32 IA8/repeat
@@ -15,8 +26,9 @@ providers / 103 retained functions, and all eight completed exact-HEAD checks.
 PR #355 merges as `9a711ca`. Full SD readback and the
 capture-disabled marker verify the corrected NRO. It launches via nxlink with
 exit 0 at 2026-10-10 12:51:41 CEST (10:51:41 UTC), after gate/hash revalidation
-(27,196,817 compressed bytes / 2,286 blocks). Trial outcome and independent USB
-report verification remain pending.
+(27,196,817 compressed bytes / 2,286 blocks). Its
+[fresh result](HARDWARE_IA8_CLAMP_2026-10-10.md) verifies reports and reaches
+the subsequent IA8/clamp boundary.
 
 2026-10-10 (CEST): [fresh signed-color trial](HARDWARE_TEV_S10_DRAW_QUAD_2026-10-10.md)
 verifies 39 reports / 839,914 bytes twice over USB and rereads the exact S10

@@ -5,13 +5,13 @@
 
 namespace mkw::gx {
 // The audited non-paletted family uses linear filtering, clamp for I4/RGB5A3
-// or repeat on both axes for IA8, disabled edge LOD, zero LOD/bias, no user
-// data/TLUT and no mipmaps. The
-// object and source addresses are identities, not admission criteria.
+// or clamp/repeat on both axes for IA8, disabled edge LOD, zero LOD/bias,
+// no user data/TLUT and no mipmaps. Object and source addresses are identities,
+// not admission criteria.
 constexpr std::uint32_t linearTextureBytes(const std::array<std::uint32_t, 8>& words, std::uint32_t slot) noexcept {
     const auto format = words[5];
     if (slot >= 8u || (format != 0u && format != 3u && format != 5u) ||
-        words[0] != (format == 3u ? 0x195u : 0x190u) || words[1] != 0u || words[4] != 0u || words[6] != 0u ||
+        (words[0] != 0x190u && (format != 3u || words[0] != 0x195u)) || words[1] != 0u || words[4] != 0u || words[6] != 0u ||
         words[3] == 0u || (words[3] & 0xff000000u) != 0u)
         return 0u;
     const auto width = (words[2] & 0x3ffu) + 1u;

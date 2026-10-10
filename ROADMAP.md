@@ -42,8 +42,10 @@ IDs 1, 2 and 3 through checked material/outer caller progression and records
 match an independent second USB read; no new Dawn error is present. Captures
 remain disabled. The [quad bridge](docs/LYT_DRAW_QUAD_2026-10-10.md) validates
 layout and full guest inputs before emitting bounded direct packets. Its fresh
-GPU scenes pass textured/color coverage and independent replay; later hardware
-return, game pixels and playability remain pending.
+GPU scenes pass textured/color coverage and independent replay. Candidate
+`380fbc4` passes the private build and all eight complete-rollup checks;
+[PR #352](https://github.com/yashin-sh/WiiCompiled-Switch/pull/352) is merged and the exact NRO passes full SD readback.
+DrawQuad hardware return, later game pixels and playability remain pending.
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.
 - [x] Validate final display-list code `6fb2718b`: 335 rendered cases / 30 diagnosed refusals, both headless refusals, four rejected mutants, five GitHub workflows / six jobs and the private NRO build.

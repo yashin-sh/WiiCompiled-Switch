@@ -50,7 +50,20 @@ capture/replay processes produce identical PNGs. Packet tests prove alpha
 modulation; the selected-XFB presentation is opaque. The full existing GPU
 suite also passes. Bridge/test changes now select the full replay CI job.
 
-The exact private rendered-build and complete GitHub rollup gates are required
-before merge and deployment. Hardware return and later game pixels are still
-pending the new candidate's console trial. Generated code, game inputs, raw
-reports and rendered NROs remain private.
+Candidate `380fbc4` passes the separate private rendered-build gate and every
+published check in the complete exact-HEAD rollup: all eight checks complete
+successfully before [PR #352](https://github.com/yashin-sh/WiiCompiled-Switch/pull/352) merges at
+2026-10-10T00:01:45Z, as main `3665c87`. SDK syntax covers
+71 rendered HLE source files plus synthetic input, libnx backend, Discovery
+and capture checks. The scoped link audit finds 85 unique providers across
+273 explicit inputs; 103 strong functions and three GX state objects remain
+in the ELF. Nine original private patches preserve bytes and nanosecond mtimes.
+
+The private NRO is 74,436,664 bytes, SHA-256
+`a22d8b6a98af8492239acb0c8f545288bb72ba6fc1d4f544addf25f4ee98c9be`. It is copied to
+`sdmc:/switch/WiiCompiled-Switch-lyt-draw-quad-380fbc4.nro` and matches complete SD byte/SHA readback at
+2026-10-10T00:01:59.933743+00:00. The capture-disabled marker is independently reread.
+The preceding owned S10 candidate is backed up and hash-verified before removal;
+this is the sole project NRO in the SD switch directory. New DrawQuad hardware
+return and later game pixels remain pending the console trial. Generated code,
+game inputs, raw reports and rendered NROs remain private.

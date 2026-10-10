@@ -60,8 +60,10 @@ full SD readback. The exact corrected candidate launches via nxlink with exit
 precedes a different IA8/clamp refusal; the prior repeat tuple is not
 separately witnessed returning. The [clamp correction](docs/GX_IA8_CLAMP_2026-10-10.md)
 passes production bridge contracts and fresh clamp/repeat GPU oracles.
-Private-build and complete-CI gates are required before merge.
-The operator still sees Wiimote, black and a crash; later pixels/playability
+Candidate `9fcb11e` passes the private build and all eight complete-rollup
+checks; PR #358 merges and the corrected NRO passes full SD readback.
+Corrected console execution remains pending.
+The preceding quad trial shows Wiimote, black and a crash; later pixels/playability
 remain unproven.
 
 - [x] Implement the [coordinated GX display-list candidate](docs/GX_DISPLAY_LIST_2026-10-03.md): shared checked native/guest buffer, Begin/End and context restoration.

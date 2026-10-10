@@ -5,6 +5,21 @@
 
 #include <cstdint>
 
+// NANDRead (PAL 0x8019B7A4). The synchronous ABI returns the transfer count.
+template <>
+struct KnownNativeCpuCall<0x8019B7A4u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+        const std::int32_t result = mkw::switch_nand_runtime::ReadSync(
+            cpu->gpr[3], cpu->gpr[4], cpu->gpr[5]);
+        cpu->gpr[3] = static_cast<std::uint32_t>(result);
+    }
+};
+
 // NANDReadAsync (PAL 0x8019B80C). Pinned WiiCompiled performs a synchronous
 // NANDRead, queues the completion callback with the raw read result
 // (bytesRead or a negative NAND error), then returns NAND_RESULT_OK when the

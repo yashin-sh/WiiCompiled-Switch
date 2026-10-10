@@ -70,7 +70,8 @@ a later IA4/repeat descriptor after further layout progression. Its
 both-mode bridge contracts and the full GPU suite, and independently tests
 S/T for IA4 and IA8. Candidate `102bb13` passes the private build and all eight complete-rollup
 checks; PR #360 merges and the corrected NRO passes full SD readback.
-Corrected console execution remains pending.
+The exact NRO launches through nxlink with exit 0 at 2026-10-10 14:42:15 CEST;
+durable USB results remain pending.
 The preceding quad trial shows Wiimote, black and a crash; later pixels/playability
 remain unproven.
 

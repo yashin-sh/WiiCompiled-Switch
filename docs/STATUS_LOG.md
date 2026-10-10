@@ -10,7 +10,12 @@ No fresh Dawn errors or exception report are present. Captures remain disabled;
 new game pixels are unproven. The [quad bridge](LYT_DRAW_QUAD_2026-10-10.md)
 adds bounded packets and full pre-output range/layout checks; fresh textured
 and colored GPU scenes pass independent capture/replay and coverage oracles.
-Private build, complete CI and the next console trial are pending.
+Candidate `380fbc4` passes the private rendered build, 71 rendered SDK source
+files plus backend/capture checks, 85 scoped providers / 103 retained functions
+and all eight completed exact-HEAD checks. PR #352 merges as
+`3665c87`. Full SD readback verifies the 74,436,664-byte
+NRO; the capture-disabled marker is reread and the previous owned candidate
+is backed up with its hash before removal. The next console trial is pending.
 
 2026-10-09: [signed TEV color bridge](GX_TEV_COLOR_S10_2026-10-09.md)
 adds the missing direct target through the source-owned extension registry.

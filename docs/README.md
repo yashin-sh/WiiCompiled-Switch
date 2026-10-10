@@ -1,5 +1,7 @@
 # Documentation index
 
+- [IA4 returned; all-zero Fog boundary](HARDWARE_IA4_FOG_ZERO_2026-10-10.md) — 39 reports / 841,828 bytes verified twice, relocated load-pass and later Fog guard
+- [Third exact Fog tuple](GX_FOG_ZERO_2026-10-10.md) — both-mode bridge/Memory, 3,072 pinned BP fixtures and four negative controls
 - [IA8/clamp trial; IA4 repeat boundary](HARDWARE_IA4_REPEAT_2026-10-10.md) — 39 reports / 841,601 bytes verified twice, later layout progression, captures disabled
 - [Checked IA4 family and independent S/T](GX_IA4_2026-10-10.md) — rectangular tiles, bridge contracts, nibble expansion and eight wrong-axis GPU negative controls
 - [IA8 trial; clamp boundary](HARDWARE_IA8_CLAMP_2026-10-10.md) — 39 reports / 839,522 bytes verified twice; another quad return, repeat tuple return not individually witnessed

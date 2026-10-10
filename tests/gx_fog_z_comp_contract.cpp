@@ -11,6 +11,7 @@
 #include <cstdio>
 #include <cstring>
 #include <new>
+#include <set>
 #include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/prctl.h>
@@ -34,11 +35,12 @@ constexpr std::array contracts{
     Contract{0x801722ccu, "RMCP01_GX_SET_FOG", "GX_SET_FOG_UNPROVEN_ARGS", "GX_SET_FOG_UNREADABLE_COLOR", KnownNativeCpuCall<0x801722ccu>::Invoke},
     Contract{0x80172858u, "RMCP01_GX_SET_Z_COMP_LOC", nullptr, nullptr, KnownNativeCpuCall<0x80172858u>::Invoke},
 };
-constexpr std::array<std::array<std::uint64_t, 4>, 2> observedTuples{{
+constexpr std::array<std::array<std::uint64_t, 4>, 3> observedTuples{{
     {0x0000000000000000ull, 0x3ff0000000000000ull,
      0x3fb99999a0000000ull, 0x3ff0000000000000ull},
     {0x3ff0000000000000ull, 0x3ff0000000000000ull,
      0x0000000000000000ull, 0x0000000000000000ull},
+    {0u, 0u, 0u, 0u},
 }};
 std::size_t selectedTuple = 0;
 constexpr std::uint32_t address = 0x70002000u;
@@ -252,9 +254,10 @@ extern "C" void GXSetFog(GXFogType type, float start, float end, float near, flo
     // Independent expected native representation; catches .f instead of .d,
     // swapped FPRs and constant/incorrect rounding of the captured near plane.
     const std::array<float, 4> values{start, end, near, far};
-    constexpr std::array<std::array<std::uint32_t, 4>, 2> expected{{
+    constexpr std::array<std::array<std::uint32_t, 4>, 3> expected{{
         {0u, 0x3f800000u, 0x3dcccccdu, 0x3f800000u},
         {0x3f800000u, 0x3f800000u, 0u, 0u},
+        {0u, 0u, 0u, 0u},
     }};
     for (std::size_t i = 0; i < values.size(); ++i) {
         std::uint32_t bits;
@@ -328,19 +331,27 @@ int main() {
         for (auto pointer : {61u, 64u, address - 1u, address + 61u, address + 64u, 0x60000000u, 0xfffffffdu, 0xfffffffeu, 0xffffffffu})
             ExpectAbort({0u, pointer}, true);
     }
-    // Mixing independently admitted components must not create a third tuple.
-    // The end parameter is shared; all six hybrids of start/near/far refuse.
+    // The union of admitted components must not admit new mixed tuples.
+    // Enumerate all combinations from all three observed tuples, deduplicate
+    // shared components, and refuse every complete tuple outside the allowlist.
+    std::set<std::array<std::uint64_t, 4>> hybrids;
+    for (const auto& a : observedTuples)
+        for (const auto& b : observedTuples)
+            for (const auto& c : observedTuples)
+                for (const auto& d : observedTuples)
+                    hybrids.insert({a[0], b[1], c[2], d[3]});
     selectedTuple = 0;
-    for (unsigned combination = 1; combination < 7u; ++combination) {
+    unsigned hybridRefusals = 0;
+    for (const auto& bits : hybrids) {
+        if (bits == observedTuples[0] || bits == observedTuples[1] || bits == observedTuples[2])
+            continue;
         auto cpu = MakeCpu({0u, 0x60000000u});
-        for (unsigned bit = 0; bit < 3u; ++bit) {
-            const auto fpr = bit == 0 ? 0u : bit + 1u;
-            const auto tuple = (combination >> bit) & 1u;
-            std::memcpy(&cpu.fpr[1u + fpr].d, &observedTuples[tuple][fpr], sizeof(std::uint64_t));
-        }
-        // Use the normal refusal harness with a complete explicit CPU fixture.
+        for (std::size_t i = 0; i < bits.size(); ++i)
+            std::memcpy(&cpu.fpr[1u + i].d, &bits[i], sizeof(bits[i]));
         ExpectAbortCpu(cpu);
+        ++hybridRefusals;
     }
+    assert(hybrids.size() == 16u && hybridRefusals == 13u);
     for (std::uint32_t value = 0; value < 65536u; ++value)
         InvokeAndCheck(Operation::ZComp, {value, 0x60000000u});
     for (auto value : {0x10000u, 0x100ffu, 0x80000000u, 0xffffff00u, 0xffffffffu})
@@ -349,6 +360,6 @@ int main() {
     Memory::Reset();
     for (selectedTuple = 0; selectedTuple < observedTuples.size(); ++selectedTuple)
         ExpectAbort({0u, 0u}, true);
-    assert(validCases == 67661u && abortCases == 630u);
+    assert(validCases == 68721u && abortCases == 949u);
     std::printf("PASS: Fog/ZComp valid=%u diagnosed-aborts=%u native=%u rendered=%d\n", validCases, abortCases, nativeCalls, MKW_LOCAL_RENDERED_FAST_TRACK);
 }

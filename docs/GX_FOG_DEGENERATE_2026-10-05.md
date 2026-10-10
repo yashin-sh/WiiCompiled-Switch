@@ -67,3 +67,7 @@ as `f6da5a7`. The exact NRO is copied to SD with complete readback at
 2026-10-06 04:57:43 UTC. The [fresh console result](HARDWARE_RESULTS_2026-10-06_MII_FOG_COPY_CLAMP_FRONTIER.md)
 now establishes the new Mii tuple return through the checked caller and later
 Clamp frontier. Recognizable pixels and broader Fog tuples remain unaccepted.
+
+The [2026-10-10 all-zero correction](GX_FOG_ZERO_2026-10-10.md) adds a third
+exact tuple after fresh hardware evidence. Its expanded contracts retain
+these earlier cases and refuse all thirteen unadmitted component hybrids.

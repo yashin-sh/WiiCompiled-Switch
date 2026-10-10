@@ -71,7 +71,11 @@ both-mode bridge contracts and the full GPU suite, and independently tests
 S/T for IA4 and IA8. Candidate `102bb13` passes the private build and all eight complete-rollup
 checks; PR #360 merges and the corrected NRO passes full SD readback.
 The exact NRO launches through nxlink with exit 0 at 2026-10-10 14:42:15 CEST;
-durable USB results remain pending.
+the [fresh result](docs/HARDWARE_IA4_FOG_ZERO_2026-10-10.md) verifies
+39 reports / 841,828 bytes twice and accepts the retained relocated IA4/repeat
+load before an all-zero Fog guard. The [Fog correction](docs/GX_FOG_ZERO_2026-10-10.md)
+passes both-mode production/Memory, pinned BP and negative-control tests.
+Its private build, CI and corrected console trial remain pending.
 The preceding quad trial shows Wiimote, black and a crash; later pixels/playability
 remain unproven.
 

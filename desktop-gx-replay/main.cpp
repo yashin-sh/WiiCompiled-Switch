@@ -213,11 +213,15 @@ void setup() {
     GXSetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
     aurora::gx::fifo::drain();
 }
-void triangle(float center, bool raw, bool indexed = false, bool directSubmission = false, bool repeatSample = false) {
+void triangle(float center, bool raw, bool indexed = false, bool directSubmission = false, bool axisSamples = false) {
+    // Isolate S outside-range on the left and T outside-range on the right.
+    // Both sampler axes must independently affect the pixel oracles.
+    const auto u = axisSamples ? (center < 0.f ? 1.25f : 0.25f) : 0.5f;
+    const auto v = axisSamples ? (center < 0.f ? 0.25f : -0.75f) : 0.5f;
     if (raw) {
         replay::Bytes vertices;
         for (auto xy : {std::array<float, 2>{center, 0.7f}, {center - 0.4f, -0.7f}, {center + 0.4f, -0.7f}}) {
-            for (float value : {xy[0], xy[1], 0.f, repeatSample ? 1.25f : 0.5f, repeatSample ? -0.75f : 0.5f})
+            for (float value : {xy[0], xy[1], 0.f, u, v})
                 integer(vertices, std::bit_cast<std::uint32_t>(value));
         }
         if (directSubmission) {
@@ -236,7 +240,7 @@ void triangle(float center, bool raw, bool indexed = false, bool directSubmissio
                 GXTexCoord1x8(0);
             } else {
                 GXPosition3f32(xy[0], xy[1], 0);
-                GXTexCoord2f32(repeatSample ? 1.25f : 0.5f, repeatSample ? -0.75f : 0.5f);
+                GXTexCoord2f32(u, v);
             }
         }
         GXEnd();
@@ -253,7 +257,7 @@ void fill_texture(std::span<std::uint8_t> tex, bool blue) {
         tex[33 + i * 2] = blue ? 255 : 0;
     }
 }
-void check_scene(const replay::Bytes& pixels, bool copies = false, bool reversed = false, bool intensity = false, bool quads = false, bool clampIntensity = false) {
+void check_scene(const replay::Bytes& pixels, bool copies = false, bool reversed = false, bool intensity = false, bool quads = false, bool clampIntensity = false, bool ia4Intensity = false) {
     const auto pixel = [&](int x, int y, int r, int g, int b) {
         const auto offset = (y * width + x) * 4;
         if (pixels[offset] != r || pixels[offset + 1] != g || pixels[offset + 2] != b || pixels[offset + 3] != 255) {
@@ -262,8 +266,10 @@ void check_scene(const replay::Bytes& pixels, bool copies = false, bool reversed
         check(pixels[offset] == r && pixels[offset + 1] == g && pixels[offset + 2] == b && pixels[offset + 3] == 255, "synthetic pixel oracle failed");
     };
     if (intensity) {
-        const auto left = clampIntensity ? 0 : 255;
-        const auto right = clampIntensity ? 255 : 0;
+        const auto high = ia4Intensity ? 119 : 255;
+        const auto low = ia4Intensity ? 34 : 0;
+        const auto left = clampIntensity ? low : high;
+        const auto right = clampIntensity ? high : low;
         pixel(width / 4, height / 2, left, left, left);
         pixel(width * 3 / 4, height / 2, right, right, right);
     } else {
@@ -291,10 +297,12 @@ void draw_lyt_quad(float center, bool colors, bool blue);
 int main(int argc, char** argv) {
     bool initialized = false;
     try {
-        check(argc == 4 && (std::string(argv[1]) == "capture-lyt-quads" || std::string(argv[1]) == "replay-lyt-quads-check" || std::string(argv[1]) == "capture-lyt-colors" || std::string(argv[1]) == "replay-lyt-colors-check" || std::string(argv[1]) == "capture-ia8-clamp" || std::string(argv[1]) == "replay-ia8-clamp-check" || std::string(argv[1]) == "capture-ia8-repeat" || std::string(argv[1]) == "replay-ia8-repeat-check" || std::string(argv[1]) == "capture-i4" || std::string(argv[1]) == "replay-i4-check" || std::string(argv[1]) == "capture-rgb5a3" || std::string(argv[1]) == "capture-sequence" || std::string(argv[1]) == "replay-sequence-check" || std::string(argv[1]) == "capture" || std::string(argv[1]) == "capture-copies" || std::string(argv[1]) == "capture-direct-copies" || std::string(argv[1]) == "replay-direct-copies-check" || std::string(argv[1]) == "capture-wide" || std::string(argv[1]) == "capture-indexed" || std::string(argv[1]) == "replay" || std::string(argv[1]) == "replay-check" || std::string(argv[1]) == "replay-copies-check"), "usage: mkw-gx-replay capture|replay|replay-check capture.mkwr output.png");
-        const bool ia8Clamp = std::string(argv[1]).find("ia8-clamp") != std::string::npos;
+        check(argc == 4 && (std::string(argv[1]) == "capture-lyt-quads" || std::string(argv[1]) == "replay-lyt-quads-check" || std::string(argv[1]) == "capture-lyt-colors" || std::string(argv[1]) == "replay-lyt-colors-check" || std::string(argv[1]) == "capture-ia4-clamp" || std::string(argv[1]) == "replay-ia4-clamp-check" || std::string(argv[1]) == "capture-ia4-repeat" || std::string(argv[1]) == "replay-ia4-repeat-check" || std::string(argv[1]) == "capture-ia8-clamp" || std::string(argv[1]) == "replay-ia8-clamp-check" || std::string(argv[1]) == "capture-ia8-repeat" || std::string(argv[1]) == "replay-ia8-repeat-check" || std::string(argv[1]) == "capture-i4" || std::string(argv[1]) == "replay-i4-check" || std::string(argv[1]) == "capture-rgb5a3" || std::string(argv[1]) == "capture-sequence" || std::string(argv[1]) == "replay-sequence-check" || std::string(argv[1]) == "capture" || std::string(argv[1]) == "capture-copies" || std::string(argv[1]) == "capture-direct-copies" || std::string(argv[1]) == "replay-direct-copies-check" || std::string(argv[1]) == "capture-wide" || std::string(argv[1]) == "capture-indexed" || std::string(argv[1]) == "replay" || std::string(argv[1]) == "replay-check" || std::string(argv[1]) == "replay-copies-check"), "usage: mkw-gx-replay capture|replay|replay-check capture.mkwr output.png");
+        const bool ia4 = std::string(argv[1]).find("ia4-") != std::string::npos;
         const bool ia8 = std::string(argv[1]).find("ia8-") != std::string::npos;
-        const bool ia8Repeat = std::string(argv[1]).find("ia8-repeat") != std::string::npos;
+        const bool ia = ia4 || ia8;
+        const bool iaClamp = ia && std::string(argv[1]).find("-clamp") != std::string::npos;
+        const bool iaRepeat = ia && !iaClamp;
         const bool i4 = std::string(argv[1]).find("i4") != std::string::npos;
         const bool rgb5a3 = std::string(argv[1]) == "capture-rgb5a3";
         const bool sequence = std::string(argv[1]).find("sequence") != std::string::npos;
@@ -321,20 +329,28 @@ int main(int argc, char** argv) {
         replay::Bytes pixels;
         if (capture) {
             replay::Recorder recorder(width, height);
-            const auto textureFormat = ia8 ? GX_TF_IA8 : (i4 ? GX_TF_I4 : (rgb5a3 ? GX_TF_RGB5A3 : GX_TF_RGBA8));
-            const auto textureWidth = ia8 ? 32u : (i4 ? 9u : (rgb5a3 ? 17u : 4u));
-            const auto textureHeight = ia8 ? 32u : (i4 || rgb5a3 ? 9u : 4u);
-            std::vector<std::uint8_t> texture(ia8 ? 2048u : (i4 ? 128u : (rgb5a3 ? 480u : 64u)));
+            const auto textureFormat = ia4 ? GX_TF_IA4 : (ia8 ? GX_TF_IA8 : (i4 ? GX_TF_I4 : (rgb5a3 ? GX_TF_RGB5A3 : GX_TF_RGBA8)));
+            const auto textureWidth = ia ? 32u : (i4 ? 9u : (rgb5a3 ? 17u : 4u));
+            const auto textureHeight = ia ? 32u : (i4 || rgb5a3 ? 9u : 4u);
+            std::vector<std::uint8_t> texture(ia4 ? 1024u : (ia8 ? 2048u : (i4 ? 128u : (rgb5a3 ? 480u : 64u))));
             std::array<std::uint8_t, 64> copyDestination{};
             const auto fill = [&](bool second) {
-                if (ia8) {
+                if (ia4) {
+                    // IA4 uses 8x4 byte tiles, alpha in the high nibble.
+                    // Midrange intensities independently check 4-bit expansion.
+                    for (unsigned y = 0; y < 32u; ++y)
+                        for (unsigned x = 0; x < 32u; ++x) {
+                            const auto at = ((y / 4u) * 4u + x / 8u) * 32u + (y % 4u) * 8u + x % 8u;
+                            texture[at] = 0xf0u | (((x < 16u && y >= 4u && y < 16u) != second) ? 7u : 2u);
+                        }
+                } else if (ia8) {
                     // Tiled IA8: alpha followed by intensity. Sample outside
-                    // both axes; clamp and repeat give opposite pixel results.
+                    // each axis separately; clamp and repeat give opposite pixels.
                     for (unsigned y = 0; y < 32u; ++y)
                         for (unsigned x = 0; x < 32u; ++x) {
                             const auto at = ((y / 4u) * 8u + x / 4u) * 32u + ((y % 4u) * 4u + x % 4u) * 2u;
                             texture[at] = 255;
-                            texture[at + 1u] = ((x < 16u && y < 16u) != second) ? 255 : 0;
+                            texture[at + 1u] = ((x < 16u && y >= 4u && y < 16u) != second) ? 255 : 0;
                         }
                 } else if (i4)
                     std::fill(texture.begin(), texture.end(), second ? 0 : 255);
@@ -372,8 +388,8 @@ int main(int argc, char** argv) {
                 GXSetCopyFilter(GX_FALSE, nullptr, GX_FALSE, nullptr);
             }
             GXTexObj obj{};
-            GXInitTexObj(&obj, texture.data(), textureWidth, textureHeight, textureFormat, ia8Repeat ? GX_REPEAT : GX_CLAMP, ia8Repeat ? GX_REPEAT : GX_CLAMP, GX_FALSE);
-            if (ia8)
+            GXInitTexObj(&obj, texture.data(), textureWidth, textureHeight, textureFormat, iaRepeat ? GX_REPEAT : GX_CLAMP, iaRepeat ? GX_REPEAT : GX_CLAMP, GX_FALSE);
+            if (ia)
                 GXInitTexObjLOD(&obj, GX_LINEAR, GX_LINEAR, 0.f, 0.f, 0.f, GX_FALSE, GX_FALSE, GX_ANISO_1);
             GXLoadTexObj(&obj, GX_TEXMAP0);
             aurora::gx::fifo::drain();
@@ -388,7 +404,7 @@ int main(int argc, char** argv) {
             if (lyt)
                 draw_lyt_quad(-0.5f, lytColors, false);
             else
-                triangle(-0.5f, false, indexed, false, ia8);
+                triangle(-0.5f, false, indexed, false, ia);
             if (indexed) {
                 GXSetVtxDesc(GX_VA_POS, GX_DIRECT);
                 GXSetVtxDesc(GX_VA_TEX0, GX_DIRECT);
@@ -405,8 +421,8 @@ int main(int argc, char** argv) {
             }
             fill(true);
             GXInvalidateTexAll();
-            GXInitTexObj(&obj, copies ? copyDestination.data() : texture.data(), copies ? 4u : textureWidth, copies ? 4u : textureHeight, copies ? (directCopies ? GX_TF_RGBA8 : GX_TF_RGB5A3) : textureFormat, ia8Repeat ? GX_REPEAT : GX_CLAMP, ia8Repeat ? GX_REPEAT : GX_CLAMP, GX_FALSE);
-            if (ia8)
+            GXInitTexObj(&obj, copies ? copyDestination.data() : texture.data(), copies ? 4u : textureWidth, copies ? 4u : textureHeight, copies ? (directCopies ? GX_TF_RGBA8 : GX_TF_RGB5A3) : textureFormat, iaRepeat ? GX_REPEAT : GX_CLAMP, iaRepeat ? GX_REPEAT : GX_CLAMP, GX_FALSE);
+            if (ia)
                 GXInitTexObjLOD(&obj, GX_LINEAR, GX_LINEAR, 0.f, 0.f, 0.f, GX_FALSE, GX_FALSE, GX_ANISO_1);
             GXLoadTexObj(&obj, GX_TEXMAP0);
             // Flush pending native state, then use raw FIFO.
@@ -414,7 +430,7 @@ int main(int argc, char** argv) {
             if (lyt)
                 draw_lyt_quad(0.5f, lytColors, true);
             else
-                triangle(0.5f, true, false, copies, ia8);
+                triangle(0.5f, true, false, copies, ia);
             if (copies) {
                 GXSetDispCopySrc(0, 0, width, height);
                 GXSetDispCopyDst(width, height);
@@ -459,7 +475,7 @@ int main(int argc, char** argv) {
                 recorder.end();
                 replay::set_recorder(nullptr);
                 pixels = finish_frame();
-                check_scene(pixels, copies, false, i4 || ia8, lyt, ia8Clamp);
+                check_scene(pixels, copies, false, i4 || ia, lyt, iaClamp, ia4);
                 save(argv[2], recorder.finish());
             }
         } else {
@@ -479,7 +495,7 @@ int main(int argc, char** argv) {
                 }
             });
             if (std::string(argv[1]).ends_with("check")) {
-                check_scene(pixels, copies, sequence, i4 || ia8, lyt, ia8Clamp);
+                check_scene(pixels, copies, sequence, i4 || ia, lyt, iaClamp, ia4);
             }
         }
         if (sequence)

@@ -1,5 +1,7 @@
 # Documentation index
 
+- [IA8/clamp trial; IA4 repeat boundary](HARDWARE_IA4_REPEAT_2026-10-10.md) — 39 reports / 841,601 bytes verified twice, later layout progression, captures disabled
+- [Checked IA4 family and independent S/T](GX_IA4_2026-10-10.md) — rectangular tiles, bridge contracts, nibble expansion and eight wrong-axis GPU negative controls
 - [IA8 trial; clamp boundary](HARDWARE_IA8_CLAMP_2026-10-10.md) — 39 reports / 839,522 bytes verified twice; another quad return, repeat tuple return not individually witnessed
 - [Checked IA8 clamp family](GX_IA8_CLAMP_2026-10-10.md) — full spans, clamp/repeat refresh contracts and opposite outside-range UV GPU oracles
 - [DrawQuad returned; IA8 repeat stop](HARDWARE_DRAW_QUAD_IA8_REPEAT_2026-10-10.md) — 39 reports / 840,193 bytes verified twice; Wiimote then black/crash, captures disabled

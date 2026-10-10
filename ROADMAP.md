@@ -77,7 +77,7 @@ load before an all-zero Fog guard. The [Fog correction](docs/GX_FOG_ZERO_2026-10
 passes both-mode production/Memory, pinned BP and negative-control tests.
 Candidate `bb00520` passes its private build and all eight exact-HEAD
 checks; PR #363 is merged and the new NRO passes complete SD readback.
-The exact corrected NRO launches via nxlink with exit 0 at 2026-10-10 15:33:09 CEST; durable USB reports remain pending.
+The exact corrected NRO launches via nxlink with exit 0 at 2026-10-10 15:33:09 CEST; the [fresh result](docs/HARDWARE_FOG_IA4_LARGE_2026-10-10.md) verifies 39 reports / 842,870 bytes and accepts one Fog-zero return through checked caller progression before an IA4/clamp 1024-square descriptor guard. The [correction](docs/GX_IA4_LARGE_2026-10-10.md) validates the pinned 15-bit count encoding while requiring the full 1 MiB backing. Both-mode contracts, four negative controls and the fresh large GPU/replay scene pass; private build, CI and corrected console execution remain pending.
 The preceding quad trial shows Wiimote, black and a crash; later pixels/playability
 remain unproven.
 

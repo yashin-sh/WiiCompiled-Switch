@@ -297,8 +297,9 @@ void draw_lyt_quad(float center, bool colors, bool blue);
 int main(int argc, char** argv) {
     bool initialized = false;
     try {
-        check(argc == 4 && (std::string(argv[1]) == "capture-lyt-quads" || std::string(argv[1]) == "replay-lyt-quads-check" || std::string(argv[1]) == "capture-lyt-colors" || std::string(argv[1]) == "replay-lyt-colors-check" || std::string(argv[1]) == "capture-ia4-clamp" || std::string(argv[1]) == "replay-ia4-clamp-check" || std::string(argv[1]) == "capture-ia4-repeat" || std::string(argv[1]) == "replay-ia4-repeat-check" || std::string(argv[1]) == "capture-ia8-clamp" || std::string(argv[1]) == "replay-ia8-clamp-check" || std::string(argv[1]) == "capture-ia8-repeat" || std::string(argv[1]) == "replay-ia8-repeat-check" || std::string(argv[1]) == "capture-i4" || std::string(argv[1]) == "replay-i4-check" || std::string(argv[1]) == "capture-rgb5a3" || std::string(argv[1]) == "capture-sequence" || std::string(argv[1]) == "replay-sequence-check" || std::string(argv[1]) == "capture" || std::string(argv[1]) == "capture-copies" || std::string(argv[1]) == "capture-direct-copies" || std::string(argv[1]) == "replay-direct-copies-check" || std::string(argv[1]) == "capture-wide" || std::string(argv[1]) == "capture-indexed" || std::string(argv[1]) == "replay" || std::string(argv[1]) == "replay-check" || std::string(argv[1]) == "replay-copies-check"), "usage: mkw-gx-replay capture|replay|replay-check capture.mkwr output.png");
+        check(argc == 4 && (std::string(argv[1]) == "capture-lyt-quads" || std::string(argv[1]) == "replay-lyt-quads-check" || std::string(argv[1]) == "capture-lyt-colors" || std::string(argv[1]) == "replay-lyt-colors-check" || std::string(argv[1]) == "capture-ia4-large-clamp" || std::string(argv[1]) == "replay-ia4-large-clamp-check" || std::string(argv[1]) == "capture-ia4-clamp" || std::string(argv[1]) == "replay-ia4-clamp-check" || std::string(argv[1]) == "capture-ia4-repeat" || std::string(argv[1]) == "replay-ia4-repeat-check" || std::string(argv[1]) == "capture-ia8-clamp" || std::string(argv[1]) == "replay-ia8-clamp-check" || std::string(argv[1]) == "capture-ia8-repeat" || std::string(argv[1]) == "replay-ia8-repeat-check" || std::string(argv[1]) == "capture-i4" || std::string(argv[1]) == "replay-i4-check" || std::string(argv[1]) == "capture-rgb5a3" || std::string(argv[1]) == "capture-sequence" || std::string(argv[1]) == "replay-sequence-check" || std::string(argv[1]) == "capture" || std::string(argv[1]) == "capture-copies" || std::string(argv[1]) == "capture-direct-copies" || std::string(argv[1]) == "replay-direct-copies-check" || std::string(argv[1]) == "capture-wide" || std::string(argv[1]) == "capture-indexed" || std::string(argv[1]) == "replay" || std::string(argv[1]) == "replay-check" || std::string(argv[1]) == "replay-copies-check"), "usage: mkw-gx-replay capture|replay|replay-check capture.mkwr output.png");
         const bool ia4 = std::string(argv[1]).find("ia4-") != std::string::npos;
+        const bool ia4Large = std::string(argv[1]).find("ia4-large-") != std::string::npos;
         const bool ia8 = std::string(argv[1]).find("ia8-") != std::string::npos;
         const bool ia = ia4 || ia8;
         const bool iaClamp = ia && std::string(argv[1]).find("-clamp") != std::string::npos;
@@ -330,18 +331,18 @@ int main(int argc, char** argv) {
         if (capture) {
             replay::Recorder recorder(width, height);
             const auto textureFormat = ia4 ? GX_TF_IA4 : (ia8 ? GX_TF_IA8 : (i4 ? GX_TF_I4 : (rgb5a3 ? GX_TF_RGB5A3 : GX_TF_RGBA8)));
-            const auto textureWidth = ia ? 32u : (i4 ? 9u : (rgb5a3 ? 17u : 4u));
-            const auto textureHeight = ia ? 32u : (i4 || rgb5a3 ? 9u : 4u);
-            std::vector<std::uint8_t> texture(ia4 ? 1024u : (ia8 ? 2048u : (i4 ? 128u : (rgb5a3 ? 480u : 64u))));
+            const auto textureWidth = ia4Large ? 1024u : (ia ? 32u : (i4 ? 9u : (rgb5a3 ? 17u : 4u)));
+            const auto textureHeight = ia4Large ? 1024u : (ia ? 32u : (i4 || rgb5a3 ? 9u : 4u));
+            std::vector<std::uint8_t> texture(ia4 ? textureWidth * textureHeight : (ia8 ? 2048u : (i4 ? 128u : (rgb5a3 ? 480u : 64u))));
             std::array<std::uint8_t, 64> copyDestination{};
             const auto fill = [&](bool second) {
                 if (ia4) {
                     // IA4 uses 8x4 byte tiles, alpha in the high nibble.
                     // Midrange intensities independently check 4-bit expansion.
-                    for (unsigned y = 0; y < 32u; ++y)
-                        for (unsigned x = 0; x < 32u; ++x) {
-                            const auto at = ((y / 4u) * 4u + x / 8u) * 32u + (y % 4u) * 8u + x % 8u;
-                            texture[at] = 0xf0u | (((x < 16u && y >= 4u && y < 16u) != second) ? 7u : 2u);
+                    for (unsigned y = 0; y < textureHeight; ++y)
+                        for (unsigned x = 0; x < textureWidth; ++x) {
+                            const auto at = ((y / 4u) * (textureWidth / 8u) + x / 8u) * 32u + (y % 4u) * 8u + x % 8u;
+                            texture[at] = 0xf0u | (((x < textureWidth / 2u && y >= textureHeight / 8u && y < textureHeight / 2u) != second) ? 7u : 2u);
                         }
                 } else if (ia8) {
                     // Tiled IA8: alpha followed by intensity. Sample outside

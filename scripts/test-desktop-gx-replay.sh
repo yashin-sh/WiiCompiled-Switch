@@ -87,3 +87,8 @@ for ia4_mode in clamp repeat; do
     cmp "$OUT_ROOT/ia4-$ia4_mode-original.png" "$OUT_ROOT/ia4-$ia4_mode-replayed.png"
 done
 echo "PASS: IA4 linear clamp/repeat, separate S/T outside-range samples, 4-bit intensity expansion and same-address refresh survive independent replay"
+
+"$REPLAY" capture-ia4-large-clamp "$OUT_ROOT/ia4-large-clamp.mkwr" "$OUT_ROOT/ia4-large-clamp-original.png"
+"$REPLAY" replay-ia4-large-clamp-check "$OUT_ROOT/ia4-large-clamp.mkwr" "$OUT_ROOT/ia4-large-clamp-replayed.png"
+cmp "$OUT_ROOT/ia4-large-clamp-original.png" "$OUT_ROOT/ia4-large-clamp-replayed.png"
+echo "PASS: 1024x1024 IA4 full backing, native clamp, separate S/T samples and same-address refresh survive independent replay"

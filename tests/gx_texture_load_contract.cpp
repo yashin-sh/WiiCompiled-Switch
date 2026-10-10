@@ -451,11 +451,34 @@ void CheckFamily() {
     Fixture wrapped{identity, 0x10600000u, 1024u, 512u, 5u, 32768u * 32u, true};
     InitFamily(wrapped, wrapped.size);
     ExpectAbort(MakeCpu(wrapped.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
-    wrapped.format = 2u;
-    wrapped.height = 1024u;
-    wrapped.repeat = true;
+    wrapped.format = 3u;
     InitFamily(wrapped, wrapped.size);
     ExpectAbort(MakeCpu(wrapped.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+    // Maximum IA4 tile counts wrap in the pinned guest initializer. Match
+    // the exact encoded count while requiring the full dimension-derived span.
+    for (bool repeat : {false, true})
+        for (auto dims : {std::pair{1016u, 1024u}, {1017u, 1021u}, {1024u, 1024u}}) {
+            Fixture large{identity + 128u, 0x10700000u, dims.first, dims.second, 2u,
+                          ((dims.first + 7u) / 8u) * ((dims.second + 3u) / 4u) * 32u, true, repeat};
+            InitFamily(large, large.size);
+            for (std::uint32_t slot = 0; slot < 8u; ++slot)
+                CheckFixtureLoad(large, slot);
+            const auto word = Memory::Read32(large.object + 28u);
+            for (unsigned bit = 0; bit < 32u; ++bit) {
+                WriteWord(large.object + 28u, word ^ (1u << bit));
+                ExpectAbort(MakeCpu(large.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+            }
+            InitFamily(large, large.size - 1u);
+            ExpectAbort(MakeCpu(large.object), "GX_LOAD_TEX_OBJ_DATA_UNMAPPED", large.size);
+        }
+    // Independent literal descriptor from the latest hardware boundary.
+    Fixture capturedLarge{0x90d28d70u, 0x10aa72e0u, 1024u, 1024u, 2u, 1048576u, true};
+    InitFamily(capturedLarge, capturedLarge.size);
+    const std::array<std::uint32_t, 8> capturedWords{0x190u, 0u, 0x002fffffu, 0x00855397u, 0u, 2u, 0u, 0x202u};
+    for (std::uint32_t word = 0; word < capturedWords.size(); ++word)
+        assert(Memory::Read32(capturedLarge.object + word * 4u) == capturedWords[word]);
+    for (std::uint32_t slot = 0; slot < 8u; ++slot)
+        CheckFixtureLoad(capturedLarge, slot);
 }
 void CheckDescriptorRefusals(Texture texture) {
     const auto fixture = GetFixture(texture);

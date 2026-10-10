@@ -10,7 +10,7 @@ and the later Fog guard at dispatch 652279 / 52.465 seconds. The
 mutants. The full GPU/replay suite and private build pass for `bb00520`.
 All eight published exact-HEAD checks succeed; PR #363 merges as
 `2aab90f`. The corrected NRO and capture-disabled
-marker pass full SD readback. The exact corrected NRO launches via nxlink with exit 0 at 2026-10-10 15:33:09 CEST; durable USB reports remain pending.
+marker pass full SD readback. The exact corrected NRO launches via nxlink with exit 0 at 2026-10-10 15:33:09 CEST; the [fresh result](HARDWARE_FOG_IA4_LARGE_2026-10-10.md) verifies 39 reports / 842,870 bytes and accepts one Fog-zero return through checked caller progression before an IA4/clamp 1024-square descriptor guard. The [correction](GX_IA4_LARGE_2026-10-10.md) validates the pinned 15-bit count encoding while requiring the full 1 MiB backing. Both-mode contracts, four negative controls and the fresh large GPU/replay scene pass; private build, CI and corrected console execution remain pending.
 
 2026-10-10: the [IA8/clamp trial](HARDWARE_IA4_REPEAT_2026-10-10.md) launches
 at 13:45:46 CEST with nxlink exit 0 and verifies 39 reports / 841,601 bytes

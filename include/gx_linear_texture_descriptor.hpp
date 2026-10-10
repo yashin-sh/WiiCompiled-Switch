@@ -21,9 +21,11 @@ constexpr std::uint32_t linearTextureBytes(const std::array<std::uint32_t, 8>& w
     const auto tileWidth = format == 0u || format == 2u ? 8u : 4u;
     const auto tileHeight = format == 0u ? 8u : 4u;
     const auto tiles = ((width + tileWidth - 1u) / tileWidth) * ((height + tileHeight - 1u) / tileHeight);
-    // The SDK stores only 15 bits of tile count. Refuse wrapped counts rather
-    // than interpreting zero as a valid declaration of a large backing range.
-    if (tiles > 0x7fffu || words[7] != ((tiles << 16u) | ((format == 0u ? 1u : 2u) << 8u) | 2u))
+    // The pinned guest initializer masks the count to 15 bits. IA4 can
+    // reach 32768 tiles within the encoded dimensions; its full backing
+    // range still comes from dimensions, never from the truncated count.
+    // Wrapped counts for other formats remain outside the audited family.
+    if ((tiles > 0x7fffu && format != 2u) || words[7] != (((tiles & 0x7fffu) << 16u) | ((format == 0u ? 1u : 2u) << 8u) | 2u))
         return 0u;
     return tiles * 32u;
 }

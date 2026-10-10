@@ -8,6 +8,12 @@ current implementation and validation evidence.
 Publish public repository files only. Preserve the existing exclusions for
 local game data, generated products, private NROs and raw diagnostic archives.
 
+On every Switch deployment, clean up older NROs deployed by this project after
+the new candidate passes complete SD size/SHA-256 readback. Back up each old
+candidate locally, verify it against its recorded size/SHA-256, then remove it
+and verify the SD directory contains only the current project candidate.
+Preserve other applications and game data. Keep cleanup receipts private.
+
 Before merging into main, every published check in the exact PR HEAD rollup must
 be completed and successful. Cancelled, skipped, neutral, failed, pending or
 missing checks block the merge. Check the complete rollup, with pagination;

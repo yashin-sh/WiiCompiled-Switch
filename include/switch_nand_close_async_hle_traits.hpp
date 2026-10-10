@@ -5,6 +5,22 @@
 
 #include <cstdint>
 
+// NANDClose (PAL 0x8019CA80). Safe-open handles are deliberately rejected by
+// the runtime and must travel through NANDSafeClose instead.
+template <>
+struct KnownNativeCpuCall<0x8019CA80u> {
+    static constexpr bool kAvailable = true;
+
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        if (!cpu) {
+            return;
+        }
+        const std::int32_t result =
+            mkw::switch_nand_runtime::CloseSync(cpu->gpr[3]);
+        cpu->gpr[3] = static_cast<std::uint32_t>(result);
+    }
+};
+
 // NANDCloseAsync (PAL 0x8019CAEC). Pinned WiiCompiled forwards to synchronous
 // NANDClose, queues the guest completion callback as (result, commandBlock),
 // and returns that synchronous result verbatim.

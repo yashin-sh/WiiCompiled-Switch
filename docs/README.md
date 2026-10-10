@@ -1,5 +1,7 @@
 # Documentation index
 
+- [Fog returned; large IA4 boundary](HARDWARE_FOG_IA4_LARGE_2026-10-10.md) — 39 reports / 842,870 bytes verified twice, scoped Fog return and 1024-square clamp guard
+- [Masked IA4 count and full backing](GX_IA4_LARGE_2026-10-10.md) — complete 1 MiB range, partial-edge contracts and large native GPU/replay scene
 - [IA4 returned; all-zero Fog boundary](HARDWARE_IA4_FOG_ZERO_2026-10-10.md) — 39 reports / 841,828 bytes verified twice, relocated load-pass and later Fog guard
 - [Third exact Fog tuple](GX_FOG_ZERO_2026-10-10.md) — both-mode bridge/Memory, 3,072 pinned BP fixtures and four negative controls
 - [IA8/clamp trial; IA4 repeat boundary](HARDWARE_IA4_REPEAT_2026-10-10.md) — 39 reports / 841,601 bytes verified twice, later layout progression, captures disabled

@@ -7,3 +7,7 @@ extern "C" void mkw_switch_hle_lyt_draw_quad(CpuContext*) noexcept {
 extern "C" void mkw_switch_hle_nand_create(CpuContext*) noexcept {
     std::abort();
 }
+
+extern "C" void mkw_switch_hle_nand_write(CpuContext*) noexcept {
+    std::abort();
+}

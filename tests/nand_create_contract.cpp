@@ -206,6 +206,7 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* re
         std::abort();                                \
     }
 UNEXERCISED(mkw_switch_hle_gx_load_light_obj_imm)
+UNEXERCISED(mkw_switch_hle_nand_write)
 UNEXERCISED(mkw_switch_hle_gx_load_nrm_mtx_imm)
 UNEXERCISED(mkw_switch_hle_gx_set_z_texture)
 UNEXERCISED(mkw_switch_hle_gx_set_tev_color_s10)

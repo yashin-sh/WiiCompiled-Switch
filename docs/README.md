@@ -1,5 +1,11 @@
 # Documentation index
 
+- [Save/NAND PR conflict resolution](NAND_SAVE_PR_371_2026-10-10.md) — preserved bounded bridges, corrected native results, safe commit and real callback/filesystem contracts
+
+- [NANDCreate returned; NANDWrite frontier](HARDWARE_NAND_CREATE_WRITE_2026-10-10.md) — 40 reports verified twice; fresh live pathname/result and owned-handle frontier
+- [Bounded temporary NANDWrite](NAND_WRITE_2026-10-10.md) — actual live buffer/handle validation, pinned count/flush semantics and preservation contracts
+- [NANDCheck returned; NANDCreate frontier](HARDWARE_NAND_CHECK_CREATE_2026-10-10.md) — 39 reports verified twice; scoped return inference, static path attribution
+- [Bounded NANDCreate](NAND_CREATE_2026-10-10.md) — live path guard, exclusive virtual creation, pinned filesystem results and preservation contracts
 - [Large IA4 returned; NANDCheck frontier](HARDWARE_IA4_LARGE_NAND_CHECK_2026-10-10.md) — 39 reports / 850,130 bytes verified twice; black output and save-worker terminal
 - [NANDCheck virtual result contract](NAND_CHECK_2026-10-10.md) — actual trait/Memory, four-byte output, pinned error semantics and negative controls
 

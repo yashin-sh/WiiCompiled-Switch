@@ -14,6 +14,7 @@ struct KnownNativeCpuCall<0x8019B7A4u> {
         if (!cpu) {
             return;
         }
+        mkw_switch_set_fast_track_stage("RMCP01_NAND_READ");
         const std::int32_t result = mkw::switch_nand_runtime::ReadSync(
             cpu->gpr[3], cpu->gpr[4], cpu->gpr[5]);
         cpu->gpr[3] = static_cast<std::uint32_t>(result);

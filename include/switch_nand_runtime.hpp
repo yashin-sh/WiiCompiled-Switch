@@ -4,6 +4,8 @@
 
 struct CpuContext;
 
+extern "C" void mkw_switch_set_fast_track_stage(const char*) noexcept;
+
 namespace mkw::switch_nand_runtime {
 
 std::int32_t OpenSync(std::uint32_t pathPtr,

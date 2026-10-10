@@ -1,9 +1,11 @@
 #include "switch_nand_runtime.hpp"
+#include "switch_nand_write_runtime.hpp"
 
 #include "horizon_runtime_services.hpp"
 #include "memory.h"
 
 #include <algorithm>
+#include <cerrno>
 #include <cstdio>
 #include <filesystem>
 #include <map>
@@ -13,6 +15,7 @@
 #include <vector>
 
 #if !defined(_WIN32)
+#include <fcntl.h>
 #include <unistd.h>
 #endif
 
@@ -179,8 +182,13 @@ std::int32_t AllocateHandle(FILE* file,
                             const std::filesystem::path& commitPath = {}) {
     std::lock_guard<std::mutex> lock(g_fileMutex);
     const std::int32_t fd = g_nextFd++;
-    g_fileHandles.emplace(
-        fd, FileHandle{file, path, static_cast<std::int32_t>(mode), commitPath});
+    try {
+        g_fileHandles.emplace(
+            fd, FileHandle{file, path, static_cast<std::int32_t>(mode), commitPath});
+    } catch (...) {
+        std::fclose(file);
+        throw;
+    }
     return fd;
 }
 
@@ -285,6 +293,15 @@ std::int32_t SafeOpenSync(std::uint32_t pathPtr,
         }
 
         const std::filesystem::path tempPath = SafeTempPathFor(hostPath);
+        // A scratch file owned by this process is not a stale file from a crash.
+        // Keep this lock through publication of the handle to exclude a second opener.
+        std::lock_guard<std::mutex> lock(g_fileMutex);
+        for (const auto& [fd, handle] : g_fileHandles) {
+            (void)fd;
+            if (handle.file && handle.path == tempPath) {
+                return kResultInvalid;
+            }
+        }
         ec.clear();
         if (std::filesystem::exists(tempPath, ec)) {
             std::filesystem::remove(tempPath, ec);
@@ -311,7 +328,14 @@ std::int32_t SafeOpenSync(std::uint32_t pathPtr,
             return kResultUnknown;
         }
 
-        const std::int32_t fd = AllocateHandle(file, tempPath, mode, hostPath);
+        const std::int32_t fd = g_nextFd++;
+        try {
+            g_fileHandles.emplace(fd, FileHandle{file, tempPath, static_cast<std::int32_t>(mode), hostPath});
+        } catch (...) {
+            std::fclose(file);
+            std::filesystem::remove(tempPath, ec);
+            throw;
+        }
         Memory::Write32(fileInfoPtr, static_cast<std::uint32_t>(fd));
         Memory::Write8(
             fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset),
@@ -373,12 +397,48 @@ std::int32_t WriteSync(std::uint32_t fileInfoPtr,
 
         const std::size_t bytesWritten =
             std::fwrite(buffer, 1u, length, it->second.file);
-        if (std::fflush(it->second.file) != 0) {
-            return kResultUnknown;
-        }
+        // Pinned NANDWrite returns fwrite's count even when the later flush fails.
+        std::fflush(it->second.file);
         return static_cast<std::int32_t>(bytesWritten);
     } catch (...) {
         return kResultInvalid;
+    }
+}
+
+BannerWriteResult WriteBannerSync(std::uint32_t fileInfoPtr,
+                                  std::uint32_t bufferPtr,
+                                  std::uint32_t length) noexcept {
+    BannerWriteResult out;
+    if (length != 0x72a0u || fileInfoPtr == 0u ||
+        !Memory::Contains(fileInfoPtr, kOpenFlagOffset + 1u) ||
+        bufferPtr == 0u || !Memory::Contains(bufferPtr, length)) {
+        return out;
+    }
+    try {
+        out.fd = static_cast<std::int32_t>(Memory::Read32(fileInfoPtr));
+        out.openFlag = Memory::Read8(fileInfoPtr + kOpenFlagOffset);
+        const auto expected = mkw::horizon_runtime_services::nand_root() / "tmp" / "banner.bin";
+        std::lock_guard<std::mutex> lock(g_fileMutex);
+        const auto it = g_fileHandles.find(out.fd);
+        if (it == g_fileHandles.end() || !it->second.file) {
+            return out;
+        }
+        out.mode = it->second.mode;
+        if (out.openFlag != 1u || out.mode != 2 || it->second.path != expected ||
+            std::ftell(it->second.file) != 0) {
+            return out;
+        }
+        const auto* buffer = static_cast<const std::uint8_t*>(Memory::GetPointer(bufferPtr));
+        if (!buffer) {
+            return out;
+        }
+        out.admitted = true;
+        out.result = static_cast<std::int32_t>(std::fwrite(buffer, 1u, length, it->second.file));
+        // Pinned NANDWrite returns fwrite's count and ignores fflush's result.
+        std::fflush(it->second.file);
+        return out;
+    } catch (...) {
+        return out;
     }
 }
 
@@ -469,10 +529,12 @@ std::int32_t CloseSync(std::uint32_t fileInfoPtr) noexcept {
                 if (it->second.file && it->second.mode >= 2 && !FlushToDisk(it->second.file)) {
                     return kResultUnknown;
                 }
-                if (it->second.file && std::fclose(it->second.file) != 0) {
+                const bool closed = !it->second.file || std::fclose(it->second.file) == 0;
+                // fclose consumes the stream even on error; never retain its pointer.
+                g_fileHandles.erase(it);
+                if (!closed) {
                     return kResultUnknown;
                 }
-                g_fileHandles.erase(it);
             }
         }
 
@@ -501,16 +563,15 @@ std::int32_t SafeCloseSync(std::uint32_t fileInfoPtr) noexcept {
         }
 
         const std::int32_t fd = static_cast<std::int32_t>(Memory::Read32(fileInfoPtr));
-        FileHandle handle{};
-        {
-            std::lock_guard<std::mutex> lock(g_fileMutex);
-            const auto it = g_fileHandles.find(fd);
-            if (it == g_fileHandles.end() || !it->second.file) {
-                return kResultInvalid;
-            }
-            handle = it->second;
-            g_fileHandles.erase(it);
+        // Keep ownership exclusive until the scratch is committed or removed.
+        // Another safe opener must not replace this shadow during the commit.
+        std::lock_guard<std::mutex> lock(g_fileMutex);
+        const auto it = g_fileHandles.find(fd);
+        if (it == g_fileHandles.end() || !it->second.file) {
+            return kResultInvalid;
         }
+        FileHandle handle = it->second;
+        g_fileHandles.erase(it);
 
         bool ok = true;
         if (handle.mode >= 2) {
@@ -539,6 +600,14 @@ std::int32_t SafeCloseSync(std::uint32_t fileInfoPtr) noexcept {
                 std::filesystem::remove(handle.path, cleanup);
                 return kResultUnknown;
             }
+#if !defined(_WIN32)
+            // Match the pinned POSIX commit: sync the renamed directory entry too.
+            const int directory = ::open(handle.safeCommitPath.parent_path().c_str(), O_RDONLY);
+            if (directory >= 0) {
+                ::fsync(directory);
+                ::close(directory);
+            }
+#endif
         }
 
         Memory::Write8(
@@ -579,12 +648,12 @@ std::int32_t CreateSync(std::uint32_t pathPtr,
             return kResultUnknown;
         }
 
-        FILE* file = std::fopen(hostPath.c_str(), "wb");
+        FILE* file = std::fopen(hostPath.c_str(), "wbx");
         if (!file) {
-            return kResultUnknown;
+            return errno == EEXIST ? kResultExists : kResultUnknown;
         }
-        const bool closed = std::fclose(file) == 0;
-        return closed ? kResultOk : kResultUnknown;
+        std::fclose(file); // Pinned NANDCreate ignores the close result.
+        return kResultOk;
     } catch (...) {
         return kResultInvalid;
     }
@@ -626,7 +695,9 @@ std::int32_t CreateDirSync(std::uint32_t pathPtr,
 
         std::error_code ec;
         if (std::filesystem::exists(hostPath, ec)) {
-            return kResultExists;
+            const bool directory = std::filesystem::is_directory(hostPath, ec);
+            return ec ? kResultUnknown : directory ? kResultOk
+                                                   : kResultExists;
         }
         if (ec) {
             return kResultUnknown;

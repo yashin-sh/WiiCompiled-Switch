@@ -15,6 +15,7 @@ struct KnownNativeCpuCall<0x8019CA80u> {
         if (!cpu) {
             return;
         }
+        mkw_switch_set_fast_track_stage("RMCP01_NAND_CLOSE");
         const std::int32_t result =
             mkw::switch_nand_runtime::CloseSync(cpu->gpr[3]);
         cpu->gpr[3] = static_cast<std::uint32_t>(result);

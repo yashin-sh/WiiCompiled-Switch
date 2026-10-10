@@ -5,21 +5,8 @@
 
 #include <cstdint>
 
-// NANDCreate (PAL 0x8019B43C). Permissions/attributes are accepted by the Wii
-// ABI; the SD-backed host file has no matching NAND metadata layer yet.
-template <>
-struct KnownNativeCpuCall<0x8019B43Cu> {
-    static constexpr bool kAvailable = true;
-
-    static inline void Invoke(CpuContext* cpu) noexcept {
-        if (!cpu) {
-            return;
-        }
-        const std::int32_t result = mkw::switch_nand_runtime::CreateSync(
-            cpu->gpr[3], cpu->gpr[4], cpu->gpr[5]);
-        cpu->gpr[3] = static_cast<std::uint32_t>(result);
-    }
-};
+// Synchronous NANDCreate/NANDWrite stay on the observed, bounded registry
+// bridges. A broad compile-time trait would silently supersede their guards.
 
 // NANDPrivateCreateAsync (PAL 0x8019B524).
 template <>
@@ -30,6 +17,7 @@ struct KnownNativeCpuCall<0x8019B524u> {
         if (!cpu) {
             return;
         }
+        mkw_switch_set_fast_track_stage("RMCP01_NAND_CREATE_ASYNC");
         const std::int32_t result = mkw::switch_nand_runtime::CreateSync(
             cpu->gpr[3], cpu->gpr[4], cpu->gpr[5]);
         mkw::switch_nand_runtime::QueueCallback(cpu->gpr[6], result, cpu->gpr[7]);
@@ -47,6 +35,7 @@ struct KnownNativeCpuCall<0x8019B59Cu> {
         if (!cpu) {
             return;
         }
+        mkw_switch_set_fast_track_stage("RMCP01_NAND_DELETE");
         const std::int32_t result =
             mkw::switch_nand_runtime::DeleteSync(cpu->gpr[3]);
         cpu->gpr[3] = static_cast<std::uint32_t>(result);
@@ -62,26 +51,12 @@ struct KnownNativeCpuCall<0x8019B6E4u> {
         if (!cpu) {
             return;
         }
+        mkw_switch_set_fast_track_stage("RMCP01_NAND_DELETE_ASYNC");
         const std::int32_t result =
             mkw::switch_nand_runtime::DeleteSync(cpu->gpr[3]);
         mkw::switch_nand_runtime::QueueCallback(cpu->gpr[4], result, cpu->gpr[5]);
         cpu->gpr[3] = static_cast<std::uint32_t>(result);
         mkw::switch_nand_runtime::PumpCallbacks(cpu);
-    }
-};
-
-// NANDWrite (PAL 0x8019B884). The synchronous ABI returns bytes written.
-template <>
-struct KnownNativeCpuCall<0x8019B884u> {
-    static constexpr bool kAvailable = true;
-
-    static inline void Invoke(CpuContext* cpu) noexcept {
-        if (!cpu) {
-            return;
-        }
-        const std::int32_t result = mkw::switch_nand_runtime::WriteSync(
-            cpu->gpr[3], cpu->gpr[4], cpu->gpr[5]);
-        cpu->gpr[3] = static_cast<std::uint32_t>(result);
     }
 };
 
@@ -96,6 +71,7 @@ struct KnownNativeCpuCall<0x8019B8ECu> {
         if (!cpu) {
             return;
         }
+        mkw_switch_set_fast_track_stage("RMCP01_NAND_WRITE_ASYNC");
         const std::int32_t result = mkw::switch_nand_runtime::WriteSync(
             cpu->gpr[3], cpu->gpr[4], cpu->gpr[5]);
         mkw::switch_nand_runtime::QueueCallback(cpu->gpr[6], result, cpu->gpr[7]);
@@ -113,6 +89,7 @@ struct KnownNativeCpuCall<0x8019BBE0u> {
         if (!cpu) {
             return;
         }
+        mkw_switch_set_fast_track_stage("RMCP01_NAND_CREATE_DIR");
         const std::int32_t result = mkw::switch_nand_runtime::CreateDirSync(
             cpu->gpr[3], cpu->gpr[4], cpu->gpr[5]);
         cpu->gpr[3] = static_cast<std::uint32_t>(result);
@@ -128,6 +105,7 @@ struct KnownNativeCpuCall<0x8019BCC8u> {
         if (!cpu) {
             return;
         }
+        mkw_switch_set_fast_track_stage("RMCP01_NAND_CREATE_DIR_ASYNC");
         const std::int32_t result = mkw::switch_nand_runtime::CreateDirSync(
             cpu->gpr[3], cpu->gpr[4], cpu->gpr[5]);
         mkw::switch_nand_runtime::QueueCallback(cpu->gpr[6], result, cpu->gpr[7]);
@@ -174,6 +152,7 @@ struct KnownNativeCpuCall<0x8019CB74u> {
         if (!cpu) {
             return;
         }
+        mkw_switch_set_fast_track_stage("RMCP01_NAND_SAFE_OPEN");
         const std::int32_t result = mkw::switch_nand_runtime::SafeOpenSync(
             cpu->gpr[3], cpu->gpr[4], cpu->gpr[5]);
         cpu->gpr[3] = static_cast<std::uint32_t>(result);
@@ -192,6 +171,7 @@ struct KnownNativeCpuCall<0x8019D104u> {
         if (!cpu) {
             return;
         }
+        mkw_switch_set_fast_track_stage("RMCP01_NAND_SAFE_OPEN_ASYNC");
 
         const std::uint32_t pathPtr = cpu->gpr[3];
         const std::uint32_t fileInfoPtr = cpu->gpr[4];
@@ -216,6 +196,7 @@ struct KnownNativeCpuCall<0x8019CF28u> {
         if (!cpu) {
             return;
         }
+        mkw_switch_set_fast_track_stage("RMCP01_NAND_SAFE_CLOSE");
         const std::int32_t result =
             mkw::switch_nand_runtime::SafeCloseSync(cpu->gpr[3]);
         cpu->gpr[3] = static_cast<std::uint32_t>(result);
@@ -231,6 +212,7 @@ struct KnownNativeCpuCall<0x8019D720u> {
         if (!cpu) {
             return;
         }
+        mkw_switch_set_fast_track_stage("RMCP01_NAND_SAFE_CLOSE_ASYNC");
         const std::int32_t result =
             mkw::switch_nand_runtime::SafeCloseSync(cpu->gpr[3]);
         mkw::switch_nand_runtime::QueueCallback(cpu->gpr[4], result, cpu->gpr[5]);

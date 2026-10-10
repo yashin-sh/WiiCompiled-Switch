@@ -1,4 +1,5 @@
-// All registry handlers link against their actual pinned native function bodies.
+// GX handlers covered here link against their actual pinned native bodies.
+// Other providers have fail-on-execution link seams and separate contracts.
 #include "pinned-light-object.inc"
 #include "pinned-gx-data.inc"
 __GXData_struct nativeState{};

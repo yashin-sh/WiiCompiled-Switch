@@ -178,6 +178,7 @@ UNEXERCISED(mkw_switch_hle_gx_set_z_texture)
 UNEXERCISED(mkw_switch_hle_gx_set_tev_color_s10)
 UNEXERCISED(mkw_switch_hle_lyt_draw_quad)
 UNEXERCISED(mkw_switch_hle_nand_create)
+UNEXERCISED(mkw_switch_hle_nand_move)
 #undef UNEXERCISED
 
 int main() {

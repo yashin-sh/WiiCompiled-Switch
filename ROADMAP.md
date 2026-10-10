@@ -1,5 +1,8 @@
 # Roadmap
 
+The [fresh NAND save result](docs/HARDWARE_NAND_WRITE_MOVE_2026-10-10.md) verifies 41 reports / 853,191 bytes twice, accepts the complete 29,344-byte write and close/home-query progression, and reaches NANDMove `0x8019BEE8`. The previous candidate is replaced on SD with complete readback and verified older-NRO cleanup. The [bounded move correction](docs/NAND_MOVE_2026-10-10.md) checks both full live paths and preserves pinned destination-directory semantics; corrected console execution remains pending.
+
+
 ## Current checkpoint — 2026-10-10
 
 The user-requested [save/NAND pre-port repair](docs/NAND_SAVE_PR_371_2026-10-10.md) reconciles PR #371 with the current bounded create/write bridges. The private rendered build and eight exact-HEAD checks pass, PR #371 is merged and the exact new NRO launches directly via Netloader with exit 0. Broader safe-open/close and callback paths have synthetic filesystem contracts; durable console results and later SD cleanup remain pending.

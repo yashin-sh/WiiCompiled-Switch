@@ -1,7 +1,6 @@
 #pragma once
 
 #include "abi_bridge.h"
-#include "memory.h"
 #include "switch_nand_runtime.hpp"
 
 #include <cstdint>
@@ -181,9 +180,10 @@ struct KnownNativeCpuCall<0x8019CB74u> {
     }
 };
 
-// NANDPrivateSafeOpenAsync (PAL 0x8019D104). Read-only mode keeps using the
-// original file. Write/read-write modes copy the original to a sibling shadow;
-// NANDSafeClose then flushes and atomically publishes it.
+// NANDPrivateSafeOpenAsync (PAL 0x8019D104). Pinned WiiCompiled forwards to
+// the same synchronous NANDSafeOpen implementation before queueing the guest
+// callback, so the file-info safe-open flag is intentionally left untouched.
+// Write/read-write modes use the same sibling shadow/commit path as sync open.
 template <>
 struct KnownNativeCpuCall<0x8019D104u> {
     static constexpr bool kAvailable = true;
@@ -201,11 +201,6 @@ struct KnownNativeCpuCall<0x8019D104u> {
 
         const std::int32_t result =
             mkw::switch_nand_runtime::SafeOpenSync(pathPtr, fileInfoPtr, mode);
-        if (result == 0 && Memory::Contains(fileInfoPtr + 0x8au, 1u)) {
-            // Distinguish async safe handles so SafeClose publishes the Wii SDK's
-            // SAFE_CLOSED_ASYNC flag (6), matching the pinned runtime layout.
-            Memory::Write8(fileInfoPtr + 0x8au, 5u);
-        }
         mkw::switch_nand_runtime::QueueCallback(callbackPtr, result, commandBlockPtr);
         cpu->gpr[3] = static_cast<std::uint32_t>(result);
         mkw::switch_nand_runtime::PumpCallbacks(cpu);

@@ -57,3 +57,7 @@ IA8/clamp refusal after DrawQuad. The prior repeat tuple is not separately
 witnessed returning; subsequent game pixels and playability remain unproven.
 Private game data, translated callers, NROs and raw reports are excluded from
 publication.
+
+The [IA4 follow-up](GX_IA4_2026-10-10.md) strengthens sampler coverage to
+isolate S and T separately; the earlier combined-axis scene did not by itself
+detect a clamped T axis. Both IA8 axes now have independent negative controls.

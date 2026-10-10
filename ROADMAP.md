@@ -62,7 +62,13 @@ separately witnessed returning. The [clamp correction](docs/GX_IA8_CLAMP_2026-10
 passes production bridge contracts and fresh clamp/repeat GPU oracles.
 Candidate `9fcb11e` passes the private build and all eight complete-rollup
 checks; PR #358 merges and the corrected NRO passes full SD readback.
-Corrected console execution remains pending.
+The exact NRO launches through nxlink with exit 0 at 2026-10-10 13:45:46 CEST;
+the [fresh USB result](docs/HARDWARE_IA4_REPEAT_2026-10-10.md) verifies
+39 reports / 841,601 bytes twice and the complete SD candidate, and reaches
+a later IA4/repeat descriptor after further layout progression. Its
+[correction](docs/GX_IA4_2026-10-10.md) audits rectangular tiles, passes
+both-mode bridge contracts and the full GPU suite, and independently tests
+S/T for IA4 and IA8. Private-build and full-CI gates are required before merge.
 The preceding quad trial shows Wiimote, black and a crash; later pixels/playability
 remain unproven.
 

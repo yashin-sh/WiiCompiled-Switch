@@ -2,6 +2,17 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-10: the [IA8/clamp trial](HARDWARE_IA4_REPEAT_2026-10-10.md) launches
+at 13:45:46 CEST with nxlink exit 0 and verifies 39 reports / 841,601 bytes
+twice plus full SD readback. Later layout/text targets precede an IA4/repeat
+guard at dispatch 653798 / 56.899 seconds. The preceding exact clamp tuple
+is not separately retained returning. Captures remain disabled and no Dawn
+uncaptured error appears. The [IA4 correction](GX_IA4_2026-10-10.md) passes
+648 valid bridge loads per mode and fresh GPU clamp/repeat, nibble expansion,
+independent S/T and replay oracles. Eight wrong-axis negative controls fail;
+the full existing suite passes. Private-build and complete-CI gates remain
+required before merge/deployment.
+
 2026-10-10: [IA8 trial result](HARDWARE_IA8_CLAMP_2026-10-10.md) verifies
 39 reports / 839,522 bytes twice and the full SD candidate. DrawQuad entry
 at dispatch 652758 and a later material guard at 652880 support one quad
@@ -14,7 +25,10 @@ variants fail their pixel oracles. Candidate `9fcb11e` passes the private
 build, 71 SDK HLE files, 85 scoped providers, 103 retained functions and all
 eight completed exact-HEAD checks. PR #358 merges as `349e9a5`;
 full SD readback and the capture-disabled marker verify the corrected NRO.
-Its console trial remains pending.
+The exact NRO launches through nxlink with exit 0 at 2026-10-10 13:45:46 CEST
+(27,196,467 compressed bytes / 2,286 blocks), after hash/gate revalidation;
+the [fresh result](HARDWARE_IA4_REPEAT_2026-10-10.md) verifies reports and
+reaches a later IA4/repeat guard.
 
 2026-10-10: [DrawQuad hardware result](HARDWARE_DRAW_QUAD_IA8_REPEAT_2026-10-10.md)
 verifies 39 reports / 840,193 bytes twice and the complete SD NRO. One quad

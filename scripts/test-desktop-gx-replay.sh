@@ -74,9 +74,16 @@ echo "PASS: production LYT bridge, native borrowed display-list decoding, textur
 "$REPLAY" capture-ia8-repeat "$OUT_ROOT/ia8-repeat.mkwr" "$OUT_ROOT/ia8-repeat-original.png"
 "$REPLAY" replay-ia8-repeat-check "$OUT_ROOT/ia8-repeat.mkwr" "$OUT_ROOT/ia8-repeat-replayed.png"
 cmp "$OUT_ROOT/ia8-repeat-original.png" "$OUT_ROOT/ia8-repeat-replayed.png"
-echo "PASS: IA8 linear repeat on both axes, outside-range UVs and same-address refresh survive independent replay"
+echo "PASS: IA8 linear repeat on both axes, separate S/T outside-range samples and same-address refresh survive independent replay"
 
 "$REPLAY" capture-ia8-clamp "$OUT_ROOT/ia8-clamp.mkwr" "$OUT_ROOT/ia8-clamp-original.png"
 "$REPLAY" replay-ia8-clamp-check "$OUT_ROOT/ia8-clamp.mkwr" "$OUT_ROOT/ia8-clamp-replayed.png"
 cmp "$OUT_ROOT/ia8-clamp-original.png" "$OUT_ROOT/ia8-clamp-replayed.png"
-echo "PASS: IA8 linear clamp on both axes, outside-range UVs and same-address refresh survive independent replay"
+echo "PASS: IA8 linear clamp on both axes, separate S/T outside-range samples and same-address refresh survive independent replay"
+
+for ia4_mode in clamp repeat; do
+    "$REPLAY" "capture-ia4-$ia4_mode" "$OUT_ROOT/ia4-$ia4_mode.mkwr" "$OUT_ROOT/ia4-$ia4_mode-original.png"
+    "$REPLAY" "replay-ia4-$ia4_mode-check" "$OUT_ROOT/ia4-$ia4_mode.mkwr" "$OUT_ROOT/ia4-$ia4_mode-replayed.png"
+    cmp "$OUT_ROOT/ia4-$ia4_mode-original.png" "$OUT_ROOT/ia4-$ia4_mode-replayed.png"
+done
+echo "PASS: IA4 linear clamp/repeat, separate S/T outside-range samples, 4-bit intensity expansion and same-address refresh survive independent replay"

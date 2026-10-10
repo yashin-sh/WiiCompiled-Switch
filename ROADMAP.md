@@ -53,7 +53,9 @@ return before an IA8/repeat descriptor refusal. The
 validated wrap modes; outside-range UV, same-address refresh and independent
 GPU replay pass. Candidate `e2aa724` passes the private build and all
 eight complete-rollup checks; PR #355 merges and the corrected NRO passes
-full SD readback. The next console trial remains pending.
+full SD readback. The exact corrected candidate launches via nxlink with exit
+0 at 2026-10-10 12:51:41 CEST (10:51:41 UTC); durable IA8 return evidence awaits
+the trial outcome and independent USB reports.
 The operator still sees Wiimote, black and a crash; later pixels/playability
 remain unproven.
 

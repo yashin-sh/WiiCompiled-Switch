@@ -101,7 +101,7 @@ extern "C" int __wrap_fflush(FILE* p) {
     return __real_fflush(p);
 }
 extern "C" int __wrap_fsync(int fd) {
-    struct stat status{};
+    struct stat status;
     assert(fstat(fd, &status) == 0);
     if (S_ISDIR(status.st_mode))
         ++directorySyncs;

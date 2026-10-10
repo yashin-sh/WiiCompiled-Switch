@@ -1,5 +1,14 @@
 # Status log
 
+## 2026-10-10 — Save/NAND pre-port launched directly via Netloader
+
+PR #371 merges after the private rendered gate and all eight exact-HEAD checks
+pass. The exact 74,461,240-byte NRO transfers with nxlink exit 0 at
+2026-10-10T19:40:22.812750+00:00. The user requests direct Netloader while USB/DBI
+is unavailable. No new SD readback or cleanup is claimed; the old SD candidate
+is preserved until later verified replacement/cleanup. Fresh durable runtime
+results remain pending. See the [launch receipt](NAND_SAVE_PR_371_2026-10-10.md).
+
 ## 2026-10-10 — Save/NAND PR conflict resolution
 
 Reconcile PR #371 with current main while retaining bounded NANDCreate/NANDWrite

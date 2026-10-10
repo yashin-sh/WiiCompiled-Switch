@@ -1,5 +1,7 @@
 # Documentation index
 
+- [NANDCheck returned; NANDCreate frontier](HARDWARE_NAND_CHECK_CREATE_2026-10-10.md) — 39 reports verified twice; scoped return inference, static path attribution
+- [Bounded NANDCreate](NAND_CREATE_2026-10-10.md) — live path guard, exclusive virtual creation, pinned filesystem results and preservation contracts
 - [Large IA4 returned; NANDCheck frontier](HARDWARE_IA4_LARGE_NAND_CHECK_2026-10-10.md) — 39 reports / 850,130 bytes verified twice; black output and save-worker terminal
 - [NANDCheck virtual result contract](NAND_CHECK_2026-10-10.md) — actual trait/Memory, four-byte output, pinned error semantics and negative controls
 

@@ -15,7 +15,10 @@ files plus backend/capture checks, 85 scoped providers / 103 retained functions
 and all eight completed exact-HEAD checks. PR #352 merges as
 `3665c87`. Full SD readback verifies the 74,436,664-byte
 NRO; the capture-disabled marker is reread and the previous owned candidate
-is backed up with its hash before removal. The next console trial is pending.
+is backed up with its hash before removal. The exact candidate transfers via
+nxlink with exit 0 at 2026-10-10 08:38:11 UTC (27,196,597 compressed bytes /
+2,286 blocks), after gate/hash revalidation. Trial outcome and USB report
+verification remain pending.
 
 2026-10-09: [signed TEV color bridge](GX_TEV_COLOR_S10_2026-10-09.md)
 adds the missing direct target through the source-owned extension registry.

@@ -1,4 +1,5 @@
 #include "switch_nand_runtime.hpp"
+#include "switch_nand_write_runtime.hpp"
 
 #include "horizon_runtime_services.hpp"
 #include "memory.h"
@@ -221,6 +222,43 @@ std::int32_t ReadSync(std::uint32_t fileInfoPtr,
         return static_cast<std::int32_t>(bytesRead);
     } catch (...) {
         return kResultInvalid;
+    }
+}
+
+BannerWriteResult WriteBannerSync(std::uint32_t fileInfoPtr,
+                                  std::uint32_t bufferPtr,
+                                  std::uint32_t length) noexcept {
+    BannerWriteResult out;
+    if (length != 0x72a0u || fileInfoPtr == 0u ||
+        !Memory::Contains(fileInfoPtr, kOpenFlagOffset + 1u) ||
+        bufferPtr == 0u || !Memory::Contains(bufferPtr, length)) {
+        return out;
+    }
+    try {
+        out.fd = static_cast<std::int32_t>(Memory::Read32(fileInfoPtr));
+        out.openFlag = Memory::Read8(fileInfoPtr + kOpenFlagOffset);
+        const auto expected = mkw::horizon_runtime_services::nand_root() / "tmp" / "banner.bin";
+        std::lock_guard<std::mutex> lock(g_fileMutex);
+        const auto it = g_fileHandles.find(out.fd);
+        if (it == g_fileHandles.end() || !it->second.file) {
+            return out;
+        }
+        out.mode = it->second.mode;
+        if (out.openFlag != 1u || out.mode != 2 || it->second.path != expected ||
+            std::ftell(it->second.file) != 0) {
+            return out;
+        }
+        const auto* buffer = static_cast<const std::uint8_t*>(Memory::GetPointer(bufferPtr));
+        if (!buffer) {
+            return out;
+        }
+        out.admitted = true;
+        out.result = static_cast<std::int32_t>(std::fwrite(buffer, 1u, length, it->second.file));
+        // Pinned NANDWrite returns fwrite's count and ignores fflush's result.
+        std::fflush(it->second.file);
+        return out;
+    } catch (...) {
+        return out;
     }
 }
 

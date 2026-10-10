@@ -37,9 +37,19 @@ test "$(git -C "$ROOT_DIR/third_party/WiiCompiled" rev-parse HEAD)" = "$WII_PIN"
 python3 - "$ROOT_DIR" "$TEST_DIR" <<'PY'
 from pathlib import Path
 import sys
+import subprocess
 
 root, test = map(Path, sys.argv[1:])
 gx = root / "third_party/WiiCompiled/aurora-main/lib/dolphin/gx"
+pin = "a135beb201042b20f390c6695ca6b26768820fb4"
+for name in ("GXPixel.cpp", "__gx.h"):
+    path = gx / name
+    relative = path.relative_to(root / "third_party/WiiCompiled")
+    original = subprocess.check_output(
+        ["git", "-C", str(root / "third_party/WiiCompiled"), "show", f"{pin}:{relative}"]
+    )
+    if path.read_bytes() != original:
+        raise SystemExit(f"Native Fog fixture source differs from pinned original: {relative}")
 pixel = (gx / "GXPixel.cpp").read_text()
 header = (gx / "__gx.h").read_text()
 macro = header.split("#define SET_REG_FIELD(", 1)[1].split("\n\n", 1)[0]

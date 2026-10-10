@@ -2,6 +2,14 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-10: the [IA4 hardware result](HARDWARE_IA4_FOG_ZERO_2026-10-10.md)
+accepts the last retained relocated IA4/repeat load through fresh `load-pass`
+and the later Fog guard at dispatch 652279 / 52.465 seconds. The
+[third exact Fog tuple](GX_FOG_ZERO_2026-10-10.md) passes 68,721 valid calls /
+949 refusals per mode, 3,072 pinned native BP fixtures and four rejected
+mutants. The full GPU/replay suite passes; private build, exact-HEAD CI and
+corrected console execution remain pending.
+
 2026-10-10: the [IA8/clamp trial](HARDWARE_IA4_REPEAT_2026-10-10.md) launches
 at 13:45:46 CEST with nxlink exit 0 and verifies 39 reports / 841,601 bytes
 twice plus full SD readback. Later layout/text targets precede an IA4/repeat
@@ -16,7 +24,9 @@ eight completed exact-HEAD checks. PR #360 merges as `744908f`;
 full SD readback and the capture-disabled marker verify the corrected NRO.
 The exact NRO launches through nxlink with exit 0 at 2026-10-10 14:42:15 CEST
 (27,196,610 compressed bytes / 2,286 blocks), after hash/gate revalidation;
-durable USB reports remain pending.
+the [fresh result](HARDWARE_IA4_FOG_ZERO_2026-10-10.md) verifies 39 reports /
+841,828 bytes twice and accepts the retained IA4/repeat load before an
+all-positive-zero Fog guard.
 
 2026-10-10: [IA8 trial result](HARDWARE_IA8_CLAMP_2026-10-10.md) verifies
 39 reports / 839,522 bytes twice and the full SD candidate. DrawQuad entry

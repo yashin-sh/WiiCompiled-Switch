@@ -4,6 +4,8 @@
 
 struct CpuContext;
 
+extern "C" void mkw_switch_set_fast_track_stage(const char*) noexcept;
+
 namespace mkw::switch_nand_runtime {
 
 std::int32_t OpenSync(std::uint32_t pathPtr,
@@ -13,9 +15,17 @@ std::int32_t OpenSync(std::uint32_t pathPtr,
 std::int32_t SafeOpenReadSync(std::uint32_t pathPtr,
                               std::uint32_t fileInfoPtr) noexcept;
 
+std::int32_t SafeOpenSync(std::uint32_t pathPtr,
+                          std::uint32_t fileInfoPtr,
+                          std::uint32_t mode) noexcept;
+
 std::int32_t ReadSync(std::uint32_t fileInfoPtr,
                       std::uint32_t bufferPtr,
                       std::uint32_t length) noexcept;
+
+std::int32_t WriteSync(std::uint32_t fileInfoPtr,
+                       std::uint32_t bufferPtr,
+                       std::uint32_t length) noexcept;
 
 std::int32_t SeekSync(std::uint32_t fileInfoPtr,
                       std::int32_t offset,
@@ -27,6 +37,17 @@ std::int32_t GetLengthSync(std::uint32_t fileInfoPtr,
 std::int32_t CloseSync(std::uint32_t fileInfoPtr) noexcept;
 
 std::int32_t SafeCloseReadSync(std::uint32_t fileInfoPtr) noexcept;
+std::int32_t SafeCloseSync(std::uint32_t fileInfoPtr) noexcept;
+
+std::int32_t CreateSync(std::uint32_t pathPtr,
+                        std::uint32_t permissions,
+                        std::uint32_t attributes) noexcept;
+
+std::int32_t DeleteSync(std::uint32_t pathPtr) noexcept;
+
+std::int32_t CreateDirSync(std::uint32_t pathPtr,
+                           std::uint32_t permissions,
+                           std::uint32_t attributes) noexcept;
 
 std::int32_t GetTypeSync(std::uint32_t pathPtr,
                          std::uint32_t outTypePtr) noexcept;

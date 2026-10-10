@@ -24,7 +24,7 @@ namespace {
 constexpr std::uint32_t base = 0x70000000, path = base + 16, info = base + 128;
 constexpr std::uint32_t buffer = base + 1024, length = 0x72a0, target = 0x8019b884;
 std::vector<std::uint8_t> bytes;
-bool active = false, diskFull = false;
+bool active = false, diskFull = false, allowFullClose = false;
 fs::path root;
 unsigned valid = 0, refusals = 0, notes = 0, polls = 0;
 const char* stage = nullptr;
@@ -145,6 +145,11 @@ extern "C" FILE* __wrap_fopen(const char* p, const char* mode) {
     }
     return __real_fopen(p, mode);
 }
+extern "C" int __real_fsync(int);
+extern "C" int __wrap_fsync(int fd) {
+    // Permit cleanup only after checking the genuine /dev/full close failure.
+    return diskFull && allowFullClose ? 0 : __real_fsync(fd);
+}
 extern "C" void mkw_switch_set_fast_track_stage(const char* p) noexcept {
     stage = p;
 }
@@ -250,7 +255,10 @@ int main() {
     assert(Pinned::handle.file && setvbuf(Pinned::handle.file, nullptr, _IONBF, 0) == 0);
     const auto oracle = Pinned::NANDWrite_HLE(info, buffer, length);
     assert(oracle == 0 && Invoke(Cpu()) == oracle);
-    assert(std::fclose(Pinned::handle.file) == 0 && CloseSync(info) == 0);
+    assert(std::fclose(Pinned::handle.file) == 0);
+    assert(CloseSync(info) == -64 && Memory::Read8(info + 0x8a) == 1);
+    allowFullClose = true;
+    assert(CloseSync(info) == 0 && Memory::Read8(info + 0x8a) == 2);
     diskFull = false;
     Memory::Reset();
     std::printf("PASS: NANDWrite valid=%u refusals=%u; real owned handles, pinned count/flush, binary/tail preservation, storage failure, CPU/guest snapshots\n", valid, refusals);

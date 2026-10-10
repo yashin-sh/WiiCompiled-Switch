@@ -2,6 +2,8 @@
 
 ## Current checkpoint — 2026-10-10
 
+The user-requested [save/NAND pre-port repair](docs/NAND_SAVE_PR_371_2026-10-10.md) reconciles PR #371 with the current bounded create/write bridges. Broader safe-open/close and callback paths have synthetic filesystem contracts; console execution remains pending.
+
 The [latest capture-enabled trial](docs/HARDWARE_NONBLACK_REPLAY_2026-10-09.md)
 preserves a recognizable Wiimote safety page at frame 4 on Switch and reproduces
 it through desktop Aurora replay. A complete 90-frame prefix remains within the

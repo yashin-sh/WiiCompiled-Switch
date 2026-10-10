@@ -1,5 +1,13 @@
 # Status log
 
+## 2026-10-10 — Save/NAND PR conflict resolution
+
+Reconcile PR #371 with current main while retaining bounded NANDCreate/NANDWrite
+registry guards and diagnostics. Correct pinned write/directory results and test
+real callback/FILE behavior, safe commit failures and consumed-stream ownership
+in both modes. Broader entry points are pre-ported; no new hardware return is
+claimed. See the [repair evidence](NAND_SAVE_PR_371_2026-10-10.md).
+
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
 2026-10-10: the [IA4 hardware result](HARDWARE_IA4_FOG_ZERO_2026-10-10.md)

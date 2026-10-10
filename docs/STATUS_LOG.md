@@ -1,5 +1,10 @@
 # Status log
 
+## 2026-10-10 — NANDWrite/close/home returned; NANDMove frontier
+
+The [fresh NAND save result](HARDWARE_NAND_WRITE_MOVE_2026-10-10.md) verifies 41 reports / 853,191 bytes twice, accepts the complete 29,344-byte write and close/home-query progression, and reaches NANDMove `0x8019BEE8`. The previous candidate is replaced on SD with complete readback and verified older-NRO cleanup. The [bounded move correction](NAND_MOVE_2026-10-10.md) checks both full live paths and preserves pinned destination-directory semantics; corrected console execution remains pending.
+
+
 ## 2026-10-10 — Save/NAND pre-port launched directly via Netloader
 
 PR #371 merges after the private rendered gate and all eight exact-HEAD checks

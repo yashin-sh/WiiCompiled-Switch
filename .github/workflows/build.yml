@@ -49,6 +49,7 @@ jobs:
           bash scripts/test-nand-check.sh
           bash scripts/test-nand-create.sh
           bash scripts/test-nand-write.sh
+          bash scripts/test-nand-move.sh
           bash scripts/test-nand-save.sh
           bash scripts/test-gx-projection-vector.sh
           bash scripts/test-gx-light-object.sh

@@ -1,5 +1,8 @@
 # Documentation index
 
+- [NANDWrite returned; NANDMove frontier](HARDWARE_NAND_WRITE_MOVE_2026-10-10.md) — 41 reports verified twice; complete write/close/home progression and later SD cleanup
+- [Bounded banner NANDMove](NAND_MOVE_2026-10-10.md) — complete live path guards, directory/basename semantics and pinned filesystem contracts
+
 - [Save/NAND PR conflict resolution](NAND_SAVE_PR_371_2026-10-10.md) — preserved bounded bridges, corrected native results, safe commit and real callback/filesystem contracts
 
 - [NANDCreate returned; NANDWrite frontier](HARDWARE_NAND_CREATE_WRITE_2026-10-10.md) — 40 reports verified twice; fresh live pathname/result and owned-handle frontier

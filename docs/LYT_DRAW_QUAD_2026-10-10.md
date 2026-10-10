@@ -70,7 +70,7 @@ On 2026-10-10, nxlink transfers this exact candidate with exit 0 at
 08:38:11.950974 UTC: 27,196,597 compressed bytes / 2,286 blocks. The transmitted
 basename matches the verified SD candidate; its complete hash, private gate
 and all published code-HEAD checks are reverified before launch. The runtime
-capture mode remains disabled via the checked SD startup marker. Durable
-DrawQuad return evidence and later game pixels await the trial outcome and
-USB report retrieval. Generated code, game inputs, raw reports and rendered
+capture mode remains disabled via the checked SD startup marker. USB retrieval now [accepts the observed DrawQuad return](HARDWARE_DRAW_QUAD_IA8_REPEAT_2026-10-10.md)
+through later caller progression and diagnoses a 32 × 32 IA8/repeat texture
+descriptor refusal. Later game pixels remain unproven. Generated code, game inputs, raw reports and rendered
 NROs remain private.

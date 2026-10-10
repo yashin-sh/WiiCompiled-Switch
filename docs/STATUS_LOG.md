@@ -2,6 +2,16 @@
 
 Archived from the project README on 2026-10-07. This preserves the dated evidence and candidate/deployment history; use [the roadmap](../ROADMAP.md) for the current frontier.
 
+2026-10-10: [DrawQuad hardware result](HARDWARE_DRAW_QUAD_IA8_REPEAT_2026-10-10.md)
+verifies 39 reports / 840,193 bytes twice and the complete SD NRO. One quad
+return is accepted through later caller progression; a 32 × 32 IA8/repeat
+texture stops at dispatch 652989 / 58.259 seconds. No fresh Dawn error or
+exception report appears. The operator sees Wiimote, then black/crash; captures
+remain disabled. The [IA8 correction](GX_IA8_REPEAT_2026-10-10.md) checks full
+tile spans and forwards validated wrap modes. Both-mode bridge contracts and
+fresh outside-range UV GPU/refresh/replay oracles pass. Private-build and full
+exact-HEAD CI gates are required before merge/deployment.
+
 2026-10-10 (CEST): [fresh signed-color trial](HARDWARE_TEV_S10_DRAW_QUAD_2026-10-10.md)
 verifies 39 reports / 839,914 bytes twice over USB and rereads the exact S10
 NRO from SD. Checked material/outer caller progression accepts S10 IDs 1, 2

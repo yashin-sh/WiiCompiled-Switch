@@ -247,6 +247,10 @@ class GateContracts(unittest.TestCase):
     def test_replay_scope_keeps_original_coverage(self):
         for name in [
             "desktop-gx-replay/capture.cpp",
+            "include/gx_linear_texture_descriptor.hpp",
+            "source/gx_init_tex_obj_hle_bridge.cpp",
+            "tests/gx_texture_load_contract.cpp",
+            "scripts/test-gx-texture-load.sh",
             "source/nw4r_lyt_draw_quad_hle_bridge.cpp",
             "tests/lyt_draw_quad_contract.cpp",
             "scripts/test-lyt-draw-quad.sh",

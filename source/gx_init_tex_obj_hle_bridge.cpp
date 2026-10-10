@@ -1872,8 +1872,8 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
             static_cast<std::uint16_t>(width),
             static_cast<std::uint16_t>(height),
             static_cast<GXTexFmt>(format),
-            GX_CLAMP,
-            GX_CLAMP,
+            static_cast<GXTexWrapMode>(wrapS),
+            static_cast<GXTexWrapMode>(wrapT),
             GX_FALSE);
         GXInitTexObjLOD(
             hostObj,

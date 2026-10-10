@@ -12,21 +12,34 @@
 #include <system_error>
 #include <vector>
 
+#if !defined(_WIN32)
+#include <unistd.h>
+#endif
+
 namespace mkw::switch_nand_runtime {
 namespace {
 
 constexpr std::int32_t kResultOk = 0;
+constexpr std::int32_t kResultExists = -6;
 constexpr std::int32_t kResultInvalid = -8;
 constexpr std::int32_t kResultNoExists = -12;
 constexpr std::int32_t kResultUnknown = -64;
 constexpr std::size_t kAccessTypeOffset = 0x88u;
 constexpr std::size_t kOpenFlagOffset = 0x8au;
+constexpr std::uint8_t kOpenFlag = 1u;
+constexpr std::uint8_t kClosedFlag = 2u;
 constexpr std::uint8_t kSafeOpenFlag = 3u;
+constexpr std::uint8_t kSafeClosedFlag = 4u;
+constexpr std::uint8_t kSafeOpenAsyncFlag = 5u;
+constexpr std::uint8_t kSafeClosedAsyncFlag = 6u;
 
 struct FileHandle {
     FILE* file = nullptr;
     std::filesystem::path path;
     std::int32_t mode = 0;
+    // Non-empty for a crash-safe shadow handle. The guest writes to `path` and
+    // SafeCloseSync atomically publishes that sibling file over this target.
+    std::filesystem::path safeCommitPath;
 };
 
 std::mutex g_fileMutex;
@@ -41,7 +54,8 @@ std::uint32_t CurrentGameCode() noexcept {
     const std::uint32_t code = Memory::Read32(0x80000000u);
     for (int shift = 24; shift >= 0; shift -= 8) {
         const unsigned char ch = static_cast<unsigned char>((code >> shift) & 0xffu);
-        if (!((ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z'))) {
+        if (!((ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'Z') ||
+              (ch >= 'a' && ch <= 'z'))) {
             return kFallback;
         }
     }
@@ -123,6 +137,53 @@ std::filesystem::path HostPath(const std::string& guestPath) {
     return host;
 }
 
+bool ResolveHostPath(std::uint32_t pathPtr, std::filesystem::path& out) noexcept {
+    try {
+        std::string guestPath;
+        if (!ReadGuestCString(pathPtr, guestPath)) {
+            return false;
+        }
+        const std::string normalized = Normalize(guestPath);
+        if (normalized.empty()) {
+            return false;
+        }
+        out = HostPath(normalized);
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+std::filesystem::path SafeTempPathFor(const std::filesystem::path& path) {
+    std::filesystem::path temp = path;
+    temp += ".nandsafe.tmp";
+    return temp;
+}
+
+bool FlushToDisk(FILE* file) noexcept {
+    if (!file || std::fflush(file) != 0) {
+        return false;
+    }
+#if !defined(_WIN32)
+    const int fd = fileno(file);
+    if (fd < 0 || fsync(fd) != 0) {
+        return false;
+    }
+#endif
+    return true;
+}
+
+std::int32_t AllocateHandle(FILE* file,
+                            const std::filesystem::path& path,
+                            std::uint32_t mode,
+                            const std::filesystem::path& commitPath = {}) {
+    std::lock_guard<std::mutex> lock(g_fileMutex);
+    const std::int32_t fd = g_nextFd++;
+    g_fileHandles.emplace(
+        fd, FileHandle{file, path, static_cast<std::int32_t>(mode), commitPath});
+    return fd;
+}
+
 } // namespace
 
 std::int32_t OpenSync(std::uint32_t pathPtr,
@@ -134,11 +195,10 @@ std::int32_t OpenSync(std::uint32_t pathPtr,
     }
 
     try {
-        std::string guestPath;
-        if (!ReadGuestCString(pathPtr, guestPath)) {
+        std::filesystem::path hostPath;
+        if (!ResolveHostPath(pathPtr, hostPath)) {
             return kResultInvalid;
         }
-        const std::filesystem::path hostPath = HostPath(Normalize(guestPath));
 
         FILE* file = nullptr;
         if (mode == 1u) {
@@ -148,6 +208,9 @@ std::int32_t OpenSync(std::uint32_t pathPtr,
             if (!file) {
                 std::error_code ec;
                 std::filesystem::create_directories(hostPath.parent_path(), ec);
+                if (ec) {
+                    return kResultUnknown;
+                }
                 file = std::fopen(hostPath.c_str(), "w+b");
             }
         }
@@ -155,14 +218,10 @@ std::int32_t OpenSync(std::uint32_t pathPtr,
             return mode == 1u ? kResultNoExists : kResultUnknown;
         }
 
-        std::int32_t fd = 0;
-        {
-            std::lock_guard<std::mutex> lock(g_fileMutex);
-            fd = g_nextFd++;
-            g_fileHandles.emplace(fd, FileHandle{file, hostPath, static_cast<std::int32_t>(mode)});
-        }
+        const std::int32_t fd = AllocateHandle(file, hostPath, mode);
         Memory::Write32(fileInfoPtr, static_cast<std::uint32_t>(fd));
-        Memory::Write8(fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset), 1u);
+        Memory::Write8(
+            fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset), kOpenFlag);
         return kResultOk;
     } catch (...) {
         return kResultInvalid;
@@ -177,20 +236,87 @@ std::int32_t SafeOpenReadSync(std::uint32_t pathPtr,
     }
 
     try {
-        // The Wii NAND library publishes accType before attempting the open.
         Memory::Write8(
-            fileInfoPtr + static_cast<std::uint32_t>(kAccessTypeOffset),
-            1u);
+            fileInfoPtr + static_cast<std::uint32_t>(kAccessTypeOffset), 1u);
 
         const std::int32_t result = OpenSync(pathPtr, fileInfoPtr, 1u);
         if (result == kResultOk) {
-            // Safe-open handles are deliberately distinct from normal opens so
-            // a later NANDClose cannot accidentally commit/close them.
             Memory::Write8(
                 fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset),
                 kSafeOpenFlag);
         }
         return result;
+    } catch (...) {
+        return kResultInvalid;
+    }
+}
+
+std::int32_t SafeOpenSync(std::uint32_t pathPtr,
+                          std::uint32_t fileInfoPtr,
+                          std::uint32_t mode) noexcept {
+    if (fileInfoPtr == 0u || !Memory::Contains(fileInfoPtr, kOpenFlagOffset + 1u) ||
+        (mode != 1u && mode != 2u && mode != 3u)) {
+        return kResultInvalid;
+    }
+
+    try {
+        Memory::Write8(
+            fileInfoPtr + static_cast<std::uint32_t>(kAccessTypeOffset),
+            static_cast<std::uint8_t>(mode));
+
+        if (mode == 1u) {
+            return SafeOpenReadSync(pathPtr, fileInfoPtr);
+        }
+
+        std::filesystem::path hostPath;
+        if (!ResolveHostPath(pathPtr, hostPath)) {
+            return kResultInvalid;
+        }
+
+        std::error_code ec;
+        if (!std::filesystem::exists(hostPath, ec)) {
+            return ec ? kResultUnknown : kResultNoExists;
+        }
+        if (std::filesystem::is_directory(hostPath, ec)) {
+            return kResultInvalid;
+        }
+        if (ec) {
+            return kResultUnknown;
+        }
+
+        const std::filesystem::path tempPath = SafeTempPathFor(hostPath);
+        ec.clear();
+        if (std::filesystem::exists(tempPath, ec)) {
+            std::filesystem::remove(tempPath, ec);
+            if (ec) {
+                return kResultUnknown;
+            }
+        } else if (ec) {
+            return kResultUnknown;
+        }
+
+        ec.clear();
+        std::filesystem::copy_file(
+            hostPath,
+            tempPath,
+            std::filesystem::copy_options::overwrite_existing,
+            ec);
+        if (ec) {
+            return kResultUnknown;
+        }
+
+        FILE* file = std::fopen(tempPath.c_str(), "r+b");
+        if (!file) {
+            std::filesystem::remove(tempPath, ec);
+            return kResultUnknown;
+        }
+
+        const std::int32_t fd = AllocateHandle(file, tempPath, mode, hostPath);
+        Memory::Write32(fileInfoPtr, static_cast<std::uint32_t>(fd));
+        Memory::Write8(
+            fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset),
+            kSafeOpenFlag);
+        return kResultOk;
     } catch (...) {
         return kResultInvalid;
     }
@@ -219,6 +345,38 @@ std::int32_t ReadSync(std::uint32_t fileInfoPtr,
 
         const std::size_t bytesRead = std::fread(buffer, 1u, length, it->second.file);
         return static_cast<std::int32_t>(bytesRead);
+    } catch (...) {
+        return kResultInvalid;
+    }
+}
+
+std::int32_t WriteSync(std::uint32_t fileInfoPtr,
+                       std::uint32_t bufferPtr,
+                       std::uint32_t length) noexcept {
+    if (fileInfoPtr == 0u || !Memory::Contains(fileInfoPtr, 4u) ||
+        bufferPtr == 0u || !Memory::Contains(bufferPtr, length == 0u ? 1u : length)) {
+        return kResultInvalid;
+    }
+
+    try {
+        const auto* buffer = static_cast<const std::uint8_t*>(Memory::GetPointer(bufferPtr));
+        if (!buffer) {
+            return kResultInvalid;
+        }
+
+        const std::int32_t fd = static_cast<std::int32_t>(Memory::Read32(fileInfoPtr));
+        std::lock_guard<std::mutex> lock(g_fileMutex);
+        const auto it = g_fileHandles.find(fd);
+        if (it == g_fileHandles.end() || !it->second.file) {
+            return kResultInvalid;
+        }
+
+        const std::size_t bytesWritten =
+            std::fwrite(buffer, 1u, length, it->second.file);
+        if (std::fflush(it->second.file) != 0) {
+            return kResultUnknown;
+        }
+        return static_cast<std::int32_t>(bytesWritten);
     } catch (...) {
         return kResultInvalid;
     }
@@ -275,21 +433,17 @@ std::int32_t GetLengthSync(std::uint32_t fileInfoPtr,
         }
 
         const long original = std::ftell(it->second.file);
-        if (original < 0 ||
-            std::fseek(it->second.file, 0, SEEK_END) != 0) {
+        if (original < 0 || std::fseek(it->second.file, 0, SEEK_END) != 0) {
             return kResultUnknown;
         }
 
         const long end = std::ftell(it->second.file);
-        const bool restored =
-            std::fseek(it->second.file, original, SEEK_SET) == 0;
+        const bool restored = std::fseek(it->second.file, original, SEEK_SET) == 0;
         if (end < 0 || !restored) {
             return kResultUnknown;
         }
 
-        Memory::Write32(
-            outLengthPtr,
-            static_cast<std::uint32_t>(end));
+        Memory::Write32(outLengthPtr, static_cast<std::uint32_t>(end));
         return kResultOk;
     } catch (...) {
         return kResultInvalid;
@@ -302,7 +456,8 @@ std::int32_t CloseSync(std::uint32_t fileInfoPtr) noexcept {
     }
 
     try {
-        if (Memory::Read8(fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset)) != 1u) {
+        if (Memory::Read8(fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset)) !=
+            kOpenFlag) {
             return kResultInvalid;
         }
 
@@ -311,6 +466,9 @@ std::int32_t CloseSync(std::uint32_t fileInfoPtr) noexcept {
             std::lock_guard<std::mutex> lock(g_fileMutex);
             const auto it = g_fileHandles.find(fd);
             if (it != g_fileHandles.end()) {
+                if (it->second.file && it->second.mode >= 2 && !FlushToDisk(it->second.file)) {
+                    return kResultUnknown;
+                }
                 if (it->second.file && std::fclose(it->second.file) != 0) {
                     return kResultUnknown;
                 }
@@ -318,7 +476,74 @@ std::int32_t CloseSync(std::uint32_t fileInfoPtr) noexcept {
             }
         }
 
-        Memory::Write8(fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset), 0u);
+        Memory::Write8(
+            fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset), kClosedFlag);
+        return kResultOk;
+    } catch (...) {
+        return kResultInvalid;
+    }
+}
+
+std::int32_t SafeCloseSync(std::uint32_t fileInfoPtr) noexcept {
+    if (fileInfoPtr == 0u || !Memory::Contains(fileInfoPtr, kOpenFlagOffset + 1u)) {
+        return kResultInvalid;
+    }
+
+    try {
+        const std::uint8_t openFlag =
+            Memory::Read8(fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset));
+        if (openFlag == kOpenFlag) {
+            return CloseSync(fileInfoPtr);
+        }
+        if (openFlag != kSafeOpenFlag && openFlag != kSafeOpenAsyncFlag) {
+            // Pinned WiiCompiled tolerates repeated safe-close after an async chain.
+            return kResultOk;
+        }
+
+        const std::int32_t fd = static_cast<std::int32_t>(Memory::Read32(fileInfoPtr));
+        FileHandle handle{};
+        {
+            std::lock_guard<std::mutex> lock(g_fileMutex);
+            const auto it = g_fileHandles.find(fd);
+            if (it == g_fileHandles.end() || !it->second.file) {
+                return kResultInvalid;
+            }
+            handle = it->second;
+            g_fileHandles.erase(it);
+        }
+
+        bool ok = true;
+        if (handle.mode >= 2) {
+            ok = FlushToDisk(handle.file);
+        }
+        if (std::fclose(handle.file) != 0) {
+            ok = false;
+        }
+
+        if (!ok) {
+            if (!handle.safeCommitPath.empty()) {
+                std::error_code cleanup;
+                std::filesystem::remove(handle.path, cleanup);
+            }
+            return kResultUnknown;
+        }
+
+        if (!handle.safeCommitPath.empty()) {
+            // The scratch file is created beside the target, keeping rename on the
+            // same filesystem. Horizon/POSIX rename publishes the complete file in
+            // one namespace operation, preserving the old target on pre-rename crash.
+            std::error_code ec;
+            std::filesystem::rename(handle.path, handle.safeCommitPath, ec);
+            if (ec) {
+                std::error_code cleanup;
+                std::filesystem::remove(handle.path, cleanup);
+                return kResultUnknown;
+            }
+        }
+
+        Memory::Write8(
+            fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset),
+            openFlag == kSafeOpenFlag ? kSafeClosedFlag : kSafeClosedAsyncFlag);
         return kResultOk;
     } catch (...) {
         return kResultInvalid;
@@ -326,40 +551,91 @@ std::int32_t CloseSync(std::uint32_t fileInfoPtr) noexcept {
 }
 
 std::int32_t SafeCloseReadSync(std::uint32_t fileInfoPtr) noexcept {
-    if (fileInfoPtr == 0u ||
-        !Memory::Contains(fileInfoPtr, kOpenFlagOffset + 1u)) {
-        return kResultInvalid;
-    }
+    return SafeCloseSync(fileInfoPtr);
+}
+
+std::int32_t CreateSync(std::uint32_t pathPtr,
+                        std::uint32_t permissions,
+                        std::uint32_t attributes) noexcept {
+    (void)permissions;
+    (void)attributes;
 
     try {
-        const std::uint8_t openFlag =
-            Memory::Read8(
-                fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset));
-        if (openFlag == 1u) {
-            return CloseSync(fileInfoPtr);
-        }
-        if (openFlag != kSafeOpenFlag) {
+        std::filesystem::path hostPath;
+        if (!ResolveHostPath(pathPtr, hostPath)) {
             return kResultInvalid;
         }
 
-        const std::int32_t fd =
-            static_cast<std::int32_t>(Memory::Read32(fileInfoPtr));
-        {
-            std::lock_guard<std::mutex> lock(g_fileMutex);
-            const auto it = g_fileHandles.find(fd);
-            if (it == g_fileHandles.end() || !it->second.file) {
-                return kResultInvalid;
-            }
-            if (std::fclose(it->second.file) != 0) {
-                return kResultUnknown;
-            }
-            g_fileHandles.erase(it);
+        std::error_code ec;
+        if (std::filesystem::exists(hostPath, ec)) {
+            return kResultExists;
+        }
+        if (ec) {
+            return kResultUnknown;
         }
 
-        // Pinned WiiCompiled uses 4 for a synchronously safe-closed handle.
-        Memory::Write8(
-            fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset),
-            4u);
+        std::filesystem::create_directories(hostPath.parent_path(), ec);
+        if (ec) {
+            return kResultUnknown;
+        }
+
+        FILE* file = std::fopen(hostPath.c_str(), "wb");
+        if (!file) {
+            return kResultUnknown;
+        }
+        const bool closed = std::fclose(file) == 0;
+        return closed ? kResultOk : kResultUnknown;
+    } catch (...) {
+        return kResultInvalid;
+    }
+}
+
+std::int32_t DeleteSync(std::uint32_t pathPtr) noexcept {
+    try {
+        std::filesystem::path hostPath;
+        if (!ResolveHostPath(pathPtr, hostPath)) {
+            return kResultInvalid;
+        }
+
+        std::error_code ec;
+        if (!std::filesystem::exists(hostPath, ec)) {
+            return ec ? kResultUnknown : kResultNoExists;
+        }
+
+        const bool removed = std::filesystem::remove(hostPath, ec);
+        if (ec || !removed) {
+            return kResultUnknown;
+        }
+        return kResultOk;
+    } catch (...) {
+        return kResultInvalid;
+    }
+}
+
+std::int32_t CreateDirSync(std::uint32_t pathPtr,
+                           std::uint32_t permissions,
+                           std::uint32_t attributes) noexcept {
+    (void)permissions;
+    (void)attributes;
+
+    try {
+        std::filesystem::path hostPath;
+        if (!ResolveHostPath(pathPtr, hostPath)) {
+            return kResultInvalid;
+        }
+
+        std::error_code ec;
+        if (std::filesystem::exists(hostPath, ec)) {
+            return kResultExists;
+        }
+        if (ec) {
+            return kResultUnknown;
+        }
+
+        const bool created = std::filesystem::create_directories(hostPath, ec);
+        if (ec || !created) {
+            return kResultUnknown;
+        }
         return kResultOk;
     } catch (...) {
         return kResultInvalid;
@@ -368,18 +644,15 @@ std::int32_t SafeCloseReadSync(std::uint32_t fileInfoPtr) noexcept {
 
 std::int32_t GetTypeSync(std::uint32_t pathPtr,
                          std::uint32_t outTypePtr) noexcept {
-    if (pathPtr == 0u || outTypePtr == 0u ||
-        !Memory::Contains(outTypePtr, 1u)) {
+    if (pathPtr == 0u || outTypePtr == 0u || !Memory::Contains(outTypePtr, 1u)) {
         return kResultInvalid;
     }
 
     try {
-        std::string guestPath;
-        if (!ReadGuestCString(pathPtr, guestPath)) {
+        std::filesystem::path hostPath;
+        if (!ResolveHostPath(pathPtr, hostPath)) {
             return kResultInvalid;
         }
-
-        const std::filesystem::path hostPath = HostPath(Normalize(guestPath));
         std::error_code ec;
         const bool exists = std::filesystem::exists(hostPath, ec);
         if (ec) {

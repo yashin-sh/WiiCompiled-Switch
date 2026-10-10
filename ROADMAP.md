@@ -51,7 +51,9 @@ verifies 39 reports / 840,193 bytes twice and accepts the observed DrawQuad
 return before an IA8/repeat descriptor refusal. The
 [correction](docs/GX_IA8_REPEAT_2026-10-10.md) checks full IA8 spans and forwards
 validated wrap modes; outside-range UV, same-address refresh and independent
-GPU replay pass. Private-build/complete-CI gates are required before merge.
+GPU replay pass. Candidate `e2aa724` passes the private build and all
+eight complete-rollup checks; PR #355 merges and the corrected NRO passes
+full SD readback. The next console trial remains pending.
 The operator still sees Wiimote, black and a crash; later pixels/playability
 remain unproven.
 

@@ -9,8 +9,11 @@ texture stops at dispatch 652989 / 58.259 seconds. No fresh Dawn error or
 exception report appears. The operator sees Wiimote, then black/crash; captures
 remain disabled. The [IA8 correction](GX_IA8_REPEAT_2026-10-10.md) checks full
 tile spans and forwards validated wrap modes. Both-mode bridge contracts and
-fresh outside-range UV GPU/refresh/replay oracles pass. Private-build and full
-exact-HEAD CI gates are required before merge/deployment.
+fresh outside-range UV GPU/refresh/replay oracles pass; a clamp mutant fails.
+Candidate `e2aa724` passes the private build, 71 SDK HLE files, 85 scoped
+providers / 103 retained functions, and all eight completed exact-HEAD checks.
+PR #355 merges as `9a711ca`. Full SD readback and the
+capture-disabled marker verify the corrected NRO; its console trial is pending.
 
 2026-10-10 (CEST): [fresh signed-color trial](HARDWARE_TEV_S10_DRAW_QUAD_2026-10-10.md)
 verifies 39 reports / 839,914 bytes twice over USB and rereads the exact S10

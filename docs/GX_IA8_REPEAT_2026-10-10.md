@@ -29,7 +29,21 @@ Separate capture/replay processes produce byte-identical PNGs. The full
 existing GPU suite, including the production DrawQuad scenes, also passes.
 Texture bridge/descriptor/test changes now select full replay CI.
 
-The private rendered build and complete exact-HEAD CI rollup are required
-before merging and deployment. The next corrected console run, subsequent
-game pixels and playability remain pending. Private game data, translated
-callers, NROs and raw reports are excluded from publication.
+Candidate `e2aa724` passes the separate private rendered-build gate:
+immutable offline rendered/capture build, 71 SDK HLE source files plus input,
+backend, Discovery and capture checks, 85 unique providers across 273 inputs,
+103 strong functions and three GX objects retained. Original private patches
+preserve bytes and nanosecond mtimes. A private clamp mutant is rejected:
+the GPU reports black where repeat requires white.
+
+Every published check in the complete exact-HEAD rollup succeeds before
+[PR #355](https://github.com/yashin-sh/WiiCompiled-Switch/pull/355) merges at
+2026-10-10T09:03:33Z, as main `9a711ca`.
+The private NRO is 74,436,664 bytes, SHA-256
+`56b77d76afbe7c2c4348a809e515aacffd3107bd21ab125024a667990dab7086`. Complete SD readback verifies
+`sdmc:/switch/WiiCompiled-Switch-ia8-repeat-e2aa724.nro` at
+2026-10-10T09:03:48.461544+00:00; the capture-disabled marker is
+independently reread. The prior owned quad candidate is backed up and verified
+before removal. The next corrected console run, subsequent game pixels and
+playability remain pending. Private game data, translated callers, NROs and
+raw reports are excluded from publication.

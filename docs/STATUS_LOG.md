@@ -7,8 +7,10 @@ accepts the last retained relocated IA4/repeat load through fresh `load-pass`
 and the later Fog guard at dispatch 652279 / 52.465 seconds. The
 [third exact Fog tuple](GX_FOG_ZERO_2026-10-10.md) passes 68,721 valid calls /
 949 refusals per mode, 3,072 pinned native BP fixtures and four rejected
-mutants. The full GPU/replay suite passes; private build, exact-HEAD CI and
-corrected console execution remain pending.
+mutants. The full GPU/replay suite and private build pass for `bb00520`.
+All eight published exact-HEAD checks succeed; PR #363 merges as
+`2aab90f`. The corrected NRO and capture-disabled
+marker pass full SD readback. Corrected console execution remains pending.
 
 2026-10-10: the [IA8/clamp trial](HARDWARE_IA4_REPEAT_2026-10-10.md) launches
 at 13:45:46 CEST with nxlink exit 0 and verifies 39 reports / 841,601 bytes

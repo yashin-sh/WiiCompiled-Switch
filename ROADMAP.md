@@ -75,7 +75,9 @@ the [fresh result](docs/HARDWARE_IA4_FOG_ZERO_2026-10-10.md) verifies
 39 reports / 841,828 bytes twice and accepts the retained relocated IA4/repeat
 load before an all-zero Fog guard. The [Fog correction](docs/GX_FOG_ZERO_2026-10-10.md)
 passes both-mode production/Memory, pinned BP and negative-control tests.
-Its private build, CI and corrected console trial remain pending.
+Candidate `bb00520` passes its private build and all eight exact-HEAD
+checks; PR #363 is merged and the new NRO passes complete SD readback.
+Corrected console execution remains pending.
 The preceding quad trial shows Wiimote, black and a crash; later pixels/playability
 remain unproven.
 

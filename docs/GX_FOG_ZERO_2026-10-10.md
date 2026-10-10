@@ -35,6 +35,20 @@ now verifies both extracted sources against their original Git blobs.
 The full desktop GPU/capture/replay suite passes. These tests establish
 native arguments and BP semantics; they do not claim fresh Switch pixels.
 
-Private rendered-build, exact-HEAD published CI, corrected NRO deployment
-and console execution are pending for this candidate. The previous nine
-private integration patches and generated game products remain excluded.
+Candidate `bb00520` passes the separate private rendered-build
+and SDK gate: immutable offline image, 71 HLE files plus input/backend,
+Discovery and capture checks, 85 unique scoped providers across 273 explicit
+link inputs, 103 strong functions and three GX objects retained. Original
+private patch bytes and nanosecond mtimes remain preserved.
+
+All eight published checks in the complete paginated exact-HEAD rollup
+complete successfully before [PR #363](https://github.com/yashin-sh/WiiCompiled-Switch/pull/363)
+merges at 2026-10-10T13:17:53Z, main `2aab90f`.
+The private NRO is 74,436,664 bytes, SHA-256
+`225a1f44701ba7e9284409e714406f33b2aba7b6e0da95824c483a1c7281274b`. Full SD readback verifies
+`sdmc:/switch/WiiCompiled-Switch-fog-zero-bb00520.nro` at
+2026-10-10T13:18:08.366110+00:00; the capture-disabled marker is
+independently reread. The previous owned IA4 NRO is copied to a private
+backup and SHA/size verified before removal. Corrected console execution,
+fresh pixels and playability remain pending. Game data, generated callers,
+NROs and raw diagnostics remain excluded.

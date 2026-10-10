@@ -77,7 +77,7 @@ load before an all-zero Fog guard. The [Fog correction](docs/GX_FOG_ZERO_2026-10
 passes both-mode production/Memory, pinned BP and negative-control tests.
 Candidate `bb00520` passes its private build and all eight exact-HEAD
 checks; PR #363 is merged and the new NRO passes complete SD readback.
-Corrected console execution remains pending.
+The exact corrected NRO launches via nxlink with exit 0 at 2026-10-10 15:33:09 CEST; durable USB reports remain pending.
 The preceding quad trial shows Wiimote, black and a crash; later pixels/playability
 remain unproven.
 

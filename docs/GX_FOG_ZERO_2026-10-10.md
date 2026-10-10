@@ -49,6 +49,8 @@ The private NRO is 74,436,664 bytes, SHA-256
 `sdmc:/switch/WiiCompiled-Switch-fog-zero-bb00520.nro` at
 2026-10-10T13:18:08.366110+00:00; the capture-disabled marker is
 independently reread. The previous owned IA4 NRO is copied to a private
-backup and SHA/size verified before removal. Corrected console execution,
-fresh pixels and playability remain pending. Game data, generated callers,
-NROs and raw diagnostics remain excluded.
+backup and SHA/size verified before removal.
+
+The exact corrected Fog-zero NRO launches via nxlink with exit 0 at 2026-10-10 15:33:09 CEST (2026-10-10T13:33:09.490611+00:00): 27,197,070 compressed bytes / 2,286 blocks. Its SHA, complete successful code-HEAD rollup, private gate and unchanged non-documentation sources are revalidated before transfer. Durable USB reports and fresh pixels/playability remain pending.
+Captures remain disabled via the verified startup marker. Game data,
+generated callers, NROs and raw diagnostics remain excluded.

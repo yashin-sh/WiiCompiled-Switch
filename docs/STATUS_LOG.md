@@ -10,8 +10,11 @@ is not separately retained returning. Captures remain disabled and no Dawn
 uncaptured error appears. The [IA4 correction](GX_IA4_2026-10-10.md) passes
 648 valid bridge loads per mode and fresh GPU clamp/repeat, nibble expansion,
 independent S/T and replay oracles. Eight wrong-axis negative controls fail;
-the full existing suite passes. Private-build and complete-CI gates remain
-required before merge/deployment.
+the full existing suite passes. Candidate `102bb13` passes the private
+build, 71 SDK HLE files, 85 scoped providers, 103 retained functions and all
+eight completed exact-HEAD checks. PR #360 merges as `744908f`;
+full SD readback and the capture-disabled marker verify the corrected NRO.
+Its console trial remains pending.
 
 2026-10-10: [IA8 trial result](HARDWARE_IA8_CLAMP_2026-10-10.md) verifies
 39 reports / 839,522 bytes twice and the full SD candidate. DrawQuad entry

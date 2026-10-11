@@ -38,6 +38,8 @@ extern "C" void mkw_switch_hle_gx_set_tev_alpha_in(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_alpha_op(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_swap_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_k_color(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_k_color_sel(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_k_alpha_sel(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_color(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_swap_mode_table(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_op(CpuContext* cpu) noexcept;
@@ -399,6 +401,24 @@ struct KnownNativeCpuCall<0x80171FD0u> {
 
     static inline void Invoke(CpuContext* cpu) noexcept {
         mkw_switch_hle_gx_set_tev_swap_mode(cpu);
+    }
+};
+
+// Bounded TEV konst selectors: r3 stage 0..15, r4 SDK selector.
+// Reserved selector holes remain blockers; native GX owns the shared KSEL BP
+// register pair, its other fields and bpSent bookkeeping.
+template <>
+struct KnownNativeCpuCall<0x80171F30u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_k_color_sel(cpu);
+    }
+};
+template <>
+struct KnownNativeCpuCall<0x80171F80u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) noexcept {
+        mkw_switch_hle_gx_set_tev_k_alpha_sel(cpu);
     }
 };
 

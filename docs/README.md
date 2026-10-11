@@ -1,6 +1,7 @@
 # Documentation index
 
-- [RGB5A3 repeat texture admission](GX_RGB5A3_REPEAT_2026-10-11.md) — current LAN-debug texture frontier and descriptor correction
+- [Bounded TEV constant selectors](GX_TEV_KSEL_2026-10-11.md) — observed K color frontier, conditional K alpha pre-port and pinned BP contracts; new candidate gates pending
+- [RGB5A3 repeat texture return](GX_RGB5A3_REPEAT_2026-10-11.md) — exact-head checks, verified LAN replacement, successful 2,048-byte texture load and later K color selector frontier
 - [NANDSeek candidate: existing-file length frontier](HARDWARE_NAND_SEEK_LENGTH_2026-10-11.md)
 - [Bounded ordinary-read NANDGetLength](NAND_GET_LENGTH_2026-10-11.md)
 - [Opt-in Switch LAN debug server](DEBUG_SERVER.md) — live status/logs, diagnostic downloads and verified deployment/restart workflow

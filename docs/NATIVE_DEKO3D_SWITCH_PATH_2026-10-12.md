@@ -31,6 +31,30 @@ That pin includes the public Switch implementation that demonstrated full races.
 separate submodule instead of replacing `third_party/WiiCompiled`, so the current exact-source
 CI, replay and hardware evidence remain reproducible while the optimized path is brought up.
 
+### Graphics dependency provenance
+
+The pinned Aurora source identifies Dawn release `v20260603.191052`. The corresponding public
+`encounter/dawn-build` release states that it was built from upstream `google/dawn` commit:
+
+```
+13abc3bc8ea2d3c2050f9e77a12d012108ceee24
+```
+
+The DriftDroid tree carries the Switch/Deko3D Dawn patch itself, so the Dawn source side can be
+reconstructed from that base commit plus the pinned patch.
+
+UAM is different. The public reference expects a separately prepared
+`$HOME/uam/build-switch/libuamcore.a` and exposes the source/build directories to the patched
+Dawn backend, but the repository does not publish the complete command sequence or a binary hash
+that produced the proven `libuamcore.a`. The public devkitPro UAM repository is currently pinned
+at upstream commit `5a5afc2bae8b55409ab36ba45be63fcb73f68993`, but that alone is **not sufficient evidence**
+that it is byte-identical to the library used for DriftDroid's measured Switch build.
+
+Therefore the current Deko3D build helper treats Dawn/UAM as explicit external dependencies and
+refuses to build when they are absent. A Deko3D NRO is not considered reproducible or eligible
+for merge until the local dependency receipt records the exact Dawn base, DriftDroid patch and
+UAM source/build hashes. Do not silently substitute a different UAM build.
+
 ## Why this path
 
 The Switch is CPU-bound in full races. The reference implementation records several hardware
@@ -67,7 +91,8 @@ The optimized path must not weaken this repository's validation discipline:
 ## Bring-up sequence
 
 1. Prepare the pinned reference with `scripts/prepare-native-deko3d-reference.sh`.
-2. Port/build the Deko3D Dawn dependency and UAM shader compiler at pinned revisions.
+2. Reconstruct Dawn from `13abc3bc8ea2d3c2050f9e77a12d012108ceee24`, apply the pinned
+   DriftDroid Switch/Deko3D patch, and prepare UAM with an attributable source/build receipt.
 3. Generate a fresh translation with the pinned DriftDroid translator from the user's own
    `local-product/Assets/main.dol` and `StaticR.rel`; do not reuse old generated C++ blindly.
 4. Build Release with Deko3D validation off, threaded GX on and section ordering on.

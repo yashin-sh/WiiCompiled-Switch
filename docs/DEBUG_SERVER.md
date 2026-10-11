@@ -30,6 +30,18 @@ mapping. When hbloader supports next-load and the runtime has enabled its
 coordinated owner-exit path, `reload` instead selects hbloader with the configured
 NRO as both path and argv. It never restarts the retail host program.
 
+After a successful listener/worker start, the owner reads the current automatic
+sleep flag on HOS 5.0.0 or later. If necessary it disables automatic sleep for
+this debug session, so a paused frontier remains reachable. `info` exposes
+`auto_sleep_disabled` (verified state) and `auto_sleep_error`. Failed reads or
+writes leave the listener running and report the error; an unknown prior state
+is never changed. The owner restores the prior flag after worker join/close only
+when this server changed it. Failed restoration makes `stop()` return false and
+retains ownership for retry before any loader return. An already disabled flag
+is preserved, and a disabled debug server makes no sleep API calls. Manual sleep
+with the Power button remains available. This SDK contract still needs its own
+hardware validation.
+
 With the server enabled, an unsupported guest frontier writes the usual durable
 SD report and holds guest execution so the independent server can still deliver
 status, reports, and deployment/restart commands. With the server disabled, the
@@ -204,6 +216,13 @@ Device destruction drains pending work, while destruction of its worker pool
 joins its threads; renderer handle release alone does not prove that the pool
 has already been destroyed. The private rendered gate checks the final linked
 exit hook, destructor array and loader path in addition to compilation.
+The pinned Switch NVK driver can quarantine a device when checked queue or
+upload teardown fails, even though Vulkan's device-destruction API returns
+void. Link wrappers preserve those exact driver calls and record their boolean
+failures. Renderer shutdown and the final exit hook check that sticky evidence;
+a quarantined device keeps the current process alive instead of returning its
+address space to hbloader. The private gate verifies both actual driver calls
+reach the wrappers in the final linked image.
 Autonomous console relaunch still requires hardware validation.
 
 If next-load is unavailable, `reload` returns an error. Program restart remains

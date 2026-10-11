@@ -19,6 +19,9 @@ std::string next_path, next_argv;
 bool allow_thread_calls = false;
 Result join_result = 0, close_result = 0;
 unsigned joins = 0, closes = 0, sockets_exits = 0;
+Result sleep_get_result = 0, sleep_set_result = 0;
+bool sleep_state = false;
+unsigned sleep_gets = 0, sleep_sets = 0;
 unsigned restarts = 0, socket_initializations = 0;
 bool parsed_program_reload = false;
 std::string wire;
@@ -30,6 +33,18 @@ AppletType appletGetAppletType() {
 bool hosversionAtLeast(unsigned major, unsigned minor, unsigned patch) {
     assert(major == 5 && minor == 0 && patch == 0);
     return modern;
+}
+Result appletIsAutoSleepDisabled(bool* out) {
+    ++sleep_gets;
+    if (!sleep_get_result)
+        *out = sleep_state;
+    return sleep_get_result;
+}
+Result appletSetAutoSleepDisabled(bool flag) {
+    ++sleep_sets;
+    if (!sleep_set_result)
+        sleep_state = flag;
+    return sleep_set_result;
 }
 Result appletRestartProgram(const void* argument, std::size_t size) {
     assert(argument == nullptr && size == 0);
@@ -98,8 +113,10 @@ void Configuration(const char* extra, bool expected) {
     std::ofstream(config) << "debug_server=1\n"
                           << extra;
     const auto previous = socket_initializations;
+    const auto previous_sleep_gets = sleep_gets, previous_sleep_sets = sleep_sets;
     assert(!mkw::debug::start()); // Mock SDK initialization intentionally fails.
     assert(socket_initializations == previous + 1);
+    assert(sleep_gets == previous_sleep_gets && sleep_sets == previous_sleep_sets);
     assert(parsed_program_reload == expected);
     assert(!mkw::debug::can_reload());
     mkw::debug::stop();
@@ -198,6 +215,65 @@ void StopFailures() {
     allow_thread_calls = false;
 }
 
+void AutoSleep() {
+    assert(!mkw::debug::running && !mkw::debug::auto_sleep_owned);
+    modern = true;
+    sleep_gets = sleep_sets = 0;
+    std::ofstream(std::string(mkw::debug::DefaultRoot) + "/Config/debug.ini") << "debug_server=0\n";
+    const auto initializations = socket_initializations;
+    assert(!mkw::debug::start() && socket_initializations == initializations);
+    assert(!sleep_gets && !sleep_sets);
+    mkw::debug::hold_auto_sleep_on_owner();
+    assert(!sleep_gets && !sleep_sets); // Disabled listener never touches applet state.
+    mkw::debug::running = true;
+    modern = false;
+    mkw::debug::hold_auto_sleep_on_owner();
+    assert(!sleep_gets && !sleep_sets && !mkw::debug::auto_sleep_disabled);
+    modern = true;
+    sleep_get_result = 0x401;
+    mkw::debug::hold_auto_sleep_on_owner();
+    assert(sleep_gets == 1 && !sleep_sets && !mkw::debug::auto_sleep_owned);
+    assert(!mkw::debug::auto_sleep_disabled && mkw::debug::auto_sleep_error == sleep_get_result);
+    sleep_get_result = 0;
+    sleep_set_result = 0x402;
+    sleep_state = false;
+    mkw::debug::hold_auto_sleep_on_owner();
+    assert(sleep_gets == 2 && sleep_sets == 1 && !sleep_state && !mkw::debug::auto_sleep_owned);
+    assert(!mkw::debug::auto_sleep_disabled && mkw::debug::auto_sleep_error == sleep_set_result);
+    sleep_set_result = 0;
+    sleep_state = true;
+    mkw::debug::hold_auto_sleep_on_owner();
+    assert(sleep_gets == 3 && sleep_sets == 1 && !mkw::debug::auto_sleep_owned);
+    assert(mkw::debug::auto_sleep_disabled && mkw::debug::stop() && sleep_state);
+    assert(sleep_sets == 1); // Preserve another owner's existing disabled flag.
+    mkw::debug::running = true;
+    sleep_state = false;
+    mkw::debug::hold_auto_sleep_on_owner();
+    assert(sleep_gets == 4 && sleep_sets == 2 && sleep_state && mkw::debug::auto_sleep_owned);
+    mkw::debug::hold_auto_sleep_on_owner();
+    assert(sleep_gets == 4 && sleep_sets == 2 && !mkw::debug::auto_sleep_prior);
+    assert(mkw::debug::info().find("auto_sleep_disabled=1\n") != std::string::npos);
+    // Restoration may occur only after the worker has joined and closed.
+    allow_thread_calls = true;
+    mkw::debug::thread_ready = mkw::debug::thread_started = true;
+    mkw::debug::thread_joined = false;
+    join_result = 0x403;
+    close_result = 0;
+    assert(!mkw::debug::stop() && sleep_sets == 2 && mkw::debug::auto_sleep_owned);
+    join_result = 0;
+    close_result = 0x404;
+    assert(!mkw::debug::stop() && sleep_sets == 2 && mkw::debug::auto_sleep_owned);
+    close_result = 0;
+    sleep_set_result = 0x405;
+    assert(!mkw::debug::stop() && sleep_sets == 3 && mkw::debug::auto_sleep_owned);
+    assert(sleep_state && !mkw::debug::thread_ready && mkw::debug::auto_sleep_error == sleep_set_result);
+    sleep_set_result = 0;
+    assert(mkw::debug::stop() && sleep_sets == 4 && !sleep_state && !mkw::debug::auto_sleep_owned);
+    assert(!mkw::debug::auto_sleep_disabled && !mkw::debug::auto_sleep_error);
+    assert(mkw::debug::stop() && sleep_sets == 4);
+    allow_thread_calls = false;
+}
+
 } // namespace
 
 int main() {
@@ -269,5 +345,6 @@ int main() {
     assert(mkw::debug::runtime_nro_sha256 == identity && mkw::debug::runtime_session == session);
     mkw::debug::set_launch_path(nullptr);
     StopFailures();
-    std::puts("PASS: Switch reload queues owner-only hbloader next-load; program restart never invokes the SDK; failed worker joins/closes remain owned");
+    AutoSleep();
+    std::puts("PASS: Switch reload queues owner-only hbloader next-load; program restart never invokes the SDK; failed worker joins/closes remain owned; auto-sleep prior state restored");
 }

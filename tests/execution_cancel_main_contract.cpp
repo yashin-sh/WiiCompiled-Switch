@@ -17,6 +17,16 @@
 #include <vector>
 
 extern "C" void userAppExit() noexcept;
+struct nvk_device;
+struct nvk_queue;
+struct nvk_upload_queue;
+extern "C" bool __wrap_nvk_queue_try_destroy(nvk_device*, nvk_queue*);
+extern "C" bool __real_nvk_queue_try_destroy(nvk_device*, nvk_queue*) {
+    return false;
+}
+extern "C" bool __real_nvk_upload_queue_try_finish(nvk_device*, nvk_upload_queue*) {
+    return true;
+}
 
 namespace {
 const auto owner = std::this_thread::get_id();
@@ -104,10 +114,22 @@ extern "C" void __libc_fini_array() {
     ++fini_calls;
     stop_device = true;
     device_worker.join();
+    if (scenario == "finalizer-failure")
+        __wrap_nvk_queue_try_destroy(nullptr, nullptr);
+}
+void svcSleepThread(std::int64_t) {
+    assert(scenario == "finalizer-failure" && fini_calls == 1 && returned);
+    std::puts("FINALIZER_FAILURE_BLOCKED");
+    std::fflush(stdout);
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
 }
 extern "C" bool mkw_switch_renderer_shutdown() noexcept {
     assert(prepared && memory_alive && !guest_live && !debug_alive && !watchdog_alive);
     Event("renderer-stop");
+    if (scenario == "renderer-failure") {
+        __wrap_nvk_queue_try_destroy(nullptr, nullptr);
+        return false;
+    }
     renderer_alive = false;
     return true;
 }
@@ -180,6 +202,13 @@ void shutdown() {
 } // namespace mkw::switch_platform
 namespace mkw::horizon_runtime_services {
 void sleep_for_ns(std::int64_t) noexcept {
+    if (scenario == "renderer-failure") {
+        assert(prepared && !debug_alive && !watchdog_alive && memory_alive && renderer_alive);
+        std::puts("RENDERER_FAILURE_BLOCKED");
+        std::fflush(stdout);
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        return;
+    }
     assert(renderer_alive && memory_alive && watchdog_alive);
     if (scenario == "retry") {
         assert(prepare_attempts == 1 && !prepared && debug_alive);
@@ -232,7 +261,7 @@ bool stop() noexcept {
 int main(int argc, char** argv) {
     assert(argc == 2);
     scenario = argv[1];
-    assert(scenario == "success" || scenario == "retry" || scenario == "join-retry");
+    assert(scenario == "success" || scenario == "retry" || scenario == "join-retry" || scenario == "renderer-failure" || scenario == "finalizer-failure");
     assert(std::atexit(ExitObserver) == 0);
     char launch[] = "sdmc:/switch/candidate.nro";
     char* candidate_args[] = {launch, nullptr};

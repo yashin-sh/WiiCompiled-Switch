@@ -14,6 +14,8 @@ struct Thread {};
 
 AppletType appletGetAppletType();
 bool hosversionAtLeast(unsigned major, unsigned minor, unsigned patch);
+Result appletIsAutoSleepDisabled(bool* out);
+Result appletSetAutoSleepDisabled(bool flag);
 bool envHasNextLoad();
 Result envSetNextLoad(const char* path, const char* argv);
 Result appletRestartProgram(const void* argument, std::size_t size);

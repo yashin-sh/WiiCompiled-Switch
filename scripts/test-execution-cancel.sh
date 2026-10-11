@@ -32,6 +32,7 @@ ASAN_OPTIONS="${ASAN_OPTIONS:+$ASAN_OPTIONS:}detect_stack_use_after_return=1" "$
 ASAN_OPTIONS="${ASAN_OPTIONS:+$ASAN_OPTIONS:}detect_stack_use_after_return=1" "$TEST_DIR/cancel-fiber" callback
 "${MKW_HOST_CXX:-clang++}" -std=c++20 -O1 -g -Wall -Wextra -Werror \
     -fsanitize=address,undefined -fno-sanitize-recover=all -D__SWITCH__ \
+    -I"$ROOT_DIR/tests/execution-cancel-seams" -I"$ROOT_DIR/include" \
     -c "$ROOT_DIR/source/mkw_loader_exit.cpp" -o "$TEST_DIR/loader-exit.o"
 "${MKW_HOST_CXX:-clang++}" -std=c++20 -O1 -g -Wall -Wextra -Werror -Wno-return-type-c-linkage -pthread \
     -fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer \
@@ -40,10 +41,36 @@ ASAN_OPTIONS="${ASAN_OPTIONS:+$ASAN_OPTIONS:}detect_stack_use_after_return=1" "$
     -I"$ROOT_DIR/tests/execution-cancel-seams" -I"$ROOT_DIR/include" \
     -isystem "$ROOT_DIR/third_party/WiiCompiled/runtime/include" \
     -isystem "$ROOT_DIR/third_party/WiiCompiled/aurora-main/include" \
-    "$ROOT_DIR/tests/execution_cancel_main_contract.cpp" "$TEST_DIR/loader-exit.o" -o "$TEST_DIR/cancel-main"
+    "$ROOT_DIR/tests/execution_cancel_main_contract.cpp" "$ROOT_DIR/source/mkw_gpu_shutdown_guard.cpp" \
+    "$TEST_DIR/loader-exit.o" -o "$TEST_DIR/cancel-main"
 "$TEST_DIR/cancel-main" success
 "$TEST_DIR/cancel-main" retry
 "$TEST_DIR/cancel-main" join-retry
+python3 - "$TEST_DIR/cancel-main" <<'PY'
+import pathlib
+import subprocess
+import sys
+import tempfile
+import time
+
+for mode in ("renderer-failure", "finalizer-failure"):
+    with tempfile.TemporaryDirectory() as directory:
+        log = pathlib.Path(directory) / "blocked.log"
+        with log.open("w") as output:
+            process = subprocess.Popen([sys.argv[1], mode], stdout=output, stderr=output)
+        try:
+            deadline = time.monotonic() + 30
+            while "FAILURE_BLOCKED" not in log.read_text():
+                assert process.poll() is None, log.read_text()
+                assert time.monotonic() < deadline, log.read_text()
+                time.sleep(0.02)
+            assert process.poll() is None
+            print(f"PASS: actual main/SDK exit hook holds process alive on {mode}; loader return was prevented")
+        finally:
+            if process.poll() is None:
+                process.terminate()
+            process.wait(timeout=10)
+PY
 "${MKW_HOST_CXX:-clang++}" -std=c++20 -O1 -g -Wall -Wextra -Werror \
     -fsanitize=address,undefined -fno-sanitize-recover=all \
     -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--wrap=fsync \
@@ -56,3 +83,4 @@ ASAN_OPTIONS="${ASAN_OPTIONS:+$ASAN_OPTIONS:}detect_stack_use_after_return=1" "$
 mkdir "$TEST_DIR/reporter"
 (cd "$TEST_DIR/reporter" && ../cancel-reporter)
 bash "$ROOT_DIR/scripts/test-execution-cancel-provider.sh"
+bash "$ROOT_DIR/scripts/test-gpu-shutdown-guard.sh"

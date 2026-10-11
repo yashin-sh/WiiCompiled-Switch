@@ -2,6 +2,7 @@
 
 #include "rendered_fast_track_graphics.hpp"
 #include "mkw_debug_server.hpp"
+#include "mkw_gpu_shutdown_guard.hpp"
 #include "switch_texture_copy_lifetime.hpp"
 #include "surface_presenter.hpp"
 #include <memory>
@@ -631,6 +632,10 @@ extern "C" bool mkw_switch_renderer_shutdown() noexcept {
         // which are outside gfx::shutdown's caches.
         if (g_device)
             g_device.Destroy();
+        if (mkw_switch_gpu_shutdown_failed()) {
+            report("STAGE RENDERER_TEARDOWN FAIL driver quarantine\n");
+            return false;
+        }
         aurora::webgpu::shutdown();
         g_queue = nullptr;
         g_surface = nullptr;

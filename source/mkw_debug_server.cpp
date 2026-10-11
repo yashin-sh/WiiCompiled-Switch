@@ -50,7 +50,8 @@ std::string root, nro;
 bool reload_program_opt_in = false;
 std::atomic<ReloadMethod> pending_reload{ReloadMethod::Unavailable};
 std::atomic<bool> reload_prepared{false}, reload_owner_available{false};
-std::atomic<std::uint32_t> reload_error{0};
+std::atomic<std::uint32_t> reload_error{0}, auto_sleep_error{0};
+std::atomic<bool> auto_sleep_disabled{false};
 std::string launched_path, runtime_nro_sha256, runtime_session;
 std::uint64_t runtime_nro_size = 0;
 bool runtime_identity_recorded = false;
@@ -60,13 +61,14 @@ Clock::time_point started;
 #if defined(__SWITCH__)
 Thread worker_thread{};
 bool sockets_ready = false, thread_ready = false, thread_started = false, thread_joined = false;
+bool auto_sleep_owned = false, auto_sleep_prior = false;
 #else
 std::thread worker_thread;
 #endif
 
 bool cleanup_pending() {
 #if defined(__SWITCH__)
-    return listener >= 0 || sockets_ready || thread_ready;
+    return listener >= 0 || sockets_ready || thread_ready || auto_sleep_owned;
 #else
     return listener >= 0 || worker_thread.joinable();
 #endif
@@ -385,6 +387,35 @@ void list_reports(const std::string& rel, std::string& out, unsigned depth = 0) 
     }
     ::closedir(dir);
 }
+void hold_auto_sleep_on_owner() noexcept {
+#if defined(__SWITCH__)
+    if (!running.load() || auto_sleep_owned)
+        return;
+    auto_sleep_disabled.store(false);
+    auto_sleep_error.store(0);
+    if (!hosversionAtLeast(5, 0, 0)) {
+        auto_sleep_error.store(0xFFFFFFFFu);
+        return;
+    }
+    bool previous = false;
+    Result result = appletIsAutoSleepDisabled(&previous);
+    if (R_FAILED(result)) {
+        auto_sleep_error.store(result);
+        return; // Never mutate when the prior state is unknown.
+    }
+    auto_sleep_prior = previous;
+    auto_sleep_disabled.store(previous);
+    if (previous)
+        return; // Already disabled by another owner; preserve it.
+    result = appletSetAutoSleepDisabled(true);
+    if (R_FAILED(result)) {
+        auto_sleep_error.store(result);
+        return;
+    }
+    auto_sleep_owned = true;
+    auto_sleep_disabled.store(true);
+#endif
+}
 bool loader_next_load_available() {
 #if defined(__SWITCH__)
     return envHasNextLoad();
@@ -438,9 +469,9 @@ std::string info() {
     const auto uptime = std::chrono::duration<double>(Clock::now() - started).count();
     char body[2048];
     std::snprintf(body, sizeof(body),
-                  "dispatch=%llu\nguest_pc=0x%08X\nfrontier=%s\nuptime=%.3f\nfps=%.2f\nstage=%s\nlog_dropped=%llu\nreload_supported=%d\nreload_method=%s\nreload_requested=%d\nreload_prepared=%d\nreload_owner_available=%d\nloader_next_load=%d\nprogram_reload_configured=%d\nprogram_reload_supported=0\nreload_error=0x%08X\nruntime_session=%s\nruntime_nro_size=%llu\nruntime_nro_sha256=%s\ndebug_nro_path=%s\n",
+                  "dispatch=%llu\nguest_pc=0x%08X\nfrontier=%s\nuptime=%.3f\nfps=%.2f\nstage=%s\nlog_dropped=%llu\nreload_supported=%d\nreload_method=%s\nreload_requested=%d\nreload_prepared=%d\nreload_owner_available=%d\nloader_next_load=%d\nprogram_reload_configured=%d\nprogram_reload_supported=0\nauto_sleep_disabled=%d\nauto_sleep_error=0x%08X\nreload_error=0x%08X\nruntime_session=%s\nruntime_nro_size=%llu\nruntime_nro_sha256=%s\ndebug_nro_path=%s\n",
                   static_cast<unsigned long long>(dispatch.load()), guest_pc.load(), snapshot_frontier, uptime,
-                  uptime > 0 ? presents.load() / uptime : 0, snapshot_stage, static_cast<unsigned long long>(dropped.load()), can_reload() ? 1 : 0, method_name(reload_method()), reload_requested() ? 1 : 0, reload_prepared.load() ? 1 : 0, reload_owner_available.load() ? 1 : 0, loader_next_load_available() ? 1 : 0, reload_program_opt_in ? 1 : 0, reload_error.load(), runtime_session.c_str(),
+                  uptime > 0 ? presents.load() / uptime : 0, snapshot_stage, static_cast<unsigned long long>(dropped.load()), can_reload() ? 1 : 0, method_name(reload_method()), reload_requested() ? 1 : 0, reload_prepared.load() ? 1 : 0, reload_owner_available.load() ? 1 : 0, loader_next_load_available() ? 1 : 0, reload_program_opt_in ? 1 : 0, auto_sleep_disabled.load() ? 1 : 0, auto_sleep_error.load(), reload_error.load(), runtime_session.c_str(),
                   static_cast<unsigned long long>(runtime_nro_size), runtime_nro_sha256.c_str(), nro.c_str());
     return body;
 }
@@ -881,6 +912,7 @@ bool launch(bool opt_in, const std::string& app_root, const std::string& candida
 #else
     worker_thread = std::thread([] { worker(nullptr); });
 #endif
+    hold_auto_sleep_on_owner();
     return true;
 }
 } // namespace
@@ -1017,6 +1049,18 @@ bool stop() noexcept {
             worker_thread.join();
     } catch (...) {
         return false;
+    }
+#endif
+#if defined(__SWITCH__)
+    if (auto_sleep_owned) {
+        const Result result = appletSetAutoSleepDisabled(auto_sleep_prior);
+        if (R_FAILED(result)) {
+            auto_sleep_error.store(result);
+            return false; // Preserve ownership/resources until restoration succeeds.
+        }
+        auto_sleep_owned = false;
+        auto_sleep_disabled.store(auto_sleep_prior);
+        auto_sleep_error.store(0);
     }
 #endif
     if (listener >= 0) {

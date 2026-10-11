@@ -64,7 +64,10 @@ for mode in ("renderer-failure", "finalizer-failure"):
                 assert process.poll() is None, log.read_text()
                 assert time.monotonic() < deadline, log.read_text()
                 time.sleep(0.02)
+            # A single sleep followed by return must fail this contract too.
+            time.sleep(0.15)
             assert process.poll() is None
+            assert log.read_text().count("FAILURE_BLOCKED") >= 2
             print(f"PASS: actual main/SDK exit hook holds process alive on {mode}; loader return was prevented")
         finally:
             if process.poll() is None:

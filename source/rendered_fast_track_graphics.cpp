@@ -1,6 +1,7 @@
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
 
 #include "rendered_fast_track_graphics.hpp"
+#include "mkw_debug_server.hpp"
 #include "switch_texture_copy_lifetime.hpp"
 #include "surface_presenter.hpp"
 #include <memory>
@@ -138,6 +139,8 @@ void report(const char* format, ...) {
     if (length <= 0) {
         return;
     }
+
+    mkw::debug::log(buffer, std::min(static_cast<std::size_t>(length), sizeof(buffer) - 1u));
 
     if (g_report) {
         std::fputs(buffer, g_report);
@@ -425,6 +428,9 @@ bool present_frame_locked(bool clear) {
 #endif
 
     const bool presented = g_surface.Present();
+    if (presented) {
+        mkw::debug::note_present();
+    }
 #if defined(MKW_RENDERED_FRAME_DUMP) && MKW_RENDERED_FRAME_DUMP
     if (readbacks[0] && presented) {
         try {

@@ -77,7 +77,7 @@ jobs:
       - name: Python lint and format
         run: |
           set -euo pipefail
-          mapfile -t python_files < <(git ls-files 'scripts/*.py')
+          mapfile -t python_files < <(git ls-files 'scripts/*.py' 'tools/*.py' 'tests/test_mkw_debug.py')
           if ((${#python_files[@]} == 0)); then
             echo "No Python scripts found"
             exit 0

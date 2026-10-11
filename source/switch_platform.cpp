@@ -1,6 +1,7 @@
 #include "switch_platform.hpp"
 
 #include "horizon_runtime_services.hpp"
+#include "mkw_debug_server.hpp"
 
 #include <switch.h>
 #include <cstdio>
@@ -11,7 +12,7 @@ namespace mkw::switch_platform {
 namespace {
 bool g_console_initialized = false;
 bool g_romfs_initialized = false;
-}
+} // namespace
 
 BootstrapInfo initialize() {
 #if defined(MKW_LOCAL_FAST_TRACK) && MKW_LOCAL_FAST_TRACK
@@ -36,6 +37,9 @@ BootstrapInfo initialize() {
     mkw_switch_set_fast_track_stage("PLATFORM_ROMFS_INIT");
     const Result romfs_rc = romfsInit();
     g_romfs_initialized = R_SUCCEEDED(romfs_rc);
+    // Opt-in diagnostics own their sockets and worker; failures do not prevent
+    // the existing runtime from starting.
+    mkw::debug::start();
     mkw_switch_set_fast_track_stage("PLATFORM_READY");
 
     return BootstrapInfo{
@@ -45,6 +49,7 @@ BootstrapInfo initialize() {
 }
 
 void shutdown() {
+    mkw::debug::stop();
     if (g_romfs_initialized) {
         romfsExit();
         g_romfs_initialized = false;

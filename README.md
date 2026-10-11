@@ -22,6 +22,11 @@ Experimental Nintendo Switch homebrew port of [WiiCompiled](https://github.com/p
 
 ## Status
 
+An opt-in [LAN debug server](docs/DEBUG_SERVER.md) provides live dispatch/status
+logs, report downloads and verified NRO deployment/restart requests. Enable it
+with `Config/debug.ini` only for debug runs; Switch hardware validation remains
+separate from protocol and build checks.
+
 A recognizable Wiimote safety page is now captured on Switch and reproduced by desktop FIFO replay. Later checkpoints remain black; menu progression, steady performance and playability are unproven.
 Real translated execution, observed boot-resource reads and the Aurora → Dawn/WebGPU → Vulkan/NVK presentation path run on Switch.
 With captures disabled and diagnostic SD writes sampled, early startup reaches 7.5–9.3 Hz before later stalls. The capture-enabled trial retains 90 replayable frames. Subsequent capture-disabled runs accept the KD post-resume request and the projection getter. The scissor-origin, light-object, normal-matrix, observed depth-texture disable and matrix-30 texture-coordinate calls now return. The latest translated stop is NANDGetLength on the existing-file read branch; NANDSeek was not reached by that trial; the preceding Dawn copy-source validation error is absent from the fresh graphics report.

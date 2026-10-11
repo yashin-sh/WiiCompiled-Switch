@@ -1,5 +1,8 @@
 # Roadmap
 
+The [fresh NANDMove result](docs/HARDWARE_NAND_MOVE_SEEK_2026-10-11.md) verifies 42 reports twice, accepts the actual move with result 0 and independent destination/source checks, and reaches NANDSeek `0x8019B964` with offset/origin 0. The operator still sees Wiimote, then black output and an error. The [bounded rewind correction](docs/NAND_SEEK_2026-10-11.md) validates a live owned ordinary write handle and performs the actual pinned seek/tell sequence; corrected console execution remains pending.
+
+
 The NANDMove candidate passes its private rendered/Discovery gate and all eight exact-HEAD GitHub checks; PR #378 is merged. Complete SD readback and verified older-NRO cleanup pass. The exact NRO launches via nxlink with exit 0 at 2026-10-11 10:38:33 CEST; durable USB results remain pending. See the [candidate receipt](docs/NAND_MOVE_2026-10-10.md).
 
 

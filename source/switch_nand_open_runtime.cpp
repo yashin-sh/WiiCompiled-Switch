@@ -1,4 +1,5 @@
 #include "switch_nand_runtime.hpp"
+#include "switch_nand_seek_runtime.hpp"
 #include "switch_nand_write_runtime.hpp"
 
 #include "horizon_runtime_services.hpp"
@@ -468,10 +469,45 @@ std::int32_t SeekSync(std::uint32_t fileInfoPtr,
         if (std::fseek(it->second.file, offset, origin) != 0) {
             return kResultUnknown;
         }
-        const long position = std::ftell(it->second.file);
-        return position < 0 ? kResultUnknown : static_cast<std::int32_t>(position);
+        // Pinned NANDSeek returns ftell verbatim, including -1 after a
+        // successful seek followed by a position-query failure.
+        return static_cast<std::int32_t>(std::ftell(it->second.file));
     } catch (...) {
         return kResultInvalid;
+    }
+}
+
+RewindResult RewindOwnedSync(std::uint32_t fileInfoPtr,
+                             std::uint32_t offset,
+                             std::uint32_t whence) noexcept {
+    RewindResult out;
+    if (offset != 0u || whence != 0u || fileInfoPtr == 0u ||
+        !Memory::Contains(fileInfoPtr, kOpenFlagOffset + 1u)) {
+        return out;
+    }
+    out.fd = static_cast<std::int32_t>(Memory::Read32(fileInfoPtr));
+    out.accessType = Memory::Read8(fileInfoPtr + kAccessTypeOffset);
+    out.openFlag = Memory::Read8(fileInfoPtr + kOpenFlagOffset);
+    try {
+        std::lock_guard<std::mutex> lock(g_fileMutex);
+        const auto it = g_fileHandles.find(out.fd);
+        if (it == g_fileHandles.end() || !it->second.file) {
+            return out;
+        }
+        out.mode = it->second.mode;
+        if (out.openFlag != kOpenFlag || out.mode != 2 ||
+            !it->second.safeCommitPath.empty()) {
+            return out;
+        }
+        out.admitted = true;
+        if (std::fseek(it->second.file, 0, SEEK_SET) != 0) {
+            out.result = kResultUnknown;
+        } else {
+            out.result = static_cast<std::int32_t>(std::ftell(it->second.file));
+        }
+        return out;
+    } catch (...) {
+        return out;
     }
 }
 

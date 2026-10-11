@@ -1,5 +1,8 @@
 # Documentation index
 
+- [NANDMove returned; NANDSeek frontier](HARDWARE_NAND_MOVE_SEEK_2026-10-11.md) — 42 reports verified twice; successful relocation, black/error and ordinary-handle rewind stop
+- [Bounded owned-stream rewind](NAND_SEEK_2026-10-11.md) — live handle/argument guards, real fseek/ftell and pinned errors
+
 - [NANDWrite returned; NANDMove frontier](HARDWARE_NAND_WRITE_MOVE_2026-10-10.md) — 41 reports verified twice; complete write/close/home progression and later SD cleanup
 - [Bounded banner NANDMove](NAND_MOVE_2026-10-10.md) — complete live path guards, directory/basename semantics and pinned filesystem contracts
 

@@ -15,3 +15,7 @@ extern "C" void mkw_switch_hle_nand_write(CpuContext*) noexcept {
 extern "C" void mkw_switch_hle_nand_move(CpuContext*) noexcept {
     std::abort();
 }
+
+extern "C" void mkw_switch_hle_nand_seek(CpuContext*) noexcept {
+    std::abort();
+}

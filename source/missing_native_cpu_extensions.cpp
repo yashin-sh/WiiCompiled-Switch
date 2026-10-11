@@ -15,6 +15,7 @@ extern "C" void mkw_switch_hle_lyt_draw_quad(CpuContext*) noexcept;
 extern "C" void mkw_switch_hle_nand_create(CpuContext*) noexcept;
 extern "C" void mkw_switch_hle_nand_write(CpuContext*) noexcept;
 extern "C" void mkw_switch_hle_nand_move(CpuContext*) noexcept;
+extern "C" void mkw_switch_hle_nand_seek(CpuContext*) noexcept;
 #endif
 
 extern "C" NativeCpuExtension mkw_switch_find_missing_native_cpu_extension(
@@ -38,6 +39,8 @@ extern "C" NativeCpuExtension mkw_switch_find_missing_native_cpu_extension(
         return mkw_switch_hle_nand_create;
     case 0x8019bee8u:
         return mkw_switch_hle_nand_move;
+    case 0x8019b964u:
+        return mkw_switch_hle_nand_seek;
     default:
         break;
     }

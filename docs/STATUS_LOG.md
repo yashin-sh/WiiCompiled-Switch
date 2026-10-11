@@ -1,5 +1,10 @@
 # Status log
 
+## 2026-10-11 — NANDMove returned; NANDSeek frontier
+
+The [fresh NANDMove result](HARDWARE_NAND_MOVE_SEEK_2026-10-11.md) verifies 42 reports twice, accepts the actual move with result 0 and independent destination/source checks, and reaches NANDSeek `0x8019B964` with offset/origin 0. The operator still sees Wiimote, then black output and an error. The [bounded rewind correction](NAND_SEEK_2026-10-11.md) validates a live owned ordinary write handle and performs the actual pinned seek/tell sequence; corrected console execution remains pending.
+
+
 ## 2026-10-11 — Bounded NANDMove candidate launched via Netloader
 
 The exact 74,465,336-byte candidate `57a2ee0` launches via nxlink with exit 0

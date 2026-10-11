@@ -1,4 +1,5 @@
 #pragma once
+#include "mkw_execution_cancel.hpp"
 
 #include "abi_bridge.h"
 #include "memory.h"
@@ -6,11 +7,11 @@
 #include <cstdint>
 
 extern "C" void mkw_switch_hle_os_create_thread(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_os_resume_thread(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_os_sleep_thread(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_os_wakeup_thread(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_select_thread(CpuContext* cpu) noexcept;
-extern "C" [[noreturn]] void mkw_switch_hle_os_load_context(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_os_resume_thread(CpuContext* cpu);
+extern "C" void mkw_switch_hle_os_sleep_thread(CpuContext* cpu);
+extern "C" void mkw_switch_hle_os_wakeup_thread(CpuContext* cpu);
+extern "C" void mkw_switch_hle_select_thread(CpuContext* cpu);
+extern "C" [[noreturn]] void mkw_switch_hle_os_load_context(CpuContext* cpu);
 
 // OSGetCurrentThread (PAL 0x801A98B0). Pinned WiiCompiled registers this as a
 // native function. Its complete guest-visible behavior is to return the running
@@ -20,7 +21,7 @@ template <>
 struct KnownNativeCpuCall<0x801A98B0u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -28,6 +29,8 @@ struct KnownNativeCpuCall<0x801A98B0u> {
         constexpr std::uint32_t kOSRunningContextAddr = 0x800000E4u;
         try {
             cpu->gpr[3] = Memory::Read32(kOSRunningContextAddr);
+        } catch (const mkw::execution::ExecutionCancelled&) {
+            throw;
         } catch (...) {
             cpu->gpr[3] = 0u;
         }
@@ -43,7 +46,7 @@ template <>
 struct KnownNativeCpuCall<0x801A9C08u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_select_thread(cpu);
     }
 };
@@ -56,7 +59,7 @@ template <>
 struct KnownNativeCpuCall<0x801A1F58u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_os_load_context(cpu);
     }
 };
@@ -70,7 +73,7 @@ template <>
 struct KnownNativeCpuCall<0x801A9E84u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_os_create_thread(cpu);
     }
 };
@@ -84,7 +87,7 @@ template <>
 struct KnownNativeCpuCall<0x801AA58Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_os_resume_thread(cpu);
     }
 };
@@ -98,7 +101,7 @@ template <>
 struct KnownNativeCpuCall<0x801AA9B8u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_os_sleep_thread(cpu);
     }
 };
@@ -112,7 +115,7 @@ template <>
 struct KnownNativeCpuCall<0x801AAAA4u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_os_wakeup_thread(cpu);
     }
 };

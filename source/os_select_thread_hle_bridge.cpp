@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
@@ -180,7 +181,7 @@ void WriteSelectThreadIdleFrontier(
 void WriteSelectThreadIdleRecovery(CpuContext*) noexcept {}
 #endif
 
-[[noreturn]] void AbortSelectBoundary(const char* kind, CpuContext* cpu) noexcept {
+[[noreturn]] void AbortSelectBoundary(const char* kind, CpuContext* cpu) {
     mkw_switch_report_unsupported_translated_dispatch(kind, 0x801A9C08u, cpu);
     std::abort();
 }
@@ -279,7 +280,7 @@ void TryInvokeSwitchCallback(std::uint32_t oldContext,
 
 } // namespace
 
-extern "C" void mkw_switch_hle_select_thread(CpuContext* ctx) noexcept {
+extern "C" void mkw_switch_hle_select_thread(CpuContext* ctx) {
     CpuContext* cpu = ctx ? ctx : &GetPersistentCpuContext();
     const std::uint32_t forceSwitch = cpu->gpr[3];
 
@@ -474,6 +475,8 @@ extern "C" void mkw_switch_hle_select_thread(CpuContext* ctx) noexcept {
         // durable blocker rather than manufacturing a translated continuation.
         cpu->gpr[3] = nextThread;
         InvokeDirectCpu<0x801A1F58u>(cpu);
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         AbortSelectBoundary("SELECTTHREAD_GUEST_MEMORY", cpu);
     }

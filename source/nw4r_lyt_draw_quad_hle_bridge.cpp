@@ -15,7 +15,7 @@ bool in_display_list();
 #endif
 extern "C" void mkw_switch_set_fast_track_stage(const char*) noexcept;
 namespace {
-[[noreturn]] void Refuse(const char* reason, CpuContext* cpu) noexcept {
+[[noreturn]] void Refuse(const char* reason, CpuContext* cpu) {
     mkw_switch_report_unsupported_translated_dispatch(reason, 0x80084d20u, cpu);
     std::abort();
 }
@@ -24,7 +24,7 @@ std::uint32_t Word(const std::uint8_t* p) noexcept {
     return (std::uint32_t{p[0]} << 24) | (std::uint32_t{p[1]} << 16) |
            (std::uint32_t{p[2]} << 8) | p[3];
 }
-float Scalar(const std::uint8_t* p, CpuContext* cpu) noexcept {
+float Scalar(const std::uint8_t* p, CpuContext* cpu) {
     const float value = std::bit_cast<float>(Word(p));
     if (!std::isfinite(value))
         Refuse("LYT_DRAW_QUAD_NONFINITE_INPUT", cpu);
@@ -51,7 +51,7 @@ bool Layout(unsigned count, bool colors) noexcept {
 }
 #endif
 } // namespace
-extern "C" void mkw_switch_hle_lyt_draw_quad(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_lyt_draw_quad(CpuContext* cpu) {
     if (!cpu)
         return;
     mkw_switch_set_fast_track_stage("RMCP01_LYT_DRAW_QUAD");

@@ -150,24 +150,24 @@ void WriteCloseStatus(const char* status, std::uint32_t fd) noexcept {
 void WriteCloseStatus(const char*, std::uint32_t) noexcept {}
 #endif
 
-[[noreturn]] void AbortOpen(const char* status, CpuContext* cpu, const char* path, std::uint32_t mode) noexcept {
+[[noreturn]] void AbortOpen(const char* status, CpuContext* cpu, const char* path, std::uint32_t mode) {
     WriteStatus(status, path, mode, 0);
     mkw_switch_report_unsupported_translated_dispatch(status, kIosOpenAddress, cpu);
     std::abort();
 }
-[[noreturn]] void AbortIoctl(const char* status, CpuContext* cpu) noexcept {
+[[noreturn]] void AbortIoctl(const char* status, CpuContext* cpu) {
     WriteIoctlStatus(status, cpu->gpr[3], cpu->gpr[4], cpu->gpr[5], cpu->gpr[6], cpu->gpr[7], cpu->gpr[8]);
     mkw_switch_report_unsupported_translated_dispatch(status, kIosIoctlAddress, cpu);
     std::abort();
 }
-[[noreturn]] void AbortClose(const char* status, CpuContext* cpu) noexcept {
+[[noreturn]] void AbortClose(const char* status, CpuContext* cpu) {
     WriteCloseStatus(status, cpu->gpr[3]);
     mkw_switch_report_unsupported_translated_dispatch(status, kIosCloseAddress, cpu);
     std::abort();
 }
 } // namespace
 
-extern "C" void mkw_switch_hle_ios_open_kd_request(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_ios_open_kd_request(CpuContext* cpu) {
     if (!cpu)
         return;
     mkw_switch_set_fast_track_stage("RMCP01_IOS_OPEN_KD_REQUEST");
@@ -193,7 +193,7 @@ extern "C" void mkw_switch_hle_ios_open_kd_request(CpuContext* cpu) noexcept {
     cpu->gpr[3] = fd;
 }
 
-extern "C" void mkw_switch_hle_ios_ioctl_kd_request(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_ios_ioctl_kd_request(CpuContext* cpu) {
     if (!cpu)
         return;
     mkw_switch_set_fast_track_stage("RMCP01_IOS_IOCTL_KD_REQUEST");
@@ -255,7 +255,7 @@ extern "C" void mkw_switch_hle_ios_ioctl_kd_request(CpuContext* cpu) noexcept {
     cpu->gpr[3] = 0;
 }
 
-extern "C" void mkw_switch_hle_ios_close_kd_request(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_ios_close_kd_request(CpuContext* cpu) {
     if (!cpu)
         return;
     mkw_switch_set_fast_track_stage("RMCP01_IOS_CLOSE_KD_REQUEST");

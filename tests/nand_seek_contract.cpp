@@ -148,14 +148,14 @@ extern "C" long __wrap_ftell(FILE* f) {
 extern "C" void mkw_switch_set_fast_track_stage(const char* p) noexcept {
     stage = p;
 }
-extern "C" void mkw_switch_note_translated_dispatch(std::uint32_t t, CpuContext*) noexcept {
+extern "C" void mkw_switch_note_translated_dispatch(std::uint32_t t, CpuContext*) {
     assert(t == target);
     ++notes;
 }
-extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) noexcept {
+extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) {
     ++polls;
 }
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t t, CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t t, CpuContext* cpu) {
     assert(t == target && std::strcmp(reason, "NAND_SEEK_UNPROVEN_CALL") == 0);
     assert(std::memcmp(cpu, &refusedCpu, sizeof(*cpu)) == 0 && bytes == refusedMemory);
     assert(seeks == expectedSeeks && tells == expectedTells);

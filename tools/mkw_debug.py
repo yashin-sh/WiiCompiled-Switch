@@ -12,6 +12,7 @@ import re
 import socket
 import sys
 import tempfile
+import time
 import zlib
 from pathlib import Path, PurePosixPath
 
@@ -25,8 +26,13 @@ class DebugError(Exception):
     """Remote rejection, invalid protocol, or failed integrity check."""
 
 
+class DebugDisconnected(DebugError):
+    """A connection ended while a framed response was incomplete."""
+
+
 class Client:
     def __init__(self, host, port=6543, timeout=30):
+        self.host, self.port, self.timeout = host, port, timeout
         self.socket = socket.create_connection((host, port), timeout=timeout)
         self.socket.settimeout(timeout)
 
@@ -56,7 +62,9 @@ class Client:
             if not byte:
                 if allow_eof and not header:
                     return None
-                raise DebugError("Server disconnected before completing a response")
+                raise DebugDisconnected(
+                    "Server disconnected before completing a response"
+                )
             if byte == b"\n":
                 match = re.fullmatch(rb"(ok|err) ([0-9]{1,10})", header)
                 if not match:
@@ -79,7 +87,7 @@ class Client:
         while remaining:
             chunk = self.socket.recv(min(CHUNK_SIZE, remaining))
             if not chunk:
-                raise DebugError("Server disconnected during response payload")
+                raise DebugDisconnected("Server disconnected during response payload")
             remaining -= len(chunk)
             if ok:
                 output.write(chunk)
@@ -103,8 +111,12 @@ class Client:
 
     def reload(self):
         acknowledgement = self.request("reload")
-        # The running NRO must acknowledge before invoking the restart SDK.
-        # It closes the connection on success or sends a final SDK error frame.
+        if not acknowledgement.startswith(b"restart requested\n") or fields(
+            acknowledgement
+        ).get("method", "hbloader") not in ("hbloader", "program"):
+            raise DebugError("Invalid restart acknowledgement")
+        # Acknowledgement means queued for owner preparation, not a new launch.
+        # Older peers may still send a trailing SDK error before disconnect.
         trailing = io.BytesIO()
         if self.receive_to(trailing, allow_eof=True) is not None:
             raise DebugError("Unexpected extra restart response")
@@ -199,7 +211,9 @@ def ensure_private_backup(path):
     return path
 
 
-def deploy(client, source, backup_dir=None, reload=False):
+def deploy(client, source, backup_dir=None, reload=False, restart_seconds=180):
+    if reload and (not math.isfinite(restart_seconds) or restart_seconds <= 0):
+        raise DebugError("Restart deadline must be positive and finite")
     source = Path(source)
     expected = file_metadata(source)
     if source.suffix.lower() != ".nro" or not 128 <= expected["size"] <= MAX_NRO:
@@ -210,6 +224,15 @@ def deploy(client, source, backup_dir=None, reload=False):
     if header[16:20] != b"NRO0" or not 128 <= declared_size <= expected["size"]:
         raise DebugError("Candidate has an invalid NRO header")
     info = fields(client.request("info"))
+    if reload and (
+        info.get("reload_supported") != "1"
+        or info.get("reload_method") != "hbloader"
+        or not re.fullmatch(r"[0-9a-f]{16}", info.get("runtime_session", ""))
+        or not re.fullmatch(r"[0-9a-f]{64}", info.get("runtime_nro_sha256", ""))
+    ):
+        raise DebugError(
+            "Running NRO lacks verified restart capability/identity; install this server revision and launch it once manually"
+        )
     target_path = info.get("debug_nro_path", "")
     target_name = target_path.rsplit("/", 1)[-1]
     if not re.fullmatch(r"[A-Za-z0-9_.-]+\.nro", target_name):
@@ -362,7 +385,91 @@ def deploy(client, source, backup_dir=None, reload=False):
     )
     print(f"Verified backups and private receipt: {backup_dir}")
     if reload:
-        print(client.reload().decode("utf-8"), end="")
+        receipt["restart"] = {
+            "status": "requesting",
+            "previous_session": info["runtime_session"],
+            "method": info["reload_method"],
+        }
+        save_receipt()
+        try:
+            print(client.reload().decode("utf-8"), end="")
+            receipt["restart"]["status"] = "requested"
+            save_receipt()
+            receipt["restart"].update(
+                wait_for_runtime(
+                    client,
+                    info["runtime_session"],
+                    target_path,
+                    expected,
+                    restart_seconds,
+                )
+            )
+            save_receipt()
+            print(
+                "New candidate runtime and translated execution verified; gameplay and pixels remain separate"
+            )
+        except (DebugError, OSError, UnicodeError, ValueError) as exc:
+            receipt["restart"]["status"] = "unverified"
+            receipt["restart"]["error"] = str(exc)
+            save_receipt()
+            raise
+
+
+def wait_for_runtime(client, previous_session, target_path, expected, seconds=180):
+    """Require a new executed-file identity and guest milestone, never SD alone."""
+    if not math.isfinite(seconds) or seconds <= 0:
+        raise DebugError("Restart deadline must be positive and finite")
+    deadline = time.monotonic() + seconds
+    last = "server has not returned"
+    while time.monotonic() < deadline:
+        try:
+            with Client(
+                client.host,
+                client.port,
+                min(client.timeout, max(0.001, deadline - time.monotonic())),
+            ) as probe:
+                info = fields(probe.request("info"))
+                if info.get("runtime_session") == previous_session:
+                    if int(info.get("reload_error", "0"), 0):
+                        raise DebugError(
+                            "Owner reload preparation failed: " + info["reload_error"]
+                        )
+                    last = "the previous runtime is still serving"
+                elif not re.fullmatch(r"[0-9a-f]{16}", info.get("runtime_session", "")):
+                    last = "the responding runtime has no session identity"
+                else:
+                    if info.get("debug_nro_path") != target_path:
+                        raise DebugError(
+                            "Reloaded runtime uses a different configured NRO path"
+                        )
+                    runtime = {
+                        "size": int(info.get("runtime_nro_size", "-1")),
+                        "sha256": info.get("runtime_nro_sha256", ""),
+                    }
+                    assert_integrity(runtime, expected, "Reloaded executed NRO")
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        break
+                    probe.socket.settimeout(min(client.timeout, remaining))
+                    assert_integrity(
+                        remote_stat(probe, target_path.rsplit("/", 1)[-1]),
+                        expected,
+                        "Reloaded SD candidate",
+                    )
+                    if int(info.get("dispatch", "0")) > 0 and info.get("stage") not in (
+                        None,
+                        "",
+                        "startup",
+                        "busy",
+                    ):
+                        return {"status": "runtime_execution_observed", "info": info}
+                    last = (
+                        "new candidate started but guest execution is not yet observed"
+                    )
+        except (DebugDisconnected, OSError, UnicodeError, ValueError) as exc:
+            last = str(exc)
+        time.sleep(min(0.5, max(0, deadline - time.monotonic())))
+    raise DebugError("Restart not verified before deadline: " + last)
 
 
 def diagnostic_path(path):
@@ -424,7 +531,13 @@ def main(argv=None):
     upload.add_argument(
         "--reload",
         action="store_true",
-        help="Request restart after verified deployment",
+        help="Restart after verified cleanup and wait for the new candidate runtime",
+    )
+    upload.add_argument(
+        "--restart-seconds",
+        type=float,
+        default=180,
+        help="Bounded new-runtime verification deadline",
     )
     args = parser.parse_args(argv)
     if not args.host:
@@ -438,7 +551,9 @@ def main(argv=None):
     try:
         with Client(args.host, args.port, args.timeout) as client:
             if args.command == "deploy":
-                deploy(client, args.nro, args.backup_dir, args.reload)
+                deploy(
+                    client, args.nro, args.backup_dir, args.reload, args.restart_seconds
+                )
             elif args.command == "reports":
                 fetch_reports(client, args.output or private_directory("reports"))
             elif args.command == "get":

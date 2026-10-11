@@ -29,7 +29,7 @@ void Report(const char* status, std::uint32_t channel, std::uint32_t address, st
 }
 } // namespace
 
-extern "C" void mkw_switch_hle_wpad_probe(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_wpad_probe(CpuContext* cpu) {
     if (!cpu) {
         return;
     }

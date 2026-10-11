@@ -108,7 +108,7 @@ std::uint32_t Read32IfMapped(std::uint32_t address) noexcept {
     }
 }
 
-bool AdvanceRetrace(CpuContext* cpu, std::int64_t targetNs) noexcept {
+bool AdvanceRetrace(CpuContext* cpu, std::int64_t targetNs) {
     if (!cpu) {
         return false;
     }
@@ -118,6 +118,11 @@ bool AdvanceRetrace(CpuContext* cpu, std::int64_t targetNs) noexcept {
             expected, true, std::memory_order_acq_rel)) {
         return false;
     }
+    struct RetraceGuard {
+        ~RetraceGuard() noexcept {
+            g_viRetraceAdvancing.store(false, std::memory_order_release);
+        }
+    } retraceGuard;
 
     // Pinned AdvanceRetrace commits pending state only when VIFlush armed it,
     // then clears the arm before publishing the new retrace count.
@@ -159,7 +164,6 @@ bool AdvanceRetrace(CpuContext* cpu, std::int64_t targetNs) noexcept {
         InvokeIndirectCpu(postCallback, cpu);
     }
 
-    g_viRetraceAdvancing.store(false, std::memory_order_release);
     return true;
 }
 
@@ -253,7 +257,7 @@ extern "C" void mkw_switch_hle_vi_set_post_retrace_callback(CpuContext* cpu) noe
     cpu->gpr[3] = previousCallback;
 }
 
-extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext* cpu) {
     if (!cpu || !g_viInitialized.load(std::memory_order_acquire) ||
         !mkw::switch_guest_fiber::available() ||
         mkw::switch_guest_fiber::current_thread() == 0u ||
@@ -326,7 +330,7 @@ extern "C" void mkw_switch_hle_vi_wait_for_next_retrace_poll() noexcept {
     svcSleepThread(remainingNs < kIdleSliceNs ? remainingNs : kIdleSliceNs);
 }
 
-extern "C" void mkw_switch_hle_vi_wait_for_retrace(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_vi_wait_for_retrace(CpuContext* cpu) {
     if (!cpu) {
         return;
     }

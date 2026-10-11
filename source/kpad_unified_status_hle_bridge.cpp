@@ -45,7 +45,7 @@ void Report(const char* status, std::uint32_t channel, std::uint32_t address, st
 }
 } // namespace
 
-extern "C" void mkw_switch_hle_kpad_unified_status(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_kpad_unified_status(CpuContext* cpu) {
     if (!cpu) {
         return;
     }

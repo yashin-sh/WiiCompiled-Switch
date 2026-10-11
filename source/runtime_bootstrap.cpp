@@ -5,6 +5,7 @@
 #include "translated_execution_handoff.hpp"
 #include "translated_product.hpp"
 #include "translated_product_handoff.hpp"
+#include "switch_guest_fiber.hpp"
 
 #include <host_context.h>
 #include <switch.h>
@@ -118,6 +119,8 @@ const char* stop_point_name(StopPoint stop_point) {
         return "WAITING_FOR_TRANSLATED_EXECUTION";
     case StopPoint::TranslatedFunctionExecuted:
         return "TRANSLATED_FUNCTION_EXECUTED";
+    case StopPoint::TranslatedExecutionCancelled:
+        return "TRANSLATED_EXECUTION_CANCELLED";
     case StopPoint::TranslatedFunctionExecutionFailed:
         return "TRANSLATED_FUNCTION_EXECUTION_FAILED";
     case StopPoint::TranslatedSequenceExecuted:
@@ -306,8 +309,8 @@ Result start() {
                     result.data_sections_initialized =
                         translated_product_handoff::run_data_initializer();
                     result.stop_point = result.data_sections_initialized
-                        ? StopPoint::DataSectionsInitialized
-                        : StopPoint::DataSectionInitializationFailed;
+                                            ? StopPoint::DataSectionsInitialized
+                                            : StopPoint::DataSectionInitializationFailed;
 
                     if (result.data_sections_initialized &&
                         result.translated_execution_handoff_enabled) {
@@ -320,24 +323,28 @@ Result start() {
                             result.translated_execution_attempted = true;
                             result.translated_execution_passed =
                                 translated_execution_handoff::run_first_translated_function(probe);
+                            result.translated_execution_cancelled = probe.cancelled;
+                            result.guest_quiescent = probe.guest_quiescent;
                             result.translated_execution_guest_address = probe.guest_address;
                             result.translated_execution_r1 = probe.r1;
                             result.translated_execution_r2 = probe.r2;
                             result.translated_execution_r13 = probe.r13;
                             result.translated_execution_r3_before = probe.r3_before;
                             result.translated_execution_r3_after = probe.r3_after;
-                            if (result.translated_bootstrap_prelude_mode) {
+                            if (probe.cancelled) {
+                                result.stop_point = StopPoint::TranslatedExecutionCancelled;
+                            } else if (result.translated_bootstrap_prelude_mode) {
                                 result.stop_point = result.translated_execution_passed
-                                    ? StopPoint::TranslatedBootstrapPreludeExecuted
-                                    : StopPoint::TranslatedBootstrapPreludeExecutionFailed;
+                                                        ? StopPoint::TranslatedBootstrapPreludeExecuted
+                                                        : StopPoint::TranslatedBootstrapPreludeExecutionFailed;
                             } else if (result.translated_sequence_mode) {
                                 result.stop_point = result.translated_execution_passed
-                                    ? StopPoint::TranslatedSequenceExecuted
-                                    : StopPoint::TranslatedSequenceExecutionFailed;
+                                                        ? StopPoint::TranslatedSequenceExecuted
+                                                        : StopPoint::TranslatedSequenceExecutionFailed;
                             } else {
                                 result.stop_point = result.translated_execution_passed
-                                    ? StopPoint::TranslatedFunctionExecuted
-                                    : StopPoint::TranslatedFunctionExecutionFailed;
+                                                        ? StopPoint::TranslatedFunctionExecuted
+                                                        : StopPoint::TranslatedFunctionExecutionFailed;
                             }
                         }
                     }
@@ -349,7 +356,13 @@ Result start() {
     return result;
 }
 
-void stop() noexcept {
+bool quiesce_guest() noexcept {
+    return switch_guest_fiber::drain_cancelled() && switch_guest_fiber::shutdown_quiescent();
+}
+
+bool stop() noexcept {
+    if (!quiesce_guest())
+        return false;
     if (g_worker) {
         HostContext::Destroy(g_worker);
         g_worker = nullptr;
@@ -362,6 +375,7 @@ void stop() noexcept {
         Memory::Reset();
     }
     g_worker_phase = 0;
+    return true;
 }
 
 void print(const Result& result) {

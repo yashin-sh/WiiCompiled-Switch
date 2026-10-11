@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
@@ -49,7 +50,7 @@ void RestoreInterrupts(CpuContext* cpu, std::uint32_t state) noexcept {
 [[noreturn]] void AbortResumeBoundary(const char* kind,
                                       CpuContext* cpu,
                                       std::uint32_t threadPtr,
-                                      std::uint32_t irqState) noexcept {
+                                      std::uint32_t irqState) {
     RestoreInterrupts(cpu, irqState);
     if (cpu) {
         cpu->gpr[3] = threadPtr;
@@ -171,7 +172,7 @@ void InsertThreadIntoQueueByPriority(std::uint32_t queuePtr,
 
 } // namespace
 
-extern "C" void mkw_switch_hle_os_resume_thread(CpuContext* ctx) noexcept {
+extern "C" void mkw_switch_hle_os_resume_thread(CpuContext* ctx) {
     CpuContext* cpu = ctx ? ctx : &GetPersistentCpuContext();
     const std::uint32_t threadPtr = cpu->gpr[3];
 
@@ -265,6 +266,8 @@ extern "C" void mkw_switch_hle_os_resume_thread(CpuContext* ctx) noexcept {
         }
 
         cpu->gpr[3] = static_cast<std::uint32_t>(suspendCount);
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         cpu->gpr[3] = 0u;
     }

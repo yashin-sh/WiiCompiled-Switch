@@ -45,6 +45,8 @@ jobs:
       - name: Execute GX, memory and host-context contracts
         run: |
           bash scripts/test-mkw-debug.sh
+          bash scripts/test-execution-cancel.sh
+          bash scripts/test-execution-cancel-provider.sh
           bash scripts/test-diagnostic-sd-budget.sh
           bash scripts/test-ios-kd-request.sh
           bash scripts/test-nand-check.sh

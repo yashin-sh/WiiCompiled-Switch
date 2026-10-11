@@ -16,7 +16,7 @@ void Status(std::uint32_t info, std::uint32_t output, const mkw::switch_nand_run
     }
 }
 } // namespace
-extern "C" void mkw_switch_hle_nand_get_length(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_nand_get_length(CpuContext* cpu) {
     if (!cpu)
         return;
     const auto info = cpu->gpr[3], output = cpu->gpr[4];
@@ -32,7 +32,7 @@ extern "C" void mkw_switch_hle_nand_get_length(CpuContext* cpu) noexcept {
 }
 #else
 struct CpuContext;
-extern "C" void mkw_switch_hle_nand_get_length(CpuContext*) noexcept {
+extern "C" void mkw_switch_hle_nand_get_length(CpuContext*) {
     std::abort();
 }
 #endif

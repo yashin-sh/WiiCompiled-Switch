@@ -290,7 +290,7 @@ extern "C" void GXSetTexCoordGen2(GXTexCoordID coord, GXTexGenType type, GXTexGe
     assert(normalize == GX_FALSE && postMtx == GX_PTIDENTITY);
 }
 extern "C" void mkw_switch_report_unsupported_translated_dispatch(
-    const char* reason, std::uint32_t target, CpuContext* cpu) noexcept {
+    const char* reason, std::uint32_t target, CpuContext* cpu) {
     assert(reportPipe >= 0 && target == expectedTarget);
     ExpectStage(target);
     assert(std::strcmp(reason, expectedReason) == 0);

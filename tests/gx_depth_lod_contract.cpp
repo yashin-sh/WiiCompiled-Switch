@@ -208,7 +208,7 @@ extern "C" void GXInitTexObjLOD(GXTexObj* obj, GXTexFilter min, GXTexFilter mag,
         throw std::runtime_error("test native LOD failure");
 }
 extern "C" void mkw_switch_report_unsupported_translated_dispatch(
-    const char* reason, std::uint32_t target, CpuContext* cpu) noexcept {
+    const char* reason, std::uint32_t target, CpuContext* cpu) {
     assert(reportPipe >= 0 && target == 0x80170a4cu);
     assert(std::strcmp(reason, expectedReason) == 0);
     CheckStage("RMCP01_GX_INIT_TEX_OBJ_LOD");

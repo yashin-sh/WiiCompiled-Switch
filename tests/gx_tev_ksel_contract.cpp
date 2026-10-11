@@ -167,10 +167,10 @@ void Refusal(bool alpha, unsigned id, unsigned selector) {
     assert(munmap(memory, sizeof(initial)) == 0);
 }
 } // namespace
-extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) noexcept {
+extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) {
     ++polls;
 }
-extern "C" void mkw_switch_note_translated_dispatch(std::uint32_t target, CpuContext*) noexcept {
+extern "C" void mkw_switch_note_translated_dispatch(std::uint32_t target, CpuContext*) {
     assert(target == (expectedAlpha ? 0x80171F80u : 0x80171F30u));
     ++notes;
 }
@@ -178,7 +178,7 @@ extern "C" void mkw_switch_set_fast_track_stage(const char* value) noexcept {
     stage = value;
     ++stageCalls;
 }
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t target, CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t target, CpuContext* cpu) {
     assert(proofFd >= 0 && cpu == liveCpu && notes == 1 && polls == 1 && stageCalls == 1);
     assert(target == (expectedAlpha ? 0x80171F80u : 0x80171F30u));
     assert(std::strcmp(reason, expectedAlpha ? "GX_SET_TEV_K_ALPHA_SEL_UNPROVEN_ARGS" : "GX_SET_TEV_K_COLOR_SEL_UNPROVEN_ARGS") == 0);

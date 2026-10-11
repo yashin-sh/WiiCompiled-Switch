@@ -262,10 +262,10 @@ std::uint8_t* HostPointer(unsigned address) {
     return nullptr;
 }
 } // namespace GuestFlat
-extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) noexcept {
+extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) {
     ++polls;
 }
-extern "C" void mkw_switch_note_translated_dispatch(unsigned address, CpuContext*) noexcept {
+extern "C" void mkw_switch_note_translated_dispatch(unsigned address, CpuContext*) {
     assert(address == target);
     ++notes;
 }
@@ -273,7 +273,7 @@ extern "C" void mkw_switch_set_fast_track_stage(const char* value) noexcept {
     stage = value;
     ++stageCalls;
 }
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, unsigned address, CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, unsigned address, CpuContext* cpu) {
     assert(proofFd >= 0 && cpu == liveCpu && address == target);
     assert(notes == 1 && polls == 1 && stageCalls == 1 && stage);
     assert(std::strcmp(stage, "RMCP01_GX_SET_TEV_INDIRECT") == 0 && std::strcmp(reason, refusedReason) == 0);

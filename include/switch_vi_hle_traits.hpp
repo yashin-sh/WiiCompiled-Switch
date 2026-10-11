@@ -6,14 +6,14 @@ extern "C" void mkw_switch_hle_vi_init(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_vi_set_black(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_vi_configure(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_vi_flush(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_vi_wait_for_retrace(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_vi_wait_for_retrace(CpuContext* cpu);
 extern "C" void mkw_switch_hle_vi_set_post_retrace_callback(CpuContext* cpu) noexcept;
 
 template <>
 struct KnownNativeCpuCall<0x801B94A4u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_vi_init(cpu);
     }
 };
@@ -22,7 +22,7 @@ template <>
 struct KnownNativeCpuCall<0x801B9294u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_vi_init(cpu);
     }
 };
@@ -34,7 +34,7 @@ template <>
 struct KnownNativeCpuCall<0x801BAD38u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (cpu) {
             cpu->gpr[3] = 0u;
         }
@@ -45,7 +45,7 @@ template <>
 struct KnownNativeCpuCall<0x801BAB2Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_vi_set_black(cpu);
     }
 };
@@ -57,7 +57,7 @@ template <>
 struct KnownNativeCpuCall<0x801B9F6Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_vi_configure(cpu);
     }
 };
@@ -69,7 +69,7 @@ template <>
 struct KnownNativeCpuCall<0x801BA9A4u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_vi_flush(cpu);
     }
 };
@@ -82,7 +82,7 @@ template <>
 struct KnownNativeCpuCall<0x801B99ECu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_vi_wait_for_retrace(cpu);
     }
 };
@@ -94,7 +94,7 @@ template <>
 struct KnownNativeCpuCall<0x801B9138u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_vi_set_post_retrace_callback(cpu);
     }
 };

@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
@@ -23,7 +24,7 @@ namespace {
 }
 } // namespace
 
-extern "C" void mkw_switch_hle_gx_set_copy_clamp(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_set_copy_clamp(CpuContext* cpu) {
     if (!cpu) {
         return;
     }
@@ -45,6 +46,8 @@ extern "C" void mkw_switch_hle_gx_set_copy_clamp(CpuContext* cpu) noexcept {
             Memory::Write32(gd + 0x23Cu, (Memory::Read32(gd + 0x23Cu) & 0xFFFFFFFCu) | clamp);
             Memory::Write32(gd + 0x24Cu, (Memory::Read32(gd + 0x24Cu) & 0xFFFFFFFCu) | clamp);
         }
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
     }
 #else
@@ -52,7 +55,7 @@ extern "C" void mkw_switch_hle_gx_set_copy_clamp(CpuContext* cpu) noexcept {
 #endif
 }
 
-extern "C" void mkw_switch_hle_gx_set_tex_copy_src(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_set_tex_copy_src(CpuContext* cpu) {
     if (!cpu) {
         return;
     }
@@ -72,7 +75,7 @@ extern "C" void mkw_switch_hle_gx_set_tex_copy_src(CpuContext* cpu) noexcept {
 #endif
 }
 
-extern "C" void mkw_switch_hle_gx_set_tex_copy_dst(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_set_tex_copy_dst(CpuContext* cpu) {
     if (!cpu) {
         return;
     }

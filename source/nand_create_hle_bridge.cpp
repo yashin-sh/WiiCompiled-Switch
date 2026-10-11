@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #include <cstdlib>
 
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
@@ -39,7 +40,7 @@ void Status(const char* state, std::uint32_t path, std::uint32_t permission,
     }
 }
 
-[[noreturn]] void Refuse(const char* reason, CpuContext* cpu) noexcept {
+[[noreturn]] void Refuse(const char* reason, CpuContext* cpu) {
     mkw_switch_report_unsupported_translated_dispatch(reason, target, cpu);
     std::abort();
 }
@@ -48,7 +49,7 @@ void Status(const char* state, std::uint32_t path, std::uint32_t permission,
 // Pinned virtual NANDCreate ignores host permission/attribute mapping. Admit
 // only the observed tuple and statically attributed temporary path after a
 // complete live-byte check. Existing files return -6 without truncation.
-extern "C" void mkw_switch_hle_nand_create(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_nand_create(CpuContext* cpu) {
     if (!cpu)
         return;
     const auto path = cpu->gpr[3], permission = cpu->gpr[4], attributes = cpu->gpr[5];
@@ -86,6 +87,8 @@ extern "C" void mkw_switch_hle_nand_create(CpuContext* cpu) noexcept {
         } else if (errno == EEXIST) {
             result = -6;
         }
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         // The virtual NAND API reports host failure as NAND_RESULT_UNKNOWN.
     }
@@ -96,7 +99,7 @@ extern "C" void mkw_switch_hle_nand_create(CpuContext* cpu) noexcept {
 }
 #else
 struct CpuContext;
-extern "C" void mkw_switch_hle_nand_create(CpuContext*) noexcept {
+extern "C" void mkw_switch_hle_nand_create(CpuContext*) {
     std::abort();
 }
 #endif

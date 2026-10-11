@@ -13,7 +13,7 @@ template <>
 struct KnownNativeCpuCall<0x8019B524u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -31,7 +31,7 @@ template <>
 struct KnownNativeCpuCall<0x8019B59Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -47,7 +47,7 @@ template <>
 struct KnownNativeCpuCall<0x8019B6E4u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -67,7 +67,7 @@ template <>
 struct KnownNativeCpuCall<0x8019B8ECu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -85,7 +85,7 @@ template <>
 struct KnownNativeCpuCall<0x8019BBE0u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -101,7 +101,7 @@ template <>
 struct KnownNativeCpuCall<0x8019BCC8u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -123,7 +123,7 @@ template <>
 struct KnownNativeCpuCall<0x8019C918u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -148,7 +148,7 @@ template <>
 struct KnownNativeCpuCall<0x8019CB74u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -167,7 +167,7 @@ template <>
 struct KnownNativeCpuCall<0x8019D104u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -192,7 +192,7 @@ template <>
 struct KnownNativeCpuCall<0x8019CF28u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -208,7 +208,7 @@ template <>
 struct KnownNativeCpuCall<0x8019D720u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -227,7 +227,7 @@ template <>
 struct KnownNativeCpuCall<0x8019BA04u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -250,7 +250,7 @@ template <>
 struct KnownNativeCpuCall<0x8019C048u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -267,7 +267,7 @@ template <>
 struct KnownNativeCpuCall<0x8019E7B4u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }

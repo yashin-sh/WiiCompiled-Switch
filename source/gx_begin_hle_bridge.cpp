@@ -13,7 +13,7 @@ extern "C" void mkw_switch_gx_record_begin(CpuContext* cpu) noexcept;
 
 extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
 
-extern "C" void mkw_switch_hle_gx_begin(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_begin(CpuContext* cpu) {
     if (!cpu) {
         return;
     }

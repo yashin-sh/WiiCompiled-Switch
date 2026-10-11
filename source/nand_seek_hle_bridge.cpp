@@ -26,7 +26,7 @@ void Status(std::uint32_t fileInfo, std::uint32_t offset, std::uint32_t whence,
     }
 }
 } // namespace
-extern "C" void mkw_switch_hle_nand_seek(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_nand_seek(CpuContext* cpu) {
     if (!cpu)
         return;
     const auto fileInfo = cpu->gpr[3], offset = cpu->gpr[4], whence = cpu->gpr[5];
@@ -42,7 +42,7 @@ extern "C" void mkw_switch_hle_nand_seek(CpuContext* cpu) noexcept {
 }
 #else
 struct CpuContext;
-extern "C" void mkw_switch_hle_nand_seek(CpuContext*) noexcept {
+extern "C" void mkw_switch_hle_nand_seek(CpuContext*) {
     std::abort();
 }
 #endif

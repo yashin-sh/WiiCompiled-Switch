@@ -139,7 +139,7 @@ extern "C" void mkw_switch_set_fast_track_stage(const char* value) noexcept {
 }
 
 extern "C" void mkw_switch_report_unsupported_translated_dispatch(
-    const char* reason, std::uint32_t target, CpuContext* cpu) noexcept {
+    const char* reason, std::uint32_t target, CpuContext* cpu) {
     if (reportPipe < 0 || reportCalls++ != 0u)
         _exit(92);
     if (target != 0x80172088u ||

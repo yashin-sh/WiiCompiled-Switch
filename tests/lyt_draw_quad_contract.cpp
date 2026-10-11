@@ -94,17 +94,17 @@ void Shutdown() noexcept {
 extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept {
     lastStage = stage;
 }
-extern "C" void mkw_switch_note_translated_dispatch(std::uint32_t address, CpuContext*) noexcept {
+extern "C" void mkw_switch_note_translated_dispatch(std::uint32_t address, CpuContext*) {
     assert(address == target);
     ++notes;
 }
-extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) noexcept {
+extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) {
     ++polls;
 }
 // These unrelated registry targets are never executed by this scoped contract.
-#define UNEXERCISED(name)                        \
-    extern "C" void name(CpuContext*) noexcept { \
-        std::abort();                            \
+#define UNEXERCISED(name)               \
+    extern "C" void name(CpuContext*) { \
+        std::abort();                   \
     }
 UNEXERCISED(mkw_switch_hle_gx_load_light_obj_imm)
 UNEXERCISED(mkw_switch_hle_gx_load_nrm_mtx_imm)
@@ -117,7 +117,7 @@ UNEXERCISED(mkw_switch_hle_nand_get_length)
 UNEXERCISED(mkw_switch_hle_nand_seek)
 UNEXERCISED(mkw_switch_hle_gx_set_tev_indirect)
 #undef UNEXERCISED
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t address, CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t address, CpuContext* cpu) {
     if (!expectedReason || std::strcmp(reason, expectedReason) != 0)
         std::fprintf(stderr, "Expected refusal %s, got %s\n", expectedReason, reason);
     assert(expectedReason && std::strcmp(reason, expectedReason) == 0);

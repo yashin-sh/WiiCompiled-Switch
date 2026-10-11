@@ -27,7 +27,7 @@ It does not establish how the NRO was relaunched: no new SDK restart command was
 sent during collection, and an operator-confirmed manual launch is not part of
 this receipt. The live subscription began after execution had paused and received
 only 63 bytes; it does not provide a complete live history of the selector calls.
-The fresh durable report supplies the progression evidence. No new frame-rate,
+The fresh durable report supplies the frontier and preceding-stage evidence. No new frame-rate,
 menu-pixel or playability result is accepted.
 
 ## Audited implementation scope

@@ -90,7 +90,7 @@ void CheckBytes() {
     assert(events == std::vector<Event>(expected.size(), Destroy));
     ++valid;
 }
-[[maybe_unused]] void Cache(void (*invoke)(CpuContext*) noexcept, std::uint32_t address,
+[[maybe_unused]] void Cache(void (*invoke)(CpuContext*), std::uint32_t address,
                             std::uint32_t count, std::vector<void*> expected) {
     auto cpu = Cpu(address, count);
     Prepare(cpu);
@@ -167,7 +167,7 @@ extern "C" void mkw_switch_set_fast_track_stage(const char* value) noexcept {
     stage = value;
 }
 extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* value, std::uint32_t target,
-                                                                  CpuContext*) noexcept {
+                                                                  CpuContext*) {
     CheckCpu();
     CheckBytes();
     assert(target == 0x8016FD74u && std::strcmp(value, reason) == 0);

@@ -56,7 +56,7 @@ inline void WriteDecodeStatus(
     std::uint32_t dst,
     std::uint32_t expandSize,
     std::uint32_t srcConsumed,
-    std::uint32_t dstProduced) noexcept {
+    std::uint32_t dstProduced) {
     WriteDecodeStatus(
         status, src, dst, expandSize, srcConsumed, dstProduced);
     mkw_switch_report_unsupported_translated_dispatch(
@@ -283,7 +283,7 @@ template <>
 struct KnownNativeCpuCall<0x80218C2Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (cpu) {
             cpu->gpr[3] = mkw::egg_decomp_hle_detail::DecodeSZS(cpu);
         }

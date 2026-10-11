@@ -17,17 +17,18 @@ debug_reload_program=0
 ```
 
 The configured NRO path is a fixed deployment destination. Set it to the project
-NRO that your HOME forwarder actually launches. The defaults above apply when
-only `debug_server=1` is specified. Launch the enabled build once manually, then
+NRO to launch through hbloader. The defaults above apply when only
+`debug_server=1` is specified. Launch the enabled build once manually, then
 connect from a computer on the same LAN. The server binds TCP port 6543 on all
 interfaces unless `debug_port` overrides it. It has no authentication or TLS;
 enable it only on a trusted LAN and do not expose it to the Internet.
 
-Program restart is disabled by default, independently of `debug_server=1`.
-Keep `debug_reload_program=0` when launching through hbmenu, including title
-override. Only set `debug_reload_program=1` for a HOME forwarder whose program
-restart is known to launch the configured NRO. The server cannot detect or
-verify that forwarder mapping from application mode.
+Program restart is unsupported in this revision: `debug_reload_program=1`
+does not enable `appletRestartProgram()`. Keep that reserved option at 0,
+including under hbmenu title override. Application mode cannot prove a forwarder
+mapping. When hbloader supports next-load and the runtime has enabled its
+coordinated owner-exit path, `reload` instead selects hbloader with the configured
+NRO as both path and argv. It never restarts the retail host program.
 
 With the server enabled, an unsupported guest frontier writes the usual durable
 SD report and holds guest execution so the independent server can still deliver
@@ -57,7 +58,15 @@ reports; arbitrary stdout and upstream runtime logging are not automatically
 captured. Streaming logs complements the existing SD diagnostics.
 
 `info` returns newline-separated status fields, including `dispatch`, `guest_pc`,
-`frontier`, `uptime`, `fps`, `stage`, `debug_nro_path`, and `reload_supported`.
+`frontier`, `uptime`, `fps`, `stage`, and `debug_nro_path`. Reload status includes
+`reload_supported`, `reload_method` (`hbloader` or `unavailable`),
+`loader_next_load`, `reload_owner_available`, `reload_requested`, `reload_prepared`
+and `reload_error`. Loader capability alone does not establish owner-exit support
+or successful hardware relaunch. `runtime_session`, `runtime_nro_size` and
+`runtime_nro_sha256` identify this process's launch file, captured once after SD
+initialization from the actual `argv[0]`; they stay fixed through deployment and
+server reinitialization. Missing launch-path evidence leaves the runtime hash
+empty and blocks autonomous client qualification.
 Counters describe the latest observed execution state. FPS is the total observed
 present count divided by uptime since server start; it is a lifetime average and
 can remain zero before rendering begins. The server accepts at most four
@@ -114,7 +123,11 @@ Deployment proceeds in this order:
 6. Remove older project candidates only after verified local backups and full
    new-candidate readback. Each removal rechecks the remote file size/SHA-256.
    Verify the inventory contains only the configured candidate.
-7. If `--reload` was supplied, request restart.
+7. If `--reload` was supplied, request owner-coordinated restart after cleanup,
+   then wait up to `--restart-seconds` (default 180) for a different runtime
+   session, the expected launch-file size/SHA-256, matching configured SD target,
+   and an attributable translated dispatch/stage. This does not require another
+   complete SD download; the primary full readback above remains mandatory.
 
 libnx's SD `rename` delegates directly to the Horizon file rename service, so
 deployment uses explicit rotation without assuming replacement of an existing
@@ -137,24 +150,84 @@ another private directory outside the checkout. Failure stops the procedure
 before further cleanup or restart and reports an error. The already-written
 candidate and verified backups remain inspectable.
 
-Launch the installed NRO manually after a normal deployment. `--reload` is only
-for the explicitly enabled and verified HOME-forwarder setup described below.
+A deployment without `--reload` leaves launch to the operator. A server revision
+that predates coordinated reload must be upgraded and launched once manually;
+the new CLI refuses autonomous qualification when the old runtime lacks its
+capability and immutable launch identity.
 
-`reload` calls `appletRestartProgram()` only with `debug_reload_program=1`, an
-application or system-application context, and system version 5.0.0 or later.
-Without the explicit opt-in, `info` reports `reload_supported=0` and the command
-returns an error before calling the restart SDK. A hbmenu title-override trial
-on 2026-10-11 demonstrated the hazard: the SDK restarted the retail host game
-instead of this NRO. Application context alone is therefore insufficient.
-Enabling the option asserts the operator's HOME-forwarder setup; it does not
-prove that setup. Your forwarder must already point at `debug_nro_path`;
-deployment cannot change that mapping. The acknowledgment
-means the restart was requested; it does not confirm that the replacement NRO has
-started. The client then waits for connection closure or a trailing error frame,
-so an SDK restart failure is surfaced to the CLI and in the log.
-The hbloader `envHasNextLoad`/`envSetNextLoad` route is a possible future chaining
-mechanism requiring coordinated guest, renderer and worker shutdown. It is not
-implemented by this server and does not change the current manual-launch workflow.
+```bash
+python3 tools/mkw_debug.py deploy WiiCompiled-Switch-local-rendered-fast-track.nro --reload --restart-seconds 180
+```
+
+For hbloader, `envHasNextLoad()` reports next-load capability. Once the runtime
+owner can drain guest fibers, finish renderer work and join all workers safely,
+it enables the separate owner-readiness gate. The network worker acknowledges
+`reload` and publishes a pending method; it does not invoke restart APIs or exit.
+After quiescence the owner calls `envSetNextLoad(debug_nro_path, debug_nro_path)`,
+then checks the debug worker's SDK join and close results before returning
+normally to the loader. A failed join leaves the worker and its resources owned;
+a failed close retains the completed-join state so only close is retried. Neither
+failure permits a loader return or socket-service cleanup. A thread whose start
+failed is closed without waiting on its unstarted handle. A successful debug
+stop covers this worker; the owner also checks the separate watchdog, renderer
+and guest shutdown. Paths are limited
+to 384 bytes, contain no whitespace, and fit the loader ABI's 512-byte path and
+2048-byte argv buffers, including terminators. This routes the configured NRO
+through hbloader without restarting the retail host program.
+
+The fast-track execution provider uses execution ABI version 2 to distinguish
+cooperative cancellation from a guest failure. Dispatch hooks check a pending
+reload before polling VI. A paused unsupported-dispatch diagnostic can throw
+`mkw::execution::ExecutionCancelled` on the guest owner thread. Native bridges
+and callback wrappers permit this exception and rethrow it past fault handlers;
+CPU, FPR, mutex and callback-depth guards therefore run during stack unwinding.
+Each started guest fiber owns stable CPU storage, catches the stop completely,
+and resumes its caller with the saved host TLS/FP state. The scheduler drains
+remaining started fibers without entering unstarted guest functions, then
+destroys only quiescent contexts. It retains guest backing if draining fails.
+
+After successful next-load preparation, main checks both diagnostic-worker
+joins before renderer cleanup. Renderer shutdown releases Aurora caches and
+Switch copy/present globals and explicitly destroys the Dawn device before
+dropping its references. Guest memory is released last. A failed shutdown keeps
+the owner alive; only a complete shutdown allows normal return from main.
+The host contracts exercise native refusal unwinding, nested and cyclic fiber
+handoffs, callback-local CPU lifetime, reporter pauses, worker-join retries and
+the real main function's normal return. They use simulated platform/loader
+services; their renderer is a seam and does not measure Dawn worker counts.
+Some pinned Aurora static GPU bindings release their final references in
+`fini_array`. The audited devkit runtime initializes that array's constructors
+but does not register its destructors with newlib exit. The Switch
+`userAppExit` hook explicitly dispatches `__libc_fini_array` once, after main
+and newlib exit procedures, before libnx service teardown and loader return.
+Device destruction drains pending work, while destruction of its worker pool
+joins its threads; renderer handle release alone does not prove that the pool
+has already been destroyed. The private rendered gate checks the final linked
+exit hook, destructor array and loader path in addition to compilation.
+Autonomous console relaunch still requires hardware validation.
+
+If next-load is unavailable, `reload` returns an error. Program restart remains
+unsupported even with `debug_reload_program=1`, an application context or newer
+system version. A hbmenu title-override trial on 2026-10-11 restarted the retail
+host game instead of this NRO; application mode is insufficient. Any future
+forwarder program-restart path needs a verified mapping and a separately validated
+final shutdown order before it can be offered.
+
+The server
+rejects a missing or invalid NRO, unfinished `.part`/`.rollback` deployment,
+duplicate requests, and candidate mutations while reload is pending. A failed
+acknowledgment never publishes a request. Owner preparation failure clears the
+pending request, leaves the NRO/server alive, logs the error and exposes its code
+through `info`; it must not lead to normal exit. The acknowledgment means queued,
+not relaunched. Standalone `reload` only acknowledges the request; `deploy
+--reload` additionally verifies the new candidate runtime and guest milestone,
+and keeps a private restart result in the deployment receipt. A blocked frontier
+can prove execution without proving gameplay or a menu image.
+
+These protocol and SDK-seam contracts do not establish a successful coordinated
+hardware relaunch. The owner-readiness gate defaults to false and must only be
+enabled by the implemented and tested runtime exit path. The new revision still
+needs its exact build, deployment and attributable automatic-relaunch trial.
 `quit` closes the client's connection; it does not terminate the NRO or disable
 the server.
 
@@ -188,7 +261,7 @@ connection after a complete response.
 | `deploy <size> <crc32hex>` | Initial `ok 0\n`, exact upload bytes, then metadata response |
 | `finalize-deploy <target-size> <target-sha256> <rollback-size> <rollback-sha256>` | Verify current target and old rollback before removing the rollback; use `0 -` when no rollback exists |
 | `remove-nro <basename> <size> <sha256hex>` | Verify then delete an older project candidate; current target cannot be removed |
-| `reload` | Restart request acknowledgment, then connection close; an SDK failure adds a trailing `err` frame before close. Unsupported launches receive only an error |
+| `reload` | `restart requested` plus `method=hbloader`, then connection close; unsupported/unready runtimes receive only an error. Later owner failures appear in `info` and logs |
 | `quit` | Acknowledgment then connection close |
 
 CRC-32 is eight hexadecimal digits; SHA-256 is 64 hexadecimal digits. Deployment
@@ -220,6 +293,6 @@ server and unsupported-frontier hold, without establishing gameplay completion.
 This initial installation did not validate forwarder restart or network NRO
 replacement. Later verified LAN replacement and texture progression are recorded
 in the [RGB5A3 candidate result](GX_RGB5A3_REPEAT_2026-10-11.md). Automatic NRO
-restart remains unvalidated; the host-game restart above motivated the separate
-default-off `debug_reload_program` safeguard.
+restart remains unvalidated; the host-game restart above motivated removal of
+program restart from the coordinated hbloader candidate.
 Binary products, backups, and raw receipts stay private.

@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #include <cstdlib>
 
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
@@ -60,7 +61,7 @@ void Status(std::uint32_t source, std::uint32_t directory, bool sourceMatch,
 // Pinned NANDMove appends the source basename to a destination directory.
 // Admit only the observed temporary banner and PAL title-home paths after
 // checking every live byte, including both terminators. Other moves abort.
-extern "C" void mkw_switch_hle_nand_move(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_nand_move(CpuContext* cpu) {
     if (!cpu)
         return;
     const auto source = cpu->gpr[3], directory = cpu->gpr[4];
@@ -90,6 +91,8 @@ extern "C" void mkw_switch_hle_nand_move(CpuContext* cpu) noexcept {
             std::filesystem::rename(srcHost, dstHost, error);
             result = error ? -64 : 0;
         }
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         // Preserve the virtual NAND unknown-error result on host failure.
     }
@@ -98,7 +101,7 @@ extern "C" void mkw_switch_hle_nand_move(CpuContext* cpu) noexcept {
 }
 #else
 struct CpuContext;
-extern "C" void mkw_switch_hle_nand_move(CpuContext*) noexcept {
+extern "C" void mkw_switch_hle_nand_move(CpuContext*) {
     std::abort();
 }
 #endif

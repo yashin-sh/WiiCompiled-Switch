@@ -17,7 +17,7 @@ namespace {
 constexpr std::uint32_t kStaticRRelPrologAddress = 0x8055531Cu;
 constexpr std::uint32_t kObservedStaticRBase = 0x805102E0u;
 
-[[noreturn]] void AbortUnprovenModule(CpuContext* cpu) noexcept {
+[[noreturn]] void AbortUnprovenModule(CpuContext* cpu) {
     mkw_switch_report_unsupported_translated_dispatch(
         "STATICR_REL_PROLOG_UNPROVEN_MODULE",
         kStaticRRelPrologAddress,
@@ -27,7 +27,7 @@ constexpr std::uint32_t kObservedStaticRBase = 0x805102E0u;
 
 } // namespace
 
-extern "C" void mkw_switch_hle_staticr_rel_prolog(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_staticr_rel_prolog(CpuContext* cpu) {
     if (!cpu) {
         return;
     }

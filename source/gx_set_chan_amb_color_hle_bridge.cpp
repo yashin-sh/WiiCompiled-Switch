@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
@@ -17,7 +18,7 @@ extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
 void EnsureAuroraFrameActive();
 
 namespace {
-[[noreturn]] void AbortInvalidColor(CpuContext* cpu) noexcept {
+[[noreturn]] void AbortInvalidColor(CpuContext* cpu) {
     mkw_switch_set_fast_track_stage("RMCP01_GX_SET_CHAN_AMB_COLOR_INVALID_COLOR");
     mkw_switch_report_unsupported_translated_dispatch(
         "GX_SET_CHAN_AMB_COLOR_INVALID_COLOR", cpu->gpr[4], cpu);
@@ -26,7 +27,7 @@ namespace {
 } // namespace
 #endif
 
-extern "C" void mkw_switch_hle_gx_set_chan_amb_color(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_set_chan_amb_color(CpuContext* cpu) {
     if (!cpu) {
         return;
     }
@@ -45,6 +46,8 @@ extern "C" void mkw_switch_hle_gx_set_chan_amb_color(CpuContext* cpu) noexcept {
     std::uint32_t word = 0u;
     try {
         word = Memory::Read32(colorAddress);
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         AbortInvalidColor(cpu);
     }

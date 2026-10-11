@@ -122,7 +122,7 @@ void Shutdown() noexcept {
 }
 } // namespace GuestFlat
 extern "C" void mkw_switch_set_fast_track_stage(const char*) noexcept {}
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t target, CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t target, CpuContext* cpu) {
     assert(expectedReason && std::strcmp(reason, expectedReason) == 0 && target == expectedTarget);
     assert(std::memcmp(cpu, &saved, sizeof(saved)) == 0 && bytes == savedMemory && calls == expectedCalls);
 #if MKW_LOCAL_RENDERED_FAST_TRACK

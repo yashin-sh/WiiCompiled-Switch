@@ -1,6 +1,8 @@
 """Network contracts against the production C++ server, compiled by test-mkw-debug.sh."""
 
 import hashlib
+import itertools
+import json
 import os
 import select
 import socket
@@ -11,7 +13,9 @@ import threading
 import unittest
 import zlib
 from pathlib import Path
-from unittest.mock import patch
+from types import SimpleNamespace
+from typing import ClassVar
+from unittest.mock import MagicMock, patch
 
 from tools import mkw_debug
 
@@ -573,6 +577,209 @@ class DebugServerContracts(unittest.TestCase):
                 )
                 self.assertTrue(old_path.exists())
                 old_path.unlink()
+
+
+class DebugClientRuntimeVerification(unittest.TestCase):
+    """Memory-only peers: SD identity alone cannot prove the executed candidate."""
+
+    target = "sdmc:/switch/WiiCompiled-Switch.nro"
+    expected: ClassVar[dict] = {"size": 160, "sha256": "a" * 64}
+    previous = "1" * 16
+
+    def info(self, **changes):
+        value = {
+            "runtime_session": "2" * 16,
+            "runtime_nro_size": "160",
+            "runtime_nro_sha256": "a" * 64,
+            "debug_nro_path": self.target,
+            "dispatch": "659106",
+            "stage": "DEBUG_FRONTIER_PAUSED",
+            "frontier": "DIRECT 0x801717AC",
+            "reload_error": "0x00000000",
+        }
+        value.update(changes)
+        return value
+
+    def verify(self, observations, seconds=0.2):
+        def connect(*args):
+            item = observations.pop(0) if len(observations) > 1 else observations[0]
+            if isinstance(item, Exception):
+                raise item
+            peer = MagicMock()
+            peer.__enter__.return_value = peer
+            peer.request.side_effect = lambda command: (
+                "\n".join(f"{key}={value}" for key, value in item.items()).encode()
+                if command == "info"
+                else ("size=160\nsha256=" + "a" * 64 + "\n").encode()
+            )
+            return peer
+
+        with (
+            patch.object(mkw_debug, "Client", side_effect=connect),
+            patch.object(
+                mkw_debug.time, "monotonic", side_effect=itertools.count(0, 0.01)
+            ),
+            patch.object(mkw_debug.time, "sleep"),
+        ):
+            return mkw_debug.wait_for_runtime(
+                SimpleNamespace(host="fixture", port=6543, timeout=30),
+                self.previous,
+                self.target,
+                self.expected,
+                seconds,
+            )
+
+    def test_waits_through_disconnect_old_runtime_and_new_runtime_startup(self):
+        observed = self.verify(
+            [
+                ConnectionRefusedError("offline"),
+                self.info(runtime_session=self.previous),
+                self.info(dispatch="0", stage="startup"),
+                self.info(),
+            ]
+        )
+        self.assertEqual(observed["status"], "runtime_execution_observed")
+        self.assertEqual(observed["info"]["frontier"], "DIRECT 0x801717AC")
+
+    def test_previous_runtime_and_correct_sd_file_cannot_prove_launch(self):
+        with self.assertRaisesRegex(mkw_debug.DebugError, "previous runtime"):
+            self.verify([self.info(runtime_session=self.previous)])
+
+    def test_new_runtime_without_guest_progress_cannot_prove_execution(self):
+        with self.assertRaisesRegex(mkw_debug.DebugError, "guest execution"):
+            self.verify([self.info(dispatch="0", stage="startup")])
+
+    def test_different_executed_binary_is_rejected_even_with_correct_sd(self):
+        with self.assertRaisesRegex(mkw_debug.DebugError, "executed NRO"):
+            self.verify([self.info(runtime_nro_sha256="b" * 64)])
+
+    def test_different_configured_target_is_rejected(self):
+        with self.assertRaisesRegex(mkw_debug.DebugError, "different configured"):
+            self.verify([self.info(debug_nro_path="sdmc:/switch/other.nro")])
+
+    def test_owner_preparation_error_leaves_previous_runtime_and_fails_client(self):
+        with self.assertRaisesRegex(mkw_debug.DebugError, "0x00001234"):
+            self.verify(
+                [self.info(runtime_session=self.previous, reload_error="0x00001234")]
+            )
+
+    def test_restart_deadline_invalid_before_deployment(self):
+        for limit in (0, -1, float("nan"), float("inf")):
+            with (
+                self.subTest(limit=limit),
+                self.assertRaisesRegex(mkw_debug.DebugError, "deadline"),
+            ):
+                mkw_debug.deploy(
+                    MagicMock(), "unused.nro", reload=True, restart_seconds=limit
+                )
+
+    def test_reload_runs_only_after_complete_readback_backup_and_cleanup(self):
+        with tempfile.TemporaryDirectory() as temp:
+            candidate = Path(temp) / "candidate.nro"
+            candidate.write_bytes(nro(b"new candidate"))
+            backups = Path(temp) / "backups"
+            target_name = "WiiCompiled-Switch.nro"
+            older_name = "WiiCompiled-Switch-old.nro"
+            data = {target_name: nro(b"current"), older_name: nro(b"older")}
+            events = []
+
+            class Fixture:
+                host, port, timeout = "fixture", 6543, 30
+
+                def __init__(self):
+                    self.socket = MagicMock()
+                    self.socket.sendall.side_effect = self.upload
+                    self.body = bytearray()
+                    self.phase = 0
+
+                def upload(self, chunk):
+                    self.body.extend(chunk)
+
+                def send_command(self, command):
+                    assert command.startswith("deploy ")
+                    events.append("upload")
+
+                def receive_to(self, output):
+                    self.phase += 1
+                    if self.phase == 2:
+                        data[target_name + ".rollback"] = data[target_name]
+                        data[target_name] = bytes(self.body)
+                        metadata = mkw_debug.file_metadata(candidate)
+                        output.write(
+                            "\n".join(f"{k}={v}" for k, v in metadata.items()).encode()
+                        )
+                    return {}
+
+                def request(self, command):
+                    if command == "info":
+                        return (
+                            "runtime_session="
+                            + "1" * 16
+                            + "\nruntime_nro_sha256="
+                            + "b" * 64
+                            + "\nreload_supported=1\nreload_method=hbloader\ndebug_nro_path="
+                            + DebugClientRuntimeVerification.target
+                            + "\n"
+                        ).encode()
+                    if command == "list-nros":
+                        return "\n".join(data).encode()
+                    if command.startswith("stat-nro "):
+                        content = data[command.split()[1]]
+                        return f"size={len(content)}\nsha256={hashlib.sha256(content).hexdigest()}\n".encode()
+                    if command.startswith("finalize-deploy "):
+                        assert "readback" in events
+                        events.append("finalize")
+                        del data[target_name + ".rollback"]
+                        return b""
+                    if command.startswith("remove-nro "):
+                        assert "finalize" in events
+                        events.append("cleanup")
+                        del data[command.split()[1]]
+                        return b""
+                    raise AssertionError(command)
+
+                def download(self, command, destination, max_size):
+                    name = command.split()[1] if " " in command else target_name
+                    content = data[name]
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    destination.write_bytes(content)
+                    if command == "get-nro":
+                        events.append("readback")
+                    return mkw_debug.file_metadata(destination)
+
+                def reload(self):
+                    assert list(data) == [target_name]
+                    assert events[-1] == "cleanup"
+                    events.append("reload")
+                    return b"restart requested\nmethod=hbloader\n"
+
+            proof = {"status": "runtime_execution_observed", "info": self.info()}
+            with patch.object(
+                mkw_debug, "wait_for_runtime", return_value=proof
+            ) as wait:
+                mkw_debug.deploy(Fixture(), candidate, backups, reload=True)
+            self.assertEqual(
+                events, ["upload", "readback", "finalize", "cleanup", "reload"]
+            )
+            self.assertEqual(wait.call_count, 1)
+            self.assertEqual((backups / target_name).read_bytes(), nro(b"current"))
+            self.assertEqual((backups / older_name).read_bytes(), nro(b"older"))
+            receipt = json.loads((backups / "receipt.json").read_text())
+            self.assertEqual(receipt["status"], "complete")
+            self.assertEqual(receipt["restart"]["status"], "runtime_execution_observed")
+
+    def test_legacy_server_requires_initial_manual_upgrade_before_reload_deploy(self):
+        with tempfile.TemporaryDirectory() as temp:
+            candidate = Path(temp) / "candidate.nro"
+            candidate.write_bytes(nro(b"candidate"))
+            peer = MagicMock()
+            peer.request.return_value = b"reload_supported=1\ndebug_nro_path=sdmc:/switch/WiiCompiled-Switch.nro\n"
+            with self.assertRaisesRegex(
+                mkw_debug.DebugError, "launch it once manually"
+            ):
+                mkw_debug.deploy(peer, candidate, Path(temp) / "backups", reload=True)
+            self.assertFalse((Path(temp) / "backups").exists())
+            peer.request.assert_called_once_with("info")
 
 
 class DebugClientMalformedResponses(unittest.TestCase):

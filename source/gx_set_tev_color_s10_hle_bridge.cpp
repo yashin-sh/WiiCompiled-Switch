@@ -9,12 +9,12 @@
 #endif
 extern "C" void mkw_switch_set_fast_track_stage(const char*) noexcept;
 namespace {
-[[noreturn]] void Refuse(const char* reason, CpuContext* cpu) noexcept {
+[[noreturn]] void Refuse(const char* reason, CpuContext* cpu) {
     mkw_switch_report_unsupported_translated_dispatch(reason, 0x80171e70u, cpu);
     std::abort();
 }
 } // namespace
-extern "C" void mkw_switch_hle_gx_set_tev_color_s10(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_set_tev_color_s10(CpuContext* cpu) {
     if (!cpu)
         return;
     mkw_switch_set_fast_track_stage("RMCP01_GX_SET_TEV_COLOR_S10");

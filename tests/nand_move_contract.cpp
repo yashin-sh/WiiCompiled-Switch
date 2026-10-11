@@ -170,14 +170,14 @@ extern "C" void WrappedRename(const fs::path& src, const fs::path& dst, std::err
 extern "C" void mkw_switch_set_fast_track_stage(const char* p) noexcept {
     stage = p;
 }
-extern "C" void mkw_switch_note_translated_dispatch(std::uint32_t t, CpuContext*) noexcept {
+extern "C" void mkw_switch_note_translated_dispatch(std::uint32_t t, CpuContext*) {
     assert(t == target);
     ++notes;
 }
-extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) noexcept {
+extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) {
     ++polls;
 }
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t t, CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t t, CpuContext* cpu) {
     assert(t == target && std::strcmp(reason, "NAND_MOVE_UNPROVEN_PATHS") == 0);
     assert(std::memcmp(cpu, &refusedCpu, sizeof(*cpu)) == 0 && bytes == refusedMemory && roots == expectedRoots);
     assert(Read("sdmc:/switch/WiiCompiled-Switch/fast-track-nand-move-status.txt").find("result=NOT_CALLED\n") != std::string::npos);

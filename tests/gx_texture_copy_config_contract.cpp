@@ -29,7 +29,7 @@ using Args = std::array<std::uint32_t, 4>;
 struct Contract {
     std::uint32_t target;
     const char* stage;
-    void (*invoke)(CpuContext*) noexcept;
+    void (*invoke)(CpuContext*);
 };
 constexpr std::array contracts{
     Contract{0x8016F618u, "RMCP01_GX_SET_COPY_CLAMP", KnownNativeCpuCall<0x8016F618u>::Invoke},
@@ -286,7 +286,7 @@ extern "C" void GXSetTexCopyDst(u16 width, u16 height, GXTexFmt format, GXBool m
     assert(width == (expectedCpu.gpr[3] & 0xffffu) && height == (expectedCpu.gpr[4] & 0xffffu));
     assert(format == GX_TF_RGB5A3 && mipmap == (expectedCpu.gpr[6] != 0u));
 }
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t target, CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t target, CpuContext* cpu) {
     if (reportPipe < 0 || reportCalls++ != 0u || cpu != liveCpu || target != For(operation).target || std::strcmp(reason, expectedReason) != 0 ||
         nativeCalls != oldNative || lookups != 0)
         _exit(93);

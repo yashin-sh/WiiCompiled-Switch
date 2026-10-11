@@ -1,10 +1,10 @@
 #pragma once
 
 namespace mkw::debug {
-// Application context includes hbmenu title override. Forwarder intent must be
-// supplied explicitly; context and system version cannot establish that intent.
-constexpr bool program_restart_allowed(bool explicit_forwarder_opt_in,
-                                       bool application_context, bool supported_system) noexcept {
-    return explicit_forwarder_opt_in && application_context && supported_system;
+enum class ReloadMethod { Unavailable,
+                          HbloaderNextLoad };
+// Loader capability and a proven owner shutdown path are both required.
+constexpr ReloadMethod choose_reload_method(bool owner_ready, bool loader_next_load) noexcept {
+    return owner_ready && loader_next_load ? ReloadMethod::HbloaderNextLoad : ReloadMethod::Unavailable;
 }
 } // namespace mkw::debug

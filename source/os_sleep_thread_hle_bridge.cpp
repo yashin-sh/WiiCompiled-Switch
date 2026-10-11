@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
@@ -168,7 +169,7 @@ void UnlinkWaitQueueNode(std::uint32_t queuePtr, std::uint32_t threadPtr) {
 
 } // namespace
 
-extern "C" void mkw_switch_hle_os_sleep_thread(CpuContext* ctx) noexcept {
+extern "C" void mkw_switch_hle_os_sleep_thread(CpuContext* ctx) {
     CpuContext* cpu = ctx ? ctx : &GetPersistentCpuContext();
     const std::uint32_t queuePtr = cpu->gpr[3];
 
@@ -251,6 +252,9 @@ extern "C" void mkw_switch_hle_os_sleep_thread(CpuContext* ctx) noexcept {
             Memory::Write16(currentThread + kThreadStateOffset, kThreadStateRunning);
             mkw::switch_guest_fiber::resume(currentThread);
         }
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        RestoreInterrupts(cpu, irqState);
+        throw;
     } catch (...) {
         // Match the pin's contained guest-memory-fault boundary. The normal
         // hardware path is fully mapped; do not manufacture scheduler state on

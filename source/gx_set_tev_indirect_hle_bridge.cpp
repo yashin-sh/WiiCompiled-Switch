@@ -10,7 +10,7 @@
 #include <cstdlib>
 extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
 namespace {
-[[noreturn]] void Refuse(CpuContext* cpu, const char* reason) noexcept {
+[[noreturn]] void Refuse(CpuContext* cpu, const char* reason) {
     mkw_switch_report_unsupported_translated_dispatch(reason, 0x801717ACu, cpu);
     std::abort();
 }
@@ -19,7 +19,7 @@ std::uint32_t ReadBE32(const std::uint8_t* bytes) noexcept {
            (std::uint32_t(bytes[2]) << 8) | std::uint32_t(bytes[3]);
 }
 } // namespace
-extern "C" void mkw_switch_hle_gx_set_tev_indirect(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_set_tev_indirect(CpuContext* cpu) {
     if (!cpu)
         return;
     mkw_switch_set_fast_track_stage("RMCP01_GX_SET_TEV_INDIRECT");

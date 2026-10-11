@@ -73,10 +73,11 @@ public indirect rerun and full rendered/input/Discovery/capture SDK gate pass.
 The combined candidate's exact-source private rendered build and complete
 exact-HEAD CI rollup remain pending. KSEL's successful `4e5087d` gates
 do not validate this new source. The next NRO also includes the separate
-[program-restart guard](DEBUG_SERVER.md): `debug_reload_program=0` by default,
-with explicit opt-in reserved for a verified HOME forwarder. Application mode
-alone cannot establish that mapping, and hbmenu title override can restart its
-retail host game.
+[coordinated hbloader route](DEBUG_SERVER.md), gated on loader capability and a
+proven owner shutdown path. Program restart is unsupported even with its reserved
+configuration flag: application mode cannot prove a forwarder mapping, and
+hbmenu title override can restart its retail host game. Automatic relaunch still
+requires attributable hardware validation.
 
 No corrected indirect NRO has yet been deployed or observed on Switch. Its
 complete SD readback, verified backup/cleanup and attributable indirect return

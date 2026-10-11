@@ -8,7 +8,7 @@
 template <>
 struct KnownNativeCpuCall<0x8012E638u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (cpu) {
             cpu->hid2 = cpu->gpr[3];
         }

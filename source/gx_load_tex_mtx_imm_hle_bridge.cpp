@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
@@ -15,7 +16,7 @@
 extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
 
 namespace {
-[[noreturn]] void AbortInvalidMatrix(CpuContext* cpu) noexcept {
+[[noreturn]] void AbortInvalidMatrix(CpuContext* cpu) {
     mkw_switch_set_fast_track_stage("RMCP01_GX_LOAD_TEX_MTX_IMM_INVALID_MATRIX");
     mkw_switch_report_unsupported_translated_dispatch(
         "GX_LOAD_TEX_MTX_IMM_INVALID_MATRIX", cpu->gpr[3], cpu);
@@ -23,7 +24,7 @@ namespace {
 }
 } // namespace
 
-extern "C" void mkw_switch_hle_gx_load_tex_mtx_imm(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_load_tex_mtx_imm(CpuContext* cpu) {
     if (!cpu) {
         return;
     }
@@ -45,6 +46,8 @@ extern "C" void mkw_switch_hle_gx_load_tex_mtx_imm(CpuContext* cpu) noexcept {
             const std::uint32_t bits = Memory::Read32(matrixAddress + i * 4u);
             std::memcpy(&matrix[i], &bits, sizeof(bits));
         }
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         AbortInvalidMatrix(cpu);
     }

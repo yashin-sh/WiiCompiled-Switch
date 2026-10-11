@@ -18,16 +18,19 @@ void GX_HLE_FIFO_WriteBurst(const std::uint8_t* data, std::uint32_t sizeBytes);
 // Diagnostic seam used by blocker-driven fast-track startup. Non-fast-track
 // builds provide no-op implementations, so translated-code behavior remains
 // unchanged while local hardware runs can publish durable liveness records.
+// These execution hooks and native call wrappers may propagate the cooperative
+// ExecutionCancelled stop. They deliberately have no noexcept specification:
+// CPU/FPR guards and HLE locks must unwind before returning to hbloader.
 void mkw_switch_report_unsupported_translated_dispatch(
     const char* kind,
     std::uint32_t target,
-    CpuContext* cpu) noexcept;
+    CpuContext* cpu);
 void mkw_switch_note_translated_dispatch(
     std::uint32_t target,
-    CpuContext* cpu) noexcept;
+    CpuContext* cpu);
 void mkw_switch_note_discovery_dispatch(
     std::uint32_t target,
-    CpuContext* cpu) noexcept;
+    CpuContext* cpu);
 
 // Switch-native implementation of Wii SDK __OSGetSystemTime (PAL 0x801AAD7C).
 // The pinned WiiCompiled runtime treats this address as a native override and
@@ -40,14 +43,14 @@ void mkw_switch_hle_os_disable_interrupts(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_enable_interrupts(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_restore_interrupts(CpuContext* cpu) noexcept;
 bool mkw_switch_hle_os_interrupts_enabled() noexcept;
-void mkw_switch_hle_os_sleep_thread(CpuContext* cpu) noexcept;
+void mkw_switch_hle_os_sleep_thread(CpuContext* cpu);
 
 // Time-driven VI service points used once cooperative guest fibers are active.
 // poll_retrace advances only already-due retraces. wait_for_next_retrace_poll
 // performs the host-side idle wait used by SelectThread when VI is the proven
 // wake source. retrace_advancing mirrors pinned VI_HLE_IsAdvancingRetrace so
 // OSWakeupThread does not recursively reschedule from inside a retrace callback.
-void mkw_switch_hle_vi_poll_retrace(CpuContext* cpu) noexcept;
+void mkw_switch_hle_vi_poll_retrace(CpuContext* cpu);
 void mkw_switch_hle_vi_wait_for_next_retrace_poll() noexcept;
 bool mkw_switch_hle_vi_retrace_advancing() noexcept;
 
@@ -56,19 +59,21 @@ bool mkw_switch_hle_vi_retrace_advancing() noexcept;
 // exception vectors or touching the Hollywood interrupt controller.
 void mkw_switch_hle_os_exception_init(CpuContext* cpu) noexcept;
 void mkw_switch_hle_os_interrupt_init(CpuContext* cpu) noexcept;
-void mkw_switch_hle_strap_check_input(CpuContext* cpu) noexcept;
-void mkw_switch_hle_staticr_rel_prolog(CpuContext* cpu) noexcept;
-void mkw_switch_hle_os_detach_thread(CpuContext* cpu) noexcept;
-void mkw_switch_hle_os_cancel_thread(CpuContext* cpu) noexcept;
+void mkw_switch_hle_strap_check_input(CpuContext* cpu);
+void mkw_switch_hle_staticr_rel_prolog(CpuContext* cpu);
+void mkw_switch_hle_os_detach_thread(CpuContext* cpu);
+void mkw_switch_hle_os_cancel_thread(CpuContext* cpu);
 }
 
-inline void ApplyRuntimeCallOptions(std::uint32_t target, CpuContext* cpu) noexcept {
+inline void ApplyRuntimeCallOptions(std::uint32_t target, CpuContext* cpu) {
+    // The note hook checks pending owner cancellation before VI callbacks can
+    // advance guest work or enter another translated context.
+    mkw_switch_note_translated_dispatch(target, cpu);
 #if defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION
     mkw_switch_hle_vi_poll_retrace(cpu);
 #elif defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION
     mkw_switch_hle_vi_poll_retrace(cpu);
 #endif
-    mkw_switch_note_translated_dispatch(target, cpu);
 #if defined(MKW_DISCOVERY_SCAN_MODE) && MKW_DISCOVERY_SCAN_MODE
     mkw_switch_note_discovery_dispatch(target, cpu);
 #endif
@@ -76,7 +81,7 @@ inline void ApplyRuntimeCallOptions(std::uint32_t target, CpuContext* cpu) noexc
 
 // Source-owned additions for missing direct targets only. Existing native and
 // translated constexpr paths keep their priority and avoid this lookup.
-using MkwSwitchNativeCpuExtension = void (*)(CpuContext*) noexcept;
+using MkwSwitchNativeCpuExtension = void (*)(CpuContext*);
 extern "C" MkwSwitchNativeCpuExtension mkw_switch_find_missing_native_cpu_extension(
     std::uint32_t target) noexcept;
 
@@ -107,7 +112,7 @@ struct KnownTranslatedCpuCall {
 template <std::uint32_t Target>
 struct KnownNativeCpuCall {
     static constexpr bool kAvailable = false;
-    static inline void Invoke(CpuContext*) noexcept {}
+    static inline void Invoke(CpuContext*) {}
 };
 
 // PAL __init_hardware. The pinned WiiCompiled runtime replaces this entire
@@ -116,7 +121,7 @@ struct KnownNativeCpuCall {
 template <>
 struct KnownNativeCpuCall<0x80006348u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext*) noexcept {}
+    static inline void Invoke(CpuContext*) {}
 };
 
 // PAL StrapScene::CheckInput. Pinned WiiCompiled replaces the game's input
@@ -126,7 +131,7 @@ struct KnownNativeCpuCall<0x80006348u> {
 template <>
 struct KnownNativeCpuCall<0x800077C8u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_strap_check_input(cpu);
     }
 };
@@ -138,7 +143,7 @@ struct KnownNativeCpuCall<0x800077C8u> {
 template <>
 struct KnownNativeCpuCall<0x8055531Cu> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_staticr_rel_prolog(cpu);
     }
 };
@@ -150,7 +155,7 @@ struct KnownNativeCpuCall<0x8055531Cu> {
 template <>
 struct KnownNativeCpuCall<0x801AA4ECu> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_os_detach_thread(cpu);
     }
 };
@@ -162,7 +167,7 @@ struct KnownNativeCpuCall<0x801AA4ECu> {
 template <>
 struct KnownNativeCpuCall<0x801AA1D4u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_os_cancel_thread(cpu);
     }
 };
@@ -173,7 +178,7 @@ struct KnownNativeCpuCall<0x801AA1D4u> {
 template <>
 struct KnownNativeCpuCall<0x801AAD7Cu> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_os_get_system_time(cpu);
     }
 };
@@ -184,7 +189,7 @@ struct KnownNativeCpuCall<0x801AAD7Cu> {
 template <>
 struct KnownNativeCpuCall<0x801A65ACu> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_os_disable_interrupts(cpu);
     }
 };
@@ -192,7 +197,7 @@ struct KnownNativeCpuCall<0x801A65ACu> {
 template <>
 struct KnownNativeCpuCall<0x801A65C0u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_os_enable_interrupts(cpu);
     }
 };
@@ -200,7 +205,7 @@ struct KnownNativeCpuCall<0x801A65C0u> {
 template <>
 struct KnownNativeCpuCall<0x801A65D4u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_os_restore_interrupts(cpu);
     }
 };
@@ -211,7 +216,7 @@ struct KnownNativeCpuCall<0x801A65D4u> {
 template <>
 struct KnownNativeCpuCall<0x801A00E0u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_os_exception_init(cpu);
     }
 };
@@ -219,7 +224,7 @@ struct KnownNativeCpuCall<0x801A00E0u> {
 template <>
 struct KnownNativeCpuCall<0x801A661Cu> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_os_interrupt_init(cpu);
     }
 };
@@ -227,11 +232,11 @@ struct KnownNativeCpuCall<0x801A661Cu> {
 // Broadway hardware-register helpers that the pinned WiiCompiled runtime
 // intentionally replaces with host no-ops. Keep the catalogue narrowly scoped
 // to helpers whose upstream HLE has no guest-visible state change.
-#define MKW_NATIVE_NOOP_TRAIT(addr)                        \
-    template <>                                            \
-    struct KnownNativeCpuCall<0x##addr##u> {               \
-        static constexpr bool kAvailable = true;           \
-        static inline void Invoke(CpuContext*) noexcept {} \
+#define MKW_NATIVE_NOOP_TRAIT(addr)               \
+    template <>                                   \
+    struct KnownNativeCpuCall<0x##addr##u> {      \
+        static constexpr bool kAvailable = true;  \
+        static inline void Invoke(CpuContext*) {} \
     }
 
 // Performance-monitor writes.
@@ -253,13 +258,13 @@ MKW_NATIVE_NOOP_TRAIT(8012E684); // PPCMthid4
 // Headless startup retains the previous no-op behavior; the rendered bridge
 // supplies the copy-lifetime part of the GX RAM tracker.
 extern "C" void mkw_switch_hle_dc_range(CpuContext* cpu) noexcept;
-#define MKW_NATIVE_DC_RANGE_TRAIT(addr)                       \
-    template <>                                               \
-    struct KnownNativeCpuCall<0x##addr##u> {                  \
-        static constexpr bool kAvailable = true;              \
-        static inline void Invoke(CpuContext* cpu) noexcept { \
-            mkw_switch_hle_dc_range(cpu);                     \
-        }                                                     \
+#define MKW_NATIVE_DC_RANGE_TRAIT(addr)              \
+    template <>                                      \
+    struct KnownNativeCpuCall<0x##addr##u> {         \
+        static constexpr bool kAvailable = true;     \
+        static inline void Invoke(CpuContext* cpu) { \
+            mkw_switch_hle_dc_range(cpu);            \
+        }                                            \
     }
 MKW_NATIVE_DC_RANGE_TRAIT(801A1600);
 MKW_NATIVE_DC_RANGE_TRAIT(801A162C);
@@ -297,7 +302,7 @@ MKW_NATIVE_NOOP_TRAIT(801B3ACC); // SISetSamplingRate
 template <>
 struct KnownNativeCpuCall<0x80168FA0u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (cpu) {
             cpu->gpr[3] = 0u;
         }
@@ -307,7 +312,7 @@ struct KnownNativeCpuCall<0x80168FA0u> {
 template <>
 struct KnownNativeCpuCall<0x801689D0u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (cpu) {
             cpu->gpr[3] = 1u;
         }
@@ -317,7 +322,7 @@ struct KnownNativeCpuCall<0x801689D0u> {
 template <>
 struct KnownNativeCpuCall<0x80168B00u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (cpu) {
             cpu->gpr[3] = 1u;
         }

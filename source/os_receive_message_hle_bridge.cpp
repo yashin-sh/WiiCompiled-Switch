@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
@@ -178,7 +179,7 @@ void RestoreInterruptState(CpuContext* cpu, bool enabled) noexcept {
 
 } // namespace
 
-extern "C" void mkw_switch_hle_os_send_message(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_os_send_message(CpuContext* cpu) {
     if (!cpu) {
         return;
     }
@@ -212,6 +213,9 @@ extern "C" void mkw_switch_hle_os_send_message(CpuContext* cpu) noexcept {
                 cpu->gpr[3] = 1u;
                 return;
             }
+        } catch (const mkw::execution::ExecutionCancelled&) {
+            RestoreInterruptState(cpu, previousInterruptState);
+            throw;
         } catch (...) {
             RestoreInterruptState(cpu, previousInterruptState);
             cpu->gpr[3] = 0u;
@@ -229,7 +233,7 @@ extern "C" void mkw_switch_hle_os_send_message(CpuContext* cpu) noexcept {
     }
 }
 
-extern "C" void mkw_switch_hle_os_receive_message(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_os_receive_message(CpuContext* cpu) {
     if (!cpu) {
         return;
     }
@@ -277,6 +281,9 @@ extern "C" void mkw_switch_hle_os_receive_message(CpuContext* cpu) noexcept {
                 cpu->gpr[3] = 1u;
                 return;
             }
+        } catch (const mkw::execution::ExecutionCancelled&) {
+            RestoreInterruptState(cpu, previousInterruptState);
+            throw;
         } catch (...) {
             RestoreInterruptState(cpu, previousInterruptState);
             cpu->gpr[3] = 0u;

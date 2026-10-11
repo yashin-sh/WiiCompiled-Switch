@@ -1,4 +1,5 @@
 #pragma once
+#include "mkw_execution_cancel.hpp"
 
 #include "abi_bridge.h"
 #include "memory.h"
@@ -27,7 +28,7 @@ extern "C" void mkw_switch_gx_notify_guest_ram_dma_write(
 template <>
 struct KnownNativeCpuCall<0x801A961Cu> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (cpu) {
             func_801A961C(cpu);
         }
@@ -40,7 +41,7 @@ struct KnownNativeCpuCall<0x801A961Cu> {
 template <>
 struct KnownNativeCpuCall<0x801A2098u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -58,6 +59,8 @@ struct KnownNativeCpuCall<0x801A2098u> {
             if (Memory::Read32(kOSExceptionContextAddr) == contextAddr) {
                 Memory::Write32(kOSExceptionContextAddr, 0u);
             }
+        } catch (const mkw::execution::ExecutionCancelled&) {
+            throw;
         } catch (...) {
             // Pinned WiiCompiled treats invalid guest bookkeeping as a logged
             // memory fault and returns; the Switch fast-track has no logger here.
@@ -88,7 +91,7 @@ inline bool MkwSwitchQueryInterruptsEnabled(CpuContext* cpu) noexcept {
 template <>
 struct KnownNativeCpuCall<0x801A1E70u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu || !Memory::IsInitialized()) {
             return;
         }
@@ -149,7 +152,7 @@ struct KnownNativeCpuCall<0x801A1E70u> {
 template <>
 struct KnownNativeCpuCall<0x801A7DFCu> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (cpu) {
             cpu->gpr[3] = 0u;
         }
@@ -162,7 +165,7 @@ struct KnownNativeCpuCall<0x801A7DFCu> {
 template <>
 struct KnownNativeCpuCall<0x80167F68u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -176,6 +179,8 @@ struct KnownNativeCpuCall<0x80167F68u> {
                 for (std::uint32_t i = 0; i < length; ++i) {
                     Memory::Write8(buffer + i, 0u);
                 }
+            } catch (const mkw::execution::ExecutionCancelled&) {
+                throw;
             } catch (...) {
                 // Match the pinned host HLE: an unmapped guest buffer is a
                 // best-effort write failure, not an EXI transaction failure.
@@ -191,7 +196,7 @@ struct KnownNativeCpuCall<0x80167F68u> {
 template <>
 struct KnownNativeCpuCall<0x80168288u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (cpu) {
             cpu->gpr[3] = 1u;
         }
@@ -201,7 +206,7 @@ struct KnownNativeCpuCall<0x80168288u> {
 template <>
 struct KnownNativeCpuCall<0x80168380u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (cpu) {
             cpu->gpr[3] = 1u;
         }
@@ -211,7 +216,7 @@ struct KnownNativeCpuCall<0x80168380u> {
 template <>
 struct KnownNativeCpuCall<0x80169260u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (cpu) {
             cpu->gpr[3] = 1u;
         }
@@ -226,7 +231,7 @@ struct KnownNativeCpuCall<0x80169260u> {
 template <>
 struct KnownNativeCpuCall<0x801A25D0u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext*) noexcept {}
+    static inline void Invoke(CpuContext*) {}
 };
 
 // OSGetConsoleType (PAL 0x8019F33C). Match the pinned native override exactly:
@@ -235,7 +240,7 @@ struct KnownNativeCpuCall<0x801A25D0u> {
 template <>
 struct KnownNativeCpuCall<0x8019F33Cu> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -253,7 +258,7 @@ struct KnownNativeCpuCall<0x8019F33Cu> {
 template <>
 struct KnownNativeCpuCall<0x801A8A50u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (cpu) {
             cpu->gpr[3] = 0u;
         }
@@ -267,7 +272,7 @@ struct KnownNativeCpuCall<0x801A8A50u> {
 template <>
 struct KnownNativeCpuCall<0x801A16E4u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -309,7 +314,7 @@ struct KnownNativeCpuCall<0x801A16E4u> {
 template <>
 struct KnownNativeCpuCall<0x80193478u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }

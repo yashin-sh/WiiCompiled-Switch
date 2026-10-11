@@ -192,7 +192,7 @@ extern "C" void GXPixModeSync() {
     if (throwNative)
         throw std::runtime_error("native transport fixture");
 }
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* value, std::uint32_t target, CpuContext* context) noexcept {
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* value, std::uint32_t target, CpuContext* context) {
     assert(reportPipe >= 0 && reports++ == 0u);
     assert(context == &cpu && target == 0x8016EB70u && std::strcmp(value, reason) == 0);
     CheckCpu();

@@ -150,7 +150,7 @@ void Shutdown() noexcept {
 extern "C" void mkw_switch_set_fast_track_stage(const char* value) noexcept {
     stage = value;
 }
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t target, CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t target, CpuContext* cpu) {
     assert(expectedReason && std::strcmp(reason, expectedReason) == 0 && target == expectedTarget);
     assert(cpu && std::memcmp(cpu, &expectedCpu, sizeof(*cpu)) == 0 && bytes == expectedMemory);
     assert(write(pipeFd, "P", 1) == 1);

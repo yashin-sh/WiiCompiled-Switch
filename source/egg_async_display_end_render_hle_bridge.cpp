@@ -7,7 +7,7 @@
 
 extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
 
-extern "C" void mkw_switch_hle_egg_async_display_end_render(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_egg_async_display_end_render(CpuContext* cpu) {
     if (!cpu) {
         return;
     }

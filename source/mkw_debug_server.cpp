@@ -48,15 +48,29 @@ std::uint64_t sequence = 0;
 char stage[96] = "startup", frontier[128] = "unknown";
 std::string root, nro;
 bool reload_program_opt_in = false;
+std::atomic<ReloadMethod> pending_reload{ReloadMethod::Unavailable};
+std::atomic<bool> reload_prepared{false}, reload_owner_available{false};
+std::atomic<std::uint32_t> reload_error{0};
+std::string launched_path, runtime_nro_sha256, runtime_session;
+std::uint64_t runtime_nro_size = 0;
+bool runtime_identity_recorded = false;
 std::uint16_t port = 0;
 int listener = -1;
 Clock::time_point started;
 #if defined(__SWITCH__)
 Thread worker_thread{};
-bool sockets_ready = false, thread_ready = false;
+bool sockets_ready = false, thread_ready = false, thread_started = false, thread_joined = false;
 #else
 std::thread worker_thread;
 #endif
+
+bool cleanup_pending() {
+#if defined(__SWITCH__)
+    return listener >= 0 || sockets_ready || thread_ready;
+#else
+    return listener >= 0 || worker_thread.joinable();
+#endif
+}
 
 // Small streaming SHA-256 implementation keeps the host contract dependency-free.
 class Sha256 {
@@ -286,7 +300,7 @@ bool project_nro(const std::string& name) {
 std::string nro_file(const std::string& name) {
     return project_nro(name) ? directory() + "/" + name : std::string();
 }
-bool file_hash(const std::string& path, std::uint64_t& size, std::string& sha, std::uint32_t* crc = nullptr) {
+bool file_hash(const std::string& path, std::uint64_t& size, std::string& sha, std::uint32_t* crc = nullptr, bool require_running = true) {
     if (!regular(path))
         return false;
     FILE* in = std::fopen(path.c_str(), "rb");
@@ -297,13 +311,13 @@ bool file_hash(const std::string& path, std::uint64_t& size, std::string& sha, s
     size = 0;
     std::uint32_t c = ~0u;
     std::size_t n;
-    while (running.load() && (n = std::fread(buf.data(), 1, buf.size(), in))) {
+    while ((!require_running || running.load()) && (n = std::fread(buf.data(), 1, buf.size(), in))) {
         size += n;
         hash.add(buf.data(), n);
         if (crc)
             c = crc_add(c, buf.data(), n);
     }
-    bool ok = running.load() && !std::ferror(in);
+    bool ok = (!require_running || running.load()) && !std::ferror(in);
     std::fclose(in);
     if (ok) {
         sha = hash.finish();
@@ -371,20 +385,45 @@ void list_reports(const std::string& rel, std::string& out, unsigned depth = 0) 
     }
     ::closedir(dir);
 }
-bool can_reload() {
-    // Application mode also includes hbmenu title override: restarting that
-    // program can launch the retail host game instead of this NRO. Only an
-    // explicitly configured HOME forwarder may use program restart.
-    if (!running.load(std::memory_order_relaxed) || !reload_program_opt_in)
-        return false;
+bool loader_next_load_available() {
 #if defined(__SWITCH__)
-    auto type = appletGetAppletType();
-    return program_restart_allowed(reload_program_opt_in,
-                                   type == AppletType_Application || type == AppletType_SystemApplication,
-                                   hosversionAtLeast(5, 0, 0));
+    return envHasNextLoad();
 #else
     return false;
 #endif
+}
+ReloadMethod reload_method() {
+    return choose_reload_method(running.load(std::memory_order_relaxed) && reload_owner_available.load(), loader_next_load_available());
+}
+const char* method_name(ReloadMethod method) {
+    switch (method) {
+    case ReloadMethod::HbloaderNextLoad:
+        return "hbloader";
+    default:
+        return "unavailable";
+    }
+}
+bool can_reload() {
+    return reload_method() != ReloadMethod::Unavailable;
+}
+bool reload_target_ready() {
+    struct stat target {};
+    if (!regular(nro) || ::stat(nro.c_str(), &target) != 0 || target.st_size < 128)
+        return false;
+    for (const char* suffix : {".rollback", ".part"}) {
+        struct stat companion {};
+        if (::lstat((nro + suffix).c_str(), &companion) == 0 || errno != ENOENT)
+            return false;
+    }
+    std::array<unsigned char, 128> header{};
+    FILE* in = std::fopen(nro.c_str(), "rb");
+    if (!in)
+        return false;
+    const bool complete = std::fread(header.data(), 1, header.size(), in) == header.size();
+    std::fclose(in);
+    const std::uint32_t declared = std::uint32_t(header[24]) | (std::uint32_t(header[25]) << 8) |
+                                   (std::uint32_t(header[26]) << 16) | (std::uint32_t(header[27]) << 24);
+    return complete && std::memcmp(header.data() + 16, "NRO0", 4) == 0 && declared >= 128 && declared <= target.st_size;
 }
 std::string info() {
     char snapshot_stage[sizeof(stage)], snapshot_frontier[sizeof(frontier)];
@@ -397,11 +436,12 @@ std::string info() {
         std::strcpy(snapshot_frontier, "busy");
     }
     const auto uptime = std::chrono::duration<double>(Clock::now() - started).count();
-    char body[1024];
+    char body[2048];
     std::snprintf(body, sizeof(body),
-                  "dispatch=%llu\nguest_pc=0x%08X\nfrontier=%s\nuptime=%.3f\nfps=%.2f\nstage=%s\nlog_dropped=%llu\nreload_supported=%d\ndebug_nro_path=%s\n",
+                  "dispatch=%llu\nguest_pc=0x%08X\nfrontier=%s\nuptime=%.3f\nfps=%.2f\nstage=%s\nlog_dropped=%llu\nreload_supported=%d\nreload_method=%s\nreload_requested=%d\nreload_prepared=%d\nreload_owner_available=%d\nloader_next_load=%d\nprogram_reload_configured=%d\nprogram_reload_supported=0\nreload_error=0x%08X\nruntime_session=%s\nruntime_nro_size=%llu\nruntime_nro_sha256=%s\ndebug_nro_path=%s\n",
                   static_cast<unsigned long long>(dispatch.load()), guest_pc.load(), snapshot_frontier, uptime,
-                  uptime > 0 ? presents.load() / uptime : 0, snapshot_stage, static_cast<unsigned long long>(dropped.load()), can_reload() ? 1 : 0, nro.c_str());
+                  uptime > 0 ? presents.load() / uptime : 0, snapshot_stage, static_cast<unsigned long long>(dropped.load()), can_reload() ? 1 : 0, method_name(reload_method()), reload_requested() ? 1 : 0, reload_prepared.load() ? 1 : 0, reload_owner_available.load() ? 1 : 0, loader_next_load_available() ? 1 : 0, reload_program_opt_in ? 1 : 0, reload_error.load(), runtime_session.c_str(),
+                  static_cast<unsigned long long>(runtime_nro_size), runtime_nro_sha256.c_str(), nro.c_str());
     return body;
 }
 bool parse_number(const std::string& text, unsigned base, std::uint64_t& number) {
@@ -516,6 +556,9 @@ bool command(Client& client, const std::string& line) {
     if (words.empty())
         return error(fd, "empty command");
     const auto& cmd = words[0];
+    if ((pending_reload.load(std::memory_order_acquire) != ReloadMethod::Unavailable || reload_prepared.load()) &&
+        (cmd == "deploy" || cmd == "finalize-deploy" || cmd == "remove-nro" || cmd == "reload"))
+        return error(fd, "reload already requested; candidate mutations are blocked");
     if (cmd == "ping" && words.size() == 1)
         return reply(fd, true, "pong\n");
     if (cmd == "info" && words.size() == 1)
@@ -612,22 +655,18 @@ bool command(Client& client, const std::string& line) {
     if (cmd == "deploy" && words.size() == 3)
         return upload(fd, words[1], words[2]);
     if (cmd == "reload" && words.size() == 1) {
-        if (!reload_program_opt_in)
-            return error(fd, "program restart disabled; debug_reload_program=1 requires a verified HOME forwarder (hbmenu title override restarts its host game)");
-        if (!can_reload())
-            return error(fd, "reload requires a HOME forwarder application on system 5.0.0 or newer");
-#if defined(__SWITCH__)
-        if (!reply(fd, true, "restart requested\n"))
+        const auto method = reload_method();
+        if (method == ReloadMethod::Unavailable)
+            return error(fd, "reload unavailable: hbloader next-load and a ready owner shutdown path are required; program restart is unsupported (hbmenu can launch its host game)");
+        if (!reload_target_ready())
+            return error(fd, "reload target is absent, invalid, or deployment has not been finalized");
+        if (!reply(fd, true, std::string("restart requested\nmethod=") + method_name(method) + "\n"))
             return false;
-        const Result result = appletRestartProgram(nullptr, 0);
-        if (R_FAILED(result)) {
-            char report[96];
-            std::snprintf(report, sizeof(report), "restart failed: 0x%08x\n", result);
-            log(report, std::strlen(report));
-            reply(fd, false, report);
-        }
+        reload_error.store(0);
+        // The worker must never exit the process or invoke the restart APIs.
+        // Publish only after the acknowledgement has been fully sent.
+        pending_reload.store(method, std::memory_order_release);
         return false;
-#endif
     }
     return error(fd, "unknown command or argument count");
 }
@@ -744,6 +783,8 @@ void worker(void*) noexcept {
 bool launch(bool opt_in, const std::string& app_root, const std::string& candidate, std::uint16_t requested_port, bool program_reload = false) {
     if (running.load())
         return true;
+    if (cleanup_pending() && !stop())
+        return false;
     if (!opt_in)
         return false;
     if (listener >= 0)
@@ -761,6 +802,23 @@ bool launch(bool opt_in, const std::string& app_root, const std::string& candida
     root = app_root;
     nro = candidate;
     reload_program_opt_in = program_reload;
+    pending_reload.store(ReloadMethod::Unavailable);
+    reload_prepared.store(false);
+    reload_error.store(0);
+    if (!runtime_identity_recorded) {
+        runtime_identity_recorded = true;
+        if (launched_path.empty() || !file_hash(launched_path, runtime_nro_size, runtime_nro_sha256, nullptr, false)) {
+            runtime_nro_size = 0;
+            runtime_nro_sha256.clear();
+        }
+    }
+    // Server reinitialization within the same NRO must not look like a new
+    // execution. Keep session and startup-file identity fixed for this process.
+    if (runtime_session.empty()) {
+        char session[32];
+        std::snprintf(session, sizeof(session), "%016llx", static_cast<unsigned long long>(Clock::now().time_since_epoch().count()));
+        runtime_session = session;
+    }
     // Recover a process/power interruption between the two commit renames.
     const auto rollback = nro + ".rollback";
     struct stat current {};
@@ -811,13 +869,15 @@ bool launch(bool opt_in, const std::string& app_root, const std::string& candida
         return false;
     }
     thread_ready = true;
+    thread_started = false;
+    thread_joined = false;
     if (R_FAILED(threadStart(&worker_thread))) {
-        running = false;
-        threadClose(&worker_thread);
-        thread_ready = false;
+        // Created but never started: close is safe without waiting on an
+        // unsignalled handle. A failed close remains owned for stop() retry.
         stop();
         return false;
     }
+    thread_started = true;
 #else
     worker_thread = std::thread([] { worker(nullptr); });
 #endif
@@ -825,10 +885,72 @@ bool launch(bool opt_in, const std::string& app_root, const std::string& candida
 }
 } // namespace
 
+void set_launch_path(const char* path) noexcept {
+    if (running.load())
+        return;
+    try {
+        launched_path.clear();
+        if (!path)
+            return;
+        const std::string candidate(path);
+#if defined(__SWITCH__)
+        if (candidate.rfind("sdmc:/switch/", 0) != 0)
+            return;
+#endif
+        if (candidate.empty())
+            return;
+        const auto relative = candidate.substr(candidate.find(':') == std::string::npos ? (candidate.front() == '/' ? 1 : 0) : candidate.find(':') + 2);
+        if (candidate.empty() || candidate.size() > 384 || !relative_safe(relative))
+            return;
+        // Main supplies argv[0] before filesystem initialization. Record only
+        // the path here; hash once in launch(), after SD services are ready.
+        launched_path = candidate;
+    } catch (...) {
+        launched_path.clear();
+    }
+}
+void set_reload_owner_available(bool available) noexcept {
+    reload_owner_available.store(available);
+}
+ReloadMethod reload_request_method() noexcept {
+    return pending_reload.load(std::memory_order_acquire);
+}
+bool reload_requested() noexcept {
+    return pending_reload.load(std::memory_order_acquire) != ReloadMethod::Unavailable && !reload_prepared.load();
+}
+bool prepare_reload_on_owner() noexcept {
+    const auto method = pending_reload.load(std::memory_order_acquire);
+    if (!reload_owner_available.load() || method == ReloadMethod::Unavailable || reload_prepared.load())
+        return false;
+#if defined(__SWITCH__)
+    Result result = 0;
+    if (method == ReloadMethod::HbloaderNextLoad) {
+        // libnx copies into the hbloader ABI's 512-byte path/2048-byte argv
+        // buffers. Configured paths are <=384 bytes and contain no whitespace.
+        result = envHasNextLoad() && nro.size() <= 384 && reload_target_ready() ? envSetNextLoad(nro.c_str(), nro.c_str()) : 0xFFFFFFFFu;
+    } else {
+        result = 0xFFFFFFFFu;
+    }
+    if (R_FAILED(result)) {
+        reload_error.store(result);
+        pending_reload.store(ReloadMethod::Unavailable, std::memory_order_release);
+        char report[96];
+        std::snprintf(report, sizeof(report), "owner reload preparation failed: 0x%08X\n", result);
+        log(report, std::strlen(report));
+        return false;
+    }
+    reload_prepared.store(true);
+    return true;
+#else
+    return false;
+#endif
+}
 bool start() noexcept {
     try {
         if (running.load())
             return true;
+        if (cleanup_pending() && !stop())
+            return false;
         reload_program_opt_in = false;
         std::string app_root = DefaultRoot, candidate = DefaultNro;
         bool opt_in = false;
@@ -870,17 +992,32 @@ bool start() noexcept {
         return false;
     }
 }
-void stop() noexcept {
+bool stop() noexcept {
     running.store(false);
 #if defined(__SWITCH__)
     if (thread_ready) {
-        threadWaitForExit(&worker_thread);
-        threadClose(&worker_thread);
-        thread_ready = false;
+        if (thread_started && !thread_joined) {
+            const Result result = threadWaitForExit(&worker_thread);
+            if (R_FAILED(result)) {
+                reload_error.store(result);
+                return false; // Never close or free a possibly live worker.
+            }
+            thread_joined = true;
+        }
+        const Result result = threadClose(&worker_thread);
+        if (R_FAILED(result)) {
+            reload_error.store(result);
+            return false; // Keep created/joined state; retry close only.
+        }
+        thread_ready = thread_started = thread_joined = false;
     }
 #else
-    if (worker_thread.joinable())
-        worker_thread.join();
+    try {
+        if (worker_thread.joinable())
+            worker_thread.join();
+    } catch (...) {
+        return false;
+    }
 #endif
     if (listener >= 0) {
         ::close(listener);
@@ -888,12 +1025,16 @@ void stop() noexcept {
     }
     port = 0;
     reload_program_opt_in = false;
+    reload_owner_available.store(false);
+    pending_reload.store(ReloadMethod::Unavailable);
+    reload_prepared.store(false);
 #if defined(__SWITCH__)
     if (sockets_ready) {
         socketExit();
         sockets_ready = false;
     }
 #endif
+    return true;
 }
 bool enabled() noexcept {
     return running.load(std::memory_order_relaxed);

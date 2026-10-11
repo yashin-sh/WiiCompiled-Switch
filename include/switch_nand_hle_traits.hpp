@@ -98,7 +98,7 @@ inline void EnsureHostTitleDataDir(std::uint32_t gameCode) noexcept {
 template <>
 struct KnownNativeCpuCall<0x8019E18Cu> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -128,7 +128,7 @@ struct KnownNativeCpuCall<0x8019E18Cu> {
 template <>
 struct KnownNativeCpuCall<0x8019E770u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -146,7 +146,7 @@ struct KnownNativeCpuCall<0x8019E770u> {
 template <>
 struct KnownNativeCpuCall<0x8019C800u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -167,7 +167,7 @@ struct KnownNativeCpuCall<0x8019C800u> {
 template <>
 struct KnownNativeCpuCall<0x8019C990u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }

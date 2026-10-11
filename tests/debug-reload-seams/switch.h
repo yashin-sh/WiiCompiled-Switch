@@ -14,10 +14,12 @@ struct Thread {};
 
 AppletType appletGetAppletType();
 bool hosversionAtLeast(unsigned major, unsigned minor, unsigned patch);
+bool envHasNextLoad();
+Result envSetNextLoad(const char* path, const char* argv);
 Result appletRestartProgram(const void* argument, std::size_t size);
 Result socketInitializeDefault();
 void socketExit();
 Result threadCreate(Thread*, void (*)(void*), void*, void*, std::size_t, int, int);
 Result threadStart(Thread*);
-void threadWaitForExit(Thread*);
-void threadClose(Thread*);
+Result threadWaitForExit(Thread*);
+Result threadClose(Thread*);

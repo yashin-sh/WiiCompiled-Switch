@@ -145,7 +145,7 @@ extern "C" void GXSetChanAmbColor(GXChannelID id, GXColor color) {
     forwarded = color;
 }
 extern "C" void mkw_switch_report_unsupported_translated_dispatch(
-    const char* reason, std::uint32_t target, CpuContext* cpu) noexcept {
+    const char* reason, std::uint32_t target, CpuContext* cpu) {
     assert(reportPipe >= 0);
     ExpectStage("RMCP01_GX_SET_CHAN_AMB_COLOR_INVALID_COLOR");
     assert(std::strcmp(reason, "GX_SET_CHAN_AMB_COLOR_INVALID_COLOR") == 0);

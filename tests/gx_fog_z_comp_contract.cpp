@@ -29,7 +29,7 @@ struct Contract {
     const char* stage;
     const char* reason;
     const char* memoryReason;
-    void (*invoke)(CpuContext*) noexcept;
+    void (*invoke)(CpuContext*);
 };
 constexpr std::array contracts{
     Contract{0x801722ccu, "RMCP01_GX_SET_FOG", "GX_SET_FOG_UNPROVEN_ARGS", "GX_SET_FOG_UNREADABLE_COLOR", KnownNativeCpuCall<0x801722ccu>::Invoke},
@@ -272,7 +272,7 @@ extern "C" void GXSetZCompLoc(GXBool beforeTexture) {
     Observe(Operation::ZComp);
     assert(beforeTexture == (expectedCpu.gpr[3] != 0u));
 }
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t target, CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t target, CpuContext* cpu) {
     if (reportPipe < 0 || reportCalls++)
         _exit(92);
     if (cpu != liveCpu || target != 0x801722ccu || std::strcmp(reason, expectedReason) != 0 ||

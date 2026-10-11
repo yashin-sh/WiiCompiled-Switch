@@ -596,11 +596,11 @@ extern "C" bool mkw_switch_renderer_initialize() noexcept {
     }
 }
 
-extern "C" void mkw_switch_renderer_shutdown() noexcept {
+extern "C" bool mkw_switch_renderer_shutdown() noexcept {
     std::scoped_lock lock(g_rendererMutex);
     if (!g_initialized) {
         close_report();
-        return;
+        return true;
     }
 
     report("STAGE RENDERER_TEARDOWN begin frames=%llu\n",
@@ -626,14 +626,16 @@ extern "C" void mkw_switch_renderer_shutdown() noexcept {
         aurora::webgpu::g_depthBuffer = {};
 
         g_surface.Unconfigure();
-        aurora::webgpu::g_queue = {};
+        // Complete Dawn's asynchronous/GPU work before dropping the last
+        // device reference. The Switch shim also owns copy/present objects
+        // which are outside gfx::shutdown's caches.
+        if (g_device)
+            g_device.Destroy();
+        aurora::webgpu::shutdown();
         g_queue = nullptr;
-        aurora::webgpu::g_surface = {};
         g_surface = nullptr;
-        aurora::webgpu::g_device = {};
         g_device = nullptr;
         g_adapter = nullptr;
-        aurora::webgpu::g_instance = {};
         g_instance = nullptr;
 
         report("STAGE RENDERER_TEARDOWN PASS\n");
@@ -645,6 +647,7 @@ extern "C" void mkw_switch_renderer_shutdown() noexcept {
     g_initialized = false;
     report("RESULT=%s renderer-shutdown\n", teardownSucceeded ? "PASS" : "FAIL");
     close_report();
+    return teardownSucceeded;
 }
 
 void* GuestToHostPtr(uint32_t addr, size_t len) {

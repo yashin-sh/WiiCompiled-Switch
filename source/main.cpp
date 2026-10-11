@@ -7,19 +7,32 @@
 #include "rendered_fast_track_graphics.hpp"
 #include "switch_platform.hpp"
 #include "vm_probe.hpp"
+#include "mkw_debug_server.hpp"
 
 #include <switch.h>
 #include <cstdio>
 
 extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
+extern "C" bool mkw_switch_stop_liveness_watchdog() noexcept;
+
+namespace {
+void JoinDiagnosticWorkers() noexcept {
+    // Failed SDK joins retain their handle ownership for a retry. No loader
+    // return is safe until both independent workers have really terminated.
+    while (!mkw::debug::stop() || !mkw_switch_stop_liveness_watchdog()) {
+        mkw_switch_set_fast_track_stage("SHUTDOWN_WORKER_JOIN_FAILED");
+        mkw::horizon_runtime_services::sleep_for_ns(50'000'000);
+    }
+}
+} // namespace
 
 #if defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK
 struct CpuContext;
 extern "C" void mkw_switch_hle_gx_draw_done(CpuContext* ctx) noexcept;
-extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* ctx) noexcept;
+extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* ctx);
 extern "C" void mkw_switch_hle_gx_set_viewport(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_scissor(CpuContext* ctx) noexcept;
-extern "C" void mkw_switch_hle_gx_load_pos_mtx_imm(CpuContext* ctx) noexcept;
+extern "C" void mkw_switch_hle_gx_load_pos_mtx_imm(CpuContext* ctx);
 extern "C" void mkw_switch_hle_gx_set_current_mtx(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_clear_vtx_desc(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_vtx_desc(CpuContext* ctx) noexcept;
@@ -34,20 +47,21 @@ extern "C" void mkw_switch_hle_gx_set_color_update(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_alpha_update(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_z_mode(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_cull_mode(CpuContext* ctx) noexcept;
-extern "C" void mkw_switch_hle_gx_begin(CpuContext* ctx) noexcept;
+extern "C" void mkw_switch_hle_gx_begin(CpuContext* ctx);
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_set_copy_filter(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_gx_flush(CpuContext* ctx) noexcept;
 extern "C" void mkw_switch_hle_os_create_thread(CpuContext* ctx) noexcept;
-extern "C" void mkw_switch_hle_select_thread(CpuContext* ctx) noexcept;
-extern "C" void mkw_switch_hle_os_send_message(CpuContext* ctx) noexcept;
-extern "C" void mkw_switch_hle_os_receive_message(CpuContext* ctx) noexcept;
-extern "C" void mkw_switch_hle_os_sleep_thread(CpuContext* ctx) noexcept;
+extern "C" void mkw_switch_hle_select_thread(CpuContext* ctx);
+extern "C" void mkw_switch_hle_os_send_message(CpuContext* ctx);
+extern "C" void mkw_switch_hle_os_receive_message(CpuContext* ctx);
+extern "C" void mkw_switch_hle_os_sleep_thread(CpuContext* ctx);
 #endif
 
-int main(int, char**) {
+int main(int argc, char** argv) {
+    mkw::debug::set_launch_path(argc > 0 && argv ? argv[0] : nullptr);
 #if defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK
     // The synthetic fast-track NRO is a link probe, not a scheduler/runtime
     // test. Keep the real bridges reachable through --gc-sections so unresolved
@@ -123,6 +137,7 @@ int main(int, char**) {
     mkw_switch_set_fast_track_stage("RENDERER_INIT");
     if (!mkw_switch_renderer_initialize()) {
         mkw_switch_set_fast_track_stage("RENDERER_INIT_FAILED");
+        JoinDiagnosticWorkers();
         mkw::switch_platform::shutdown();
         return 2;
     }
@@ -211,15 +226,52 @@ int main(int, char**) {
 #endif
 
     mkw_switch_set_fast_track_stage("IDLE_AFTER_BOOTSTRAP");
-    while (!mkw::switch_platform::should_exit()) {
-        mkw::horizon_runtime_services::sleep_for_ns(16'000'000); // bootstrap only
+    while (true) {
+        if (mkw::debug::reload_requested()) {
+            // The execution provider must have unwound every guest stack;
+            // envSetNextLoad schedules the loader return, it does not exit.
+            if (!runtime_result.translated_execution_cancelled || runtime_result.guest_quiescent) {
+                if (mkw::runtime_bootstrap::quiesce_guest()) {
+                    if (mkw::debug::prepare_reload_on_owner())
+                        break;
+                } else {
+                    mkw::debug::set_reload_owner_available(false);
+                    mkw_switch_set_fast_track_stage("RELOAD_GUEST_DRAIN_FAILED");
+                }
+            } else {
+                mkw::debug::set_reload_owner_available(false);
+            }
+        }
+        if (mkw::switch_platform::should_exit())
+            break;
+        mkw::horizon_runtime_services::sleep_for_ns(16'000'000);
+    }
+
+    if (!mkw::runtime_bootstrap::quiesce_guest()) {
+        mkw::debug::set_reload_owner_available(false);
+        mkw_switch_set_fast_track_stage("SHUTDOWN_GUEST_DRAIN_FAILED");
+        // Do not return to a loader or destroy backing while guards are live.
+        for (;;)
+            mkw::horizon_runtime_services::sleep_for_ns(50'000'000);
     }
 
     mkw_switch_set_fast_track_stage("SHUTDOWN");
+    // No background diagnostics may survive a normal hbloader return.
+    JoinDiagnosticWorkers();
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
-    mkw_switch_renderer_shutdown();
+    if (!mkw_switch_renderer_shutdown()) {
+        mkw_switch_set_fast_track_stage("RELOAD_RENDERER_DRAIN_FAILED");
+        // Next-load buffers take effect only after normal main return.
+        for (;;)
+            mkw::horizon_runtime_services::sleep_for_ns(50'000'000);
+    }
 #endif
-    mkw::runtime_bootstrap::stop();
+    if (!mkw::runtime_bootstrap::stop()) {
+        // Preserve memory and suspended C++ stacks rather than freeing backing
+        // under live CPU/FPR guards. A failed drain cannot return to hbloader.
+        for (;;)
+            mkw::horizon_runtime_services::sleep_for_ns(50'000'000);
+    }
     mkw::switch_platform::shutdown();
     return 0;
 }

@@ -121,9 +121,9 @@ extern "C" int __wrap_fclose(FILE* p) {
     return result;
 }
 extern "C" void mkw_switch_set_fast_track_stage(const char*) noexcept {}
-extern "C" void mkw_switch_note_translated_dispatch(std::uint32_t, CpuContext*) noexcept {}
-extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) noexcept {}
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char*, std::uint32_t, CpuContext*) noexcept {
+extern "C" void mkw_switch_note_translated_dispatch(std::uint32_t, CpuContext*) {}
+extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) {}
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char*, std::uint32_t, CpuContext*) {
     std::abort();
 }
 bool mkw_switch_try_dispatch_indirect(std::uint32_t target, CpuContext* cpu) {

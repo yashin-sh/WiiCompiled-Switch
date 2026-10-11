@@ -677,7 +677,7 @@ extern "C" void GXLoadTexObj(GXTexObj* obj, GXTexMapID id) {
     assert(nativeCalls++ == 3u && obj == currentHost && id == static_cast<GXTexMapID>(expectedMap));
 }
 extern "C" void mkw_switch_report_unsupported_translated_dispatch(
-    const char* reason, std::uint32_t target, CpuContext* cpu) noexcept {
+    const char* reason, std::uint32_t target, CpuContext* cpu) {
     assert(reportPipe >= 0);
     CheckStage();
     assert(std::strcmp(reason, expectedReason) == 0 && target == 0x80170f2cu);

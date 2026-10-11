@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 #include "abi_bridge.h"
@@ -108,7 +109,7 @@ namespace {
     std::abort();
 }
 } // namespace
-extern "C" void mkw_switch_hle_gx_get_viewport(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_get_viewport(CpuContext* cpu) {
     if (!cpu)
         return;
     mkw_switch_set_fast_track_stage("RMCP01_GX_GET_VIEWPORT");
@@ -119,6 +120,8 @@ extern "C" void mkw_switch_hle_gx_get_viewport(CpuContext* cpu) noexcept {
             lastBypassFrame = g_gxFrameCount;
             AssertFrameOffscreenScreenBypass();
         }
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         Refuse("GX_GET_VIEWPORT_BYPASS_EXCEPTION", 0x801733E0u, cpu);
     }
@@ -135,6 +138,8 @@ extern "C" void mkw_switch_hle_gx_get_viewport(CpuContext* cpu) noexcept {
             Memory::WriteFloat32(output, g_viewportState[i]);
         } catch (const Memory::AccessViolation& error) {
             LogMemoryError(RT_TAG_GX, "GX write", error);
+        } catch (const mkw::execution::ExecutionCancelled&) {
+            throw;
         } catch (...) {
             Refuse("GX_GET_VIEWPORT_WRITE_EXCEPTION", 0x801733E0u, cpu);
         }
@@ -143,7 +148,7 @@ extern "C" void mkw_switch_hle_gx_get_viewport(CpuContext* cpu) noexcept {
     Refuse("GX_GET_VIEWPORT_REQUIRES_RENDERER", 0x801733E0u, cpu);
 #endif
 }
-extern "C" void mkw_switch_hle_gx_set_z_scale_offset(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_set_z_scale_offset(CpuContext* cpu) {
     if (!cpu)
         return;
     mkw_switch_set_fast_track_stage("RMCP01_GX_SET_Z_SCALE_OFFSET");
@@ -152,6 +157,8 @@ extern "C" void mkw_switch_hle_gx_set_z_scale_offset(CpuContext* cpu) noexcept {
     const float offset = static_cast<float>(cpu->fpr[2].d);
     try {
         GXSetZScaleOffset(scale, offset);
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         Refuse("GX_Z_SCALE_OFFSET_NATIVE_EXCEPTION", 0x80173400u, cpu);
     }
@@ -165,13 +172,15 @@ extern "C" void mkw_switch_hle_gx_set_z_scale_offset(CpuContext* cpu) noexcept {
             Memory::WriteFloat32(gd + 0x560u, 1.0f + z24 * scale);
             Memory::Write32(gd + 0x5FCu, Memory::Read32(gd + 0x5FCu) | 0x10000000u);
         }
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
     }
 #else
     Refuse("GX_Z_SCALE_OFFSET_REQUIRES_RENDERER", 0x80173400u, cpu);
 #endif
 }
-extern "C" void mkw_switch_hle_gx_set_scissor_box_offset(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_set_scissor_box_offset(CpuContext* cpu) {
     if (!cpu)
         return;
     mkw_switch_set_fast_track_stage("RMCP01_GX_SET_SCISSOR_BOX_OFFSET");
@@ -184,6 +193,8 @@ extern "C" void mkw_switch_hle_gx_set_scissor_box_offset(CpuContext* cpu) noexce
         Refuse("GX_SCISSOR_BOX_OFFSET_UNPROVEN_RANGE", 0x801734E0u, cpu);
     try {
         GXSetScissorBoxOffset(x, y);
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         Refuse("GX_SCISSOR_BOX_OFFSET_NATIVE_EXCEPTION", 0x801734E0u, cpu);
     }
@@ -193,6 +204,8 @@ extern "C" void mkw_switch_hle_gx_set_scissor_box_offset(CpuContext* cpu) noexce
         const auto gd = Memory::Read32(kGXDataPtrAddr);
         if (gd)
             Memory::Write16(gd + 2u, 0);
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
     }
 #else

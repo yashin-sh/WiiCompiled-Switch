@@ -22,7 +22,7 @@ constexpr std::uint32_t kObservedTextureMtx = 30u;
 constexpr std::uint32_t kObservedNormalize = 0u;
 constexpr std::uint32_t kObservedPostMtx = 125u;
 
-[[noreturn]] void AbortUnproven(CpuContext* cpu) noexcept {
+[[noreturn]] void AbortUnproven(CpuContext* cpu) {
     mkw_switch_report_unsupported_translated_dispatch(
         "GX_SET_TEX_COORD_GEN2_UNPROVEN_ARGS",
         kGxSetTexCoordGen2Address,
@@ -32,7 +32,7 @@ constexpr std::uint32_t kObservedPostMtx = 125u;
 
 } // namespace
 
-extern "C" void mkw_switch_hle_gx_set_tex_coord_gen2(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_set_tex_coord_gen2(CpuContext* cpu) {
     if (!cpu) {
         return;
     }

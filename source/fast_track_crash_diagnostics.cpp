@@ -3,6 +3,7 @@ extern "C" void mkw_switch_fifo_capture_checkpoint() noexcept;
 #endif
 #include <cstdint>
 #include "mkw_debug_server.hpp"
+#include "mkw_execution_cancel.hpp"
 #if defined(__SWITCH__)
 #include "horizon_runtime_services.hpp"
 #endif
@@ -14,7 +15,15 @@ void note_stage(const char*) noexcept __attribute__((weak));
 void note_dispatch(std::uint64_t, std::uint32_t, const char*) noexcept __attribute__((weak));
 void log(const char*, std::size_t) noexcept __attribute__((weak));
 bool enabled() noexcept __attribute__((weak));
+bool reload_requested() noexcept __attribute__((weak));
 } // namespace mkw::debug
+
+namespace mkw::execution {
+void check_execution_cancel() {
+    if (mkw::debug::reload_requested && mkw::debug::reload_requested())
+        throw ExecutionCancelled{};
+}
+} // namespace mkw::execution
 #if defined(MKW_RENDERED_FRAME_DUMP) && MKW_RENDERED_FRAME_DUMP
 extern "C" void mkw_switch_frame_dump_checkpoint() noexcept;
 #endif
@@ -855,7 +864,8 @@ extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept {
 
 extern "C" void mkw_switch_note_translated_dispatch(
     std::uint32_t target,
-    CpuContext* cpu) noexcept {
+    CpuContext* cpu) {
+    mkw::execution::check_execution_cancel();
 #if MKW_FAST_TRACK_DIAGNOSTICS
     if (g_dispatch_count == 0u) {
         g_first_dispatch_tick = armGetSystemTick();
@@ -1060,7 +1070,7 @@ extern "C" void mkw_switch_note_translated_dispatch(
 
 extern "C" void mkw_switch_note_discovery_dispatch(
     std::uint32_t target,
-    CpuContext* cpu) noexcept {
+    CpuContext* cpu) {
 #if MKW_FAST_TRACK_DIAGNOSTICS && \
     defined(MKW_DISCOVERY_SCAN_MODE) && MKW_DISCOVERY_SCAN_MODE
     if (target == 0u) {
@@ -1162,7 +1172,7 @@ extern "C" void mkw_switch_note_discovery_dispatch(
 extern "C" void mkw_switch_report_unsupported_translated_dispatch(
     const char* kind,
     std::uint32_t target,
-    CpuContext* cpu) noexcept {
+    CpuContext* cpu) {
 #if MKW_FAST_TRACK_DIAGNOSTICS
     if (mkw::debug::note_dispatch) {
         const char* phase = post_main_phase_name(target);
@@ -1600,6 +1610,7 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
         // No guest continuation or guessed HLE semantics. Keep the independent
         // host worker available after durable blocker/capture evidence is saved.
         while (mkw::debug::enabled() && !mkw::horizon_runtime_services::should_exit()) {
+            mkw::execution::check_execution_cancel();
             // Retry best-effort publication during the pause, so contention on
             // the last dispatch cannot leave the terminal frontier stale.
             if (mkw::debug::note_dispatch) {
@@ -1608,6 +1619,7 @@ extern "C" void mkw_switch_report_unsupported_translated_dispatch(
             mkw_switch_set_fast_track_stage("DEBUG_FRONTIER_PAUSED");
             mkw::horizon_runtime_services::sleep_for_ns(50'000'000);
         }
+        mkw::execution::check_execution_cancel();
         // The caller's existing abort remains the terminal path on local exit.
     }
 #endif
@@ -1718,8 +1730,8 @@ extern "C" void __libnx_exception_handler(ThreadExceptionDump* ctx) {
 
     if (n > 0) {
         const std::size_t size = static_cast<std::size_t>(n) < sizeof(buffer)
-            ? static_cast<std::size_t>(n)
-            : sizeof(buffer) - 1;
+                                     ? static_cast<std::size_t>(n)
+                                     : sizeof(buffer) - 1;
         write_atomicish(kExceptionPath, buffer, size);
     }
 }

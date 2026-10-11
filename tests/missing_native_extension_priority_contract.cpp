@@ -13,7 +13,7 @@ void Extension(CpuContext*) noexcept {
 template <>
 struct KnownNativeCpuCall<0x12340001> {
     static constexpr bool kAvailable = true;
-    static void Invoke(CpuContext*) noexcept {
+    static void Invoke(CpuContext*) {
         ++native;
     }
 };
@@ -33,13 +33,13 @@ extern "C" MkwSwitchNativeCpuExtension mkw_switch_find_missing_native_cpu_extens
     ++lookup;
     return Extension;
 }
-extern "C" void mkw_switch_note_translated_dispatch(std::uint32_t, CpuContext*) noexcept {
+extern "C" void mkw_switch_note_translated_dispatch(std::uint32_t, CpuContext*) {
     ++notes;
 }
-extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) noexcept {
+extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) {
     ++polls;
 }
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char*, std::uint32_t, CpuContext*) noexcept {
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char*, std::uint32_t, CpuContext*) {
     assert(false);
 }
 int main() {

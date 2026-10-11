@@ -1,5 +1,14 @@
 # Status log
 
+## 2026-10-11 — Bounded NANDMove candidate launched via Netloader
+
+The exact 74,465,336-byte candidate `57a2ee0` launches via nxlink with exit 0
+at 10:38:33 CEST, after fresh artifact/runtime-input/private-patch and complete
+exact-code-HEAD CI checks. The prior SD readback/older-NRO cleanup is dated
+2026-10-10; the capture marker is not reread for this launch. Durable console
+results and current visuals remain pending. See the
+[launch receipt](NAND_MOVE_2026-10-10.md#netloader-launch--2026-10-11).
+
 The NANDMove candidate passes its private rendered/Discovery gate and all eight exact-HEAD GitHub checks; PR #378 is merged. Complete SD readback and verified older-NRO cleanup pass. Corrected Netloader execution remains pending. See the [candidate receipt](NAND_MOVE_2026-10-10.md).
 
 

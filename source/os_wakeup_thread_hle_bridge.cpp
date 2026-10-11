@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
@@ -88,7 +89,7 @@ void MarkRunQueuePending(std::int32_t priority) {
 
 } // namespace
 
-extern "C" void mkw_switch_hle_os_wakeup_thread(CpuContext* ctx) noexcept {
+extern "C" void mkw_switch_hle_os_wakeup_thread(CpuContext* ctx) {
     CpuContext* cpu = ctx ? ctx : &GetPersistentCpuContext();
     const std::uint32_t queueAddr = cpu->gpr[3];
     if (queueAddr == 0u) {
@@ -172,6 +173,9 @@ extern "C" void mkw_switch_hle_os_wakeup_thread(CpuContext* ctx) noexcept {
             cpu->gpr[3] = 0u;
             InvokeDirectCpu<0x801A9C08u>(cpu);
         }
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        RestoreInterrupts(cpu, irqState);
+        throw;
     } catch (...) {
         // Keep malformed guest scheduler state contained at this native boundary.
     }

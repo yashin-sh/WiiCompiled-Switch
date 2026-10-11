@@ -28,7 +28,7 @@ struct Contract {
     std::uint32_t target;
     const char* stage;
     const char* reason;
-    void (*invoke)(CpuContext*) noexcept;
+    void (*invoke)(CpuContext*);
 };
 constexpr std::array contracts{
     Contract{0x80171b58u, "RMCP01_GX_SET_TEV_DIRECT", "GX_SET_TEV_DIRECT_UNPROVEN_ARGS", KnownNativeCpuCall<0x80171b58u>::Invoke},
@@ -256,7 +256,7 @@ extern "C" void mkw_switch_set_fast_track_stage(const char* value) noexcept {
     stage = value;
     ++stageCalls;
 }
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t target, CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t target, CpuContext* cpu) {
     if (reportCalls != 0u)
         _exit(92); // A second report must not become an accepted SIGABRT assertion.
     ++reportCalls;

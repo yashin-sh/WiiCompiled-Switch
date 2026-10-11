@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
@@ -63,7 +64,7 @@ namespace {
 }
 } // namespace
 
-extern "C" void mkw_switch_hle_gx_copy_tex(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_copy_tex(CpuContext* cpu) {
     if (!cpu)
         return;
     mkw_switch_set_fast_track_stage("RMCP01_GX_COPY_TEX");
@@ -95,6 +96,8 @@ extern "C" void mkw_switch_hle_gx_copy_tex(CpuContext* cpu) noexcept {
         }
         GXSetTexCopySrc(0, 0, 128, 128);
         Report("copy-pass", address, clear);
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         // Never publish a successful copy after a native/resource exception.
         Refuse("GX_COPY_TEX_NATIVE_EXCEPTION", cpu);

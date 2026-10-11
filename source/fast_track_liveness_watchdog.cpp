@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <atomic>
 
 #if (defined(MKW_LOCAL_FAST_TRACK) && MKW_LOCAL_FAST_TRACK) || \
     (defined(MKW_SYNTHETIC_FAST_TRACK) && MKW_SYNTHETIC_FAST_TRACK)
@@ -24,6 +25,10 @@ constexpr std::uint64_t kMaxHistorySamples = 180u;
 constexpr std::uint64_t kFsyncStride = 5u;
 
 Thread g_watchdog_thread{};
+std::atomic<bool> g_watchdog_running{false};
+bool g_watchdog_created = false;
+bool g_watchdog_started = false;
+bool g_watchdog_joined = false;
 bool g_history_initialized = false;
 bool g_have_previous = false;
 std::uint64_t g_sample_index = 0u;
@@ -234,7 +239,7 @@ void AppendHistorySample(std::uint64_t now,
 }
 
 void WatchdogThread(void*) noexcept {
-    while (true) {
+    while (g_watchdog_running.load(std::memory_order_acquire)) {
         char heartbeat[kHeartbeatBufferSize]{};
         std::size_t heartbeat_size = 0u;
         if (ReadHeartbeat(heartbeat, sizeof(heartbeat), &heartbeat_size)) {
@@ -288,9 +293,15 @@ __attribute__((constructor)) void StartFastTrackLivenessWatchdog() noexcept {
     if (R_FAILED(create_rc)) {
         return;
     }
+    g_watchdog_created = true;
+    g_watchdog_running.store(true, std::memory_order_release);
     const Result start_rc = threadStart(&g_watchdog_thread);
     if (R_FAILED(start_rc)) {
-        threadClose(&g_watchdog_thread);
+        g_watchdog_running.store(false, std::memory_order_release);
+        if (R_SUCCEEDED(threadClose(&g_watchdog_thread)))
+            g_watchdog_created = false;
+    } else {
+        g_watchdog_started = true;
     }
 }
 #endif
@@ -319,3 +330,31 @@ extern "C" __attribute__((used)) bool mkw_switch_liveness_watchdog_synthetic_pro
 } // namespace
 
 #endif
+
+extern "C" bool mkw_switch_stop_liveness_watchdog() noexcept {
+#if defined(MKW_LOCAL_FAST_TRACK) && MKW_LOCAL_FAST_TRACK
+    g_watchdog_running.store(false, std::memory_order_release);
+    if (g_watchdog_started && !g_watchdog_joined) {
+        if (R_FAILED(threadWaitForExit(&g_watchdog_thread)))
+            return false;
+        g_watchdog_joined = true;
+    }
+    if (g_watchdog_created) {
+        if (R_FAILED(threadClose(&g_watchdog_thread)))
+            return false;
+        g_watchdog_created = false;
+        g_watchdog_started = false;
+        g_watchdog_joined = false;
+    }
+#endif
+    return true;
+}
+
+// Covers early normal returns as well as main's explicit shutdown sequence.
+__attribute__((destructor)) static void StopLivenessWatchdogAtExit() noexcept {
+    while (!mkw_switch_stop_liveness_watchdog()) {
+#if defined(MKW_LOCAL_FAST_TRACK) && MKW_LOCAL_FAST_TRACK
+        svcSleepThread(50'000'000);
+#endif
+    }
+}

@@ -1,6 +1,8 @@
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
 
 #include "rendered_fast_track_graphics.hpp"
+#include "mkw_debug_server.hpp"
+#include "mkw_gpu_shutdown_guard.hpp"
 #include "switch_texture_copy_lifetime.hpp"
 #include "surface_presenter.hpp"
 #include <memory>
@@ -138,6 +140,8 @@ void report(const char* format, ...) {
     if (length <= 0) {
         return;
     }
+
+    mkw::debug::log(buffer, std::min(static_cast<std::size_t>(length), sizeof(buffer) - 1u));
 
     if (g_report) {
         std::fputs(buffer, g_report);
@@ -425,6 +429,9 @@ bool present_frame_locked(bool clear) {
 #endif
 
     const bool presented = g_surface.Present();
+    if (presented) {
+        mkw::debug::note_present();
+    }
 #if defined(MKW_RENDERED_FRAME_DUMP) && MKW_RENDERED_FRAME_DUMP
     if (readbacks[0] && presented) {
         try {
@@ -590,11 +597,11 @@ extern "C" bool mkw_switch_renderer_initialize() noexcept {
     }
 }
 
-extern "C" void mkw_switch_renderer_shutdown() noexcept {
+extern "C" bool mkw_switch_renderer_shutdown() noexcept {
     std::scoped_lock lock(g_rendererMutex);
     if (!g_initialized) {
         close_report();
-        return;
+        return true;
     }
 
     report("STAGE RENDERER_TEARDOWN begin frames=%llu\n",
@@ -620,14 +627,20 @@ extern "C" void mkw_switch_renderer_shutdown() noexcept {
         aurora::webgpu::g_depthBuffer = {};
 
         g_surface.Unconfigure();
-        aurora::webgpu::g_queue = {};
+        // Complete Dawn's asynchronous/GPU work before dropping the last
+        // device reference. The Switch shim also owns copy/present objects
+        // which are outside gfx::shutdown's caches.
+        if (g_device)
+            g_device.Destroy();
+        if (mkw_switch_gpu_shutdown_failed()) {
+            report("STAGE RENDERER_TEARDOWN FAIL driver quarantine\n");
+            return false;
+        }
+        aurora::webgpu::shutdown();
         g_queue = nullptr;
-        aurora::webgpu::g_surface = {};
         g_surface = nullptr;
-        aurora::webgpu::g_device = {};
         g_device = nullptr;
         g_adapter = nullptr;
-        aurora::webgpu::g_instance = {};
         g_instance = nullptr;
 
         report("STAGE RENDERER_TEARDOWN PASS\n");
@@ -639,6 +652,7 @@ extern "C" void mkw_switch_renderer_shutdown() noexcept {
     g_initialized = false;
     report("RESULT=%s renderer-shutdown\n", teardownSucceeded ? "PASS" : "FAIL");
     close_report();
+    return teardownSucceeded;
 }
 
 void* GuestToHostPtr(uint32_t addr, size_t len) {

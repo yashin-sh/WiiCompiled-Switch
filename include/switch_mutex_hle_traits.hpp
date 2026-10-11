@@ -45,7 +45,7 @@ inline void RestoreInterrupts(CpuContext* cpu, std::uint32_t state) noexcept {
     std::uint32_t target,
     std::uint32_t mutex,
     CpuContext* cpu,
-    std::uint32_t irqState) noexcept {
+    std::uint32_t irqState) {
     RestoreInterrupts(cpu, irqState);
     if (cpu) {
         cpu->gpr[3] = mutex;
@@ -62,7 +62,7 @@ inline void LinkMutexToThread(
     std::uint32_t thread,
     std::uint32_t mutex,
     CpuContext* cpu,
-    std::uint32_t irqState) noexcept {
+    std::uint32_t irqState) {
     const std::uint32_t tailAddr = thread + kThreadMutexTailOffset;
     const std::uint32_t headAddr = thread + kThreadMutexQueueOffset;
     if (!Mapped32(tailAddr) || !Mapped32(headAddr) ||
@@ -92,7 +92,7 @@ inline void UnlinkMutexFromThread(
     std::uint32_t thread,
     std::uint32_t mutex,
     CpuContext* cpu,
-    std::uint32_t irqState) noexcept {
+    std::uint32_t irqState) {
     const std::uint32_t headAddr = thread + kThreadMutexQueueOffset;
     const std::uint32_t tailAddr = thread + kThreadMutexTailOffset;
     if (!Mapped32(headAddr) || !Mapped32(tailAddr) ||
@@ -136,7 +136,7 @@ template <>
 struct KnownNativeCpuCall<0x801A7EE4u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         using namespace mkw::switch_mutex_hle;
         if (!cpu || !Memory::IsInitialized()) {
             return;
@@ -190,7 +190,7 @@ template <>
 struct KnownNativeCpuCall<0x801A7FC0u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         using namespace mkw::switch_mutex_hle;
         if (!cpu || !Memory::IsInitialized()) {
             return;

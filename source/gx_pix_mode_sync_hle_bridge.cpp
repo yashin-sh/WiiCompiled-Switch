@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
@@ -18,7 +19,7 @@ namespace {
 }
 } // namespace
 
-extern "C" void mkw_switch_hle_gx_pix_mode_sync(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_pix_mode_sync(CpuContext* cpu) {
     if (!cpu)
         return;
     mkw_switch_set_fast_track_stage("RMCP01_GX_PIX_MODE_SYNC");
@@ -29,10 +30,14 @@ extern "C" void mkw_switch_hle_gx_pix_mode_sync(CpuContext* cpu) noexcept {
         const std::uint32_t gd = Memory::Read32(kGXDataPtrAddr);
         if (gd)
             Memory::Write16(gd + 2u, 0);
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
     }
     try {
         GXPixModeSync();
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         Refuse("GX_PIX_MODE_SYNC_NATIVE_EXCEPTION", cpu);
     }

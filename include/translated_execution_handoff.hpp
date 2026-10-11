@@ -14,6 +14,8 @@ struct MkwSwitchTranslatedExecutionProbeResult {
     std::uint32_t r13;
     std::uint32_t r3_before;
     std::uint32_t r3_after;
+    bool cancelled = false;
+    bool guest_quiescent = false;
 };
 
 struct MkwSwitchTranslatedExecutionHandoffApi {
@@ -28,7 +30,7 @@ mkw_switch_get_translated_execution_handoff_api() noexcept;
 
 namespace mkw::translated_execution_handoff {
 
-inline constexpr std::uint32_t kAbiVersion = 1;
+inline constexpr std::uint32_t kAbiVersion = 2;
 
 struct Status {
     bool linked = false;

@@ -10,8 +10,8 @@
 #include <cstdint>
 
 extern "C" void mkw_switch_hle_task_thread_run(CpuContext* cpu);
-extern "C" void mkw_switch_hle_egg_async_display_end_render(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_staticr_rel_prolog(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_egg_async_display_end_render(CpuContext* cpu);
+extern "C" void mkw_switch_hle_staticr_rel_prolog(CpuContext* cpu);
 
 namespace {
 std::atomic<const StaticIndirectDispatchTable*> g_staticIndirectDispatchTable{nullptr};

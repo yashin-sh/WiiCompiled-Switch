@@ -3,20 +3,21 @@
 // The public probe does not load translated-runtime headers. The registry only
 // needs the opaque context pointer; execution variants provide its definition.
 struct CpuContext;
-using NativeCpuExtension = void (*)(CpuContext*) noexcept;
+using NativeCpuExtension = void (*)(CpuContext*);
 
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 extern "C" void mkw_switch_hle_gx_load_light_obj_imm(CpuContext*) noexcept;
-extern "C" void mkw_switch_hle_gx_load_nrm_mtx_imm(CpuContext*) noexcept;
-extern "C" void mkw_switch_hle_gx_set_z_texture(CpuContext*) noexcept;
-extern "C" void mkw_switch_hle_gx_set_tev_color_s10(CpuContext*) noexcept;
-extern "C" void mkw_switch_hle_lyt_draw_quad(CpuContext*) noexcept;
-extern "C" void mkw_switch_hle_nand_create(CpuContext*) noexcept;
-extern "C" void mkw_switch_hle_nand_write(CpuContext*) noexcept;
-extern "C" void mkw_switch_hle_nand_move(CpuContext*) noexcept;
-extern "C" void mkw_switch_hle_nand_seek(CpuContext*) noexcept;
-extern "C" void mkw_switch_hle_nand_get_length(CpuContext*) noexcept;
+extern "C" void mkw_switch_hle_gx_load_nrm_mtx_imm(CpuContext*);
+extern "C" void mkw_switch_hle_gx_set_z_texture(CpuContext*);
+extern "C" void mkw_switch_hle_gx_set_tev_color_s10(CpuContext*);
+extern "C" void mkw_switch_hle_gx_set_tev_indirect(CpuContext*);
+extern "C" void mkw_switch_hle_lyt_draw_quad(CpuContext*);
+extern "C" void mkw_switch_hle_nand_create(CpuContext*);
+extern "C" void mkw_switch_hle_nand_write(CpuContext*);
+extern "C" void mkw_switch_hle_nand_move(CpuContext*);
+extern "C" void mkw_switch_hle_nand_seek(CpuContext*);
+extern "C" void mkw_switch_hle_nand_get_length(CpuContext*);
 #endif
 
 extern "C" NativeCpuExtension mkw_switch_find_missing_native_cpu_extension(
@@ -34,6 +35,8 @@ extern "C" NativeCpuExtension mkw_switch_find_missing_native_cpu_extension(
         return mkw_switch_hle_gx_set_z_texture;
     case 0x80171e70u:
         return mkw_switch_hle_gx_set_tev_color_s10;
+    case 0x801717acu:
+        return mkw_switch_hle_gx_set_tev_indirect;
     case 0x8019b884u:
         return mkw_switch_hle_nand_write;
     case 0x8019b43cu:

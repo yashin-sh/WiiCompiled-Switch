@@ -296,7 +296,7 @@ template <>
 struct KnownNativeCpuCall<0x8015EA1Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu || !mkw::dvd_hle_detail::GuestBootstrapRangesAvailable()) {
             return;
         }

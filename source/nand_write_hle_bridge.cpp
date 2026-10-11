@@ -27,7 +27,7 @@ void Status(std::uint32_t fileInfo, std::uint32_t buffer, std::uint32_t length,
     }
 }
 } // namespace
-extern "C" void mkw_switch_hle_nand_write(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_nand_write(CpuContext* cpu) {
     if (!cpu)
         return;
     const auto fileInfo = cpu->gpr[3], buffer = cpu->gpr[4], length = cpu->gpr[5];
@@ -43,7 +43,7 @@ extern "C" void mkw_switch_hle_nand_write(CpuContext* cpu) noexcept {
 }
 #else
 struct CpuContext;
-extern "C" void mkw_switch_hle_nand_write(CpuContext*) noexcept {
+extern "C" void mkw_switch_hle_nand_write(CpuContext*) {
     std::abort();
 }
 #endif

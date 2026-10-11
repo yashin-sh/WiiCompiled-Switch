@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
@@ -536,7 +537,7 @@ void WriteWrapStatus(
     std::uint32_t format,
     std::uint32_t wrapS,
     std::uint32_t wrapT,
-    std::uint32_t mipmap) noexcept {
+    std::uint32_t mipmap) {
     WriteStatus(
         status,
         obj,
@@ -564,7 +565,7 @@ void WriteWrapStatus(
     std::uint32_t wrapS,
     std::uint32_t wrapT,
     std::uint32_t mipmap,
-    std::uint32_t size) noexcept {
+    std::uint32_t size) {
     WriteLoadStatus(
         status,
         obj,
@@ -593,7 +594,7 @@ void WriteWrapStatus(
     std::uint32_t lodBiasBits,
     std::uint32_t biasClamp,
     std::uint32_t edgeLod,
-    std::uint32_t maxAniso) noexcept {
+    std::uint32_t maxAniso) {
     WriteLodStatus(
         status,
         obj,
@@ -616,7 +617,7 @@ void WriteWrapStatus(
     std::uint32_t obj,
     std::uint32_t wrapS,
     std::uint32_t wrapT,
-    std::uint32_t word0Before) noexcept {
+    std::uint32_t word0Before) {
     WriteWrapStatus(status, obj, wrapS, wrapT, word0Before);
     mkw_switch_report_unsupported_translated_dispatch(
         status, kGxInitTexObjWrapModeAddress, cpu);
@@ -938,7 +939,7 @@ void ApplyGuestTexObjLodWords(
 
 } // namespace
 
-extern "C" void mkw_switch_hle_gx_init_tex_obj(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_init_tex_obj(CpuContext* cpu) {
     if (!cpu) {
         return;
     }
@@ -998,6 +999,8 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj(CpuContext* cpu) noexcept {
             static_cast<GXTexWrapMode>(wrapS),
             static_cast<GXTexWrapMode>(wrapT),
             static_cast<GXBool>(mipmap));
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         AbortBoundary(
             "GX_INIT_TEX_OBJ_HOST_EXCEPTION",
@@ -1025,7 +1028,7 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj(CpuContext* cpu) noexcept {
         mipmap);
 }
 
-extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) {
     if (!cpu) {
         return;
     }
@@ -1370,6 +1373,8 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept {
             biasClamp != 0u ? GX_TRUE : GX_FALSE,
             edgeLod != 0u ? GX_TRUE : GX_FALSE,
             static_cast<GXAnisotropy>(maxAniso));
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         AbortLodBoundary(
             "GX_INIT_TEX_OBJ_LOD_HOST_EXCEPTION",
@@ -1431,7 +1436,7 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept {
         maxAniso);
 }
 
-extern "C" void mkw_switch_hle_gx_init_tex_obj_wrap_mode(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_init_tex_obj_wrap_mode(CpuContext* cpu) {
     if (!cpu) {
         return;
     }
@@ -1693,6 +1698,8 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_wrap_mode(CpuContext* cpu) noexce
             hostObj,
             static_cast<GXTexWrapMode>(wrapS),
             static_cast<GXTexWrapMode>(wrapT));
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         AbortWrapBoundary(
             "GX_INIT_TEX_OBJ_WRAP_MODE_HOST_EXCEPTION",
@@ -1724,7 +1731,7 @@ extern "C" void mkw_switch_hle_gx_init_tex_obj_wrap_mode(CpuContext* cpu) noexce
     WriteWrapStatus("wrap-pass", obj, wrapS, wrapT, word0);
 }
 
-extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) {
     if (!cpu) {
         return;
     }
@@ -1887,6 +1894,8 @@ extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept {
             GX_ANISO_1);
         GXInitTexObjUserData(hostObj, nullptr);
         GXLoadTexObj(hostObj, static_cast<GXTexMapID>(tid));
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         AbortLoadBoundary(
             "GX_LOAD_TEX_OBJ_HOST_EXCEPTION",

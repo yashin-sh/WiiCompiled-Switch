@@ -32,3 +32,6 @@ for rendered in 0 1; do
     "$TEST_DIR/contract-$rendered"
     echo "PASS: GX TEV scalar batch contract (rendered=$rendered)"
 done
+
+# Audited konst selector setters share the TEV scalar validation gate.
+bash "$ROOT_DIR/scripts/test-gx-tev-ksel.sh"

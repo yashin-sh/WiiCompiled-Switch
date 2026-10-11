@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
@@ -23,14 +24,14 @@ constexpr std::uint16_t kExceptionContextBit = 0x0002u;
 [[noreturn]] void AbortLoadContextBoundary(
     const char* kind,
     std::uint32_t target,
-    CpuContext* cpu) noexcept {
+    CpuContext* cpu) {
     mkw_switch_report_unsupported_translated_dispatch(kind, target, cpu);
     std::abort();
 }
 
 } // namespace
 
-extern "C" [[noreturn]] void mkw_switch_hle_os_load_context(CpuContext* ctx) noexcept {
+extern "C" [[noreturn]] void mkw_switch_hle_os_load_context(CpuContext* ctx) {
     CpuContext* cpu = ctx ? ctx : &GetPersistentCpuContext();
     const std::uint32_t guestContextAddr = cpu->gpr[3];
 
@@ -81,6 +82,8 @@ extern "C" [[noreturn]] void mkw_switch_hle_os_load_context(CpuContext* ctx) noe
         // previous host call stack. Keep that impossible pin path explicit and
         // durable if it ever occurs on hardware.
         AbortLoadContextBoundary("OSLOADCONTEXT_TARGET_RETURNED", srr0, cpu);
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         AbortLoadContextBoundary("OSLOADCONTEXT_GUEST_MEMORY", kOSLoadContextAddress, cpu);
     }

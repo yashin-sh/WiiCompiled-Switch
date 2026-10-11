@@ -1,4 +1,5 @@
 #pragma once
+#include "mkw_execution_cancel.hpp"
 
 #include "abi_bridge.h"
 #include "memory.h"
@@ -480,7 +481,7 @@ inline void InvokeReadCallback(
     CpuContext* cpu,
     std::uint32_t callbackPtr,
     std::int32_t result,
-    std::uint32_t fileInfoPtr) noexcept {
+    std::uint32_t fileInfoPtr) {
     if (!cpu || callbackPtr == 0u) {
         return;
     }
@@ -491,6 +492,8 @@ inline void InvokeReadCallback(
         callbackCpu.gpr[4] = fileInfoPtr;
         CpuContextScope scope(&callbackCpu);
         InvokeIndirectCpu(callbackPtr, &callbackCpu);
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         WriteReadStatus(
             "callback-failed",
@@ -513,7 +516,7 @@ template <>
 struct KnownNativeCpuCall<0x8015E834u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -541,7 +544,7 @@ template <>
 struct KnownNativeCpuCall<0x8015E74Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }

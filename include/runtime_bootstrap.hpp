@@ -14,6 +14,7 @@ enum class StopPoint {
     WaitingForTranslatedExecution,
     TranslatedFunctionExecuted,
     TranslatedFunctionExecutionFailed,
+    TranslatedExecutionCancelled,
     TranslatedSequenceExecuted,
     TranslatedSequenceExecutionFailed,
     TranslatedBootstrapPreludeExecuted,
@@ -53,6 +54,8 @@ struct Result {
     std::uint32_t translated_execution_handoff_reported_abi = 0;
     bool translated_execution_attempted = false;
     bool translated_execution_passed = false;
+    bool translated_execution_cancelled = false;
+    bool guest_quiescent = false;
     bool translated_sequence_mode = false;
     bool translated_bootstrap_prelude_mode = false;
     std::uint32_t translated_execution_guest_address = 0;
@@ -66,7 +69,10 @@ struct Result {
 };
 
 Result start();
-void stop() noexcept;
+// Unwind guest contexts before renderer teardown; retain CPU backing.
+bool quiesce_guest() noexcept;
+// Fails without freeing CPU memory if a guest stack could not be unwound.
+bool stop() noexcept;
 void print(const Result& result);
 bool write_report(const Result& result);
 

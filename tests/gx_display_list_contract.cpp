@@ -223,13 +223,13 @@ extern "C" [[noreturn]] void __wrap_abort() {
 extern "C" void mkw_switch_set_fast_track_stage(const char* s) noexcept {
     stage = s;
 }
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char*, std::uint32_t, CpuContext*) noexcept {}
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char*, std::uint32_t, CpuContext*) {}
 extern "C" void mkw_switch_pinned_fifo_write_burst(const std::uint8_t* data, std::uint32_t size) {
     assert(data && size);
     ++liveBursts;
 }
 
-extern "C" void mkw_switch_gx_record_begin(CpuContext*) noexcept;
+extern "C" void mkw_switch_gx_record_begin(CpuContext*);
 
 int main() {
     Reset();

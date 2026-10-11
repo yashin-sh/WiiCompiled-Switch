@@ -23,6 +23,13 @@ std::uint32_t current_thread() noexcept;
 bool register_current(std::uint32_t guest_thread, CpuContext* cpu) noexcept;
 void suspend(std::uint32_t guest_thread) noexcept;
 void resume(std::uint32_t guest_thread) noexcept;
-bool switch_to(std::uint32_t guest_thread, CpuContext* cpu) noexcept;
+bool switch_to(std::uint32_t guest_thread, CpuContext* cpu);
+
+// Owner-only: after typed cancellation reaches the scheduler stack, resume
+// every started suspended fibre solely to unwind its C++ frames. Never run
+// guest entry points for fibres that have not started. Destroy only quiescent
+// stacks; memory remains valid until all CPU/FPR/context guards have run.
+bool drain_cancelled() noexcept;
+bool shutdown_quiescent() noexcept;
 
 } // namespace mkw::switch_guest_fiber

@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
@@ -28,7 +29,7 @@ float ReadGuestFloat32(std::uint32_t address) {
     return value;
 }
 
-[[noreturn]] void AbortInvalidProjectionMatrix(CpuContext* cpu, std::uint32_t address) noexcept {
+[[noreturn]] void AbortInvalidProjectionMatrix(CpuContext* cpu, std::uint32_t address) {
     mkw_switch_set_fast_track_stage("RMCP01_GX_SET_PROJECTION_INVALID");
     mkw_switch_report_unsupported_translated_dispatch(
         "GX_SET_PROJECTION_INVALID_MATRIX",
@@ -39,7 +40,7 @@ float ReadGuestFloat32(std::uint32_t address) {
 
 } // namespace
 
-extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* cpu) {
     if (!cpu) {
         return;
     }
@@ -57,6 +58,8 @@ extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* cpu) noexcept {
         for (std::uint32_t i = 0; i < 16u; ++i) {
             matrix[i] = ReadGuestFloat32(matrixAddress + i * 4u);
         }
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         AbortInvalidProjectionMatrix(cpu, matrixAddress);
     }
@@ -94,7 +97,7 @@ void ValidateVector(CpuContext* cpu, const char* reason, std::uint32_t target) {
 } // namespace
 #endif
 
-extern "C" void mkw_switch_hle_gx_get_projectionv(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_get_projectionv(CpuContext* cpu) {
     if (!cpu)
         return;
     mkw_switch_set_fast_track_stage("RMCP01_GX_GET_PROJECTIONV");
@@ -111,7 +114,7 @@ extern "C" void mkw_switch_hle_gx_get_projectionv(CpuContext* cpu) noexcept {
 #endif
 }
 
-extern "C" void mkw_switch_hle_gx_set_projectionv(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_set_projectionv(CpuContext* cpu) {
     if (!cpu)
         return;
     mkw_switch_set_fast_track_stage("RMCP01_GX_SET_PROJECTIONV");

@@ -34,12 +34,19 @@ void QueueCallback(std::uint32_t callbackPtr,
     }
 }
 
-void PumpCallbacks(CpuContext* cpu) noexcept {
+void PumpCallbacks(CpuContext* cpu) {
     if (!cpu || g_callbackDrainDepth != 0) {
         return;
     }
 
-    ++g_callbackDrainDepth;
+    struct DrainDepthGuard {
+        DrainDepthGuard() noexcept {
+            ++g_callbackDrainDepth;
+        }
+        ~DrainDepthGuard() noexcept {
+            --g_callbackDrainDepth;
+        }
+    } drainDepthGuard;
     for (int processed = 0; processed < 64; ++processed) {
         PendingCallback callback{};
         {
@@ -57,11 +64,10 @@ void PumpCallbacks(CpuContext* cpu) noexcept {
         CpuContextScope callbackScope(&callbackCpu);
         InvokeIndirectCpu(callback.callbackPtr, &callbackCpu);
     }
-    --g_callbackDrainDepth;
 }
 
 } // namespace mkw::switch_nand_runtime
 
-extern "C" void mkw_switch_pump_deferred_guest_callbacks(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_pump_deferred_guest_callbacks(CpuContext* cpu) {
     mkw::switch_nand_runtime::PumpCallbacks(cpu);
 }

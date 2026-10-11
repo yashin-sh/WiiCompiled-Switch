@@ -1,7 +1,11 @@
 # Documentation index
 
+- [Bounded TEV indirect correction](GX_TEV_INDIRECT_2026-10-11.md) — later observed frontier, checked ten-argument ABI and pinned BP contracts; new candidate gates pending
+- [Bounded TEV constant selectors](GX_TEV_KSEL_2026-10-11.md) — exact-candidate gates and verified LAN replacement pass; fresh console reports advance beyond K color to the alpha stage and indirect frontier
+- [RGB5A3 repeat texture return](GX_RGB5A3_REPEAT_2026-10-11.md) — exact-head checks, verified LAN replacement, successful 2,048-byte texture load and later K color selector frontier
 - [NANDSeek candidate: existing-file length frontier](HARDWARE_NAND_SEEK_LENGTH_2026-10-11.md)
 - [Bounded ordinary-read NANDGetLength](NAND_GET_LENGTH_2026-10-11.md)
+- [Opt-in Switch LAN debug server](DEBUG_SERVER.md) — live status/logs, diagnostic downloads and verified deployment/restart workflow
 
 - [NANDMove returned; NANDSeek frontier](HARDWARE_NAND_MOVE_SEEK_2026-10-11.md) — 42 reports verified twice; successful relocation, black/error and ordinary-handle rewind stop
 - [Bounded owned-stream rewind](NAND_SEEK_2026-10-11.md) — live handle/argument guards, real fseek/ftell and pinned errors

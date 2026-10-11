@@ -4,6 +4,7 @@
 #include "devkita64_gcc_compat.hpp"
 #include "abi_bridge.h"
 #include "memory.h"
+#include "mkw_execution_cancel.hpp"
 #include "switch_host_context_ext.hpp"
 
 #include <array>
@@ -29,6 +30,7 @@ enum class FiberState : std::uint8_t {
     Ready,
     Running,
     Waiting,
+    Cancelled,
 };
 
 struct GuestFiberRecord {
@@ -37,14 +39,18 @@ struct GuestFiberRecord {
     std::uint32_t entry_point = 0u;
     std::uint32_t entry_arg = 0u;
     CpuContext saved_cpu{};
+    CpuContext execution_cpu{};
     FiberState state = FiberState::Empty;
     bool scheduler_host = false;
+    bool started = false;
+    HostContext::Handle resume_host = nullptr;
 };
 
 std::array<GuestFiberRecord, kMaxGuestFibers> g_records{};
 HostContext::Handle g_scheduler_host = nullptr;
 std::uint32_t g_current_guest_thread = 0u;
-CpuContext* g_active_cpu = nullptr;
+bool g_cancelling = false;
+HostContext::Handle g_drain_owner = nullptr;
 
 GuestFiberRecord* Find(std::uint32_t guest_thread) noexcept {
     if (guest_thread == 0u) {
@@ -72,16 +78,12 @@ GuestFiberRecord* Allocate(std::uint32_t guest_thread) noexcept {
     return nullptr;
 }
 
-[[noreturn]] void AbortGuestFiberBoundary(const char* kind, std::uint32_t target, CpuContext* cpu) noexcept {
+[[noreturn]] void AbortGuestFiberBoundary(const char* kind, std::uint32_t target, CpuContext* cpu) {
     mkw_switch_report_unsupported_translated_dispatch(kind, target, cpu);
     std::abort();
 }
 
-void GuestFiberEntry(void* argument) {
-    const std::uint32_t guest_thread =
-        static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(argument));
-    GuestFiberRecord* record = Find(guest_thread);
-    CpuContext* cpu = g_active_cpu ? g_active_cpu : &GetPersistentCpuContext();
+void RunGuestFiber(GuestFiberRecord* record, CpuContext* cpu, std::uint32_t guest_thread) {
     if (!record || !cpu) {
         AbortGuestFiberBoundary("GUEST_FIBER_ENTRY_STATE", guest_thread, cpu);
     }
@@ -109,6 +111,8 @@ void GuestFiberEntry(void* argument) {
 
         CpuContextScope scope(cpu);
         InvokeIndirectCpu(record->entry_point, cpu);
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         AbortGuestFiberBoundary("GUEST_FIBER_ENTRY_EXCEPTION", record->entry_point, cpu);
     }
@@ -116,6 +120,45 @@ void GuestFiberEntry(void* argument) {
     // Full guest-thread exit semantics are a separate hardware boundary. Do not
     // guess OSExitThread cleanup here; keep an unexpected natural return durable.
     AbortGuestFiberBoundary("GUEST_FIBER_ENTRY_RETURNED", record->entry_point, cpu);
+}
+
+void GuestFiberEntry(void* argument) {
+    const auto guest_thread = static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(argument));
+    GuestFiberRecord* record = Find(guest_thread);
+    CpuContext* cpu = record ? &record->execution_cpu : nullptr;
+    if (!record)
+        std::abort();
+    record->started = true;
+    bool cancelled = false;
+    try {
+        RunGuestFiber(record, cpu, guest_thread);
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        cancelled = true;
+    }
+    // The exception must be completely caught before switching stacks: the
+    // C++ exception runtime is thread-local, while these fibres share a thread.
+    // RunGuestFiber's CPU/FPR/lock guards are now destroyed on this stack.
+    if (cancelled) {
+        record->state = FiberState::Cancelled;
+        g_cancelling = true;
+        auto destination = g_drain_owner ? g_drain_owner : record->resume_host;
+        // Cooperative guest scheduling may form A -> B -> A cycles. Never
+        // resume an already terminal stack; its exception catch has finished
+        // and only the owner may reclaim it after draining the other fibres.
+        if (!g_drain_owner) {
+            for (const auto& caller : g_records)
+                if (caller.host == destination && caller.state == FiberState::Cancelled) {
+                    destination = g_scheduler_host;
+                    break;
+                }
+        }
+        if (!destination || HostContext::IsCurrent(destination))
+            std::abort();
+        HostContext::Switch(destination);
+        // Terminal stacks are never resumed after their final unwind.
+        std::abort();
+    }
+    std::abort();
 }
 
 } // namespace
@@ -149,6 +192,8 @@ bool create(std::uint32_t guest_thread,
         return false;
     }
     if (record->host && !record->scheduler_host) {
+        if (record->started && record->state != FiberState::Cancelled)
+            return false;
         HostContext::Destroy(record->host);
     }
 
@@ -171,6 +216,7 @@ bool create(std::uint32_t guest_thread,
     record->saved_cpu.srr0 = entry_point;
     record->saved_cpu.hid2 =
         seed_cpu && seed_cpu->hid2 != 0u ? seed_cpu->hid2 : 0x10000000u;
+    record->execution_cpu = record->saved_cpu;
     record->state = FiberState::Waiting;
     record->scheduler_host = false;
     return true;
@@ -224,7 +270,6 @@ bool register_current(std::uint32_t guest_thread, CpuContext* cpu) noexcept {
     record->state = FiberState::Running;
     record->scheduler_host = true;
     g_current_guest_thread = guest_thread;
-    g_active_cpu = cpu;
     return true;
 }
 
@@ -240,7 +285,8 @@ void resume(std::uint32_t guest_thread) noexcept {
     }
 }
 
-bool switch_to(std::uint32_t guest_thread, CpuContext* cpu) noexcept {
+bool switch_to(std::uint32_t guest_thread, CpuContext* cpu) {
+    mkw::execution::check_execution_cancel();
     GuestFiberRecord* target = Find(guest_thread);
     if (!available() || !target || !target->host || !cpu) {
         return false;
@@ -257,13 +303,40 @@ bool switch_to(std::uint32_t guest_thread, CpuContext* cpu) noexcept {
     g_current_guest_thread = guest_thread;
     target->state = FiberState::Running;
     *cpu = target->saved_cpu;
-    g_active_cpu = cpu;
 
     if (HostContext::IsCurrent(target->host)) {
         return true;
     }
 
+    target->resume_host = HostContext::Current();
+    CpuContext* const caller_tls = TryGetCpuContext();
+    const auto caller_fp = MkwGetHostFpControl();
+    // Each fibre owns stable CPU backing. Its root CpuContextScope must not
+    // retain a pointer to a caller callback's automatic CPU after that parent
+    // stack has unwound. A suspended source restores its own TLS before throw.
+    // First entry seeds the root CPU once. A started fibre may be parked in a
+    // callback whose automatic CPU supplied saved_cpu; its suspended switch_to
+    // will restore that callback itself. Do not overwrite the distinct root
+    // execution CPU while resuming such a callback.
+    if (!target->started && !target->scheduler_host)
+        target->execution_cpu = target->saved_cpu;
+    g_currentCpuContext = target->scheduler_host ? cpu : &target->execution_cpu;
+    MkwApplyHostNiMode(g_currentCpuContext->fpscr);
     HostContext::Switch(target->host);
+    g_currentCpuContext = caller_tls;
+    // The CPU argument still contains the temporary target snapshot here;
+    // restore the exact pre-switch host control, not its stale FPSCR bits.
+    MkwRestoreHostMxcsr(caller_fp);
+
+    if (g_cancelling || target->state == FiberState::Cancelled) {
+        // Restore the caller before unwinding its guards. Guest globals cannot
+        // be consulted during shutdown and no guest instructions may resume.
+        *cpu = caller_context;
+        g_current_guest_thread = previous_thread;
+        if (previous)
+            previous->state = FiberState::Running;
+        throw mkw::execution::ExecutionCancelled{};
+    }
 
     // The source host stack resumes only when guest scheduling has selected it
     // again. Mirror the pin's bookkeeping: if guest globals confirm that fact,
@@ -285,7 +358,52 @@ bool switch_to(std::uint32_t guest_thread, CpuContext* cpu) noexcept {
         *cpu = caller_context;
         g_current_guest_thread = 0u;
     }
-    g_active_cpu = cpu;
+    return true;
+}
+
+bool drain_cancelled() noexcept {
+    if (!g_scheduler_host)
+        return true;
+    if (HostContext::Current() != g_scheduler_host)
+        return false;
+    g_cancelling = true;
+    g_drain_owner = g_scheduler_host;
+    CpuContext* const owner_tls = TryGetCpuContext();
+    const auto owner_fp = MkwGetHostFpControl();
+    bool quiescent = true;
+    for (auto& record : g_records) {
+        if (!record.host || record.scheduler_host || !record.started || record.state == FiberState::Cancelled)
+            continue;
+        g_currentCpuContext = &record.execution_cpu;
+        MkwApplyHostNiMode(record.execution_cpu.fpscr);
+        HostContext::Switch(record.host);
+        if (record.state != FiberState::Cancelled) {
+            quiescent = false;
+            break;
+        }
+    }
+    g_currentCpuContext = owner_tls;
+    MkwRestoreHostMxcsr(owner_fp);
+    g_current_guest_thread = 0u;
+    g_drain_owner = nullptr;
+    return quiescent;
+}
+
+bool shutdown_quiescent() noexcept {
+    if (g_scheduler_host && HostContext::Current() != g_scheduler_host)
+        return false;
+    for (const auto& record : g_records)
+        if (record.host && !record.scheduler_host && record.started && record.state != FiberState::Cancelled)
+            return false;
+    for (auto& record : g_records) {
+        if (record.host && !record.scheduler_host)
+            HostContext::Destroy(record.host);
+        record = {};
+    }
+    g_scheduler_host = nullptr;
+    g_current_guest_thread = 0u;
+    g_drain_owner = nullptr;
+    g_cancelling = false;
     return true;
 }
 

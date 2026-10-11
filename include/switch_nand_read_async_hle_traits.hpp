@@ -10,7 +10,7 @@ template <>
 struct KnownNativeCpuCall<0x8019B7A4u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -30,7 +30,7 @@ template <>
 struct KnownNativeCpuCall<0x8019B80Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }

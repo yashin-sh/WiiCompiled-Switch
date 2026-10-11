@@ -1,4 +1,5 @@
 #pragma once
+#include "mkw_execution_cancel.hpp"
 
 #include "abi_bridge.h"
 #include "memory.h"
@@ -8,8 +9,8 @@
 #include <cstdint>
 #include <cstdlib>
 
-extern "C" void mkw_switch_hle_os_send_message(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_os_receive_message(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_os_send_message(CpuContext* cpu);
+extern "C" void mkw_switch_hle_os_receive_message(CpuContext* cpu);
 
 // __OSInitSTM (PAL 0x801AB848). Pinned WiiCompiled skips real /dev/stm/* IOS
 // handles and publishes the guest-visible STM state directly in the SDA block:
@@ -19,7 +20,7 @@ template <>
 struct KnownNativeCpuCall<0x801AB848u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -64,7 +65,7 @@ template <>
 struct KnownNativeCpuCall<0x801A72FCu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -91,6 +92,8 @@ struct KnownNativeCpuCall<0x801A72FCu> {
             Memory::Write32(queuePtr + 0x14u, msgCount);
             Memory::Write32(queuePtr + 0x18u, 0u);
             Memory::Write32(queuePtr + 0x1Cu, 0u);
+        } catch (const mkw::execution::ExecutionCancelled&) {
+            throw;
         } catch (...) {
             // Match the pinned HLE boundary: a guest-memory fault is contained
             // inside the native override rather than escaping into the caller.
@@ -106,7 +109,7 @@ template <>
 struct KnownNativeCpuCall<0x801A735Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_os_send_message(cpu);
     }
 };
@@ -120,7 +123,7 @@ template <>
 struct KnownNativeCpuCall<0x801A7424u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_os_receive_message(cpu);
     }
 };
@@ -132,7 +135,7 @@ template <>
 struct KnownNativeCpuCall<0x801AAD5Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -282,7 +285,7 @@ inline void InsertAlarm(
 
 inline thread_local bool gProcessingDueAlarms = false;
 
-inline void ProcessDueAlarms(CpuContext* cpu, int maxToProcess) noexcept {
+inline void ProcessDueAlarms(CpuContext* cpu, int maxToProcess) {
     constexpr std::uint32_t kOSCurrentContextAddr = 0x800000D4u;
     constexpr std::uint32_t kSchedulerDisableCountAddr = 0x80386918u;
 
@@ -371,6 +374,9 @@ inline void ProcessDueAlarms(CpuContext* cpu, int maxToProcess) noexcept {
                 }
             }
         }
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        gProcessingDueAlarms = false;
+        throw;
     } catch (...) {
         // Keep malformed guest alarm state contained at the HLE boundary.
     }
@@ -388,7 +394,7 @@ template <>
 struct KnownNativeCpuCall<0x801A08E0u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -438,6 +444,8 @@ struct KnownNativeCpuCall<0x801A08E0u> {
                 alarm,
                 0u,
                 handler);
+        } catch (const mkw::execution::ExecutionCancelled&) {
+            throw;
         } catch (...) {
             // Keep guest-memory faults contained at the native HLE boundary,
             // matching the rest of the Switch OS bridge.
@@ -457,7 +465,7 @@ template <>
 struct KnownNativeCpuCall<0x800BD860u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -482,6 +490,8 @@ struct KnownNativeCpuCall<0x800BD860u> {
                             manager + kWorkingFlagOffset);
                 }
             }
+        } catch (const mkw::execution::ExecutionCancelled&) {
+            throw;
         } catch (...) {
             working = 0u;
         }
@@ -497,7 +507,7 @@ template <>
 struct KnownNativeCpuCall<0x801AD1D4u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -533,7 +543,7 @@ template <>
 struct KnownNativeCpuCall<0x801AE4A0u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -563,7 +573,7 @@ template <>
 struct KnownNativeCpuCall<0x801B0220u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (cpu) {
             cpu->gpr[3] = 0u;
         }
@@ -577,7 +587,7 @@ template <>
 struct KnownNativeCpuCall<0x801B1CACu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (cpu) {
             cpu->gpr[3] = 1u;
         }
@@ -592,7 +602,7 @@ template <>
 struct KnownNativeCpuCall<0x801B1BE4u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (cpu) {
             cpu->gpr[3] = 1u;
         }

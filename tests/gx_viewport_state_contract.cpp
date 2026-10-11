@@ -275,7 +275,7 @@ extern "C" void GXSetScissorBoxOffset(std::int32_t x, std::int32_t y) {
     if (throwing)
         throw std::runtime_error("native offset fixture");
 }
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* value, std::uint32_t target, CpuContext* context) noexcept {
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* value, std::uint32_t target, CpuContext* context) {
     assert(proofFd >= 0 && reports++ == 0 && context == &cpu && target == refusalTarget && std::strcmp(value, reason) == 0);
     CheckCpu();
     Check(expected);

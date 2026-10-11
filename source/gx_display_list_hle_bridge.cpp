@@ -122,7 +122,7 @@ void FlushGuestSu(std::uint32_t gd, CpuContext* cpu, std::uint32_t target, const
 #endif
 } // namespace
 
-extern "C" void mkw_switch_hle_gx_begin_display_list(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_begin_display_list(CpuContext* cpu) {
     if (!cpu) {
         return;
     }
@@ -198,7 +198,7 @@ extern "C" void mkw_switch_hle_gx_begin_display_list(CpuContext* cpu) noexcept {
 #endif
 }
 
-extern "C" void mkw_switch_hle_gx_draw_sphere(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_draw_sphere(CpuContext* cpu) {
     if (!cpu) {
         return;
     }
@@ -227,7 +227,7 @@ extern "C" void mkw_switch_hle_gx_draw_sphere(CpuContext* cpu) noexcept {
 #endif
 }
 
-extern "C" void mkw_switch_hle_gx_end_display_list(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_end_display_list(CpuContext* cpu) {
     if (!cpu) {
         return;
     }
@@ -262,7 +262,7 @@ extern "C" void mkw_switch_hle_gx_end_display_list(CpuContext* cpu) noexcept {
 }
 
 #if defined(MKW_LOCAL_RENDERED_FAST_TRACK) && MKW_LOCAL_RENDERED_FAST_TRACK
-extern "C" void mkw_switch_gx_record_begin(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_gx_record_begin(CpuContext* cpu) {
     if (!cpu)
         return;
     CheckActive(cpu, 0x8016F0F0u);

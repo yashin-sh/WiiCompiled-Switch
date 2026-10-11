@@ -185,16 +185,16 @@ extern "C" int __wrap_close(int fd) {
 extern "C" void mkw_switch_set_fast_track_stage(const char* value) noexcept {
     stage = value;
 }
-extern "C" void mkw_switch_note_translated_dispatch(std::uint32_t address, CpuContext*) noexcept {
+extern "C" void mkw_switch_note_translated_dispatch(std::uint32_t address, CpuContext*) {
     assert(address == target);
     ++notes;
 }
-extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) noexcept {
+extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) {
     ++polls;
 }
 extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason,
                                                                   std::uint32_t address,
-                                                                  CpuContext* cpu) noexcept {
+                                                                  CpuContext* cpu) {
     assert(address == target && std::strcmp(reason, refusalReason) == 0);
     assert(std::memcmp(cpu, &refusalCpu, sizeof(*cpu)) == 0 && bytes == refusalMemory);
     assert(rootCalls == expectedRootCalls && descriptors.empty());
@@ -214,6 +214,7 @@ UNEXERCISED(mkw_switch_hle_lyt_draw_quad)
 UNEXERCISED(mkw_switch_hle_nand_move)
 UNEXERCISED(mkw_switch_hle_nand_get_length)
 UNEXERCISED(mkw_switch_hle_nand_seek)
+UNEXERCISED(mkw_switch_hle_gx_set_tev_indirect)
 #undef UNEXERCISED
 
 int main() {

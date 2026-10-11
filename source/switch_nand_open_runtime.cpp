@@ -5,8 +5,10 @@
 
 #include "horizon_runtime_services.hpp"
 #include "memory.h"
+#include "nand_save_probe.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cerrno>
 #include <cstdio>
 #include <filesystem>
@@ -51,6 +53,65 @@ struct FileHandle {
 std::mutex g_fileMutex;
 std::map<std::int32_t, FileHandle> g_fileHandles;
 std::int32_t g_nextFd = 100;
+std::atomic<std::uint64_t> g_saveReadAttempts{0};
+
+const char* ReadActionName(RuntimeNandSave::ReadAction action) noexcept {
+    switch (action) {
+    case RuntimeNandSave::ReadAction::Proceed:
+        return "Proceed";
+    case RuntimeNandSave::ReadAction::Missing:
+        return "Missing";
+    case RuntimeNandSave::ReadAction::Error:
+        return "Error";
+    case RuntimeNandSave::ReadAction::RecoveryNeeded:
+        return "RecoveryNeeded";
+    }
+    return "Unknown";
+}
+
+void WriteSaveReadStatus(std::uint32_t pathPtr,
+                         const std::filesystem::path& hostPath,
+                         RuntimeNandSave::ReadAction action,
+                         std::int32_t result,
+                         std::int32_t fd,
+                         std::uint64_t attempt) noexcept {
+    try {
+        // Keep control characters in a guest filename from creating report
+        // fields. The guest path reader is bounded; this report is bounded too.
+        const auto text = hostPath.generic_string();
+        char escaped[4096] = {};
+        constexpr char hex[] = "0123456789ABCDEF";
+        std::size_t used = 0;
+        bool truncated = false;
+        for (const unsigned char ch : text) {
+            const bool encode = ch < 0x20 || ch == 0x7f || ch == '%';
+            const std::size_t count = encode ? 3u : 1u;
+            if (used + count >= sizeof(escaped)) {
+                truncated = true;
+                break;
+            }
+            if (encode) {
+                escaped[used++] = '%';
+                escaped[used++] = hex[ch >> 4];
+                escaped[used++] = hex[ch & 15];
+            } else {
+                escaped[used++] = static_cast<char>(ch);
+            }
+        }
+        if (FILE* out = std::fopen(
+                "sdmc:/switch/WiiCompiled-Switch/fast-track-nand-open-status.txt", "w")) {
+            std::fprintf(out,
+                         "status=rksys-read-open\nattempt=%llu\npath_ptr=0x%08x\n"
+                         "normalized_host_path=%s\npath_truncated=%s\n"
+                         "read_action=%s\nresult=%d\nfd=%d\n",
+                         static_cast<unsigned long long>(attempt), pathPtr, escaped,
+                         truncated ? "YES" : "NO", ReadActionName(action), result, fd);
+            std::fclose(out);
+        }
+    } catch (...) {
+        // Diagnostics must never change the NAND operation's result.
+    }
+}
 
 std::uint32_t CurrentGameCode() noexcept {
     constexpr std::uint32_t kFallback = 0x524D4350u;
@@ -211,6 +272,27 @@ std::int32_t OpenSync(std::uint32_t pathPtr,
             return kResultInvalid;
         }
 
+        // Keep the pinned NAND read policy: an empty or all-zero system save
+        // is missing, while an unreadable file or a nonzero recovery shadow
+        // must remain untouched and must not be reported as missing.
+        const auto readAction = RuntimeNandSave::CheckRead(hostPath, mode);
+        const bool reportSaveRead = mode == 1u && hostPath.filename() == "rksys.dat";
+        const auto attempt = reportSaveRead
+                                 ? g_saveReadAttempts.fetch_add(1, std::memory_order_relaxed) + 1u
+                                 : 0u;
+        const auto finish = [&](std::int32_t result, std::int32_t fd = -1) noexcept {
+            if (reportSaveRead) {
+                WriteSaveReadStatus(pathPtr, hostPath, readAction, result, fd, attempt);
+            }
+            return result;
+        };
+        if (readAction == RuntimeNandSave::ReadAction::Missing) {
+            return finish(kResultNoExists);
+        }
+        if (readAction != RuntimeNandSave::ReadAction::Proceed) {
+            return finish(kResultUnknown);
+        }
+
         FILE* file = nullptr;
         if (mode == 1u) {
             file = std::fopen(hostPath.c_str(), "rb");
@@ -220,20 +302,20 @@ std::int32_t OpenSync(std::uint32_t pathPtr,
                 std::error_code ec;
                 std::filesystem::create_directories(hostPath.parent_path(), ec);
                 if (ec) {
-                    return kResultUnknown;
+                    return finish(kResultUnknown);
                 }
                 file = std::fopen(hostPath.c_str(), "w+b");
             }
         }
         if (!file) {
-            return mode == 1u ? kResultNoExists : kResultUnknown;
+            return finish(mode == 1u ? kResultNoExists : kResultUnknown);
         }
 
         const std::int32_t fd = AllocateHandle(file, hostPath, mode);
         Memory::Write32(fileInfoPtr, static_cast<std::uint32_t>(fd));
         Memory::Write8(
             fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset), kOpenFlag);
-        return kResultOk;
+        return finish(kResultOk, fd);
     } catch (...) {
         return kResultInvalid;
     }

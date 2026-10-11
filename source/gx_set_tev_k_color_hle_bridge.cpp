@@ -13,7 +13,7 @@
 
 extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
 
-extern "C" void mkw_switch_hle_gx_set_tev_k_color(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_set_tev_k_color(CpuContext* cpu) {
     if (!cpu) {
         return;
     }

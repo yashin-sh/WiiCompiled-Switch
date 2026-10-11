@@ -8,43 +8,45 @@ extern "C" void mkw_switch_hle_gx_copy_disp(CpuContext* cpu) noexcept;
 
 extern "C" void mkw_switch_hle_gx_init(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_draw_done(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_pix_mode_sync(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_projectionv(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_get_projectionv(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_pix_mode_sync(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_projection(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_projectionv(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_get_projectionv(CpuContext* cpu);
 extern "C" void mkw_switch_hle_gx_set_viewport(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_get_viewport(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_z_scale_offset(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_get_viewport(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_z_scale_offset(CpuContext* cpu);
 extern "C" void mkw_switch_hle_gx_set_scissor(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_scissor_box_offset(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_load_pos_mtx_imm(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_load_tex_mtx_imm(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_scissor_box_offset(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_load_pos_mtx_imm(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_load_tex_mtx_imm(CpuContext* cpu);
 extern "C" void mkw_switch_hle_gx_set_current_mtx(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_clear_vtx_desc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_vtx_desc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_vtx_attr_fmt(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_tex_gens(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_tex_coord_gen2(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_tex_coord_scale_manually(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_tex_coord_bias(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tex_coord_gen2(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_tex_coord_scale_manually(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_tex_coord_bias(CpuContext* cpu);
 extern "C" void mkw_switch_hle_gx_set_num_ind_stages(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_ind_tex_mtx(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_ind_tex_mtx(CpuContext* cpu);
 extern "C" void mkw_switch_hle_gx_set_ind_tex_coord_scale(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_num_tev_stages(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_tev_direct(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_tev_color_in(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_tev_color_op(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_tev_alpha_in(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_tev_alpha_op(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_tev_swap_mode(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_tev_k_color(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_tev_color(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_tev_swap_mode_table(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_tev_direct(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_tev_color_in(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_tev_color_op(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_tev_alpha_in(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_tev_alpha_op(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_tev_swap_mode(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_tev_k_color(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_tev_k_color_sel(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_tev_k_alpha_sel(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_tev_color(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_tev_swap_mode_table(CpuContext* cpu);
 extern "C" void mkw_switch_hle_gx_set_tev_op(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_tev_order(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_blend_mode(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_alpha_compare(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_fog(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_alpha_compare(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_fog(CpuContext* cpu);
 extern "C" void mkw_switch_hle_gx_set_z_comp_loc(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_color_update(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_alpha_update(CpuContext* cpu) noexcept;
@@ -55,33 +57,33 @@ extern "C" void mkw_switch_hle_gx_set_co_planar(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_clip_mode(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_dither(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_dst_alpha(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_begin(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_draw_sphere(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_begin_display_list(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_end_display_list(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_begin(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_draw_sphere(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_begin_display_list(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_end_display_list(CpuContext* cpu);
 extern "C" void mkw_switch_hle_gx_set_num_chans(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_chan_mat_color(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_chan_amb_color(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_set_chan_amb_color(CpuContext* cpu);
 extern "C" void mkw_switch_hle_gx_set_chan_ctrl(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_copy_filter(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_flush(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_invalidate_tex_all(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_src(CpuContext* cpu) noexcept;
 extern "C" void mkw_switch_hle_gx_set_disp_copy_dst(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_copy_tex(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_copy_clamp(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_tex_copy_src(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_set_tex_copy_dst(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_init_tex_obj(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_init_tex_obj_wrap_mode(CpuContext* cpu) noexcept;
-extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_gx_copy_tex(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_copy_clamp(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_tex_copy_src(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_set_tex_copy_dst(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_init_tex_obj(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_init_tex_obj_lod(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_init_tex_obj_wrap_mode(CpuContext* cpu);
+extern "C" void mkw_switch_hle_gx_load_tex_obj(CpuContext* cpu);
 
 template <>
 struct KnownNativeCpuCall<0x8016B850u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_init(cpu);
     }
 };
@@ -94,7 +96,7 @@ template <>
 struct KnownNativeCpuCall<0x8016EAB0u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_draw_done(cpu);
     }
 };
@@ -104,7 +106,7 @@ struct KnownNativeCpuCall<0x8016EAB0u> {
 template <>
 struct KnownNativeCpuCall<0x8016EB70u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_pix_mode_sync(cpu);
     }
 };
@@ -117,7 +119,7 @@ template <>
 struct KnownNativeCpuCall<0x8017301Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_projection(cpu);
     }
 };
@@ -127,14 +129,14 @@ struct KnownNativeCpuCall<0x8017301Cu> {
 template <>
 struct KnownNativeCpuCall<0x80173080u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_projectionv(cpu);
     }
 };
 template <>
 struct KnownNativeCpuCall<0x801730CCu> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_get_projectionv(cpu);
     }
 };
@@ -146,7 +148,7 @@ template <>
 struct KnownNativeCpuCall<0x801733B4u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_viewport(cpu);
     }
 };
@@ -155,7 +157,7 @@ struct KnownNativeCpuCall<0x801733B4u> {
 template <>
 struct KnownNativeCpuCall<0x801733E0u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_get_viewport(cpu);
     }
 };
@@ -163,7 +165,7 @@ struct KnownNativeCpuCall<0x801733E0u> {
 template <>
 struct KnownNativeCpuCall<0x80173400u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_z_scale_offset(cpu);
     }
 };
@@ -175,7 +177,7 @@ template <>
 struct KnownNativeCpuCall<0x80173430u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_scissor(cpu);
     }
 };
@@ -184,7 +186,7 @@ struct KnownNativeCpuCall<0x80173430u> {
 template <>
 struct KnownNativeCpuCall<0x801734E0u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_scissor_box_offset(cpu);
     }
 };
@@ -196,7 +198,7 @@ template <>
 struct KnownNativeCpuCall<0x8017310Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_load_pos_mtx_imm(cpu);
     }
 };
@@ -209,7 +211,7 @@ template <>
 struct KnownNativeCpuCall<0x80173234u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_load_tex_mtx_imm(cpu);
     }
 };
@@ -220,7 +222,7 @@ template <>
 struct KnownNativeCpuCall<0x80173214u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_current_mtx(cpu);
     }
 };
@@ -232,7 +234,7 @@ template <>
 struct KnownNativeCpuCall<0x8016DC34u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_clear_vtx_desc(cpu);
     }
 };
@@ -245,7 +247,7 @@ template <>
 struct KnownNativeCpuCall<0x8016D3A4u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_vtx_desc(cpu);
     }
 };
@@ -258,7 +260,7 @@ template <>
 struct KnownNativeCpuCall<0x8016DC68u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_vtx_attr_fmt(cpu);
     }
 };
@@ -270,7 +272,7 @@ template <>
 struct KnownNativeCpuCall<0x8016E37Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_tex_coord_gen2(cpu);
     }
 };
@@ -282,7 +284,7 @@ template <>
 struct KnownNativeCpuCall<0x80171180u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_tex_coord_scale_manually(cpu);
     }
 };
@@ -293,7 +295,7 @@ template <>
 struct KnownNativeCpuCall<0x801711FCu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_tex_coord_bias(cpu);
     }
 };
@@ -305,7 +307,7 @@ template <>
 struct KnownNativeCpuCall<0x8016E5A4u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_num_tex_gens(cpu);
     }
 };
@@ -317,7 +319,7 @@ template <>
 struct KnownNativeCpuCall<0x80171B38u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_num_ind_stages(cpu);
     }
 };
@@ -329,7 +331,7 @@ template <>
 struct KnownNativeCpuCall<0x801722A8u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_num_tev_stages(cpu);
     }
 };
@@ -345,7 +347,7 @@ template <>
 struct KnownNativeCpuCall<0x80171B58u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_tev_direct(cpu);
     }
 };
@@ -355,7 +357,7 @@ template <>
 struct KnownNativeCpuCall<0x80171CE0u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_tev_color_in(cpu);
     }
 };
@@ -366,7 +368,7 @@ template <>
 struct KnownNativeCpuCall<0x80171D60u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_tev_color_op(cpu);
     }
 };
@@ -376,7 +378,7 @@ template <>
 struct KnownNativeCpuCall<0x80171D20u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_tev_alpha_in(cpu);
     }
 };
@@ -387,7 +389,7 @@ template <>
 struct KnownNativeCpuCall<0x80171DB8u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_tev_alpha_op(cpu);
     }
 };
@@ -397,8 +399,26 @@ template <>
 struct KnownNativeCpuCall<0x80171FD0u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_tev_swap_mode(cpu);
+    }
+};
+
+// Bounded TEV konst selectors: r3 stage 0..15, r4 SDK selector.
+// Reserved selector holes remain blockers; native GX owns the shared KSEL BP
+// register pair, its other fields and bpSent bookkeeping.
+template <>
+struct KnownNativeCpuCall<0x80171F30u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) {
+        mkw_switch_hle_gx_set_tev_k_color_sel(cpu);
+    }
+};
+template <>
+struct KnownNativeCpuCall<0x80171F80u> {
+    static constexpr bool kAvailable = true;
+    static inline void Invoke(CpuContext* cpu) {
+        mkw_switch_hle_gx_set_tev_k_alpha_sel(cpu);
     }
 };
 
@@ -409,7 +429,7 @@ template <>
 struct KnownNativeCpuCall<0x80171ED4u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_tev_k_color(cpu);
     }
 };
@@ -419,7 +439,7 @@ template <>
 struct KnownNativeCpuCall<0x80171E10u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_tev_color(cpu);
     }
 };
@@ -429,7 +449,7 @@ template <>
 struct KnownNativeCpuCall<0x8017200Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_tev_swap_mode_table(cpu);
     }
 };
@@ -441,7 +461,7 @@ template <>
 struct KnownNativeCpuCall<0x80172088u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_alpha_compare(cpu);
     }
 };
@@ -452,7 +472,7 @@ template <>
 struct KnownNativeCpuCall<0x801722CCu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_fog(cpu);
     }
 };
@@ -463,7 +483,7 @@ template <>
 struct KnownNativeCpuCall<0x80172858u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_z_comp_loc(cpu);
     }
 };
@@ -475,7 +495,7 @@ template <>
 struct KnownNativeCpuCall<0x80171C4Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_tev_op(cpu);
     }
 };
@@ -487,7 +507,7 @@ template <>
 struct KnownNativeCpuCall<0x8017214Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_tev_order(cpu);
     }
 };
@@ -499,7 +519,7 @@ template <>
 struct KnownNativeCpuCall<0x8017277Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_blend_mode(cpu);
     }
 };
@@ -511,7 +531,7 @@ template <>
 struct KnownNativeCpuCall<0x801727CCu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_color_update(cpu);
     }
 };
@@ -523,7 +543,7 @@ template <>
 struct KnownNativeCpuCall<0x801727F8u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_alpha_update(cpu);
     }
 };
@@ -535,7 +555,7 @@ template <>
 struct KnownNativeCpuCall<0x80172824u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_z_mode(cpu);
     }
 };
@@ -548,7 +568,7 @@ template <>
 struct KnownNativeCpuCall<0x80172888u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_pixel_fmt(cpu);
     }
 };
@@ -559,7 +579,7 @@ template <>
 struct KnownNativeCpuCall<0x8016F3B8u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_cull_mode(cpu);
     }
 };
@@ -571,7 +591,7 @@ template <>
 struct KnownNativeCpuCall<0x8016F3E0u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_co_planar(cpu);
     }
 };
@@ -582,7 +602,7 @@ template <>
 struct KnownNativeCpuCall<0x8017351Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_clip_mode(cpu);
     }
 };
@@ -594,7 +614,7 @@ template <>
 struct KnownNativeCpuCall<0x80171814u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_ind_tex_mtx(cpu);
     }
 };
@@ -605,7 +625,7 @@ template <>
 struct KnownNativeCpuCall<0x80171968u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_ind_tex_coord_scale(cpu);
     }
 };
@@ -616,7 +636,7 @@ template <>
 struct KnownNativeCpuCall<0x80172930u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_dither(cpu);
     }
 };
@@ -627,7 +647,7 @@ template <>
 struct KnownNativeCpuCall<0x8017295Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_dst_alpha(cpu);
     }
 };
@@ -640,7 +660,7 @@ template <>
 struct KnownNativeCpuCall<0x8016F0F0u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_begin(cpu);
     }
 };
@@ -650,21 +670,21 @@ struct KnownNativeCpuCall<0x8016F0F0u> {
 template <>
 struct KnownNativeCpuCall<0x80172A30u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_draw_sphere(cpu);
     }
 };
 template <>
 struct KnownNativeCpuCall<0x80172E00u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_begin_display_list(cpu);
     }
 };
 template <>
 struct KnownNativeCpuCall<0x80172EB4u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_end_display_list(cpu);
     }
 };
@@ -677,7 +697,7 @@ template <>
 struct KnownNativeCpuCall<0x801707F8u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_init_tex_obj(cpu);
     }
 };
@@ -689,7 +709,7 @@ template <>
 struct KnownNativeCpuCall<0x8017039Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_chan_amb_color(cpu);
     }
 };
@@ -701,7 +721,7 @@ template <>
 struct KnownNativeCpuCall<0x80170A4Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_init_tex_obj_lod(cpu);
     }
 };
@@ -717,7 +737,7 @@ template <>
 struct KnownNativeCpuCall<0x80170B50u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_init_tex_obj_wrap_mode(cpu);
     }
 };
@@ -730,7 +750,7 @@ template <>
 struct KnownNativeCpuCall<0x80171110u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_invalidate_tex_all(cpu);
     }
 };
@@ -744,7 +764,7 @@ template <>
 struct KnownNativeCpuCall<0x80170F2Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_load_tex_obj(cpu);
     }
 };
@@ -756,7 +776,7 @@ template <>
 struct KnownNativeCpuCall<0x8017054Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_num_chans(cpu);
     }
 };
@@ -768,7 +788,7 @@ template <>
 struct KnownNativeCpuCall<0x80170474u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_chan_mat_color(cpu);
     }
 };
@@ -781,7 +801,7 @@ template <>
 struct KnownNativeCpuCall<0x80170570u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_chan_ctrl(cpu);
     }
 };
@@ -795,7 +815,7 @@ template <>
 struct KnownNativeCpuCall<0x8016FA40u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_copy_filter(cpu);
     }
 };
@@ -807,7 +827,7 @@ template <>
 struct KnownNativeCpuCall<0x8016E654u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_flush(cpu);
     }
 };
@@ -817,21 +837,21 @@ struct KnownNativeCpuCall<0x8016E654u> {
 template <>
 struct KnownNativeCpuCall<0x8016F618u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_copy_clamp(cpu);
     }
 };
 template <>
 struct KnownNativeCpuCall<0x8016F478u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_tex_copy_src(cpu);
     }
 };
 template <>
 struct KnownNativeCpuCall<0x8016F4DCu> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_tex_copy_dst(cpu);
     }
 };
@@ -844,7 +864,7 @@ template <>
 struct KnownNativeCpuCall<0x8016F438u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_disp_copy_src(cpu);
     }
 };
@@ -856,7 +876,7 @@ template <>
 struct KnownNativeCpuCall<0x8016F4B8u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_set_disp_copy_dst(cpu);
     }
 };
@@ -870,7 +890,7 @@ template <>
 struct KnownNativeCpuCall<0x8016FC38u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_copy_disp(cpu);
     }
 };
@@ -880,7 +900,7 @@ struct KnownNativeCpuCall<0x8016FC38u> {
 template <>
 struct KnownNativeCpuCall<0x8016FD74u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_gx_copy_tex(cpu);
     }
 };

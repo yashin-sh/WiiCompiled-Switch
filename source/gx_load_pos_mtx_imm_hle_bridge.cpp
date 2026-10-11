@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
@@ -25,7 +26,7 @@ float ReadGuestFloat32(std::uint32_t address) {
 
 [[noreturn]] void AbortInvalidPositionMatrix(
     CpuContext* cpu,
-    std::uint32_t address) noexcept {
+    std::uint32_t address) {
     mkw_switch_set_fast_track_stage("RMCP01_GX_LOAD_POS_MTX_IMM_INVALID");
     mkw_switch_report_unsupported_translated_dispatch(
         "GX_LOAD_POS_MTX_IMM_INVALID_MATRIX",
@@ -36,7 +37,7 @@ float ReadGuestFloat32(std::uint32_t address) {
 
 } // namespace
 
-extern "C" void mkw_switch_hle_gx_load_pos_mtx_imm(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_load_pos_mtx_imm(CpuContext* cpu) {
     if (!cpu) {
         return;
     }
@@ -54,6 +55,8 @@ extern "C" void mkw_switch_hle_gx_load_pos_mtx_imm(CpuContext* cpu) noexcept {
         for (std::uint32_t i = 0; i < 12u; ++i) {
             matrix[i] = ReadGuestFloat32(matrixAddress + i * 4u);
         }
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         AbortInvalidPositionMatrix(cpu, matrixAddress);
     }

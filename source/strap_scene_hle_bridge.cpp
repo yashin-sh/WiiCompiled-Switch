@@ -11,7 +11,7 @@ namespace {
 constexpr std::uint32_t kStrapCheckInputAddress = 0x800077C8u;
 constexpr std::uint32_t kObservedScenePtr = 0x90112A34u;
 
-[[noreturn]] void AbortUnproven(CpuContext* cpu) noexcept {
+[[noreturn]] void AbortUnproven(CpuContext* cpu) {
     mkw_switch_report_unsupported_translated_dispatch(
         "STRAP_CHECK_INPUT_UNPROVEN_SCENE",
         kStrapCheckInputAddress,
@@ -21,7 +21,7 @@ constexpr std::uint32_t kObservedScenePtr = 0x90112A34u;
 
 } // namespace
 
-extern "C" void mkw_switch_hle_strap_check_input(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_strap_check_input(CpuContext* cpu) {
     if (!cpu) {
         return;
     }

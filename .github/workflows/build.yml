@@ -44,6 +44,9 @@ jobs:
           sudo sysctl -w kernel.core_pattern=core
       - name: Execute GX, memory and host-context contracts
         run: |
+          bash scripts/test-mkw-debug.sh
+          bash scripts/test-execution-cancel.sh
+          bash scripts/test-execution-cancel-provider.sh
           bash scripts/test-diagnostic-sd-budget.sh
           bash scripts/test-ios-kd-request.sh
           bash scripts/test-nand-check.sh
@@ -53,6 +56,7 @@ jobs:
           bash scripts/test-nand-seek.sh
           bash scripts/test-nand-get-length.sh
           bash scripts/test-nand-save.sh
+          bash scripts/test-nand-blank-save.sh
           bash scripts/test-gx-projection-vector.sh
           bash scripts/test-gx-light-object.sh
           bash scripts/test-lyt-draw-quad.sh

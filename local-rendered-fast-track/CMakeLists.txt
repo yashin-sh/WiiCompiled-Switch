@@ -127,6 +127,8 @@ target_link_libraries(mkw_switch_rendered_fast_track PRIVATE
 
 target_link_options(mkw_switch_rendered_fast_track PRIVATE
     -Wl,--gc-sections
+    -Wl,--wrap=nvk_queue_try_destroy
+    -Wl,--wrap=nvk_upload_queue_try_finish
     -Wl,--allow-multiple-definition
     -Wl,-u,func_800060A4
     -Wl,-u,mkw_switch_report_unsupported_translated_dispatch

@@ -28,7 +28,7 @@ template <>
 struct KnownNativeCpuCall<0x801BF5C4u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -45,7 +45,7 @@ template <>
 struct KnownNativeCpuCall<0x801C329Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -61,7 +61,7 @@ template <>
 struct KnownNativeCpuCall<0x801BF64Cu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -77,7 +77,7 @@ template <>
 struct KnownNativeCpuCall<0x801BF640u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -96,7 +96,7 @@ template <>
 struct KnownNativeCpuCall<0x801C0EC4u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext*) noexcept {}
+    static inline void Invoke(CpuContext*) {}
 };
 
 // PADInit (PAL 0x801AF2F0). Pinned WiiCompiled calls Aurora PADInit(), which is
@@ -108,7 +108,7 @@ template <>
 struct KnownNativeCpuCall<0x801AF2F0u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -125,31 +125,31 @@ extern "C" void mkw_switch_hle_pad_read(CpuContext* cpu) noexcept;
 template <>
 struct KnownNativeCpuCall<0x801AF44Cu> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_pad_read(cpu);
     }
 };
 
 // WPADProbe (PAL 0x801C0990), reached after PADRead on the Switch. No Wii
 // Bluetooth backend exists here; preserve the pinned absent-remote branch.
-extern "C" void mkw_switch_hle_wpad_probe(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_wpad_probe(CpuContext* cpu);
 
 template <>
 struct KnownNativeCpuCall<0x801C0990u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_wpad_probe(cpu);
     }
 };
 
 // KPADGetUnifiedWpadStatus (PAL 0x8019812C), reached after WPADProbe.
 // Preserve the pinned raw absent-remote samples, including count clamping.
-extern "C" void mkw_switch_hle_kpad_unified_status(CpuContext* cpu) noexcept;
+extern "C" void mkw_switch_hle_kpad_unified_status(CpuContext* cpu);
 
 template <>
 struct KnownNativeCpuCall<0x8019812Cu> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_kpad_unified_status(cpu);
     }
 };
@@ -162,7 +162,7 @@ extern "C" void mkw_switch_hle_pad_control_motor(CpuContext* cpu) noexcept;
 template <>
 struct KnownNativeCpuCall<0x801AF908u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_pad_control_motor(cpu);
     }
 };
@@ -174,7 +174,7 @@ extern "C" void mkw_switch_hle_pad_reset(CpuContext* cpu) noexcept;
 template <>
 struct KnownNativeCpuCall<0x801AF0DCu> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         mkw_switch_hle_pad_reset(cpu);
     }
 };

@@ -1,4 +1,5 @@
 #pragma once
+#include "mkw_execution_cancel.hpp"
 
 #include "abi_bridge.h"
 #include "memory.h"
@@ -67,7 +68,7 @@ template <>
 struct KnownNativeCpuCall<0x800A35E0u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -85,6 +86,8 @@ struct KnownNativeCpuCall<0x800A35E0u> {
             Memory::Write32(
                 soundPlayer + kVolumeOffset,
                 mkw::switch_audio_hle::FloatBits(clamped));
+        } catch (const mkw::execution::ExecutionCancelled&) {
+            throw;
         } catch (...) {
             // Keep guest-memory faults contained at the native HLE boundary.
         }
@@ -100,7 +103,7 @@ template <>
 struct KnownNativeCpuCall<0x80123F88u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -114,6 +117,8 @@ struct KnownNativeCpuCall<0x80123F88u> {
                 oldCallback = Memory::Read32(kAIDmaCallbackAddr);
                 Memory::Write32(kAIDmaCallbackAddr, callback);
             }
+        } catch (const mkw::execution::ExecutionCancelled&) {
+            throw;
         } catch (...) {
             // Pinned WiiCompiled uses TryRead32/TryWrite32 here. Failed guest
             // access therefore preserves the default old-callback value of 0.
@@ -132,7 +137,7 @@ template <>
 struct KnownNativeCpuCall<0x80123FCCu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -159,7 +164,7 @@ template <>
 struct KnownNativeCpuCall<0x80124048u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext*) noexcept {
+    static inline void Invoke(CpuContext*) {
         mkw::switch_audio_hle::g_ai_dma_sample_rate = 32000u;
         mkw::switch_audio_hle::g_ai_dma_enabled = true;
         mkw::switch_audio_hle::g_ai_dma_bytes_left =
@@ -175,7 +180,7 @@ template <>
 struct KnownNativeCpuCall<0x80124094u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -186,6 +191,8 @@ struct KnownNativeCpuCall<0x80124094u> {
             if (Memory::Contains(kAIInitializedAddr, 4u)) {
                 initialized = Memory::Read32(kAIInitializedAddr);
             }
+        } catch (const mkw::execution::ExecutionCancelled&) {
+            throw;
         } catch (...) {
             // Upstream uses TryRead32; unreadable guest memory returns 0.
         }
@@ -203,7 +210,7 @@ template <>
 struct KnownNativeCpuCall<0x801240B0u> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -229,6 +236,8 @@ struct KnownNativeCpuCall<0x801240B0u> {
             Memory::Write32(kAICallbackBusyAddr, 0u);
             Memory::Write32(kAICallbackStackSwitchAddr, cpu->gpr[3]);
             Memory::Write32(kAIInitializedAddr, 1u);
+        } catch (const mkw::execution::ExecutionCancelled&) {
+            throw;
         } catch (...) {
             // Pinned WiiCompiled uses TryRead/TryWrite for this bookkeeping;
             // an unavailable guest range therefore leaves AIInit best-effort.
@@ -245,7 +254,7 @@ template <>
 struct KnownNativeCpuCall<0x801269BCu> {
     static constexpr bool kAvailable = true;
 
-    static inline void Invoke(CpuContext* cpu) noexcept {
+    static inline void Invoke(CpuContext* cpu) {
         if (!cpu) {
             return;
         }
@@ -312,6 +321,8 @@ struct KnownNativeCpuCall<0x801269BCu> {
             Memory::Write32(kDspRunningTaskAddr, kAxDspTaskAddr);
             Memory::Write32(sdaOutput + 0x04u, 1u);
             Memory::Write32(sdaOutput + 0x00u, 0u);
+        } catch (const mkw::execution::ExecutionCancelled&) {
+            throw;
         } catch (...) {
             // Keep the Switch fast-track best-effort if guest memory is not
             // available; the real hardware path maps every range above.
@@ -322,17 +333,17 @@ struct KnownNativeCpuCall<0x801269BCu> {
 template <>
 struct KnownNativeCpuCall<0x801A1138u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext*) noexcept {}
+    static inline void Invoke(CpuContext*) {}
 };
 
 template <>
 struct KnownNativeCpuCall<0x801A1358u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext*) noexcept {}
+    static inline void Invoke(CpuContext*) {}
 };
 
 template <>
 struct KnownNativeCpuCall<0x801A1520u> {
     static constexpr bool kAvailable = true;
-    static inline void Invoke(CpuContext*) noexcept {}
+    static inline void Invoke(CpuContext*) {}
 };

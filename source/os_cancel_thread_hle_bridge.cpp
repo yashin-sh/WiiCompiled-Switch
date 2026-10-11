@@ -1,3 +1,4 @@
+#include "mkw_execution_cancel.hpp"
 #if (defined(MKW_LOCAL_FUNCTION_EXECUTION) && MKW_LOCAL_FUNCTION_EXECUTION) || \
     (defined(MKW_SYNTHETIC_EXECUTION) && MKW_SYNTHETIC_EXECUTION)
 
@@ -45,7 +46,7 @@ constexpr std::uint16_t kObservedAttr = 0x0001u;
 constexpr std::int32_t kObservedPriority = 20;
 constexpr std::uint32_t kObservedPending = 0x02000000u;
 
-[[noreturn]] void AbortUnproven(CpuContext* cpu, const char* kind) noexcept {
+[[noreturn]] void AbortUnproven(CpuContext* cpu, const char* kind) {
     if (cpu) {
         cpu->gpr[3] = kObservedThread;
     }
@@ -59,7 +60,7 @@ constexpr std::uint32_t kObservedPending = 0x02000000u;
 [[noreturn]] void RestoreAndAbort(
     CpuContext* cpu,
     std::uint32_t irqState,
-    const char* kind) noexcept {
+    const char* kind) {
     if (cpu) {
         cpu->gpr[3] = irqState;
         mkw_switch_hle_os_restore_interrupts(cpu);
@@ -120,7 +121,7 @@ bool ExactObservedState() {
 
 } // namespace
 
-extern "C" void mkw_switch_hle_os_cancel_thread(CpuContext* ctx) noexcept {
+extern "C" void mkw_switch_hle_os_cancel_thread(CpuContext* ctx) {
     CpuContext* cpu = ctx ? ctx : &GetPersistentCpuContext();
     const std::uint32_t threadPtr = cpu->gpr[3];
 
@@ -134,6 +135,8 @@ extern "C" void mkw_switch_hle_os_cancel_thread(CpuContext* ctx) noexcept {
         if (!ExactObservedState()) {
             AbortUnproven(cpu, "OSCANCELTHREAD_UNPROVEN_STATE");
         }
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         AbortUnproven(cpu, "OSCANCELTHREAD_GUEST_MEMORY");
     }
@@ -180,6 +183,8 @@ extern "C" void mkw_switch_hle_os_cancel_thread(CpuContext* ctx) noexcept {
             cpu->gpr[3] = 0u;
             InvokeDirectCpu<0x801A9C08u>(cpu); // SelectThread(0)
         }
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        throw;
     } catch (...) {
         RestoreAndAbort(cpu, irqState, "OSCANCELTHREAD_GUEST_MUTATION");
     }

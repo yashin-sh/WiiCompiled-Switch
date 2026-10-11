@@ -15,7 +15,7 @@ extern bool g_alphaCompareValid;
 
 extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept;
 
-extern "C" void mkw_switch_hle_gx_set_alpha_compare(CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_hle_gx_set_alpha_compare(CpuContext* cpu) {
     if (!cpu) {
         return;
     }

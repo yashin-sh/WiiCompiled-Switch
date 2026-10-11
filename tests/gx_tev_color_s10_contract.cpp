@@ -95,14 +95,14 @@ void Shutdown() noexcept {
 extern "C" void mkw_switch_set_fast_track_stage(const char* stage) noexcept {
     lastStage = stage;
 }
-extern "C" void mkw_switch_note_translated_dispatch(std::uint32_t address, CpuContext*) noexcept {
+extern "C" void mkw_switch_note_translated_dispatch(std::uint32_t address, CpuContext*) {
     assert(address == target);
     ++notes;
 }
-extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) noexcept {
+extern "C" void mkw_switch_hle_vi_poll_retrace(CpuContext*) {
     ++polls;
 }
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t address, CpuContext* cpu) noexcept {
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t address, CpuContext* cpu) {
     assert(expectedReason && std::strcmp(reason, expectedReason) == 0 && address == expectedTarget);
     assert(std::memcmp(cpu, &saved, sizeof(saved)) == 0 && bytes == savedMemory && packet.empty() && NativeStatePreserved());
     assert(notes == (address == target) && polls == notes);

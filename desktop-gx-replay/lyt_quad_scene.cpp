@@ -7,7 +7,7 @@
 #include <cstring>
 #include <stdexcept>
 
-extern "C" void mkw_switch_hle_lyt_draw_quad(CpuContext*) noexcept;
+extern "C" void mkw_switch_hle_lyt_draw_quad(CpuContext*);
 HleGxState g_hleGxState;
 GxDisplayListState g_dlRecordState;
 bool g_alphaCompareValid = false;
@@ -41,7 +41,7 @@ void Shutdown() noexcept {
 }
 } // namespace GuestFlat
 extern "C" void mkw_switch_set_fast_track_stage(const char*) noexcept {}
-extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char*, std::uint32_t, CpuContext*) noexcept {
+extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char*, std::uint32_t, CpuContext*) {
     std::abort();
 }
 void EnsureAuroraFrameActive() {

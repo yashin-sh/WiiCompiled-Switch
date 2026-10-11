@@ -145,7 +145,7 @@ extern "C" void GXLoadTexMtxImm(const void* matrix, u32 id, GXTexMtxType type) {
 }
 
 extern "C" void mkw_switch_report_unsupported_translated_dispatch(
-    const char* reason, std::uint32_t target, CpuContext* cpu) noexcept {
+    const char* reason, std::uint32_t target, CpuContext* cpu) {
     assert(reportPipe >= 0);
     ExpectStage("RMCP01_GX_LOAD_TEX_MTX_IMM_INVALID_MATRIX");
     assert(std::strcmp(reason, "GX_LOAD_TEX_MTX_IMM_INVALID_MATRIX") == 0);

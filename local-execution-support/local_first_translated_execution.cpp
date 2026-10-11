@@ -1,6 +1,9 @@
 #include "abi_bridge.h"
 #include "translated_execution_handoff.hpp"
 #include "RuntimeConfig.h"
+#include "mkw_execution_cancel.hpp"
+#include "mkw_debug_server.hpp"
+#include "switch_guest_fiber.hpp"
 
 #include <cstdint>
 #include <cstdio>
@@ -198,10 +201,15 @@ bool run_local_fast_track(MkwSwitchTranslatedExecutionProbeResult* out) noexcept
     out->r3_before = cpu.gpr[3];
     write_fast_track_progress("ENTERING_TRANSLATED_START", cpu);
 
+    bool cancelled = false;
+    mkw::debug::set_reload_owner_available(true);
     try {
         CpuContextScope scope(&cpu);
         func_800060A4(&cpu);
+    } catch (const mkw::execution::ExecutionCancelled&) {
+        cancelled = true;
     } catch (const std::exception& ex) {
+        mkw::debug::set_reload_owner_available(false);
         out->guest_address = cpu.pc;
         out->r1 = cpu.gpr[1];
         out->r2 = cpu.gpr[2];
@@ -210,6 +218,7 @@ bool run_local_fast_track(MkwSwitchTranslatedExecutionProbeResult* out) noexcept
         write_fast_track_progress("BLOCKED_STD_EXCEPTION", cpu, ex.what());
         return false;
     } catch (...) {
+        mkw::debug::set_reload_owner_available(false);
         out->guest_address = cpu.pc;
         out->r1 = cpu.gpr[1];
         out->r2 = cpu.gpr[2];
@@ -224,6 +233,16 @@ bool run_local_fast_track(MkwSwitchTranslatedExecutionProbeResult* out) noexcept
     out->r2 = cpu.gpr[2];
     out->r13 = cpu.gpr[13];
     out->r3_after = cpu.gpr[3];
+    if (cancelled) {
+        // End the catch before switching fibres: they share exception-runtime
+        // TLS. Every suspended stack unwinds while CPU memory is still valid.
+        out->cancelled = true;
+        out->guest_quiescent = mkw::switch_guest_fiber::drain_cancelled();
+        if (!out->guest_quiescent)
+            mkw::debug::set_reload_owner_available(false);
+        write_fast_track_progress(out->guest_quiescent ? "CANCELLED_AND_QUIESCENT" : "CANCELLATION_DRAIN_FAILED", cpu);
+        return false;
+    }
     write_fast_track_progress("RETURNED_FROM_TRANSLATED_START", cpu);
     return TryGetCpuContext() == nullptr;
 }

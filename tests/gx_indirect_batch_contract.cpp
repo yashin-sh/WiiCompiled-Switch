@@ -137,7 +137,7 @@ extern "C" void mkw_switch_set_fast_track_stage(const char* value) noexcept {
 extern "C" void mkw_switch_report_unsupported_translated_dispatch(
     const char* reason,
     std::uint32_t target,
-    CpuContext* cpu) noexcept {
+    CpuContext* cpu) {
     assert(reportPipe >= 0);
     assert(std::strcmp(reason, expectedReason) == 0);
     ExpectStage(expectedInvalidStage);

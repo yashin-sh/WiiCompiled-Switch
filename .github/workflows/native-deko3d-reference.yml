@@ -1,0 +1,42 @@
+name: native-deko3d-reference
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.repo.full_name || github.repository }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  reference-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Validate helper syntax
+        run: |
+          bash -n scripts/prepare-native-deko3d-reference.sh
+          bash -n scripts/prepare-local-native-deko3d-product.sh
+          bash -n scripts/build-local-native-deko3d.sh
+
+      - name: Verify optimized Switch reference contracts
+        run: bash scripts/prepare-native-deko3d-reference.sh
+
+      - name: Enforce local-only product inputs and outputs
+        run: |
+          grep -Fxq '/local-product/' .gitignore
+          grep -Fxq '/.deps/' .gitignore
+          grep -Fq 'local-product/Assets' scripts/prepare-local-native-deko3d-product.sh
+          grep -Fq '.deps/native-deko3d/driftdroid' scripts/prepare-local-native-deko3d-product.sh
+          grep -Fq 'AURORA_SWITCH_DEKO3D_DEBUG:-OFF' scripts/build-local-native-deko3d.sh
+          grep -Fq -- '-DMKW_SWITCH_SECTION_ORDERING=ON' scripts/build-local-native-deko3d.sh
+          grep -Fq -- '--romfsdir="$romfs_dir"' scripts/build-local-native-deko3d.sh

@@ -178,3 +178,27 @@ CRC-32 is eight hexadecimal digits; SHA-256 is 64 hexadecimal digits. Deployment
 metadata contains `path`, `size`, `crc32`, and `sha256`. The Python client caps
 ordinary responses at 1 MiB, diagnostic downloads at 64 MiB, and NRO transfers at
 512 MiB, with bounded header reads and streaming file hashing.
+
+## Console installation on 2026-10-11
+
+The rendered candidate built from `10dc30d` is installed as
+`sdmc:/switch/WiiCompiled-Switch-debug-10dc30d.nro`. Its 73,711,672 bytes and
+SHA-256 `79b709bda353e1e7630d4c62dd72109ea48ce4c212b1a79f28b4dadfa99fdb14`
+pass complete USB SD readback. The SD configuration is independently reread with
+`debug_server=1`, port 6543, and that exact deployment path. The older project NRO
+is backed up locally, checked against its recorded size/SHA-256, and removed;
+the new candidate is the only project NRO in the SD `switch` directory.
+
+The user first-launched the candidate after exiting Haze. On the console,
+`ping` returns `pong`; `info`, framed log streaming, report enumeration/download,
+and `stat-nro` all succeed. The server independently reports the installed
+candidate's exact size/SHA-256. A first report download retrieves 48 files;
+pre-existing SD reports and captures are not automatically fresh-run evidence.
+
+After about 40 seconds, execution reaches dispatch 655,654 and pauses at
+`GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR@0x80170f2c`, with guest PC `0x800060A4`.
+`info` reports `DEBUG_FRONTIER_PAUSED`, and the current blocker report is fetched
+over TCP while the server remains accessible. This validates the hardware
+server and unsupported-frontier hold, without establishing gameplay completion.
+Forwarder restart and network NRO replacement remain untested on hardware.
+Binary products, backups, and raw receipts stay private.

@@ -1,4 +1,5 @@
 #include "mkw_debug_server.hpp"
+#include "mkw_debug_reload_policy.hpp"
 
 #include <algorithm>
 #include <array>
@@ -46,6 +47,7 @@ std::array<Record, LogSlots> records{};
 std::uint64_t sequence = 0;
 char stage[96] = "startup", frontier[128] = "unknown";
 std::string root, nro;
+bool reload_program_opt_in = false;
 std::uint16_t port = 0;
 int listener = -1;
 Clock::time_point started;
@@ -370,9 +372,16 @@ void list_reports(const std::string& rel, std::string& out, unsigned depth = 0) 
     ::closedir(dir);
 }
 bool can_reload() {
+    // Application mode also includes hbmenu title override: restarting that
+    // program can launch the retail host game instead of this NRO. Only an
+    // explicitly configured HOME forwarder may use program restart.
+    if (!running.load(std::memory_order_relaxed) || !reload_program_opt_in)
+        return false;
 #if defined(__SWITCH__)
     auto type = appletGetAppletType();
-    return (type == AppletType_Application || type == AppletType_SystemApplication) && hosversionAtLeast(5, 0, 0);
+    return program_restart_allowed(reload_program_opt_in,
+                                   type == AppletType_Application || type == AppletType_SystemApplication,
+                                   hosversionAtLeast(5, 0, 0));
 #else
     return false;
 #endif
@@ -603,6 +612,8 @@ bool command(Client& client, const std::string& line) {
     if (cmd == "deploy" && words.size() == 3)
         return upload(fd, words[1], words[2]);
     if (cmd == "reload" && words.size() == 1) {
+        if (!reload_program_opt_in)
+            return error(fd, "program restart disabled; debug_reload_program=1 requires a verified HOME forwarder (hbmenu title override restarts its host game)");
         if (!can_reload())
             return error(fd, "reload requires a HOME forwarder application on system 5.0.0 or newer");
 #if defined(__SWITCH__)
@@ -730,7 +741,7 @@ void worker(void*) noexcept {
     for (auto& c : clients)
         close_client(c);
 }
-bool launch(bool opt_in, const std::string& app_root, const std::string& candidate, std::uint16_t requested_port) {
+bool launch(bool opt_in, const std::string& app_root, const std::string& candidate, std::uint16_t requested_port, bool program_reload = false) {
     if (running.load())
         return true;
     if (!opt_in)
@@ -749,6 +760,7 @@ bool launch(bool opt_in, const std::string& app_root, const std::string& candida
         return false;
     root = app_root;
     nro = candidate;
+    reload_program_opt_in = program_reload;
     // Recover a process/power interruption between the two commit renames.
     const auto rollback = nro + ".rollback";
     struct stat current {};
@@ -763,8 +775,10 @@ bool launch(bool opt_in, const std::string& app_root, const std::string& candida
             return false;
     }
 #if defined(__SWITCH__)
-    if (R_FAILED(socketInitializeDefault()))
+    if (R_FAILED(socketInitializeDefault())) {
+        stop();
         return false;
+    }
     sockets_ready = true;
 #endif
     listener = ::socket(AF_INET, SOCK_STREAM, 0);
@@ -813,8 +827,12 @@ bool launch(bool opt_in, const std::string& app_root, const std::string& candida
 
 bool start() noexcept {
     try {
+        if (running.load())
+            return true;
+        reload_program_opt_in = false;
         std::string app_root = DefaultRoot, candidate = DefaultNro;
         bool opt_in = false;
+        bool program_reload = false;
         std::uint16_t requested_port = 6543;
         FILE* config = std::fopen((app_root + "/Config/debug.ini").c_str(), "r");
         if (!config)
@@ -832,6 +850,8 @@ bool start() noexcept {
             auto key = trim(text.substr(0, equals)), value = trim(text.substr(equals + 1));
             if (key == "debug_server")
                 opt_in = value == "1";
+            else if (key == "debug_reload_program")
+                program_reload = value == "1";
             else if (key == "debug_nro_path")
                 candidate = value;
             else if (key == "debug_port") {
@@ -844,7 +864,7 @@ bool start() noexcept {
             }
         }
         std::fclose(config);
-        return launch(opt_in, app_root, candidate, requested_port);
+        return launch(opt_in, app_root, candidate, requested_port, program_reload);
     } catch (...) {
         stop();
         return false;
@@ -867,6 +887,7 @@ void stop() noexcept {
         listener = -1;
     }
     port = 0;
+    reload_program_opt_in = false;
 #if defined(__SWITCH__)
     if (sockets_ready) {
         socketExit();

@@ -12,6 +12,7 @@ int main() {
     assert(!mkw_switch_find_missing_native_cpu_extension(0x8019bee8));
     assert(!mkw_switch_find_missing_native_cpu_extension(0x8019b964));
     assert(!mkw_switch_find_missing_native_cpu_extension(0x8019bf4c));
+    assert(!mkw_switch_find_missing_native_cpu_extension(0x801717ac));
     assert(!mkw_switch_find_missing_native_cpu_extension(0x12345678));
     std::puts("PASS: public probe registry requires no translated headers and exposes no execution handlers");
 }

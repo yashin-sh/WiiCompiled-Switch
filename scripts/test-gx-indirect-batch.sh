@@ -25,3 +25,5 @@ for rendered in 0 1; do
     "$TEST_DIR/contract-$rendered"
     echo "PASS: GX indirect batch contract (rendered=$rendered)"
 done
+
+"$ROOT_DIR/scripts/test-gx-tev-indirect.sh"

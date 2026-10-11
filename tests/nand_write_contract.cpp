@@ -181,6 +181,7 @@ UNEXERCISED(mkw_switch_hle_nand_create)
 UNEXERCISED(mkw_switch_hle_nand_move)
 UNEXERCISED(mkw_switch_hle_nand_get_length)
 UNEXERCISED(mkw_switch_hle_nand_seek)
+UNEXERCISED(mkw_switch_hle_gx_set_tev_indirect)
 #undef UNEXERCISED
 
 int main() {

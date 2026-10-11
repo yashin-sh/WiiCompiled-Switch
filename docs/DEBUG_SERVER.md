@@ -13,6 +13,7 @@ In `sdmc:/switch/WiiCompiled-Switch/Config/debug.ini`, add:
 debug_server=1
 debug_port=6543
 debug_nro_path=sdmc:/switch/WiiCompiled-Switch/WiiCompiled-Switch.nro
+debug_reload_program=0
 ```
 
 The configured NRO path is a fixed deployment destination. Set it to the project
@@ -21,6 +22,12 @@ only `debug_server=1` is specified. Launch the enabled build once manually, then
 connect from a computer on the same LAN. The server binds TCP port 6543 on all
 interfaces unless `debug_port` overrides it. It has no authentication or TLS;
 enable it only on a trusted LAN and do not expose it to the Internet.
+
+Program restart is disabled by default, independently of `debug_server=1`.
+Keep `debug_reload_program=0` when launching through hbmenu, including title
+override. Only set `debug_reload_program=1` for a HOME forwarder whose program
+restart is known to launch the configured NRO. The server cannot detect or
+verify that forwarder mapping from application mode.
 
 With the server enabled, an unsupported guest frontier writes the usual durable
 SD report and holds guest execution so the independent server can still deliver
@@ -80,7 +87,7 @@ For an existing local rendered build environment:
 
 ```bash
 ./scripts/build-local-rendered-fast-track.sh
-python3 tools/mkw_debug.py deploy WiiCompiled-Switch-local-rendered-fast-track.nro --reload
+python3 tools/mkw_debug.py deploy WiiCompiled-Switch-local-rendered-fast-track.nro
 ```
 
 The build helper requires the existing local game product, generated shards, and
@@ -130,14 +137,24 @@ another private directory outside the checkout. Failure stops the procedure
 before further cleanup or restart and reports an error. The already-written
 candidate and verified backups remain inspectable.
 
-`reload` uses `appletRestartProgram()` only in an application or system-application
-context on system version 5.0.0 or later. hbmenu in applet mode rejects the command;
-title override can provide an application context, but support alone does not
-prove which NRO the title will restart. Your HOME forwarder must already point at
-`debug_nro_path`; deployment cannot change that launch mapping. The acknowledgment
+Launch the installed NRO manually after a normal deployment. `--reload` is only
+for the explicitly enabled and verified HOME-forwarder setup described below.
+
+`reload` calls `appletRestartProgram()` only with `debug_reload_program=1`, an
+application or system-application context, and system version 5.0.0 or later.
+Without the explicit opt-in, `info` reports `reload_supported=0` and the command
+returns an error before calling the restart SDK. A hbmenu title-override trial
+on 2026-10-11 demonstrated the hazard: the SDK restarted the retail host game
+instead of this NRO. Application context alone is therefore insufficient.
+Enabling the option asserts the operator's HOME-forwarder setup; it does not
+prove that setup. Your forwarder must already point at `debug_nro_path`;
+deployment cannot change that mapping. The acknowledgment
 means the restart was requested; it does not confirm that the replacement NRO has
 started. The client then waits for connection closure or a trailing error frame,
 so an SDK restart failure is surfaced to the CLI and in the log.
+The hbloader `envHasNextLoad`/`envSetNextLoad` route is a possible future chaining
+mechanism requiring coordinated guest, renderer and worker shutdown. It is not
+implemented by this server and does not change the current manual-launch workflow.
 `quit` closes the client's connection; it does not terminate the NRO or disable
 the server.
 
@@ -200,5 +217,9 @@ After about 40 seconds, execution reaches dispatch 655,654 and pauses at
 `info` reports `DEBUG_FRONTIER_PAUSED`, and the current blocker report is fetched
 over TCP while the server remains accessible. This validates the hardware
 server and unsupported-frontier hold, without establishing gameplay completion.
-Forwarder restart and network NRO replacement remain untested on hardware.
+This initial installation did not validate forwarder restart or network NRO
+replacement. Later verified LAN replacement and texture progression are recorded
+in the [RGB5A3 candidate result](GX_RGB5A3_REPEAT_2026-10-11.md). Automatic NRO
+restart remains unvalidated; the host-game restart above motivated the separate
+default-off `debug_reload_program` safeguard.
 Binary products, backups, and raw receipts stay private.

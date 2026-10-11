@@ -25,3 +25,9 @@ for scenario in enabled disabled disconnect; do
     mkdir "$TEST_DIR/$scenario"
     (cd "$TEST_DIR/$scenario" && ../frontier-contract "$scenario")
 done
+"${MKW_HOST_CXX:-clang++}" -std=c++20 -O1 -g -Wall -Wextra -Werror \
+    -fsanitize=address,undefined -fno-sanitize-recover=all \
+    -D__SWITCH__ -I"$ROOT_DIR/tests/debug-reload-seams" -I"$ROOT_DIR/include" \
+    "$ROOT_DIR/tests/mkw_debug_reload_contract.cpp" -o "$TEST_DIR/reload-contract"
+mkdir "$TEST_DIR/reload-config"
+(cd "$TEST_DIR/reload-config" && ../reload-contract)

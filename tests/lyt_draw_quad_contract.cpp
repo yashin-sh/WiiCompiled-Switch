@@ -115,6 +115,7 @@ UNEXERCISED(mkw_switch_hle_nand_write)
 UNEXERCISED(mkw_switch_hle_nand_move)
 UNEXERCISED(mkw_switch_hle_nand_get_length)
 UNEXERCISED(mkw_switch_hle_nand_seek)
+UNEXERCISED(mkw_switch_hle_gx_set_tev_indirect)
 #undef UNEXERCISED
 extern "C" void mkw_switch_report_unsupported_translated_dispatch(const char* reason, std::uint32_t address, CpuContext* cpu) noexcept {
     if (!expectedReason || std::strcmp(reason, expectedReason) != 0)

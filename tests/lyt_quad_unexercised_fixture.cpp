@@ -23,3 +23,7 @@ extern "C" void mkw_switch_hle_nand_seek(CpuContext*) noexcept {
 extern "C" void mkw_switch_hle_nand_get_length(CpuContext*) noexcept {
     std::abort();
 }
+
+extern "C" void mkw_switch_hle_gx_set_tev_indirect(CpuContext*) noexcept {
+    std::abort();
+}

@@ -1,5 +1,8 @@
 # Roadmap
 
+The NANDGetLength candidate passes its private rendered/Discovery gate and all eight exact-HEAD GitHub checks; PR #383 is merged. Complete SD readback and verified older-NRO cleanup pass. Corrected Netloader execution remains pending. See the [candidate receipt](docs/NAND_GET_LENGTH_2026-10-11.md).
+
+
 The NANDSeek candidate launches successfully, but the verified trial stops earlier at NANDGetLength on the existing-file branch. No rewind execution is accepted. See the [hardware result](docs/HARDWARE_NAND_SEEK_LENGTH_2026-10-11.md) and [bounded length correction](docs/NAND_GET_LENGTH_2026-10-11.md).
 
 

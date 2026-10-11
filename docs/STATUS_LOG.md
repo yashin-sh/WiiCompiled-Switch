@@ -1,6 +1,9 @@
 # Status log
 
-The NANDSeek candidate passes its private rendered/Discovery gate and all eight exact-HEAD GitHub checks; PR #381 is merged. Complete SD readback and verified older-NRO cleanup pass. Corrected Netloader execution remains pending. See the [candidate receipt](NAND_SEEK_2026-10-11.md).
+The NANDSeek candidate launches successfully, but the verified trial stops earlier at NANDGetLength on the existing-file branch. No rewind execution is accepted. See the [hardware result](HARDWARE_NAND_SEEK_LENGTH_2026-10-11.md) and [bounded length correction](NAND_GET_LENGTH_2026-10-11.md).
+
+
+The NANDSeek candidate passes its private rendered/Discovery gate and all eight exact-HEAD GitHub checks; PR #381 is merged. Complete SD readback and verified older-NRO cleanup pass. The subsequent Netloader trial is verified and reaches the earlier existing-file NANDGetLength branch. See the [candidate receipt](NAND_SEEK_2026-10-11.md).
 
 
 ## 2026-10-11 — NANDMove returned; NANDSeek frontier

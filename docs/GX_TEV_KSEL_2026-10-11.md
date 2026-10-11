@@ -43,10 +43,23 @@ check register masks, packet bytes, dirty flags, paired/shared-field preservatio
 unchanged CPU state, invalid stages, reserved selectors and high-bit inputs.
 
 These local contracts establish bounded argument/native-packet behavior. The
-new KSEL candidate's rendered/Discovery syntax gate, separate exact-source
-private rendered build, complete exact-HEAD published checks, verified SD
-deployment and corrected console execution remain pending. Success of the
-preceding RGB5A3 candidate's gates does not validate this new code revision.
+KSEL code candidate `4e5087d` passes its own rendered HLE/input/Discovery/capture
+SDK syntax gate, strict debug-server compile and separate exact-source private
+rendered build. All eight published checks on that exact HEAD are successful.
+These results belong to the KSEL revision, independently of the preceding
+RGB5A3 candidate's validation.
+
+The private provider audit checks 100 unique scoped providers across 281 explicit
+inputs. The final link retains 114 strong functions, including both new bridges
+and native KSEL functions, plus three GX state objects. The source snapshot
+matches 866 public inputs; the original nine private patch files retain their
+bytes and nanosecond modification times. Provider uniqueness remains scoped to
+the explicitly audited inputs.
+
+The exact candidate NRO is 73,711,672 bytes, SHA-256 identity `22dac60ee6a2eda3…`;
+its full hash and build receipts stay private. Discovery, FIFO capture and frame
+dump are disabled in this built NRO, matching the preceding trial. Verified SD
+deployment and corrected console execution remain pending.
 
 Keep automatic restart acceptance separate from manual launch evidence. A later
 durable frontier or attributable milestone is still required to accept the

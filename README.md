@@ -4,9 +4,10 @@ The corrected RGB5A3/repeat candidate passes all eight exact-HEAD checks and
 verified LAN deployment. A user-launched trial records the 32 × 32 texture as
 `load-pass`, then reaches `GXSetTevKColorSel` (`0x80171F30`) at dispatch 656,213.
 See the [texture return and deployment evidence](docs/GX_RGB5A3_REPEAT_2026-10-11.md)
-and [bounded KSEL correction](docs/GX_TEV_KSEL_2026-10-11.md). The new selector
-candidate's build/CI/hardware gates remain pending; automatic restart and later
-game pixels are unproven.
+and [bounded KSEL correction](docs/GX_TEV_KSEL_2026-10-11.md). Selector candidate
+`4e5087d` passes its exact-source private rendered gate and all eight published
+exact-HEAD checks. Verified SD deployment and its console trial remain pending;
+automatic restart and later game pixels are unproven.
 
 The NANDGetLength candidate passes its private rendered/Discovery gate and all eight exact-HEAD GitHub checks; PR #383 is merged. Complete SD readback and verified older-NRO cleanup pass. Corrected Netloader execution remains pending. See the [candidate receipt](docs/NAND_GET_LENGTH_2026-10-11.md).
 

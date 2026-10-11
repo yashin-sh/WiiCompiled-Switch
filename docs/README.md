@@ -1,5 +1,6 @@
 # Documentation index
 
+- [RGB5A3 repeat texture admission](GX_RGB5A3_REPEAT_2026-10-11.md) — current LAN-debug texture frontier and descriptor correction
 - [NANDSeek candidate: existing-file length frontier](HARDWARE_NAND_SEEK_LENGTH_2026-10-11.md)
 - [Bounded ordinary-read NANDGetLength](NAND_GET_LENGTH_2026-10-11.md)
 - [Opt-in Switch LAN debug server](DEBUG_SERVER.md) — live status/logs, diagnostic downloads and verified deployment/restart workflow

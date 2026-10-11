@@ -64,6 +64,13 @@ echo "PASS: partial-tile I4 textures render white/black and refresh at the same 
 cmp "$OUT_ROOT/rgb5a3-original.png" "$OUT_ROOT/rgb5a3-replayed.png"
 echo "PASS: partial-tile direct RGB5A3 textures render exact red/blue pixels"
 
+for rgb5a3_mode in repeat clamp; do
+    "$REPLAY" "capture-rgb5a3-$rgb5a3_mode" "$OUT_ROOT/rgb5a3-$rgb5a3_mode.mkwr" "$OUT_ROOT/rgb5a3-$rgb5a3_mode-original.png"
+    "$REPLAY" "replay-rgb5a3-$rgb5a3_mode-check" "$OUT_ROOT/rgb5a3-$rgb5a3_mode.mkwr" "$OUT_ROOT/rgb5a3-$rgb5a3_mode-replayed.png"
+    cmp "$OUT_ROOT/rgb5a3-$rgb5a3_mode-original.png" "$OUT_ROOT/rgb5a3-$rgb5a3_mode-replayed.png"
+done
+echo "PASS: RGB5A3 32x32 linear repeat/clamp, separate S/T samples, same-address refresh and partial A3RGB4 alpha blending survive independent replay"
+
 for quad_mode in quads colors; do
     "$REPLAY" "capture-lyt-$quad_mode" "$OUT_ROOT/lyt-$quad_mode.mkwr" "$OUT_ROOT/lyt-$quad_mode-original.png"
     "$REPLAY" "replay-lyt-$quad_mode-check" "$OUT_ROOT/lyt-$quad_mode.mkwr" "$OUT_ROOT/lyt-$quad_mode-replayed.png"

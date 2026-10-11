@@ -360,22 +360,25 @@ void CheckLoad(Texture texture, std::uint32_t tid = 0u) {
                                                              : (texture == Texture::SecondRelocatedMiiI4 ? Texture::SecondMiiI4 : texture);
     CheckFixtureLoad(GetFixture(texture), tid, static_cast<std::size_t>(identity));
 }
-void InitFamily(const Fixture& f, std::uint32_t bytes) {
+void InitFamily(const Fixture& f, std::uint32_t bytes, std::uint32_t objectBytes = 64u) {
     Memory::Config config;
-    config.regions = {{"family-object", f.object, 64u}, {"gx-pointer", gxPointer, 4u}, {"gx-state", gxData, 0x604u}};
+    config.regions = {{"gx-pointer", gxPointer, 4u}, {"gx-state", gxData, 0x604u}};
+    if (objectBytes)
+        config.regions.push_back({"family-object", f.object, objectBytes});
     if (bytes)
         config.regions.push_back({"family-data", f.data, bytes});
     Memory::Init(config);
     WriteWord(gxPointer, gxData);
     WriteWord(gxData + 0x5fcu, 0x12345678u);
     Memory::Write16(gxData + 2u, 0xabcdu);
-    WriteDescriptorFixture(f);
+    if (objectBytes >= 32u)
+        WriteDescriptorFixture(f);
 }
 void CheckFamily() {
     std::uint32_t identity = 0x80401000u;
     // Sources and objects absent from the hardware-address lists. Exercise
     // whole and partial tiles, small/large extents and all native binding slots.
-    for (auto mode : {std::pair{0u, false}, {2u, false}, {2u, true}, {3u, false}, {3u, true}, {5u, false}}) {
+    for (auto mode : {std::pair{0u, false}, {2u, false}, {2u, true}, {3u, false}, {3u, true}, {5u, false}, {5u, true}}) {
         const auto format = mode.first;
         for (auto dims : {std::pair{1u, 1u}, {4u, 7u}, {8u, 8u}, {9u, 9u}, {36u, 32u}, {32u, 32u}, {511u, 17u}, {1024u, 64u}}) {
             const auto columns = format == 0u || format == 2u ? 8u : 4u;
@@ -479,6 +482,92 @@ void CheckFamily() {
         assert(Memory::Read32(capturedLarge.object + word * 4u) == capturedWords[word]);
     for (std::uint32_t slot = 0; slot < 8u; ++slot)
         CheckFixtureLoad(capturedLarge, slot);
+}
+void CheckRgb5a3Repeat() {
+    const Fixture captured{0x80398eb8u, 0x116e8220u, 32u, 32u, 5u, 2048u, true, true};
+    const std::array<std::uint32_t, 8> literal{0x195u, 0u, 0x00507c1fu, 0x008b7411u,
+                                               0u, 5u, 0u, 0x00400202u};
+    InitFamily(captured, captured.size + 32u);
+    for (std::uint32_t word = 0; word < literal.size(); ++word)
+        assert(Memory::Read32(captured.object + word * 4u) == literal[word]);
+    for (std::uint32_t slot = 0; slot < 8u; ++slot)
+        CheckFixtureLoad(captured, slot);
+    // Sampler changes and moved payloads must refresh one stable host object.
+    auto* previous = currentHost;
+    for (bool repeat : {false, true, false, true}) {
+        auto changed = captured;
+        changed.repeat = repeat;
+        WriteDescriptorFixture(changed);
+        CheckFixtureLoad(changed);
+#if MKW_LOCAL_RENDERED_FAST_TRACK
+        assert(currentHost == previous);
+#else
+        (void)previous;
+#endif
+    }
+    auto relocated = captured;
+    relocated.data += 32u;
+    WriteDescriptorFixture(relocated);
+    CheckFixtureLoad(relocated);
+#if MKW_LOCAL_RENDERED_FAST_TRACK
+    assert(currentHost == previous);
+#endif
+    // Copy the descriptor to another aligned identity without admission lists.
+    relocated.object += 32u;
+    WriteDescriptorFixture(relocated);
+    CheckFixtureLoad(relocated, 7u);
+#if MKW_LOCAL_RENDERED_FAST_TRACK
+    assert(currentHost != previous);
+#endif
+    InitFamily(captured, captured.size);
+    for (std::uint32_t word = 0; word < literal.size(); ++word) {
+        for (std::uint32_t bit = 0; bit < 32u; ++bit) {
+            if ((word == 2u && bit < 20u) || (word == 3u && bit < 24u))
+                continue;
+            WriteWord(captured.object + word * 4u, literal[word] ^ (1u << bit));
+            ExpectAbort(MakeCpu(captured.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+        }
+        WriteWord(captured.object + word * 4u, literal[word]);
+    }
+    for (std::uint32_t s = 0; s < 4u; ++s) {
+        for (std::uint32_t t = 0; t < 4u; ++t) {
+            if ((s == 0u && t == 0u) || (s == 1u && t == 1u))
+                continue;
+            WriteWord(captured.object, 0x190u | s | (t << 2u));
+            ExpectAbort(MakeCpu(captured.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+        }
+    }
+    WriteWord(captured.object, literal[0]);
+    for (auto slot : {8u, 0xffu, 0xffffffffu})
+        ExpectAbort(MakeCpu(captured.object, slot), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+    for (auto bytes : {0u, 32u, 1024u, 2016u, 2047u}) {
+        InitFamily(captured, bytes);
+        ExpectAbort(MakeCpu(captured.object), "GX_LOAD_TEX_OBJ_DATA_UNMAPPED", captured.size);
+    }
+    for (auto bytes : {0u, 31u}) {
+        InitFamily(captured, captured.size, bytes);
+        ExpectAbort(MakeCpu(captured.object), "GX_LOAD_TEX_OBJ_GUEST_UNMAPPED", 0u);
+    }
+    InitFamily(captured, captured.size);
+#if MKW_LOCAL_RENDERED_FAST_TRACK
+    nullHostPointer = true;
+    ExpectAbort(MakeCpu(captured.object), "GX_LOAD_TEX_OBJ_DATA_POINTER_NULL", captured.size);
+    nullHostPointer = false;
+    throwOnInit = true;
+    ExpectAbort(MakeCpu(captured.object), "GX_LOAD_TEX_OBJ_HOST_EXCEPTION", captured.size);
+    throwOnInit = false;
+#endif
+    auto outside = captured;
+    outside.format = 0u;
+    outside.size = 512u;
+    InitFamily(outside, outside.size);
+    ExpectAbort(MakeCpu(outside.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+    outside = captured;
+    outside.width = 1024u;
+    outside.height = 512u;
+    outside.size = 1048576u;
+    InitFamily(outside, outside.size);
+    ExpectAbort(MakeCpu(outside.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
 }
 void CheckDescriptorRefusals(Texture texture) {
     const auto fixture = GetFixture(texture);
@@ -734,6 +823,7 @@ int main() {
     CheckLoad(Texture::MiiI4);
     CheckLoad(Texture::SecondMiiI4);
     CheckFamily();
+    CheckRgb5a3Repeat();
     initRelocated();
     CheckLoad(Texture::RelocatedMiiI4);
     CheckLoad(Texture::SecondRelocatedMiiI4);

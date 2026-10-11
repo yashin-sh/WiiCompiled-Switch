@@ -24,7 +24,7 @@ extern "C" int __wrap_rename(const char* source, const char* destination) {
     }
     // Horizon fsFsRenameFile rejects an existing destination. POSIX rename
     // ordinarily replaces it, which hid a deployment failure on the hardware.
-    struct stat existing{};
+    struct stat existing {};
     if (::lstat(destination, &existing) == 0) {
         errno = EEXIST;
         return -1;

@@ -232,7 +232,7 @@ bool no_symlinks(const std::string& path, bool allow_missing_leaf = false) {
         if (i == 0)
             continue;
         const auto prefix = path.substr(0, i);
-        struct stat st{};
+        struct stat st {};
         const auto stat_path = prefix.back() == ':' ? prefix + "/" : prefix;
         if (::lstat(stat_path.c_str(), &st) != 0)
             return allow_missing_leaf && i == path.size() && errno == ENOENT;
@@ -244,7 +244,7 @@ bool no_symlinks(const std::string& path, bool allow_missing_leaf = false) {
     return true;
 }
 bool regular(const std::string& path) {
-    struct stat st{};
+    struct stat st {};
     return no_symlinks(path) && ::stat(path.c_str(), &st) == 0 && S_ISREG(st.st_mode) &&
            st.st_size >= 0 && std::uint64_t(st.st_size) <= MaxFile;
 }
@@ -316,7 +316,7 @@ bool send_file(int fd, const std::string& path) {
     FILE* in = std::fopen(path.c_str(), "rb");
     if (!in)
         return error(fd, "cannot open file");
-    struct stat st{};
+    struct stat st {};
     if (::fstat(::fileno(in), &st) != 0) {
         std::fclose(in);
         return error(fd, "cannot stat file");
@@ -353,7 +353,7 @@ void list_reports(const std::string& rel, std::string& out, unsigned depth = 0) 
         auto full = root + "/" + child;
         if (!no_symlinks(full))
             continue;
-        struct stat st{};
+        struct stat st {};
         if (::stat(full.c_str(), &st) != 0)
             continue;
         if (S_ISDIR(st.st_mode)) {
@@ -412,7 +412,7 @@ bool upload(int fd, const std::string& size_text, const std::string& crc_text) {
         return error(fd, "unsafe deployment path");
     const auto part = nro + ".part";
     const auto rollback = nro + ".rollback";
-    struct stat old{};
+    struct stat old {};
     if (::lstat(rollback.c_str(), &old) == 0)
         return error(fd, "pending rollback requires verified backup and finalize-deploy");
     if (errno != ENOENT)
@@ -588,7 +588,7 @@ bool command(Client& client, const std::string& line) {
         if (!file_hash(nro, actual, sha) || actual != expected || sha != words[2])
             return error(fd, "current candidate size/SHA256 mismatch");
         const auto rollback = nro + ".rollback";
-        struct stat st{};
+        struct stat st {};
         if (::lstat(rollback.c_str(), &st) != 0) {
             if (errno == ENOENT && previous == 0 && words[4] == "-")
                 return reply(fd, true, "");
@@ -751,11 +751,11 @@ bool launch(bool opt_in, const std::string& app_root, const std::string& candida
     nro = candidate;
     // Recover a process/power interruption between the two commit renames.
     const auto rollback = nro + ".rollback";
-    struct stat current{};
+    struct stat current {};
     if (::lstat(nro.c_str(), &current) != 0) {
         if (errno != ENOENT)
             return false;
-        struct stat previous{};
+        struct stat previous {};
         if (::lstat(rollback.c_str(), &previous) == 0) {
             if (!regular(rollback) || ::rename(rollback.c_str(), nro.c_str()) != 0)
                 return false;

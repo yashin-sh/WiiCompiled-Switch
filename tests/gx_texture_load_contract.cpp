@@ -1,9 +1,11 @@
 #include "abi_bridge.h"
 #include "guest_flat_memory.h"
+#include "gx_linear_texture_descriptor.hpp"
 #include "memory.h"
 #include "switch_gx_hle_traits.hpp"
 #include <dolphin/gx.h>
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <csignal>
@@ -17,6 +19,10 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
+
+#define CHECK(condition, ...) assert(condition)
+#include "pinned-rgb565-guest-texture.inc"
+#undef CHECK
 
 namespace {
 constexpr std::uint32_t ia8Obj = 0x80384500u;
@@ -569,6 +575,96 @@ void CheckRgb5a3Repeat() {
     InitFamily(outside, outside.size);
     ExpectAbort(MakeCpu(outside.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
 }
+void CheckRgb565Repeat() {
+    const auto validBefore = validCalls, refusedBefore = diagnosedAborts;
+    const Fixture captured{0x80398eb8u, 0x116e75a0u, 32u, 32u, 4u, 2048u, true, true};
+    const std::array<std::uint32_t, 8> literal{0x195u, 0u, 0x00407c1fu, 0x008b73adu, 0u, 4u, 0u, 0x00400202u};
+    static_assert(GX_TF_RGB565 == 4 && mkw::gx::linearTextureBytes({0x195u, 0u, 0x00407c1fu, 0x008b73adu, 0u, 4u, 0u, 0x00400202u}, 0u) == 2048u);
+    assert(PinnedGXGetTexBufferSize(32u, 32u, GX_TF_RGB565, GX_FALSE, 0u) == captured.size);
+    // Exact pinned guest initializer/LOD writer independently generates all
+    // eight words, with physical/cached/uncached aliases and both legal samplers.
+    for (auto alias : {0u, 0x80000000u, 0xc0000000u}) {
+        for (bool repeat : {false, true}) {
+            auto f = captured;
+            f.repeat = repeat;
+            InitFamily(f, f.size + 32u);
+            PinnedWriteGuestTexObj(f.object, f.data + alias, f.width, f.height, f.format, repeat ? 1u : 0u, repeat ? 1u : 0u, false, false, 0u);
+            assert(Memory::Read32(f.object) == (repeat ? 0x95u : 0x90u));
+            PinnedWriteGuestTexObjLOD(f.object, 1u, 1u, 0.0f, 0.0f, 0.0f, false, false, 0u);
+            for (std::uint32_t word = 0; word < literal.size(); ++word)
+                assert(Memory::Read32(f.object + 4u * word) == (word == 0u && !repeat ? 0x190u : literal[word]));
+            for (std::uint32_t slot = 0; slot < 8u; ++slot)
+                CheckFixtureLoad(f, slot);
+            auto* host = currentHost;
+            // Same identity observes sampler changes and relocated source.
+            f.repeat = !repeat;
+            WriteDescriptorFixture(f);
+            CheckFixtureLoad(f);
+#if MKW_LOCAL_RENDERED_FAST_TRACK
+            assert(currentHost == host);
+#else
+            (void)host;
+#endif
+            f.data += 32u;
+            WriteDescriptorFixture(f);
+            CheckFixtureLoad(f);
+#if MKW_LOCAL_RENDERED_FAST_TRACK
+            assert(currentHost == host);
+#endif
+            f.object += 32u;
+            WriteDescriptorFixture(f);
+            CheckFixtureLoad(f, 7u);
+#if MKW_LOCAL_RENDERED_FAST_TRACK
+            assert(currentHost != host);
+#endif
+        }
+    }
+    InitFamily(captured, captured.size);
+    for (std::uint32_t word = 0; word < literal.size(); ++word) {
+        for (std::uint32_t bit = 0; bit < 32u; ++bit) {
+            if (word == 3u && bit < 24u)
+                continue; // Source identity is variable.
+            WriteWord(captured.object + 4u * word, literal[word] ^ (1u << bit));
+            ExpectAbort(MakeCpu(captured.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+        }
+        WriteWord(captured.object + 4u * word, literal[word]);
+    }
+    for (std::uint32_t s = 0; s < 4u; ++s)
+        for (std::uint32_t t = 0; t < 4u; ++t) {
+            if ((s == 0u && t == 0u) || (s == 1u && t == 1u))
+                continue;
+            WriteWord(captured.object, 0x190u | s | (t << 2u));
+            ExpectAbort(MakeCpu(captured.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+        }
+    WriteWord(captured.object, literal[0]);
+    for (auto slot : {8u, 0xffu, 0xffffffffu})
+        ExpectAbort(MakeCpu(captured.object, slot), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+    for (auto bytes : {0u, 32u, 1024u, 2016u, 2047u}) {
+        InitFamily(captured, bytes);
+        ExpectAbort(MakeCpu(captured.object), "GX_LOAD_TEX_OBJ_DATA_UNMAPPED", captured.size);
+    }
+    for (auto bytes : {0u, 31u}) {
+        InitFamily(captured, captured.size, bytes);
+        ExpectAbort(MakeCpu(captured.object), "GX_LOAD_TEX_OBJ_GUEST_UNMAPPED", 0u);
+    }
+    for (auto dims : {std::pair{31u, 32u}, {33u, 32u}, {32u, 31u}, {32u, 33u}, {1u, 1u}, {832u, 456u}}) {
+        auto f = captured;
+        f.width = dims.first;
+        f.height = dims.second;
+        f.size = PinnedGXGetTexBufferSize(f.width, f.height, GX_TF_RGB565, GX_FALSE, 0u);
+        InitFamily(f, f.size);
+        ExpectAbort(MakeCpu(f.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+    }
+    InitFamily(captured, captured.size);
+    WriteWord(captured.object + 12u, 0u);
+    ExpectAbort(MakeCpu(captured.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+    auto unaligned = captured;
+    ++unaligned.object;
+    InitFamily(unaligned, captured.size);
+    ExpectAbort(MakeCpu(unaligned.object), "GX_LOAD_TEX_OBJ_UNPROVEN_DESCRIPTOR", 0u);
+    assert(validCalls - validBefore == 66u && diagnosedAborts - refusedBefore == 264u);
+    std::printf("PASS: RGB56532x32 pinned packing/size, native arguments and CPU/Memory valid=%u refusals=%u rendered=%d\n", validCalls - validBefore, diagnosedAborts - refusedBefore, MKW_LOCAL_RENDERED_FAST_TRACK);
+}
 void CheckDescriptorRefusals(Texture texture) {
     const auto fixture = GetFixture(texture);
     const auto object = fixture.object;
@@ -824,6 +920,7 @@ int main() {
     CheckLoad(Texture::SecondMiiI4);
     CheckFamily();
     CheckRgb5a3Repeat();
+    CheckRgb565Repeat();
     initRelocated();
     CheckLoad(Texture::RelocatedMiiI4);
     CheckLoad(Texture::SecondRelocatedMiiI4);

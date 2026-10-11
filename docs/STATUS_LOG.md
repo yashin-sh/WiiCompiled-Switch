@@ -1,5 +1,14 @@
 # Status log
 
+The user reports visible progress beyond the Wiimote warning to a save-error
+dialogue. The subsequently observed debug session reaches dispatch 827,547 and
+pauses on a 32×32 RGB565 repeat descriptor. The photo establishes visible UI;
+retained NAND reports and missing immutable runtime identity limit attribution.
+The bounded RGB565 correction and read-only blank-save policy pass their host
+contracts; corrected console execution remains pending. See the
+[hardware observation](HARDWARE_SAVE_DIALOG_RGB565_2026-10-11.md) and
+[blank-save correction](NAND_BLANK_SAVE_2026-10-11.md).
+
 The NANDGetLength candidate passes its private rendered/Discovery gate and all eight exact-HEAD GitHub checks; PR #383 is merged. Complete SD readback and verified older-NRO cleanup pass. Corrected Netloader execution remains pending. See the [candidate receipt](NAND_GET_LENGTH_2026-10-11.md).
 
 

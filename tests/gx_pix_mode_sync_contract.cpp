@@ -34,7 +34,7 @@ const char* reason = nullptr;
 const char* stage = nullptr;
 using Trait = KnownNativeCpuCall<0x8016EB70u>;
 static_assert(Trait::kAvailable);
-static_assert(noexcept(Trait::Invoke(nullptr)));
+static_assert(!noexcept(Trait::Invoke(nullptr)));
 
 void CheckCpu() {
     assert(std::memcmp(&cpu, &savedCpu, sizeof(cpu)) == 0);

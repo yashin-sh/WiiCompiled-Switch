@@ -1,3 +1,8 @@
 [submodule "third_party/WiiCompiled"]
 	path = third_party/WiiCompiled
 	url = https://github.com/patchzyy/Wiicompiled.git
+
+[submodule "third_party/DriftDroid"]
+	path = third_party/DriftDroid
+	url = https://github.com/dorPXP/driftdroid.git
+	branch = android-port

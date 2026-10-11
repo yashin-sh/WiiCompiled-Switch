@@ -1,6 +1,9 @@
 # Roadmap
 
-The NANDSeek candidate passes its private rendered/Discovery gate and all eight exact-HEAD GitHub checks; PR #381 is merged. Complete SD readback and verified older-NRO cleanup pass. Corrected Netloader execution remains pending. See the [candidate receipt](docs/NAND_SEEK_2026-10-11.md).
+The NANDSeek candidate launches successfully, but the verified trial stops earlier at NANDGetLength on the existing-file branch. No rewind execution is accepted. See the [hardware result](docs/HARDWARE_NAND_SEEK_LENGTH_2026-10-11.md) and [bounded length correction](docs/NAND_GET_LENGTH_2026-10-11.md).
+
+
+The NANDSeek candidate passes its private rendered/Discovery gate and all eight exact-HEAD GitHub checks; PR #381 is merged. Complete SD readback and verified older-NRO cleanup pass. The subsequent Netloader trial is verified and reaches the earlier existing-file NANDGetLength branch. See the [candidate receipt](docs/NAND_SEEK_2026-10-11.md).
 
 
 The [fresh NANDMove result](docs/HARDWARE_NAND_MOVE_SEEK_2026-10-11.md) verifies 42 reports twice, accepts the actual move with result 0 and independent destination/source checks, and reaches NANDSeek `0x8019B964` with offset/origin 0. The operator still sees Wiimote, then black output and an error. The [bounded rewind correction](docs/NAND_SEEK_2026-10-11.md) validates a live owned ordinary write handle and performs the actual pinned seek/tell sequence; corrected console execution remains pending.

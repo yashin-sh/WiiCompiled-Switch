@@ -1,4 +1,5 @@
 #include "switch_nand_runtime.hpp"
+#include "switch_nand_length_runtime.hpp"
 #include "switch_nand_seek_runtime.hpp"
 #include "switch_nand_write_runtime.hpp"
 
@@ -44,6 +45,7 @@ struct FileHandle {
     // Non-empty for a crash-safe shadow handle. The guest writes to `path` and
     // SafeCloseSync atomically publishes that sibling file over this target.
     std::filesystem::path safeCommitPath;
+    bool safeOrigin = false;
 };
 
 std::mutex g_fileMutex;
@@ -250,6 +252,11 @@ std::int32_t SafeOpenReadSync(std::uint32_t pathPtr,
 
         const std::int32_t result = OpenSync(pathPtr, fileInfoPtr, 1u);
         if (result == kResultOk) {
+            std::lock_guard<std::mutex> lock(g_fileMutex);
+            const auto it = g_fileHandles.find(static_cast<std::int32_t>(Memory::Read32(fileInfoPtr)));
+            if (it == g_fileHandles.end() || !it->second.file)
+                return kResultInvalid;
+            it->second.safeOrigin = true;
             Memory::Write8(
                 fileInfoPtr + static_cast<std::uint32_t>(kOpenFlagOffset),
                 kSafeOpenFlag);
@@ -331,7 +338,7 @@ std::int32_t SafeOpenSync(std::uint32_t pathPtr,
 
         const std::int32_t fd = g_nextFd++;
         try {
-            g_fileHandles.emplace(fd, FileHandle{file, tempPath, static_cast<std::int32_t>(mode), hostPath});
+            g_fileHandles.emplace(fd, FileHandle{file, tempPath, static_cast<std::int32_t>(mode), hostPath, true});
         } catch (...) {
             std::fclose(file);
             std::filesystem::remove(tempPath, ec);
@@ -528,21 +535,50 @@ std::int32_t GetLengthSync(std::uint32_t fileInfoPtr,
             return kResultInvalid;
         }
 
+        // Pinned NandProbeFileExtent always performs this sequence and
+        // NANDGetLength returns 0 with the actual ftell result cast to u32.
         const long original = std::ftell(it->second.file);
-        if (original < 0 || std::fseek(it->second.file, 0, SEEK_END) != 0) {
-            return kResultUnknown;
-        }
-
+        std::fseek(it->second.file, 0, SEEK_END);
         const long end = std::ftell(it->second.file);
-        const bool restored = std::fseek(it->second.file, original, SEEK_SET) == 0;
-        if (end < 0 || !restored) {
-            return kResultUnknown;
-        }
-
+        std::fseek(it->second.file, original, SEEK_SET);
         Memory::Write32(outLengthPtr, static_cast<std::uint32_t>(end));
         return kResultOk;
     } catch (...) {
         return kResultInvalid;
+    }
+}
+
+LengthResult LengthOwnedReadSync(std::uint32_t fileInfoPtr,
+                                 std::uint32_t outLengthPtr) noexcept {
+    LengthResult out;
+    constexpr std::uint32_t span = kOpenFlagOffset + 1u;
+    if (fileInfoPtr == 0u || outLengthPtr == 0u ||
+        !Memory::Contains(fileInfoPtr, span) || !Memory::Contains(outLengthPtr, 4u) ||
+        (static_cast<std::uint64_t>(outLengthPtr) < static_cast<std::uint64_t>(fileInfoPtr) + span &&
+         static_cast<std::uint64_t>(fileInfoPtr) < static_cast<std::uint64_t>(outLengthPtr) + 4u)) {
+        return out;
+    }
+    out.fd = static_cast<std::int32_t>(Memory::Read32(fileInfoPtr));
+    out.accessType = Memory::Read8(fileInfoPtr + kAccessTypeOffset);
+    out.openFlag = Memory::Read8(fileInfoPtr + kOpenFlagOffset);
+    try {
+        std::lock_guard<std::mutex> lock(g_fileMutex);
+        const auto it = g_fileHandles.find(out.fd);
+        if (it == g_fileHandles.end() || !it->second.file)
+            return out;
+        out.mode = it->second.mode;
+        if (out.openFlag != kOpenFlag || out.mode != 1 || it->second.safeOrigin || !it->second.safeCommitPath.empty())
+            return out;
+        out.admitted = true;
+        out.position = std::ftell(it->second.file);
+        out.endSeek = std::fseek(it->second.file, 0, SEEK_END);
+        out.length = static_cast<std::uint32_t>(std::ftell(it->second.file));
+        out.restoreSeek = std::fseek(it->second.file, out.position, SEEK_SET);
+        Memory::Write32(outLengthPtr, out.length);
+        out.result = kResultOk;
+        return out;
+    } catch (...) {
+        return out;
     }
 }
 

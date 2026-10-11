@@ -1,5 +1,8 @@
 # Documentation index
 
+- [NANDSeek candidate: existing-file length frontier](HARDWARE_NAND_SEEK_LENGTH_2026-10-11.md)
+- [Bounded ordinary-read NANDGetLength](NAND_GET_LENGTH_2026-10-11.md)
+
 - [NANDMove returned; NANDSeek frontier](HARDWARE_NAND_MOVE_SEEK_2026-10-11.md) — 42 reports verified twice; successful relocation, black/error and ordinary-handle rewind stop
 - [Bounded owned-stream rewind](NAND_SEEK_2026-10-11.md) — live handle/argument guards, real fseek/ftell and pinned errors
 

@@ -174,6 +174,7 @@ UNEXERCISED(mkw_switch_hle_lyt_draw_quad)
 UNEXERCISED(mkw_switch_hle_nand_create)
 UNEXERCISED(mkw_switch_hle_nand_write)
 UNEXERCISED(mkw_switch_hle_nand_move)
+UNEXERCISED(mkw_switch_hle_nand_get_length)
 #undef UNEXERCISED
 
 int main() {

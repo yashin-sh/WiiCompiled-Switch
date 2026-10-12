@@ -8,7 +8,9 @@ submodule used by the native Switch/Deko3D path:
   * Switch NROs are ELF-derived but libnx has no glibc dynamic-linker <link.h>,
     so Abseil ELF memory-image introspection must be disabled on __SWITCH__.
   * libnx/newlib struct tm has no tm_gmtoff/tm_zone fields, so cctz must use
-    its existing newlib _timezone/tzname fallback on __SWITCH__.
+    its existing newlib _timezone/tzname fallback on __SWITCH__. Dawn compiles
+    with strict C++20, which hides those non-ISO newlib declarations, so the
+    two ABI globals are redeclared narrowly for Switch.
 
 The transformation is deliberately strict and idempotent. If upstream text no
 longer matches the pinned source contract, it fails instead of guessing.
@@ -53,6 +55,21 @@ THREAD_IDENTITY_PATTERNS = (
     ),
 )
 
+TIME_ZONE_LIBC_INCLUDE_ANCHOR = (
+    '#include "absl/time/internal/cctz/include/cctz/time_zone.h"\n'
+)
+TIME_ZONE_LIBC_SWITCH_DECLS = """#ifdef __SWITCH__
+// devkitA64/newlib provides these ABI globals, but <time.h> hides their
+// declarations when Dawn compiles with strict -std=c++20 (__STRICT_ANSI__).
+extern "C" {
+extern long _timezone;
+extern char* _tzname[2];
+}
+#ifndef tzname
+#define tzname _tzname
+#endif
+#endif
+"""
 TIME_ZONE_LIBC_PATTERN = """#elif defined(__native_client__) || defined(__myriad2__) || \\
     defined(__EMSCRIPTEN__)"""
 TIME_ZONE_LIBC_SWITCH = """#elif defined(__native_client__) || defined(__myriad2__) || \\
@@ -152,17 +169,31 @@ def patch_elf_mem_image(path: Path, check_only: bool) -> bool:
 
 def patch_time_zone_libc(path: Path, check_only: bool) -> bool:
     text = path.read_text(encoding="utf-8")
-    if TIME_ZONE_LIBC_SWITCH in text:
-        return False
+    changed = False
 
-    if check_only:
-        fail(f"Switch cctz newlib timezone fallback missing from {path}")
-    if TIME_ZONE_LIBC_PATTERN not in text:
-        fail(f"cctz newlib timezone fallback contract changed in {path}")
+    if TIME_ZONE_LIBC_SWITCH_DECLS not in text:
+        if check_only:
+            fail(f"Switch strict-mode newlib timezone declarations missing from {path}")
+        if TIME_ZONE_LIBC_INCLUDE_ANCHOR not in text:
+            fail(f"cctz include anchor changed in {path}")
+        text = text.replace(
+            TIME_ZONE_LIBC_INCLUDE_ANCHOR,
+            TIME_ZONE_LIBC_INCLUDE_ANCHOR + "\n" + TIME_ZONE_LIBC_SWITCH_DECLS,
+            1,
+        )
+        changed = True
 
-    text = text.replace(TIME_ZONE_LIBC_PATTERN, TIME_ZONE_LIBC_SWITCH, 1)
-    path.write_text(text, encoding="utf-8")
-    return True
+    if TIME_ZONE_LIBC_SWITCH not in text:
+        if check_only:
+            fail(f"Switch cctz newlib timezone fallback missing from {path}")
+        if TIME_ZONE_LIBC_PATTERN not in text:
+            fail(f"cctz newlib timezone fallback contract changed in {path}")
+        text = text.replace(TIME_ZONE_LIBC_PATTERN, TIME_ZONE_LIBC_SWITCH, 1)
+        changed = True
+
+    if changed:
+        path.write_text(text, encoding="utf-8")
+    return changed
 
 
 def verify(root: Path) -> None:

@@ -10,6 +10,7 @@ readonly JOBS="${MKW_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}"
 
 readonly DAWN_REPO="https://github.com/google/dawn.git"
 readonly DAWN_PIN="13abc3bc8ea2d3c2050f9e77a12d012108ceee24"
+readonly DAWN_ABSEIL_PIN="d16e32215c3ab90ba57c2e904a5344d85c7353e4"
 readonly DAWN_DIR="${AURORA_SWITCH_DAWN_SOURCE_DIR:-$DEPS_DIR/dawn}"
 readonly DAWN_BUILD_DIR="${AURORA_SWITCH_DAWN_BUILD_DIR:-$DEPS_DIR/dawn-build-switch}"
 readonly UAM_REPO="https://github.com/averne/libuam.git"
@@ -21,6 +22,7 @@ readonly CROSS_FILE="$DEPS_DIR/uam-switch.cross"
 readonly RECEIPT="$DEPS_DIR/native-deko3d-toolchain.receipt"
 readonly DAWN_PATCH="$REF_DIR/aurora-main/cmake/patches/dawn-nintendo-switch-platform.patch"
 readonly AURORA_ABSEIL_PATCH="$REF_DIR/aurora-main/cmake/patches/abseil-nintendo-switch-platform.patch"
+readonly DAWN_ABSEIL_PATCHER="$ROOT_DIR/scripts/patch-dawn-abseil-switch.py"
 readonly DAWN_EXCLUDE_EGL="third_party/EGL-Registry/src"
 readonly DAWN_EXCLUDE_ABSEIL="third_party/abseil-cpp"
 
@@ -46,6 +48,10 @@ if [[ -z "${DEVKITPRO:-}" || ! -f "$DEVKITPRO/cmake/Switch.cmake" ]]; then
 fi
 if [[ ! -f "$DEVKITPRO/switchvars.sh" ]]; then
     echo "error: missing $DEVKITPRO/switchvars.sh" >&2
+    exit 2
+fi
+if [[ ! -f "$DAWN_ABSEIL_PATCHER" ]]; then
+    echo "error: missing Dawn Abseil Switch patcher: $DAWN_ABSEIL_PATCHER" >&2
     exit 2
 fi
 
@@ -108,16 +114,46 @@ apply_dawn_patch() {
     git -C "$DAWN_DIR" apply "${dawn_patch_args[@]}" "$DAWN_PATCH"
 }
 
+assert_dawn_abseil_switch_changes() {
+    local abseil_dir="$DAWN_DIR/$DAWN_EXCLUDE_ABSEIL"
+    local actual changed expected
+    actual="$(git -C "$abseil_dir" rev-parse HEAD)"
+    if [[ "$actual" != "$DAWN_ABSEIL_PIN" ]]; then
+        echo "error: Dawn Abseil pin mismatch: expected $DAWN_ABSEIL_PIN, got $actual" >&2
+        exit 4
+    fi
+
+    python3 "$DAWN_ABSEIL_PATCHER" "$abseil_dir" --check
+
+    changed="$(git -C "$abseil_dir" diff --name-only HEAD | sort -u)"
+    expected=$'absl/base/internal/sysinfo.cc\nabsl/base/internal/thread_identity.cc'
+    if [[ "$changed" != "$expected" ]]; then
+        echo "error: Dawn Abseil contains changes outside the two audited libnx portability files" >&2
+        printf 'expected:\n%s\nactual:\n%s\n' "$expected" "$changed" >&2
+        exit 4
+    fi
+    if ! git -C "$abseil_dir" diff --cached --quiet; then
+        echo "error: unexpected staged changes in Dawn Abseil" >&2
+        exit 4
+    fi
+    if [[ -n "$(git -C "$abseil_dir" ls-files --others --exclude-standard | head -n 1)" ]]; then
+        echo "error: unexpected untracked files in Dawn Abseil" >&2
+        exit 4
+    fi
+}
+
 assert_only_dawn_patch_changes() {
-    local changed path allowed
+    local changed path allowed abseil_seen=0
     changed="$( { git -C "$DAWN_DIR" diff --name-only HEAD; git -C "$DAWN_DIR" ls-files --others --exclude-standard; } | sort -u)"
     while IFS= read -r path; do
         [[ -z "$path" ]] && continue
-        # The two excluded paths are submodule "-dirty" markers accidentally
-        # captured by the upstream patch export. They are not source changes.
-        if [[ "$path" == "$DAWN_EXCLUDE_EGL" || "$path" == "$DAWN_EXCLUDE_ABSEIL" ]]; then
-            echo "error: excluded Dawn submodule unexpectedly became dirty: $path" >&2
+        if [[ "$path" == "$DAWN_EXCLUDE_EGL" ]]; then
+            echo "error: excluded EGL Dawn submodule unexpectedly became dirty" >&2
             exit 4
+        fi
+        if [[ "$path" == "$DAWN_EXCLUDE_ABSEIL" ]]; then
+            abseil_seen=1
+            continue
         fi
         allowed=0
         if grep -Eq "^(--- a/|\+\+\+ b/)${path//./\.}$" "$DAWN_PATCH"; then
@@ -128,6 +164,12 @@ assert_only_dawn_patch_changes() {
             exit 4
         fi
     done <<< "$changed"
+
+    if ((abseil_seen == 0)); then
+        echo "error: expected audited Dawn Abseil libnx portability delta is missing" >&2
+        exit 4
+    fi
+    assert_dawn_abseil_switch_changes
 }
 
 echo "[1/6] Preparing static UAM library source..."
@@ -189,14 +231,20 @@ if [[ ! -e "$DAWN_DIR/third_party/abseil-cpp/.git" ]]; then
     echo "error: Dawn Abseil dependency was not initialized" >&2
     exit 4
 fi
+if [[ "$(git -C "$DAWN_DIR/third_party/abseil-cpp" rev-parse HEAD)" != "$DAWN_ABSEIL_PIN" ]]; then
+    echo "error: Dawn initialized an unexpected Abseil revision" >&2
+    exit 4
+fi
 
 # DriftDroid's Dawn patch was exported from a worktree where EGL-Registry and
 # Dawn's own Abseil submodules were dirty. Those two gitlink-only "-dirty"
-# hunks are metadata noise and are deliberately excluded. The separate
-# abseil-nintendo-switch-platform.patch belongs to Aurora's Abseil 20240722.0
-# FetchContent dependency (aurora-main/extern/CMakeLists.txt), not this Dawn
-# submodule, so applying it here would modify the wrong source tree.
+# hunks are metadata noise and are deliberately excluded. DriftDroid's separate
+# Aurora Abseil patch targets a different 20240722.0 source tree. Dawn's pinned
+# internal Abseil still needs two small libnx-specific fixes discovered by the
+# public cross-build: Horizon thread handles for GetTID and the existing
+# no-signals pthread path for thread identity setup.
 apply_dawn_patch
+python3 "$DAWN_ABSEIL_PATCHER" "$DAWN_DIR/third_party/abseil-cpp"
 if ! dawn_patch_is_applied; then
     echo "error: Dawn Deko3D patch verification failed after apply" >&2
     exit 4
@@ -253,7 +301,8 @@ fi
 
 echo "[6/6] Writing reproducible dependency receipt..."
 uam_diff="$(git -C "$UAM_DIR" diff HEAD --binary | sha256sum | awk '{print $1}')"
-dawn_diff="$(git -C "$DAWN_DIR" diff HEAD --binary | sha256sum | awk '{print $1}')"
+dawn_diff="$(git -C "$DAWN_DIR" diff HEAD --binary -- . ':(exclude)third_party/abseil-cpp' | sha256sum | awk '{print $1}')"
+dawn_abseil_diff="$(git -C "$DAWN_DIR/third_party/abseil-cpp" diff HEAD --binary | sha256sum | awk '{print $1}')"
 {
     echo "driftdroid_reference=$REF_PIN"
     echo "dawn_repo=$DAWN_REPO"
@@ -262,6 +311,9 @@ dawn_diff="$(git -C "$DAWN_DIR" diff HEAD --binary | sha256sum | awk '{print $1}
     echo "dawn_patch_excluded_gitlinks=$DAWN_EXCLUDE_EGL,$DAWN_EXCLUDE_ABSEIL"
     echo "dawn_worktree_diff_sha256=$dawn_diff"
     echo "dawn_archive_sha256=$(sha256sum "$DAWN_LIB" | awk '{print $1}')"
+    echo "dawn_abseil_commit=$DAWN_ABSEIL_PIN"
+    echo "dawn_abseil_patcher_sha256=$(sha256sum "$DAWN_ABSEIL_PATCHER" | awk '{print $1}')"
+    echo "dawn_abseil_diff_sha256=$dawn_abseil_diff"
     echo "aurora_abseil_patch_sha256=$(sha256sum "$AURORA_ABSEIL_PATCH" | awk '{print $1}')"
     echo "uam_repo=$UAM_REPO"
     echo "uam_commit=$UAM_PIN"

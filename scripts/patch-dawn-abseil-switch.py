@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Apply the minimal libnx portability fixes required by Dawn's pinned Abseil.
 
 This intentionally patches only two known incompatibilities in the exact Dawn
@@ -11,11 +10,8 @@ The transformation is deliberately strict and idempotent. If upstream text no
 longer matches the pinned source contract, it fails instead of guessing.
 """
 
-from __future__ import annotations
-
 import argparse
 from pathlib import Path
-
 
 SYSINFO_INCLUDE_ANCHOR = "#ifdef __linux__\n#include <sys/syscall.h>\n#endif\n"
 SYSINFO_SWITCH_INCLUDE = "#ifdef __SWITCH__\n#include <switch.h>\n#endif\n"
@@ -144,7 +140,8 @@ def main() -> None:
     changed |= patch_sysinfo(sysinfo, check_only=False)
     changed |= patch_thread_identity(thread_identity, check_only=False)
     verify(root)
-    print(f"Dawn Abseil Switch portability {'applied' if changed else 'already present'}: {root}")
+    status = "applied" if changed else "already present"
+    print(f"Dawn Abseil Switch portability {status}: {root}")
 
 
 if __name__ == "__main__":

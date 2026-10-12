@@ -227,11 +227,18 @@ if [[ ! -f "$DAWN_LIB" ]]; then
 fi
 
 # Confirm the backend made it into the archive before a much more expensive game build.
+# Do not pipe nm directly into grep -q under pipefail: grep can exit after the first match,
+# SIGPIPE nm and turn a successful symbol lookup into a false negative.
 if [[ -x "$DEVKITPRO/devkitA64/bin/aarch64-none-elf-nm" ]]; then
-    if ! "$DEVKITPRO/devkitA64/bin/aarch64-none-elf-nm" -C "$DAWN_LIB" 2>/dev/null | grep -q 'dawn::native::deko3d'; then
+    nm_scan="$(mktemp)"
+    trap 'rm -f -- "${nm_scan:-}"' EXIT
+    "$DEVKITPRO/devkitA64/bin/aarch64-none-elf-nm" -C "$DAWN_LIB" > "$nm_scan"
+    if ! grep -Fq 'dawn::native::deko3d' "$nm_scan"; then
         echo "error: libwebgpu_dawn.a does not expose Deko3D backend symbols" >&2
         exit 5
     fi
+    rm -f -- "$nm_scan"
+    trap - EXIT
 fi
 
 echo "[6/6] Writing reproducible dependency receipt..."

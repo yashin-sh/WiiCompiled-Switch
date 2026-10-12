@@ -25,11 +25,23 @@ jobs:
       - name: Validate helper syntax
         run: |
           bash -n scripts/prepare-native-deko3d-reference.sh
+          bash -n scripts/prepare-native-deko3d-deps.sh
           bash -n scripts/prepare-local-native-deko3d-product.sh
           bash -n scripts/build-local-native-deko3d.sh
 
       - name: Verify optimized Switch reference contracts
         run: bash scripts/prepare-native-deko3d-reference.sh
+
+      - name: Verify reproducible dependency pins
+        run: |
+          grep -Fq '13abc3bc8ea2d3c2050f9e77a12d012108ceee24' scripts/prepare-native-deko3d-deps.sh
+          grep -Fq 'https://github.com/google/dawn.git' scripts/prepare-native-deko3d-deps.sh
+          grep -Fq 'f8c9eef01ffe06334d530393d636d69e2b52744b' scripts/prepare-native-deko3d-deps.sh
+          grep -Fq 'https://github.com/averne/libuam.git' scripts/prepare-native-deko3d-deps.sh
+          grep -Fq -- '-DDAWN_ENABLE_DEKO3D=ON' scripts/prepare-native-deko3d-deps.sh
+          grep -Fq -- '--target webgpu_dawn' scripts/prepare-native-deko3d-deps.sh
+          grep -Fq 'libuam.a' scripts/prepare-native-deko3d-deps.sh
+          grep -Fq 'abseil-nintendo-switch-platform.patch' scripts/prepare-native-deko3d-deps.sh
 
       - name: Enforce local-only product inputs and outputs
         run: |
@@ -37,6 +49,8 @@ jobs:
           grep -Fxq '/.deps/' .gitignore
           grep -Fq 'local-product/Assets' scripts/prepare-local-native-deko3d-product.sh
           grep -Fq '.deps/native-deko3d/driftdroid' scripts/prepare-local-native-deko3d-product.sh
+          grep -Fq 'MKW_SKIP_DEKO3D_DEPS' scripts/build-local-native-deko3d.sh
           grep -Fq 'AURORA_SWITCH_DEKO3D_DEBUG:-OFF' scripts/build-local-native-deko3d.sh
           grep -Fq -- '-DMKW_SWITCH_SECTION_ORDERING=ON' scripts/build-local-native-deko3d.sh
           grep -Fq -- '--romfsdir="$romfs_dir"' scripts/build-local-native-deko3d.sh
+          grep -Fq 'dependency_receipt_sha256=' scripts/build-local-native-deko3d.sh

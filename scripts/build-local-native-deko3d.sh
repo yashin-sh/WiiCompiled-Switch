@@ -15,6 +15,8 @@ readonly PGO_MODE="${MKW_PGO:-}"
 readonly REF_PIN="8b33d31016a8b8735fe35b4fb633c491d33774c6"
 readonly DAWN_BASE_PIN="13abc3bc8ea2d3c2050f9e77a12d012108ceee24"
 readonly UAM_PIN="f8c9eef01ffe06334d530393d636d69e2b52744b"
+readonly DAWN_EXCLUDE_EGL="third_party/EGL-Registry/src"
+readonly DAWN_EXCLUDE_ABSEIL="third_party/abseil-cpp"
 
 need() {
     if ! command -v "$1" >/dev/null 2>&1; then
@@ -53,8 +55,13 @@ UAM_LIB="${AURORA_SWITCH_UAM_LIB:-$UAM_ROOT/build-switch/libuam.a}"
 readonly DAWN_SOURCE_DIR DAWN_BUILD_DIR UAM_ROOT UAM_LIB
 readonly DAWN_ARCHIVE="$DAWN_BUILD_DIR/src/dawn/native/libwebgpu_dawn.a"
 readonly DAWN_PATCH="$REF_DIR/aurora-main/cmake/patches/dawn-nintendo-switch-platform.patch"
-readonly ABSEIL_PATCH="$REF_DIR/aurora-main/cmake/patches/abseil-nintendo-switch-platform.patch"
+readonly AURORA_ABSEIL_PATCH="$REF_DIR/aurora-main/cmake/patches/abseil-nintendo-switch-platform.patch"
 readonly DEP_RECEIPT="$DEPS_DIR/native-deko3d-toolchain.receipt"
+
+dawn_patch_args=(
+    --exclude="$DAWN_EXCLUDE_EGL"
+    --exclude="$DAWN_EXCLUDE_ABSEIL"
+)
 
 if [[ ! -d "$REF_DIR/.git" && ! -f "$REF_DIR/.git" ]]; then
     echo "error: DriftDroid reference submodule is missing" >&2
@@ -73,18 +80,16 @@ if [[ "$actual_dawn_head" != "$DAWN_BASE_PIN" ]]; then
     echo "error: Dawn base mismatch: expected $DAWN_BASE_PIN, got $actual_dawn_head" >&2
     exit 3
 fi
-if [[ ! -f "$DAWN_PATCH" || ! -f "$ABSEIL_PATCH" ]]; then
+if [[ ! -f "$DAWN_PATCH" || ! -f "$AURORA_ABSEIL_PATCH" ]]; then
     echo "error: pinned DriftDroid Switch dependency patches are missing" >&2
     exit 3
 fi
-if ! git -C "$DAWN_SOURCE_DIR" apply --reverse --check "$DAWN_PATCH" >/dev/null 2>&1; then
+if ! git -C "$DAWN_SOURCE_DIR" apply --reverse --check "${dawn_patch_args[@]}" "$DAWN_PATCH" >/dev/null 2>&1; then
     echo "error: pinned DriftDroid Switch/Deko3D patch is not exactly applied to Dawn" >&2
     exit 3
 fi
-if ! git -C "$DAWN_SOURCE_DIR/third_party/abseil-cpp" apply --reverse --check "$ABSEIL_PATCH" >/dev/null 2>&1; then
-    echo "error: pinned DriftDroid Switch patch is not exactly applied to Dawn Abseil" >&2
-    exit 3
-fi
+# The separate Abseil patch is intentionally NOT applied to Dawn's own Abseil
+# submodule. DriftDroid applies it later to Aurora's FetchContent Abseil 20240722.0.
 if [[ ! -f "$DAWN_ARCHIVE" ]]; then
     echo "error: native Deko3D Dawn archive not found: $DAWN_ARCHIVE" >&2
     exit 3
@@ -108,8 +113,7 @@ if [[ ! -f "$DEP_RECEIPT" ]]; then
 fi
 
 uam_diff_sha256="$(git -C "$UAM_ROOT" diff HEAD --binary | sha256sum | awk '{print $1}')"
-dawn_diff_sha256="$(git -C "$DAWN_SOURCE_DIR" diff HEAD --binary -- . ':(exclude)third_party/abseil-cpp' | sha256sum | awk '{print $1}')"
-abseil_diff_sha256="$(git -C "$DAWN_SOURCE_DIR/third_party/abseil-cpp" diff HEAD --binary | sha256sum | awk '{print $1}')"
+dawn_diff_sha256="$(git -C "$DAWN_SOURCE_DIR" diff HEAD --binary | sha256sum | awk '{print $1}')"
 
 mkdir -p "$BUILD_DIR" "$OUTPUT_DIR"
 
@@ -215,10 +219,10 @@ fi
     echo "dawn_release=v20260603.191052"
     echo "dawn_base_commit=$actual_dawn_head"
     echo "dawn_patch_sha256=$(sha256sum "$DAWN_PATCH" | awk '{print $1}')"
+    echo "dawn_patch_excluded_gitlinks=$DAWN_EXCLUDE_EGL,$DAWN_EXCLUDE_ABSEIL"
     echo "dawn_worktree_diff_sha256=$dawn_diff_sha256"
     echo "dawn_archive_sha256=$(sha256sum "$DAWN_ARCHIVE" | awk '{print $1}')"
-    echo "abseil_patch_sha256=$(sha256sum "$ABSEIL_PATCH" | awk '{print $1}')"
-    echo "abseil_worktree_diff_sha256=$abseil_diff_sha256"
+    echo "aurora_abseil_patch_sha256=$(sha256sum "$AURORA_ABSEIL_PATCH" | awk '{print $1}')"
     echo "uam_repo=https://github.com/averne/libuam.git"
     echo "uam_commit=$uam_head"
     echo "uam_worktree_diff_sha256=$uam_diff_sha256"

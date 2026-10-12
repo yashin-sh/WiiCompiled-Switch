@@ -57,14 +57,27 @@ mkdir -p "$DEPS_DIR"
 
 ensure_checkout() {
     local repo="$1" dir="$2" pin="$3" name="$4"
+    local fresh=0 has_worktree=""
+
     if [[ ! -e "$dir/.git" ]]; then
         rm -rf "$dir"
         git clone --filter=blob:none --no-checkout "$repo" "$dir"
+        fresh=1
     fi
-    if ! git -C "$dir" diff --quiet || ! git -C "$dir" diff --cached --quiet; then
-        echo "error: refusing to overwrite local changes in $name checkout: $dir" >&2
-        exit 3
+
+    # A --no-checkout clone has a valid HEAD but intentionally no worktree, so
+    # `git diff --quiet` reports every tracked path as deleted. Treat only that
+    # empty worktree as fresh. Any existing files must still pass the normal
+    # dirty-worktree guard before we move the checkout.
+    has_worktree="$(find "$dir" -mindepth 1 -maxdepth 1 ! -name .git -print -quit)"
+    if ((fresh == 0)) && [[ -n "$has_worktree" ]]; then
+        if ! git -C "$dir" diff --quiet || ! git -C "$dir" diff --cached --quiet || \
+           [[ -n "$(git -C "$dir" ls-files --others --exclude-standard | head -n 1)" ]]; then
+            echo "error: refusing to overwrite local changes in $name checkout: $dir" >&2
+            exit 3
+        fi
     fi
+
     if ! git -C "$dir" cat-file -e "${pin}^{commit}" 2>/dev/null; then
         git -C "$dir" fetch --quiet origin "$pin"
     fi

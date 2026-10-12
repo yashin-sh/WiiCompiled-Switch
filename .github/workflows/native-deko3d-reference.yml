@@ -2,6 +2,15 @@ name: native-deko3d-reference
 
 on:
   pull_request:
+    paths:
+      - '.github/workflows/native-deko3d-reference.yml'
+      - '.gitmodules'
+      - 'third_party/DriftDroid'
+      - 'scripts/prepare-native-deko3d-reference.sh'
+      - 'scripts/prepare-native-deko3d-deps.sh'
+      - 'scripts/prepare-local-native-deko3d-product.sh'
+      - 'scripts/build-local-native-deko3d.sh'
+      - 'docs/NATIVE_DEKO3D_SWITCH_PATH_2026-10-12.md'
   workflow_dispatch:
 
 permissions:
@@ -42,6 +51,7 @@ jobs:
           grep -Fq -- '--target webgpu_dawn' scripts/prepare-native-deko3d-deps.sh
           grep -Fq 'libuam.a' scripts/prepare-native-deko3d-deps.sh
           grep -Fq 'abseil-nintendo-switch-platform.patch' scripts/prepare-native-deko3d-deps.sh
+          ! grep -Eq 'aarch64-none-elf-nm.*\|.*grep[[:space:]].*-.*q' scripts/prepare-native-deko3d-deps.sh
 
       - name: Enforce local-only product inputs and outputs
         run: |
@@ -54,3 +64,40 @@ jobs:
           grep -Fq -- '-DMKW_SWITCH_SECTION_ORDERING=ON' scripts/build-local-native-deko3d.sh
           grep -Fq -- '--romfsdir="$romfs_dir"' scripts/build-local-native-deko3d.sh
           grep -Fq 'dependency_receipt_sha256=' scripts/build-local-native-deko3d.sh
+
+  public-dependencies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    container:
+      image: mirror.gcr.io/devkitpro/devkita64@sha256:1fc388c3a0d34bd2045a6dadcb1020e069d5f876a187fd705de14b4440c00282
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Install host build prerequisites
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            meson python3-mako bison flex pkg-config ca-certificates
+          rm -rf /var/lib/apt/lists/*
+
+      - name: Build pinned public UAM and Dawn Deko3D dependencies
+        env:
+          MKW_JOBS: '2'
+        run: bash scripts/prepare-native-deko3d-deps.sh
+
+      - name: Verify produced archives and provenance
+        run: |
+          test -f .deps/native-deko3d/uam/build-switch/libuam.a
+          test -f .deps/native-deko3d/dawn-build-switch/src/dawn/native/libwebgpu_dawn.a
+          test -f .deps/native-deko3d/native-deko3d-toolchain.receipt
+          grep -Fq 'uam_commit=f8c9eef01ffe06334d530393d636d69e2b52744b' \
+            .deps/native-deko3d/native-deko3d-toolchain.receipt
+          grep -Fq 'dawn_base_commit=13abc3bc8ea2d3c2050f9e77a12d012108ceee24' \
+            .deps/native-deko3d/native-deko3d-toolchain.receipt
+          sha256sum \
+            .deps/native-deko3d/uam/build-switch/libuam.a \
+            .deps/native-deko3d/dawn-build-switch/src/dawn/native/libwebgpu_dawn.a

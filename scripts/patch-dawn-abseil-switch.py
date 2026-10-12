@@ -1,10 +1,12 @@
 """Apply the minimal libnx portability fixes required by Dawn's pinned Abseil.
 
-This intentionally patches only two known incompatibilities in the exact Dawn
+This intentionally patches only three known incompatibilities in the exact Dawn
 submodule used by the native Switch/Deko3D path:
   * libnx pthread_t is an opaque pointer, so GetTID() must use Horizon's thread handle.
   * libnx pthreads do not expose POSIX signal-mask APIs, so thread identity setup
     must use the existing no-signals pthread_setspecific path.
+  * Switch NROs are ELF-derived but libnx has no glibc dynamic-linker <link.h>,
+    so Abseil ELF memory-image introspection must be disabled on __SWITCH__.
 
 The transformation is deliberately strict and idempotent. If upstream text no
 longer matches the pinned source contract, it fails instead of guessing.
@@ -110,13 +112,44 @@ def patch_thread_identity(path: Path, check_only: bool) -> bool:
     return False
 
 
+def patch_elf_mem_image(path: Path, check_only: bool) -> bool:
+    text = path.read_text(encoding="utf-8")
+    define = "#define ABSL_HAVE_ELF_MEM_IMAGE 1"
+    define_idx = text.find(define)
+    if define_idx < 0:
+        fail(f"ELF memory-image feature definition missing from {path}")
+
+    if_idx = text.rfind("#if defined(__ELF__)", 0, define_idx)
+    if if_idx < 0:
+        fail(f"ELF memory-image feature condition changed in {path}")
+    condition = text[if_idx:define_idx]
+    if "!defined(__SWITCH__)" in condition:
+        return False
+
+    if check_only:
+        fail(f"Switch ELF memory-image exclusion missing from {path}")
+
+    needle = "!defined(__hexagon__)"
+    needle_idx = condition.rfind(needle)
+    if needle_idx < 0:
+        fail(f"ELF memory-image exclusion tail changed in {path}")
+
+    absolute = if_idx + needle_idx
+    replacement = "!defined(__hexagon__) &&                 \\\n    !defined(__SWITCH__)"
+    text = text[:absolute] + replacement + text[absolute + len(needle) :]
+    path.write_text(text, encoding="utf-8")
+    return True
+
+
 def verify(root: Path) -> None:
     sysinfo = root / "absl/base/internal/sysinfo.cc"
     thread_identity = root / "absl/base/internal/thread_identity.cc"
-    if not sysinfo.is_file() or not thread_identity.is_file():
+    elf_mem_image = root / "absl/debugging/internal/elf_mem_image.h"
+    if not all(path.is_file() for path in (sysinfo, thread_identity, elf_mem_image)):
         fail(f"not an initialized Abseil checkout: {root}")
     patch_sysinfo(sysinfo, check_only=True)
     patch_thread_identity(thread_identity, check_only=True)
+    patch_elf_mem_image(elf_mem_image, check_only=True)
 
 
 def main() -> None:
@@ -128,7 +161,8 @@ def main() -> None:
     root = args.abseil_root.resolve()
     sysinfo = root / "absl/base/internal/sysinfo.cc"
     thread_identity = root / "absl/base/internal/thread_identity.cc"
-    if not sysinfo.is_file() or not thread_identity.is_file():
+    elf_mem_image = root / "absl/debugging/internal/elf_mem_image.h"
+    if not all(path.is_file() for path in (sysinfo, thread_identity, elf_mem_image)):
         fail(f"not an initialized Abseil checkout: {root}")
 
     if args.check:
@@ -139,6 +173,7 @@ def main() -> None:
     changed = False
     changed |= patch_sysinfo(sysinfo, check_only=False)
     changed |= patch_thread_identity(thread_identity, check_only=False)
+    changed |= patch_elf_mem_image(elf_mem_image, check_only=False)
     verify(root)
     status = "applied" if changed else "already present"
     print(f"Dawn Abseil Switch portability {status}: {root}")

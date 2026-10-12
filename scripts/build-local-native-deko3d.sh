@@ -103,7 +103,7 @@ if [[ "$actual_dawn_abseil_head" != "$DAWN_ABSEIL_PIN" ]]; then
 fi
 python3 "$DAWN_ABSEIL_PATCHER" "$DAWN_ABSEIL_DIR" --check
 abseil_changed="$(git -C "$DAWN_ABSEIL_DIR" diff --name-only HEAD | sort -u)"
-expected_abseil_changed=$'absl/base/internal/sysinfo.cc\nabsl/base/internal/thread_identity.cc\nabsl/debugging/internal/elf_mem_image.h'
+expected_abseil_changed=$'absl/base/internal/sysinfo.cc\nabsl/base/internal/thread_identity.cc\nabsl/debugging/internal/elf_mem_image.h\nabsl/time/internal/cctz/src/time_zone_libc.cc'
 if [[ "$abseil_changed" != "$expected_abseil_changed" ]]; then
     echo "error: unexpected Dawn Abseil worktree delta" >&2
     printf 'expected:\n%s\nactual:\n%s\n' "$expected_abseil_changed" "$abseil_changed" >&2
@@ -115,7 +115,7 @@ if ! git -C "$DAWN_ABSEIL_DIR" diff --cached --quiet || \
     exit 3
 fi
 
-# Reject every other dirty/moved Dawn submodule. Only the audited three-file
+# Reject every other dirty/moved Dawn submodule. Only the audited four-file
 # libnx portability delta in Dawn's own Abseil is expected.
 while IFS= read -r line; do
     [[ -z "$line" ]] && continue
@@ -134,7 +134,8 @@ while IFS= read -r line; do
 done < <(git -C "$DAWN_SOURCE_DIR" submodule status)
 
 # The separate DriftDroid Abseil patch is intentionally NOT applied to Dawn's
-# own Abseil submodule. It belongs to Aurora's FetchContent Abseil 20240722.0.
+# own Abseil submodule. Its relevant Switch portability hunks are mirrored by
+# the strict Dawn patcher against Dawn's independently pinned Abseil revision.
 if [[ ! -f "$DAWN_ARCHIVE" ]]; then
     echo "error: native Deko3D Dawn archive not found: $DAWN_ARCHIVE" >&2
     exit 3

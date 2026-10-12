@@ -126,9 +126,9 @@ assert_dawn_abseil_switch_changes() {
     python3 "$DAWN_ABSEIL_PATCHER" "$abseil_dir" --check
 
     changed="$(git -C "$abseil_dir" diff --name-only HEAD | sort -u)"
-    expected=$'absl/base/internal/sysinfo.cc\nabsl/base/internal/thread_identity.cc\nabsl/debugging/internal/elf_mem_image.h'
+    expected=$'absl/base/internal/sysinfo.cc\nabsl/base/internal/thread_identity.cc\nabsl/debugging/internal/elf_mem_image.h\nabsl/time/internal/cctz/src/time_zone_libc.cc'
     if [[ "$changed" != "$expected" ]]; then
-        echo "error: Dawn Abseil contains changes outside the three audited libnx portability files" >&2
+        echo "error: Dawn Abseil contains changes outside the four audited libnx portability files" >&2
         printf 'expected:\n%s\nactual:\n%s\n' "$expected" "$changed" >&2
         exit 4
     fi
@@ -240,9 +240,10 @@ fi
 # Dawn's own Abseil submodules were dirty. Those two gitlink-only "-dirty"
 # hunks are metadata noise and are deliberately excluded. DriftDroid's separate
 # Aurora Abseil patch targets a different 20240722.0 source tree. Dawn's pinned
-# internal Abseil needs three narrow libnx fixes observed by the public build:
+# internal Abseil needs four narrow libnx fixes observed by the public build:
 # Horizon thread handles for GetTID, the no-signals pthread path for thread
-# identity, and disabling glibc-style ELF dynamic-linker introspection.
+# identity, disabling glibc-style ELF dynamic-linker introspection, and using
+# cctz's existing newlib _timezone/tzname fallback on Switch.
 apply_dawn_patch
 python3 "$DAWN_ABSEIL_PATCHER" "$DAWN_DIR/third_party/abseil-cpp"
 if ! dawn_patch_is_applied; then

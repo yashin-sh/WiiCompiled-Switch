@@ -1,12 +1,14 @@
 """Apply the minimal libnx portability fixes required by Dawn's pinned Abseil.
 
-This intentionally patches only three known incompatibilities in the exact Dawn
+This intentionally patches only four known incompatibilities in the exact Dawn
 submodule used by the native Switch/Deko3D path:
   * libnx pthread_t is an opaque pointer, so GetTID() must use Horizon's thread handle.
   * libnx pthreads do not expose POSIX signal-mask APIs, so thread identity setup
     must use the existing no-signals pthread_setspecific path.
   * Switch NROs are ELF-derived but libnx has no glibc dynamic-linker <link.h>,
     so Abseil ELF memory-image introspection must be disabled on __SWITCH__.
+  * libnx/newlib struct tm has no tm_gmtoff/tm_zone fields, so cctz must use
+    its existing newlib _timezone/tzname fallback on __SWITCH__.
 
 The transformation is deliberately strict and idempotent. If upstream text no
 longer matches the pinned source contract, it fails instead of guessing.
@@ -50,6 +52,11 @@ THREAD_IDENTITY_PATTERNS = (
         "#if defined(__EMSCRIPTEN__) || defined(__MINGW32__) || defined(__SWITCH__)",
     ),
 )
+
+TIME_ZONE_LIBC_PATTERN = """#elif defined(__native_client__) || defined(__myriad2__) || \\
+    defined(__EMSCRIPTEN__)"""
+TIME_ZONE_LIBC_SWITCH = """#elif defined(__native_client__) || defined(__myriad2__) || \\
+    defined(__EMSCRIPTEN__) || defined(__SWITCH__)"""
 
 
 def fail(message: str) -> None:
@@ -143,15 +150,33 @@ def patch_elf_mem_image(path: Path, check_only: bool) -> bool:
     return True
 
 
+def patch_time_zone_libc(path: Path, check_only: bool) -> bool:
+    text = path.read_text(encoding="utf-8")
+    if TIME_ZONE_LIBC_SWITCH in text:
+        return False
+
+    if check_only:
+        fail(f"Switch cctz newlib timezone fallback missing from {path}")
+    if TIME_ZONE_LIBC_PATTERN not in text:
+        fail(f"cctz newlib timezone fallback contract changed in {path}")
+
+    text = text.replace(TIME_ZONE_LIBC_PATTERN, TIME_ZONE_LIBC_SWITCH, 1)
+    path.write_text(text, encoding="utf-8")
+    return True
+
+
 def verify(root: Path) -> None:
     sysinfo = root / "absl/base/internal/sysinfo.cc"
     thread_identity = root / "absl/base/internal/thread_identity.cc"
     elf_mem_image = root / "absl/debugging/internal/elf_mem_image.h"
-    if not all(path.is_file() for path in (sysinfo, thread_identity, elf_mem_image)):
+    time_zone_libc = root / "absl/time/internal/cctz/src/time_zone_libc.cc"
+    paths = (sysinfo, thread_identity, elf_mem_image, time_zone_libc)
+    if not all(path.is_file() for path in paths):
         fail(f"not an initialized Abseil checkout: {root}")
     patch_sysinfo(sysinfo, check_only=True)
     patch_thread_identity(thread_identity, check_only=True)
     patch_elf_mem_image(elf_mem_image, check_only=True)
+    patch_time_zone_libc(time_zone_libc, check_only=True)
 
 
 def main() -> None:
@@ -164,7 +189,9 @@ def main() -> None:
     sysinfo = root / "absl/base/internal/sysinfo.cc"
     thread_identity = root / "absl/base/internal/thread_identity.cc"
     elf_mem_image = root / "absl/debugging/internal/elf_mem_image.h"
-    if not all(path.is_file() for path in (sysinfo, thread_identity, elf_mem_image)):
+    time_zone_libc = root / "absl/time/internal/cctz/src/time_zone_libc.cc"
+    paths = (sysinfo, thread_identity, elf_mem_image, time_zone_libc)
+    if not all(path.is_file() for path in paths):
         fail(f"not an initialized Abseil checkout: {root}")
 
     if args.check:
@@ -176,6 +203,7 @@ def main() -> None:
     changed |= patch_sysinfo(sysinfo, check_only=False)
     changed |= patch_thread_identity(thread_identity, check_only=False)
     changed |= patch_elf_mem_image(elf_mem_image, check_only=False)
+    changed |= patch_time_zone_libc(time_zone_libc, check_only=False)
     verify(root)
     status = "applied" if changed else "already present"
     print(f"Dawn Abseil Switch portability {status}: {root}")

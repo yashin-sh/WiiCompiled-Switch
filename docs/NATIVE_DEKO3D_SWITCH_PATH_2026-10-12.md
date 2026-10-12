@@ -40,20 +40,47 @@ The pinned Aurora source identifies Dawn release `v20260603.191052`. The corresp
 13abc3bc8ea2d3c2050f9e77a12d012108ceee24
 ```
 
-The DriftDroid tree carries the Switch/Deko3D Dawn patch itself, so the Dawn source side can be
-reconstructed from that base commit plus the pinned patch.
+The DriftDroid tree carries the Switch/Deko3D Dawn patch and the matching Abseil/newlib Switch
+patch. `scripts/prepare-native-deko3d-deps.sh` reconstructs this source locally, initializes the
+pinned Dawn dependencies, applies only those authorized patches and builds the static
+`libwebgpu_dawn.a` with only the native Deko3D backend enabled.
 
-UAM is different. The public reference expects a separately prepared
-`$HOME/uam/build-switch/libuamcore.a` and exposes the source/build directories to the patched
-Dawn backend, but the repository does not publish the complete command sequence or a binary hash
-that produced the proven `libuamcore.a`. The public devkitPro UAM repository is currently pinned
-at upstream commit `5a5afc2bae8b55409ab36ba45be63fcb73f68993`, but that alone is **not sufficient evidence**
-that it is byte-identical to the library used for DriftDroid's measured Switch build.
+The missing UAM provenance has also been resolved without inventing a private build recipe.
+`averne/libuam` is a public fork of devkitPro UAM that turns the compiler into a static library
+for Nintendo Switch. We pin it to:
 
-Therefore the current Deko3D build helper treats Dawn/UAM as explicit external dependencies and
-refuses to build when they are absent. A Deko3D NRO is not considered reproducible or eligible
-for merge until the local dependency receipt records the exact Dawn base, DriftDroid patch and
-UAM source/build hashes. Do not silently substitute a different UAM build.
+```
+f8c9eef01ffe06334d530393d636d69e2b52744b
+```
+
+Its public Switch packaging recipe builds that source with Meson/devkitA64 into `libuam.a`.
+Our dependency helper reproduces that cross-build locally instead of relying on DriftDroid's
+previously assumed `$HOME/uam/build-switch/libuamcore.a`.
+
+The dependency helper writes `.deps/native-deko3d/native-deko3d-toolchain.receipt` containing the
+Dawn/UAM commits, patch hashes, worktree-diff hashes, archive hashes and local toolchain versions.
+The final NRO receipt includes the hash of this dependency receipt, so hardware evidence can be
+traced back to the exact graphics toolchain.
+
+## One-command local candidate
+
+With devkitPro/devkitA64 installed and the user's own PAL inputs already under
+`local-product/Assets/main.dol` and `local-product/Assets/StaticR.rel`, the normal path is:
+
+```bash
+bash scripts/build-local-native-deko3d.sh
+```
+
+That command, by default:
+
+1. prepares/builds pinned Dawn + `averne/libuam` under `.deps/native-deko3d/`;
+2. creates a clean DriftDroid workspace and freshly translates the user's own game program;
+3. builds the optimized Release Switch product;
+4. packages the private NRO under `local-product/native-deko3d/`;
+5. writes SHA-256 and dependency provenance beside it.
+
+Advanced reuse is opt-in with `MKW_SKIP_DEKO3D_DEPS=1` and/or `MKW_SKIP_TRANSLATE=1`; the build
+still refuses unattributed or incorrectly pinned dependencies.
 
 ## Why this path
 
@@ -90,21 +117,18 @@ The optimized path must not weaken this repository's validation discipline:
 
 ## Bring-up sequence
 
-1. Prepare the pinned reference with `scripts/prepare-native-deko3d-reference.sh`.
-2. Reconstruct Dawn from `13abc3bc8ea2d3c2050f9e77a12d012108ceee24`, apply the pinned
-   DriftDroid Switch/Deko3D patch, and prepare UAM with an attributable source/build receipt.
-3. Generate a fresh translation with the pinned DriftDroid translator from the user's own
-   `local-product/Assets/main.dol` and `StaticR.rel`; do not reuse old generated C++ blindly.
-4. Build Release with Deko3D validation off, threaded GX on and section ordering on.
-5. First hardware gate: boot -> Wiimote page -> menu, with exact NRO attribution.
-6. Second gate: complete a Time Trial at stock clocks, record frame pacing and CPU/GPU timing.
-7. Third gate: 12-kart race at stock clocks; only then compare against the old NVK path.
-8. Once correctness is stable, record a representative race profile and test a `MKW_PGO=use`
+1. Run `bash scripts/build-local-native-deko3d.sh` to produce the first exact candidate.
+2. First hardware gate: boot -> Wiimote page -> menu, with exact NRO attribution.
+3. Second gate: complete a Time Trial at stock clocks, record frame pacing and CPU/GPU timing.
+4. Third gate: 12-kart race at stock clocks; only then compare against the old NVK path.
+5. Once correctness is stable, record a representative race profile and test a `MKW_PGO=use`
    product against the non-PGO release.
+6. Only if profiling shows material Dawn frontend CPU cost should a direct Aurora -> Deko3D
+   rewrite be considered.
 
 ## What is deliberately not changed yet
 
 The current NVK rendered pipeline, its WiiCompiled pin, bridges, LAN debug server and replay
-oracles remain untouched. The new reference is additive until a native Deko3D NRO from this repo
+oracles remain untouched. The new path is additive until a native Deko3D NRO from this repo
 passes build and hardware gates. This avoids trading a known, attributable debugging path for an
 untested bulk replacement.

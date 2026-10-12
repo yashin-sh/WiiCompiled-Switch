@@ -126,9 +126,9 @@ assert_dawn_abseil_switch_changes() {
     python3 "$DAWN_ABSEIL_PATCHER" "$abseil_dir" --check
 
     changed="$(git -C "$abseil_dir" diff --name-only HEAD | sort -u)"
-    expected=$'absl/base/internal/sysinfo.cc\nabsl/base/internal/thread_identity.cc'
+    expected=$'absl/base/internal/sysinfo.cc\nabsl/base/internal/thread_identity.cc\nabsl/debugging/internal/elf_mem_image.h'
     if [[ "$changed" != "$expected" ]]; then
-        echo "error: Dawn Abseil contains changes outside the two audited libnx portability files" >&2
+        echo "error: Dawn Abseil contains changes outside the three audited libnx portability files" >&2
         printf 'expected:\n%s\nactual:\n%s\n' "$expected" "$changed" >&2
         exit 4
     fi
@@ -240,9 +240,9 @@ fi
 # Dawn's own Abseil submodules were dirty. Those two gitlink-only "-dirty"
 # hunks are metadata noise and are deliberately excluded. DriftDroid's separate
 # Aurora Abseil patch targets a different 20240722.0 source tree. Dawn's pinned
-# internal Abseil still needs two small libnx-specific fixes discovered by the
-# public cross-build: Horizon thread handles for GetTID and the existing
-# no-signals pthread path for thread identity setup.
+# internal Abseil needs three narrow libnx fixes observed by the public build:
+# Horizon thread handles for GetTID, the no-signals pthread path for thread
+# identity, and disabling glibc-style ELF dynamic-linker introspection.
 apply_dawn_patch
 python3 "$DAWN_ABSEIL_PATCHER" "$DAWN_DIR/third_party/abseil-cpp"
 if ! dawn_patch_is_applied; then

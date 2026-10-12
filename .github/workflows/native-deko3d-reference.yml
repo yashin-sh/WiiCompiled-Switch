@@ -87,7 +87,11 @@ jobs:
       - name: Build pinned public UAM and Dawn Deko3D dependencies
         env:
           MKW_JOBS: '2'
-        run: bash scripts/prepare-native-deko3d-deps.sh
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/third_party/DriftDroid"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/third_party/WiiCompiled"
+          bash scripts/prepare-native-deko3d-deps.sh
 
       - name: Verify produced archives and provenance
         run: |

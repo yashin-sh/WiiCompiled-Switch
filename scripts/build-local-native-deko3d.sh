@@ -103,7 +103,7 @@ if [[ "$actual_dawn_abseil_head" != "$DAWN_ABSEIL_PIN" ]]; then
 fi
 python3 "$DAWN_ABSEIL_PATCHER" "$DAWN_ABSEIL_DIR" --check
 abseil_changed="$(git -C "$DAWN_ABSEIL_DIR" diff --name-only HEAD | sort -u)"
-expected_abseil_changed=$'absl/base/internal/sysinfo.cc\nabsl/base/internal/thread_identity.cc'
+expected_abseil_changed=$'absl/base/internal/sysinfo.cc\nabsl/base/internal/thread_identity.cc\nabsl/debugging/internal/elf_mem_image.h'
 if [[ "$abseil_changed" != "$expected_abseil_changed" ]]; then
     echo "error: unexpected Dawn Abseil worktree delta" >&2
     printf 'expected:\n%s\nactual:\n%s\n' "$expected_abseil_changed" "$abseil_changed" >&2
@@ -115,7 +115,7 @@ if ! git -C "$DAWN_ABSEIL_DIR" diff --cached --quiet || \
     exit 3
 fi
 
-# Reject every other dirty/moved Dawn submodule. Only the audited two-file
+# Reject every other dirty/moved Dawn submodule. Only the audited three-file
 # libnx portability delta in Dawn's own Abseil is expected.
 while IFS= read -r line; do
     [[ -z "$line" ]] && continue

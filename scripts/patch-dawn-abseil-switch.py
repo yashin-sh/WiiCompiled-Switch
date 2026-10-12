@@ -135,7 +135,9 @@ def patch_elf_mem_image(path: Path, check_only: bool) -> bool:
         fail(f"ELF memory-image exclusion tail changed in {path}")
 
     absolute = if_idx + needle_idx
-    replacement = "!defined(__hexagon__) &&                 \\\n    !defined(__SWITCH__)"
+    replacement = (
+        "!defined(__hexagon__) &&                 \\\n    !defined(__SWITCH__)"
+    )
     text = text[:absolute] + replacement + text[absolute + len(needle) :]
     path.write_text(text, encoding="utf-8")
     return True

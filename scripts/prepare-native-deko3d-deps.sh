@@ -20,7 +20,9 @@ readonly UAM_LIB="${AURORA_SWITCH_UAM_LIB:-$UAM_BUILD_DIR/libuam.a}"
 readonly CROSS_FILE="$DEPS_DIR/uam-switch.cross"
 readonly RECEIPT="$DEPS_DIR/native-deko3d-toolchain.receipt"
 readonly DAWN_PATCH="$REF_DIR/aurora-main/cmake/patches/dawn-nintendo-switch-platform.patch"
-readonly ABSEIL_PATCH="$REF_DIR/aurora-main/cmake/patches/abseil-nintendo-switch-platform.patch"
+readonly AURORA_ABSEIL_PATCH="$REF_DIR/aurora-main/cmake/patches/abseil-nintendo-switch-platform.patch"
+readonly DAWN_EXCLUDE_EGL="third_party/EGL-Registry/src"
+readonly DAWN_EXCLUDE_ABSEIL="third_party/abseil-cpp"
 
 need() {
     if ! command -v "$1" >/dev/null 2>&1; then
@@ -65,10 +67,6 @@ ensure_checkout() {
         fresh=1
     fi
 
-    # A --no-checkout clone has a valid HEAD but intentionally no worktree, so
-    # `git diff --quiet` reports every tracked path as deleted. Treat only that
-    # empty worktree as fresh. Any existing files must still pass the normal
-    # dirty-worktree guard before we move the checkout.
     has_worktree="$(find "$dir" -mindepth 1 -maxdepth 1 ! -name .git -print -quit)"
     if ((fresh == 0)) && [[ -n "$has_worktree" ]]; then
         if ! git -C "$dir" diff --quiet || ! git -C "$dir" diff --cached --quiet || \
@@ -90,33 +88,43 @@ ensure_checkout() {
     fi
 }
 
-apply_exact_patch() {
-    local checkout="$1" patch="$2" name="$3"
-    if git -C "$checkout" apply --reverse --check "$patch" >/dev/null 2>&1; then
-        return 0
-    fi
-    if ! git -C "$checkout" apply --check "$patch"; then
-        echo "error: $name patch does not apply cleanly to pinned source" >&2
-        exit 4
-    fi
-    git -C "$checkout" apply "$patch"
+dawn_patch_args=(
+    --exclude="$DAWN_EXCLUDE_EGL"
+    --exclude="$DAWN_EXCLUDE_ABSEIL"
+)
+
+dawn_patch_is_applied() {
+    git -C "$DAWN_DIR" apply --reverse --check "${dawn_patch_args[@]}" "$DAWN_PATCH" >/dev/null 2>&1
 }
 
-assert_only_patch_changes() {
-    local checkout="$1" patch="$2" name="$3" extra_allowed="${4:-}"
+apply_dawn_patch() {
+    if dawn_patch_is_applied; then
+        return 0
+    fi
+    if ! git -C "$DAWN_DIR" apply --check "${dawn_patch_args[@]}" "$DAWN_PATCH"; then
+        echo "error: DriftDroid Dawn/Deko3D patch does not apply cleanly to pinned Dawn" >&2
+        exit 4
+    fi
+    git -C "$DAWN_DIR" apply "${dawn_patch_args[@]}" "$DAWN_PATCH"
+}
+
+assert_only_dawn_patch_changes() {
     local changed path allowed
-    changed="$( { git -C "$checkout" diff --name-only HEAD; git -C "$checkout" ls-files --others --exclude-standard; } | sort -u)"
+    changed="$( { git -C "$DAWN_DIR" diff --name-only HEAD; git -C "$DAWN_DIR" ls-files --others --exclude-standard; } | sort -u)"
     while IFS= read -r path; do
         [[ -z "$path" ]] && continue
-        if [[ -n "$extra_allowed" && "$path" == "$extra_allowed" ]]; then
-            continue
+        # The two excluded paths are submodule "-dirty" markers accidentally
+        # captured by the upstream patch export. They are not source changes.
+        if [[ "$path" == "$DAWN_EXCLUDE_EGL" || "$path" == "$DAWN_EXCLUDE_ABSEIL" ]]; then
+            echo "error: excluded Dawn submodule unexpectedly became dirty: $path" >&2
+            exit 4
         fi
         allowed=0
-        if grep -Eq "^(--- a/|\+\+\+ b/)${path//./\.}$" "$patch"; then
+        if grep -Eq "^(--- a/|\+\+\+ b/)${path//./\.}$" "$DAWN_PATCH"; then
             allowed=1
         fi
         if ((allowed == 0)); then
-            echo "error: unexpected local change in $name checkout: $path" >&2
+            echo "error: unexpected local change in Dawn checkout: $path" >&2
             exit 4
         fi
     done <<< "$changed"
@@ -125,8 +133,6 @@ assert_only_patch_changes() {
 echo "[1/6] Preparing static UAM library source..."
 ensure_checkout "$UAM_REPO" "$UAM_DIR" "$UAM_PIN" "libuam"
 
-# This cross file is the public Switch recipe used by projects packaging averne/libuam,
-# made path-independent by resolving DEVKITPRO here.
 cat > "$CROSS_FILE" <<EOF_CROSS
 [built-in options]
 buildtype = 'release'
@@ -145,8 +151,6 @@ cpu = 'armv8a'
 endian = 'little'
 EOF_CROSS
 
-# switchvars provides the libnx/portlibs compile and link environment expected by
-# the public libuam Switch package recipe.
 set +u
 # shellcheck disable=SC1090
 source "$DEVKITPRO/switchvars.sh"
@@ -169,8 +173,7 @@ if [[ ! -f "$UAM_LIB" ]]; then
 fi
 
 echo "[3/6] Preparing exact Dawn source..."
-if [[ -e "$DAWN_DIR/.git" ]] && [[ "$(git -C "$DAWN_DIR" rev-parse HEAD 2>/dev/null || true)" == "$DAWN_PIN" ]] && \
-   git -C "$DAWN_DIR" apply --reverse --check "$DAWN_PATCH" >/dev/null 2>&1; then
+if [[ -e "$DAWN_DIR/.git" ]] && [[ "$(git -C "$DAWN_DIR" rev-parse HEAD 2>/dev/null || true)" == "$DAWN_PIN" ]] && dawn_patch_is_applied; then
     echo "      reusing already patched Dawn checkout"
 else
     ensure_checkout "$DAWN_REPO" "$DAWN_DIR" "$DAWN_PIN" "Dawn"
@@ -187,21 +190,18 @@ if [[ ! -e "$DAWN_DIR/third_party/abseil-cpp/.git" ]]; then
     exit 4
 fi
 
-apply_exact_patch "$DAWN_DIR" "$DAWN_PATCH" "Dawn Deko3D"
-apply_exact_patch "$DAWN_DIR/third_party/abseil-cpp" "$ABSEIL_PATCH" "Dawn Abseil Switch"
-
-# Require exactly our two authorized source deltas: the Dawn backend patch and
-# the Abseil newlib/libnx portability patch. Their hashes are recorded below.
-if ! git -C "$DAWN_DIR" apply --reverse --check "$DAWN_PATCH" >/dev/null 2>&1; then
+# DriftDroid's Dawn patch was exported from a worktree where EGL-Registry and
+# Dawn's own Abseil submodules were dirty. Those two gitlink-only "-dirty"
+# hunks are metadata noise and are deliberately excluded. The separate
+# abseil-nintendo-switch-platform.patch belongs to Aurora's Abseil 20240722.0
+# FetchContent dependency (aurora-main/extern/CMakeLists.txt), not this Dawn
+# submodule, so applying it here would modify the wrong source tree.
+apply_dawn_patch
+if ! dawn_patch_is_applied; then
     echo "error: Dawn Deko3D patch verification failed after apply" >&2
     exit 4
 fi
-if ! git -C "$DAWN_DIR/third_party/abseil-cpp" apply --reverse --check "$ABSEIL_PATCH" >/dev/null 2>&1; then
-    echo "error: Abseil Switch patch verification failed after apply" >&2
-    exit 4
-fi
-assert_only_patch_changes "$DAWN_DIR" "$DAWN_PATCH" "Dawn" "third_party/abseil-cpp"
-assert_only_patch_changes "$DAWN_DIR/third_party/abseil-cpp" "$ABSEIL_PATCH" "Dawn Abseil"
+assert_only_dawn_patch_changes
 
 echo "[4/6] Configuring minimal Dawn native Deko3D backend..."
 cmake -S "$DAWN_DIR" -B "$DAWN_BUILD_DIR" -G Ninja \
@@ -239,9 +239,6 @@ if [[ ! -f "$DAWN_LIB" ]]; then
     exit 5
 fi
 
-# Confirm the backend made it into the archive before a much more expensive game build.
-# Do not pipe nm directly into grep -q under pipefail: grep can exit after the first match,
-# SIGPIPE nm and turn a successful symbol lookup into a false negative.
 if [[ -x "$DEVKITPRO/devkitA64/bin/aarch64-none-elf-nm" ]]; then
     nm_scan="$(mktemp)"
     trap 'rm -f -- "${nm_scan:-}"' EXIT
@@ -256,17 +253,16 @@ fi
 
 echo "[6/6] Writing reproducible dependency receipt..."
 uam_diff="$(git -C "$UAM_DIR" diff HEAD --binary | sha256sum | awk '{print $1}')"
-dawn_diff="$(git -C "$DAWN_DIR" diff HEAD --binary -- . ':(exclude)third_party/abseil-cpp' | sha256sum | awk '{print $1}')"
-abseil_diff="$(git -C "$DAWN_DIR/third_party/abseil-cpp" diff HEAD --binary | sha256sum | awk '{print $1}')"
+dawn_diff="$(git -C "$DAWN_DIR" diff HEAD --binary | sha256sum | awk '{print $1}')"
 {
     echo "driftdroid_reference=$REF_PIN"
     echo "dawn_repo=$DAWN_REPO"
     echo "dawn_base_commit=$DAWN_PIN"
     echo "dawn_patch_sha256=$(sha256sum "$DAWN_PATCH" | awk '{print $1}')"
+    echo "dawn_patch_excluded_gitlinks=$DAWN_EXCLUDE_EGL,$DAWN_EXCLUDE_ABSEIL"
     echo "dawn_worktree_diff_sha256=$dawn_diff"
     echo "dawn_archive_sha256=$(sha256sum "$DAWN_LIB" | awk '{print $1}')"
-    echo "abseil_patch_sha256=$(sha256sum "$ABSEIL_PATCH" | awk '{print $1}')"
-    echo "abseil_worktree_diff_sha256=$abseil_diff"
+    echo "aurora_abseil_patch_sha256=$(sha256sum "$AURORA_ABSEIL_PATCH" | awk '{print $1}')"
     echo "uam_repo=$UAM_REPO"
     echo "uam_commit=$UAM_PIN"
     echo "uam_worktree_diff_sha256=$uam_diff"

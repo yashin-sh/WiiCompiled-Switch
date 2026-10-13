@@ -23,6 +23,8 @@ readonly RECEIPT="$DEPS_DIR/native-deko3d-toolchain.receipt"
 readonly DAWN_PATCH="$REF_DIR/aurora-main/cmake/patches/dawn-nintendo-switch-platform.patch"
 readonly AURORA_ABSEIL_PATCH="$REF_DIR/aurora-main/cmake/patches/abseil-nintendo-switch-platform.patch"
 readonly DAWN_ABSEIL_PATCHER="$ROOT_DIR/scripts/patch-dawn-abseil-switch.py"
+readonly DAWN_SWITCH_PATCHER="$ROOT_DIR/scripts/patch-dawn-switch.py"
+readonly DAWN_SWITCH_PORTABILITY_FILE="src/tint/utils/text_generator/text_generator.cc"
 readonly DAWN_EXCLUDE_EGL="third_party/EGL-Registry/src"
 readonly DAWN_EXCLUDE_ABSEIL="third_party/abseil-cpp"
 
@@ -52,6 +54,10 @@ if [[ ! -f "$DEVKITPRO/switchvars.sh" ]]; then
 fi
 if [[ ! -f "$DAWN_ABSEIL_PATCHER" ]]; then
     echo "error: missing Dawn Abseil Switch patcher: $DAWN_ABSEIL_PATCHER" >&2
+    exit 2
+fi
+if [[ ! -f "$DAWN_SWITCH_PATCHER" ]]; then
+    echo "error: missing Dawn/Tint Switch patcher: $DAWN_SWITCH_PATCHER" >&2
     exit 2
 fi
 
@@ -143,7 +149,7 @@ assert_dawn_abseil_switch_changes() {
 }
 
 assert_only_dawn_patch_changes() {
-    local changed path allowed abseil_seen=0
+    local changed path allowed abseil_seen=0 switch_portability_seen=0
     changed="$( { git -C "$DAWN_DIR" diff --name-only HEAD; git -C "$DAWN_DIR" ls-files --others --exclude-standard; } | sort -u)"
     while IFS= read -r path; do
         [[ -z "$path" ]] && continue
@@ -156,7 +162,10 @@ assert_only_dawn_patch_changes() {
             continue
         fi
         allowed=0
-        if grep -Eq "^(--- a/|\+\+\+ b/)${path//./\.}$" "$DAWN_PATCH"; then
+        if [[ "$path" == "$DAWN_SWITCH_PORTABILITY_FILE" ]]; then
+            allowed=1
+            switch_portability_seen=1
+        elif grep -Eq "^(--- a/|\+\+\+ b/)${path//./\.}$" "$DAWN_PATCH"; then
             allowed=1
         fi
         if ((allowed == 0)); then
@@ -169,7 +178,12 @@ assert_only_dawn_patch_changes() {
         echo "error: expected audited Dawn Abseil libnx portability delta is missing" >&2
         exit 4
     fi
+    if ((switch_portability_seen == 0)); then
+        echo "error: expected audited Dawn/Tint libnx portability delta is missing" >&2
+        exit 4
+    fi
     assert_dawn_abseil_switch_changes
+    python3 "$DAWN_SWITCH_PATCHER" "$DAWN_DIR" --check
 }
 
 echo "[1/6] Preparing static UAM library source..."
@@ -243,9 +257,11 @@ fi
 # internal Abseil needs four narrow libnx fixes observed by the public build:
 # Horizon thread handles for GetTID, the no-signals pthread path for thread
 # identity, disabling glibc-style ELF dynamic-linker introspection, and using
-# cctz's existing newlib _timezone/tzname fallback on Switch.
+# cctz's existing newlib _timezone/tzname fallback on Switch. Pinned Tint also
+# needs one audited strict-C++20 fallback for newlib's hidden isascii extension.
 apply_dawn_patch
 python3 "$DAWN_ABSEIL_PATCHER" "$DAWN_DIR/third_party/abseil-cpp"
+python3 "$DAWN_SWITCH_PATCHER" "$DAWN_DIR"
 if ! dawn_patch_is_applied; then
     echo "error: Dawn Deko3D patch verification failed after apply" >&2
     exit 4
@@ -310,6 +326,8 @@ dawn_abseil_diff="$(git -C "$DAWN_DIR/third_party/abseil-cpp" diff HEAD --binary
     echo "dawn_base_commit=$DAWN_PIN"
     echo "dawn_patch_sha256=$(sha256sum "$DAWN_PATCH" | awk '{print $1}')"
     echo "dawn_patch_excluded_gitlinks=$DAWN_EXCLUDE_EGL,$DAWN_EXCLUDE_ABSEIL"
+    echo "dawn_switch_portability_file=$DAWN_SWITCH_PORTABILITY_FILE"
+    echo "dawn_switch_patcher_sha256=$(sha256sum "$DAWN_SWITCH_PATCHER" | awk '{print $1}')"
     echo "dawn_worktree_diff_sha256=$dawn_diff"
     echo "dawn_archive_sha256=$(sha256sum "$DAWN_LIB" | awk '{print $1}')"
     echo "dawn_abseil_commit=$DAWN_ABSEIL_PIN"

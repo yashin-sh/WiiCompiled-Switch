@@ -13,8 +13,10 @@ complete SD readback and verified older-NRO cleanup. Its native profile uses the
 existing verified PAL extraction. Corrected source checks are tracked in PR #387.
 
 The operator reports visual corruption at character selection followed by a
-crash. Next retrieve fresh native logs, symbolize against the retained exact
-ELF, and validate the runtime texture/binding/lifetime repairs on the Switch.
+crash. Retrieved fresh native logs and the exact ELF identify a secondary crash
+inside the undersized exception logger. Next validate the larger exception
+stack and runtime texture/binding/lifetime repairs on the Switch, and obtain the
+original fault if progression still fails.
 Complete a stock-clock Time Trial and a 12-kart race only after menu correctness.
 Compare against NVK and consider PGO only after correctness.
 The earlier NVK frontiers below remain diagnostic evidence for their own candidates.

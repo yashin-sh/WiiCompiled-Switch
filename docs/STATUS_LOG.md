@@ -1,5 +1,34 @@
 # Status log
 
+## 2026-10-14 — Character-selection failure reported; native runtime repairs built
+
+The operator reports character-selection visual corruption followed by a crash
+on the deployed first native candidate. Fresh native logs and the Atmosphere
+report pass independent readback checks; argv and the complete NRO digest match
+`e217a6f`. Symbolization exposes recursive stdio failure in the exception logger.
+The ELF confirms libnx's weak 1 KiB exception stack. A 64 KiB aligned strong
+override and checked frame reads pass a compiled production-handler/weak-link
+contract; the original game fault remains obscured by that secondary failure.
+A successful complete race is not claimed.
+
+An independent audit identifies texture upload padding overreads, stale combined
+texture/sampler bindings across shared-layout shader changes and premature GPU
+descriptor reuse. The audited runtime patch fixes all three. The production
+upload method reproduces the original heap-buffer-overflow under AddressSanitizer;
+the repaired minimum-buffer/stride/array/3D/BC/stencil cases, allocation failure,
+descriptor lifetime and shader rebinding contracts pass. Existing portability
+and eight preparation/reuse tests pass. Complete-file provenance checks remain
+strict and the reference is unchanged.
+
+The repaired backend and private product rebuild successfully. Source candidate
+`ddc2cd0` produces a 74,444,944-byte NRO with SHA-256
+`d52c76be1f0dc7a39d93452d51d7002aae8056b327513d02811abcf4935983d1`;
+artifact and source/dependency validation pass. New SD deployment and console
+execution are pending. The exact older NRO/debug ELF are retained and verified
+for crash symbolization. Current PR #387 CI is tracked independently; the test
+formatting repair uses CI's clang-format 18. See the
+[candidate report](NATIVE_DEKO3D_CANDIDATE_2026-10-14.md).
+
 ## 2026-10-14 — First private native Deko3D NRO built and deployed
 
 Candidate `e217a6f` completes fresh PAL translation, all 72 native game-code

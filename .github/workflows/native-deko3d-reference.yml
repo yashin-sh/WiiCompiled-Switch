@@ -16,6 +16,7 @@ on:
       - 'scripts/build-local-native-deko3d.sh'
       - 'tests/test_native_deko3d_build_scripts.py'
       - 'tests/deko3d_runtime_contract.cpp'
+      - 'tests/native_exception_handler_contract.cpp'
       - 'docs/NATIVE_DEKO3D_SWITCH_PATH_2026-10-12.md'
   workflow_dispatch:
 

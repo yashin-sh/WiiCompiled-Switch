@@ -20,8 +20,9 @@ The first private [Deko3D candidate](docs/NATIVE_DEKO3D_CANDIDATE_2026-10-14.md)
 code `e217a6f`, now passes full PAL translation/product build, artifact/provenance
 validation and complete SD readback with verified older-NRO cleanup. The first
 console trial reaches character selection according to the operator, then shows
-visual corruption and crashes. Fresh diagnostics and a corrected console trial
-remain required. Complete races, playability and race FPS remain unproven.
+visual corruption and crashes. Retrieved diagnostics expose a recursive fault
+in the crash logger, masking the initial fault; a corrected console trial remains
+required. Complete races, playability and race FPS remain unproven.
 The user clarified on 2026-10-14 that private builds do not block merging into
 `main`: every published check on the final PR HEAD must be completed and successful.
 Private product builds and Switch measurements remain separate readiness evidence.

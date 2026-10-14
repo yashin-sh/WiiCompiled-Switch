@@ -24,6 +24,25 @@ SQLITE_OLD_COMMAND = "PATCH_COMMAND patch -p1 -N -r - < ${CMAKE_CURRENT_LIST_DIR
 SQLITE_NEW_COMMAND = '''PATCH_COMMAND "${MKW_NATIVE_DEKO3D_PYTHON}" "${MKW_NATIVE_DEKO3D_PRODUCT_PATCHER}"
         --sqlite sqlite3.c --sqlite-patch
         "${CMAKE_CURRENT_LIST_DIR}/../cmake/patches/sqlite3-nintendo-switch-platform.patch"'''
+EXCEPTION_STACK = """// libnx defaults its user-exception stack to only 0x400 bytes. newlib's
+// unbuffered vfprintf uses a BUFSIZ-sized temporary FILE buffer on the stack;
+// the old handler overflowed before its first diagnostic reached the SD card.
+extern "C" {
+alignas(16) u8 __nx_exception_stack[64 * 1024] = {};
+u64 __nx_exception_stack_size = sizeof(__nx_exception_stack);
+}
+
+"""
+FRAME_READ_GUARD = """        // A corrupt frame chain must not fault again inside the crash logger.
+        MemoryInfo frameMemory{};
+        u32 framePageInfo = 0;
+        if (R_FAILED(svcQueryMemory(&frameMemory, &framePageInfo, fp)) ||
+            (frameMemory.perm & MemPerm_Read) == 0 || fp < frameMemory.addr ||
+            frameMemory.size < 2 * sizeof(u64) ||
+            fp - frameMemory.addr > frameMemory.size - 2 * sizeof(u64)) {
+            break;
+        }
+"""
 
 
 def digest(data):
@@ -96,6 +115,21 @@ def product_changes(reference):
         original,
         replace_once(original, SQLITE_OLD_COMMAND, SQLITE_NEW_COMMAND),
     )
+    name = "runtime/src/main.cpp"
+    original = (reference / name).read_text()
+    patched = replace_once(
+        original,
+        "// hbloader runs every homebrew .nro inside its own process, so an unhandled CPU fault produces\n",
+        EXCEPTION_STACK
+        + "// hbloader runs every homebrew .nro inside its own process, so an unhandled CPU fault produces\n",
+    )
+    patched = replace_once(
+        patched,
+        "        const auto* entry = reinterpret_cast<const u64*>(fp);\n",
+        FRAME_READ_GUARD
+        + "        const auto* entry = reinterpret_cast<const u64*>(fp);\n",
+    )
+    changes[name] = (original, patched)
     return changes
 
 
@@ -221,6 +255,45 @@ def self_test(reference):
             pass
         else:
             raise AssertionError("reference mutation accepted")
+        # Compile the complete production exception handler, and link a second
+        # TU with libnx's weak stack defaults to verify the actual override ABI.
+        from dawn_deko3d_runtime import method
+
+        runtime_main = product_changes(reference)["runtime/src/main.cpp"][1]
+        (work / "exception-production.inc").write_text(
+            EXCEPTION_STACK
+            + method(runtime_main, 'extern "C" void __libnx_exception_handler(')
+        )
+        defaults = work / "libnx-exception-defaults.cpp"
+        defaults.write_text("""#include <cstdint>
+extern "C" {
+alignas(16) __attribute__((weak)) uint8_t __nx_exception_stack[0x400] = {};
+__attribute__((weak)) uint64_t __nx_exception_stack_size = sizeof(__nx_exception_stack);
+uint64_t LibnxExceptionStackSize() { return __nx_exception_stack_size; }
+uint8_t* LibnxExceptionStackAddress() { return __nx_exception_stack; }
+}
+""")
+        executable = work / "exception-contract"
+        subprocess.run(
+            [
+                "g++",
+                "-std=c++20",
+                "-Wall",
+                "-Wextra",
+                "-Werror",
+                "-I",
+                str(work),
+                str(
+                    Path(__file__).resolve().parents[1]
+                    / "tests/native_exception_handler_contract.cpp"
+                ),
+                str(defaults),
+                "-o",
+                str(executable),
+            ],
+            check=True,
+        )
+        subprocess.run([str(executable)], check=True)
         # Exercise the actual production declaration placement in a unity-style TU.
         bridge = product_changes(reference)["runtime/src/system_bridge.cpp"][1]
         assert bridge.index(SYMBOL_DECLARATIONS) < bridge.index("namespace {\n")
@@ -324,7 +397,7 @@ assert(GuestMapSymbolFloor(0x12000, &start) == nullptr);
         else:
             raise AssertionError("unattributed SQLite source accepted")
     print(
-        "Product patch guards, production C-linkage/unity and automatic-backend tests passed"
+        "Product patch guards, exception stack/frame safety, C-linkage/unity and automatic-backend tests passed"
     )
 
 

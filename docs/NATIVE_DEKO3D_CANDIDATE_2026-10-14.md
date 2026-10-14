@@ -5,9 +5,11 @@ completes PAL translation, all 72 native game-code blocks, the full Release
 product link and private NRO packaging. It is deployed to the Switch with
 complete size/SHA-256 readback and verified removal of the older project NRO.
 The operator subsequently reports reaching character selection, where visual
-bugs begin and the application then crashes. Fresh console diagnostics are not
-yet available; the failure is not symbolized or attributed to a specific
-instruction. Race completion and performance remain unvalidated.
+bugs begin and the application then crashes. Native logs and the latest
+Atmosphere report are retrieved and verified by independent reads; the console
+argv and complete SD NRO digest match `e217a6f`. The report exposes a secondary
+fault in the crash logger, obscuring the initial fault. Race completion and
+performance remain unvalidated.
 
 | Evidence | Result |
 | --- | --- |
@@ -20,6 +22,7 @@ instruction. Race completion and performance remain unvalidated.
 | Native configuration and verified-extraction marker readback | Passed |
 | Real Switch launch and menu progression | Operator reports reaching character selection, then visual corruption and crash |
 | Complete Time Trial and 12-kart race | Not validated; current candidate fails before a confirmed race |
+| Original native diagnostics | Stable readbacks, exact argv/NRO match; secondary crash-handler fault symbolized |
 | Published checks on the final PR HEAD | Tracked separately in [PR #387](https://github.com/yashin-sh/WiiCompiled-Switch/pull/387) |
 
 ## Exact artifact
@@ -101,9 +104,47 @@ heap-buffer-overflow under AddressSanitizer. The repaired method passes with
 minimum-size input buffers, padded rows/images, array layers, 3D slices, BC
 formats, stencil and injected upload-allocation failure. Separate contracts
 cover deferred descriptor reuse and shared-layout shader changes. These tests
-do not emulate the Switch GPU. A rebuilt NRO and a new console trial remain
-necessary before claiming a fix for character selection.
+do not emulate the Switch GPU. The corrected backend and full private NRO now
+build and pass artifact/source/dependency validation. A new console trial
+remains necessary before claiming a fix for character selection.
+
+```text
+runtime-fix build source: ddc2cd0a7f742e6c3482b4598d70a8ecc29cbc09
+NRO bytes:               74444944
+NRO SHA-256:             d52c76be1f0dc7a39d93452d51d7002aae8056b327513d02811abcf4935983d1
+```
+
+Later test-formatting changes do not alter the product sources. The repaired
+candidate's SD deployment and console execution are pending. The preceding
+NRO and debug ELF are retained locally and match their recorded complete
+size/SHA-256, allowing fresh crash addresses to be resolved against that build.
 
 The [Deko3D transfer implementation](https://github.com/devkitPro/deko3d/blob/master/source/dk_image.cpp)
 uses byte row and image strides for `DkCopyBuf`, including compressed texel
 blocks; the repair preserves those units while packing the upload.
+
+## Retrieved native failure diagnostics
+
+The retained console transcript identifies the deployed `e217a6f` NRO, whose
+complete MTP readback matches its recorded 74,444,944-byte size and SHA-256.
+The native stdout/stderr and recent Atmosphere crash report are stable across
+two independent reads. Deko3D initializes and its 21 GPU smoke tests pass; the
+game advances through multiple scenes. This does not validate all GX behavior,
+menu correctness, a complete race or measured FPS.
+
+Symbolization against the exact retained ELF places the repeated exception
+frames in `SwitchCrashWrite`, `__libnx_exception_handler`, `_vfprintf_r`,
+`__sbprintf` and `_fflush_r`. The exception logger faults recursively before its
+first complete diagnostic reaches the SD card. The ELF confirms that the
+runtime uses libnx's weak **0x400-byte exception stack**. The inference is that
+newlib's temporary stdio buffer overruns that stack; the original game's fault
+is not recovered from this secondary report.
+
+The product repair supplies a strong, aligned 64 KiB exception stack and its
+size symbol, matching the [libnx override contract](https://github.com/switchbrew/libnx/blob/v4.12.0/nx/source/runtime/init.c).
+It also queries memory permissions and full FP/LR bounds before reading a stack
+frame, preventing a corrupt frame chain from causing another fault. The host
+contract compiles the complete repaired handler, links against simulated weak
+libnx defaults, verifies the strong stack override and exercises unreadable,
+out-of-range, truncated, cyclic and valid frame chains. The next console trial
+must establish the initial fault or demonstrate corrected progression.

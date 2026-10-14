@@ -47,6 +47,29 @@ and hardware receipts cannot be transferred to this Deko3D candidate.
 Documentation-only follow-ups must validate their own exact HEAD; the successful
 source commit above is a dated result, not a claim about future commits.
 
+## First private product link follow-up — 2026-10-14
+
+The first local PAL attempt completes translation and all 72 native game-code
+blocks, but its final link identifies three portability defects in the pinned
+product: guest-map C declarations inside an anonymous namespace, a Switch-only
+OpenGL adapter constructor despite the Deko3D-only Dawn archive, and an unapplied
+SQLite portability patch. The reference SQLite diff has malformed hunk counts;
+its CMake patch command also suppresses patch failures.
+
+`scripts/patch-native-deko3d-product.py` applies a checked four-file delta only
+to the private archived product workspace. The reference submodule stays clean.
+It moves diagnostic C declarations to global scope, aligns Aurora's backend
+flags with the native archive, and gates GL adapter options on the GL backend.
+SQLite's three existing Switch hunks are applied by complete literal context,
+with pinned original, patch and complete-result SHA-256 checks. Unknown source
+changes stop the build. Preparation and reuse both verify the product delta;
+the final receipt records the patcher, product-delta and SQLite hashes.
+
+Nintendo-data-free tests exercise unity inclusion order and real SQLite
+create/write/reopen/query behavior with device-prefixed paths, injected EOF/EIO
+and genuine non-EOF errors. Unsupported ownership calls are poisoned at link
+time. Product rebuild and Switch execution are pending at this checkpoint.
+
 ## Reproducible reference
 
 `third_party/DriftDroid` is pinned to:

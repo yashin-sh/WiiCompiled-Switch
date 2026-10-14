@@ -10,6 +10,7 @@ on:
       - 'scripts/prepare-native-deko3d-deps.sh'
       - 'scripts/patch-dawn-abseil-switch.py'
       - 'scripts/patch-dawn-switch.py'
+      - 'scripts/patch-native-deko3d-product.py'
       - 'scripts/prepare-local-native-deko3d-product.sh'
       - 'scripts/build-local-native-deko3d.sh'
       - 'tests/test_native_deko3d_build_scripts.py'
@@ -40,13 +41,30 @@ jobs:
           bash -n scripts/prepare-native-deko3d-deps.sh
           bash -n scripts/prepare-local-native-deko3d-product.sh
           bash -n scripts/build-local-native-deko3d.sh
-          python3 -m py_compile scripts/patch-dawn-abseil-switch.py scripts/patch-dawn-switch.py
+          python3 -m py_compile scripts/patch-dawn-abseil-switch.py scripts/patch-dawn-switch.py scripts/patch-native-deko3d-product.py
 
       - name: Verify optimized Switch reference contracts
         run: bash scripts/prepare-native-deko3d-reference.sh
 
       - name: Test strict C++ Switch portability patches
         run: python3 scripts/patch-dawn-switch.py --self-test
+
+      - name: Test native product portability and C linkage
+        run: python3 scripts/patch-native-deko3d-product.py --self-test
+
+      - name: Test complete pinned SQLite persistence and error handling
+        run: |
+          python3 - <<'PY'
+          import hashlib, io, pathlib, urllib.request, zipfile
+          raw = urllib.request.urlopen("https://sqlite.org/2026/sqlite-amalgamation-3510300.zip", timeout=60).read()
+          assert hashlib.sha256(raw).hexdigest() == "acb1e6f5d832484bf6d32b681e858c38add8b2acdfd42ac5df24b8afb46552b4"
+          output = pathlib.Path(".deps/native-product-sqlite-test")
+          output.mkdir(parents=True, exist_ok=True)
+          with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+              for name in ("sqlite3.c", "sqlite3.h"):
+                  (output / name).write_bytes(archive.read("sqlite-amalgamation-3510300/" + name))
+          PY
+          python3 scripts/patch-native-deko3d-product.py --sqlite-self-test .deps/native-product-sqlite-test/sqlite3.c
 
       - name: Test product preparation and reuse guards
         run: python3 -m unittest discover -s tests -p 'test_native_deko3d_build_scripts.py' -v

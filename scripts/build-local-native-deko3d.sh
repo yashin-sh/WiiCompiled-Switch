@@ -87,6 +87,7 @@ readonly DAWN_ARCHIVE="$DAWN_BUILD_DIR/src/dawn/native/libwebgpu_dawn.a"
 readonly DAWN_PATCH="$REF_DIR/aurora-main/cmake/patches/dawn-nintendo-switch-platform.patch"
 readonly AURORA_ABSEIL_PATCH="$REF_DIR/aurora-main/cmake/patches/abseil-nintendo-switch-platform.patch"
 readonly DEP_RECEIPT="$DEPS_DIR/native-deko3d-toolchain.receipt"
+readonly PRODUCT_PATCHER="$ROOT_DIR/scripts/patch-native-deko3d-product.py"
 
 if [[ ! -d "$REF_DIR/.git" && ! -f "$REF_DIR/.git" ]]; then
     echo "error: DriftDroid reference submodule is missing" >&2
@@ -233,6 +234,15 @@ PY
 
 mkdir -p "$BUILD_DIR" "$OUTPUT_DIR"
 
+# Apply/check only the audited product delta, including on translation reuse.
+# Existing generated game code and completed translated objects are preserved.
+python3 "$PRODUCT_PATCHER" "$WORK_DIR" --reference "$REF_DIR"
+sqlite_source="$BUILD_DIR/_deps/sqlite3-src/sqlite3.c"
+sqlite_patch="$WORK_DIR/aurora-main/cmake/patches/sqlite3-nintendo-switch-platform.patch"
+if [[ -f "$sqlite_source" ]]; then
+    python3 "$PRODUCT_PATCHER" --sqlite "$sqlite_source" --sqlite-patch "$sqlite_patch"
+fi
+
 configure=(
     -S "$WORK_DIR/runtime"
     -B "$BUILD_DIR"
@@ -246,6 +256,8 @@ configure=(
     -DMKW_SWITCH_SECTION_ORDERING=ON
     -DMKW_TRANSLATED_COMPILE_JOBS="$TRANSLATED_JOBS"
     -DMKW_PGO="$PGO_MODE"
+    -DMKW_NATIVE_DEKO3D_PYTHON="$(command -v python3)"
+    -DMKW_NATIVE_DEKO3D_PRODUCT_PATCHER="$PRODUCT_PATCHER"
 )
 
 cat <<EOF_CONFIG
@@ -261,6 +273,8 @@ cat <<EOF_CONFIG
 EOF_CONFIG
 
 cmake "${configure[@]}"
+python3 "$PRODUCT_PATCHER" "$WORK_DIR" --reference "$REF_DIR" --check
+python3 "$PRODUCT_PATCHER" --sqlite "$sqlite_source" --sqlite-patch "$sqlite_patch" --check
 cmake --build "$BUILD_DIR" --target mkw_release --parallel "$JOBS"
 
 elf=""
@@ -347,6 +361,9 @@ fi
     echo "uam_worktree_diff_sha256=$uam_diff_sha256"
     echo "uam_archive_sha256=$(sha256sum "$UAM_LIB" | awk '{print $1}')"
     echo "dependency_receipt_sha256=$(sha256sum "$DEP_RECEIPT" | awk '{print $1}')"
+    echo "product_patcher_sha256=$(sha256sum "$PRODUCT_PATCHER" | awk '{print $1}')"
+    echo "product_patch_receipt_sha256=$(sha256sum "$WORK_DIR/.wcs-native-deko3d-product-patches.json" | awk '{print $1}')"
+    echo "sqlite_source_sha256=$(sha256sum "$sqlite_source" | awk '{print $1}')"
     echo "deko3d_mode=$DEKO3D_DEBUG"
     echo "deko3d_library=${deko3d_lib:-not-found}"
     echo "deko3d_library_sha256=$deko3d_sha256"

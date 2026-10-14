@@ -49,6 +49,10 @@ The strict C++20 Switch build also needs audited portability fixes for Dawn's ow
 Abseil, Tint identifier classification and Dawn environment/sleep utilities. Switch sleep uses
 `svcSleepThread` with microseconds widened to 64 bits before conversion to nanoseconds. The
 helper verifies these source changes and records its patcher hash in the dependency receipt.
+The Deko3D configuration explicitly enables Tint's desktop GLSL writer even though the GL/GLES
+backends are disabled. The pinned UAM memory API uses a size query and a 256-byte-aligned output
+buffer; its adapter is checked against the complete shader-compiler file from the pinned Dawn
+patch, in addition to checking the remaining patch hunks.
 
 The missing UAM provenance has also been resolved without inventing a private build recipe.
 `averne/libuam` is a public fork of devkitPro UAM that turns the compiler into a static library

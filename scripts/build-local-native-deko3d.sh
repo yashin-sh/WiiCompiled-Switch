@@ -88,11 +88,6 @@ readonly DAWN_PATCH="$REF_DIR/aurora-main/cmake/patches/dawn-nintendo-switch-pla
 readonly AURORA_ABSEIL_PATCH="$REF_DIR/aurora-main/cmake/patches/abseil-nintendo-switch-platform.patch"
 readonly DEP_RECEIPT="$DEPS_DIR/native-deko3d-toolchain.receipt"
 
-dawn_patch_args=(
-    --exclude="$DAWN_EXCLUDE_EGL"
-    --exclude="$DAWN_EXCLUDE_ABSEIL"
-)
-
 if [[ ! -d "$REF_DIR/.git" && ! -f "$REF_DIR/.git" ]]; then
     echo "error: DriftDroid reference submodule is missing" >&2
     exit 3
@@ -114,7 +109,7 @@ if [[ ! -f "$DAWN_PATCH" || ! -f "$AURORA_ABSEIL_PATCH" || ! -f "$DAWN_ABSEIL_PA
     echo "error: pinned Switch dependency patches/helpers are missing" >&2
     exit 3
 fi
-if ! git -C "$DAWN_SOURCE_DIR" apply --reverse --check "${dawn_patch_args[@]}" "$DAWN_PATCH" >/dev/null 2>&1; then
+if ! python3 "$DAWN_SWITCH_PATCHER" "$DAWN_SOURCE_DIR" --verify-base-patch "$DAWN_PATCH"; then
     echo "error: pinned DriftDroid Switch/Deko3D patch is not exactly applied to Dawn" >&2
     exit 3
 fi
@@ -206,6 +201,11 @@ python3 - "$DEP_RECEIPT" \
     "dawn_switch_patcher_sha256=$(sha256sum "$DAWN_SWITCH_PATCHER" | awk '{print $1}')" \
     "dawn_worktree_diff_sha256=$dawn_diff_sha256" \
     "dawn_archive_sha256=$(sha256sum "$DAWN_ARCHIVE" | awk '{print $1}')" \
+    "dawn_tint_build_wgsl_reader=ON" \
+    "dawn_tint_build_wgsl_writer=ON" \
+    "dawn_tint_build_glsl_writer=ON" \
+    "dawn_tint_build_glsl_validator=OFF" \
+    "dawn_cmake_cache_sha256=$(sha256sum "$DAWN_BUILD_DIR/CMakeCache.txt" | awk '{print $1}')" \
     "dawn_abseil_commit=$actual_dawn_abseil_head" \
     "dawn_abseil_patcher_sha256=$(sha256sum "$DAWN_ABSEIL_PATCHER" | awk '{print $1}')" \
     "dawn_abseil_diff_sha256=$dawn_abseil_diff_sha256" \

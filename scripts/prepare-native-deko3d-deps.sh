@@ -154,7 +154,7 @@ dawn_patch_args=(
 )
 
 dawn_patch_is_applied() {
-    git -C "$DAWN_DIR" apply --reverse --check "${dawn_patch_args[@]}" "$DAWN_PATCH" >/dev/null 2>&1
+    python3 "$DAWN_SWITCH_PATCHER" "$DAWN_DIR" --verify-base-patch "$DAWN_PATCH" >/dev/null 2>&1
 }
 
 apply_dawn_patch() {
@@ -325,6 +325,9 @@ if ! dawn_patch_is_applied; then
 fi
 assert_only_dawn_patch_changes
 
+# Deko3D consumes WGSL through Tint's desktop GLSL writer before UAM emits
+# DKSH. Upstream defaults that writer from the GL backend flags, which remain
+# disabled here; request its shader pipeline explicitly, including on reuse.
 echo "[4/6] Configuring minimal Dawn native Deko3D backend..."
 cmake -S "$DAWN_DIR" -B "$DAWN_BUILD_DIR" -G Ninja \
     -DCMAKE_TOOLCHAIN_FILE="$DEVKITPRO/cmake/Switch.cmake" \
@@ -351,7 +354,50 @@ cmake -S "$DAWN_DIR" -B "$DAWN_BUILD_DIR" -G Ninja \
     -DDAWN_USE_GLFW=OFF \
     -DTINT_BUILD_TESTS=OFF \
     -DTINT_BUILD_CMD_TOOLS=OFF \
+    -DTINT_BUILD_WGSL_READER=ON \
+    -DTINT_BUILD_WGSL_WRITER=ON \
+    -DTINT_BUILD_GLSL_WRITER=ON \
+    -DTINT_BUILD_GLSL_VALIDATOR=OFF \
+    -DTINT_BUILD_SPV_READER=OFF \
+    -DTINT_BUILD_SPV_WRITER=OFF \
+    -DTINT_BUILD_HLSL_WRITER=OFF \
+    -DTINT_BUILD_MSL_WRITER=OFF \
+    -DTINT_BUILD_NULL_WRITER=OFF \
     -DDAWN_BUILD_MONOLITHIC_LIBRARY=STATIC
+
+# Fail before compilation if cache reuse or upstream configuration omitted a
+# required writer. Store these actual cache values in the successful receipt.
+tint_config="$(python3 - "$DAWN_BUILD_DIR/CMakeCache.txt" <<'PY'
+from pathlib import Path
+import sys
+
+cache = {}
+for line in Path(sys.argv[1]).read_text().splitlines():
+    if line.startswith(("//", "#")) or ":" not in line or "=" not in line:
+        continue
+    key, value = line.split("=", 1)
+    name, kind = key.split(":", 1)
+    if name in cache:
+        raise SystemExit(f"error: duplicate Dawn CMake cache key: {name}")
+    cache[name] = (kind, value)
+required = {
+    "TINT_BUILD_WGSL_READER": "ON",
+    "TINT_BUILD_WGSL_WRITER": "ON",
+    "TINT_BUILD_GLSL_WRITER": "ON",
+    "TINT_BUILD_GLSL_VALIDATOR": "OFF",
+    "TINT_BUILD_SPV_READER": "OFF",
+    "TINT_BUILD_SPV_WRITER": "OFF",
+    "TINT_BUILD_HLSL_WRITER": "OFF",
+    "TINT_BUILD_MSL_WRITER": "OFF",
+    "TINT_BUILD_NULL_WRITER": "OFF",
+}
+for key, value in required.items():
+    if cache.get(key) != ("BOOL", value):
+        raise SystemExit(f"error: required Deko3D Tint option {key}:BOOL={value}, got {cache.get(key)}")
+    print(f"dawn_{key.lower()}={value}")
+PY
+)"
+readonly tint_config
 
 echo "[5/6] Building Dawn WebGPU library with native Deko3D backend..."
 cmake --build "$DAWN_BUILD_DIR" --target webgpu_dawn --parallel "$JOBS"
@@ -388,6 +434,8 @@ dawn_abseil_diff="$(git -C "$DAWN_DIR/third_party/abseil-cpp" diff HEAD --binary
     echo "dawn_switch_patcher_sha256=$(sha256sum "$DAWN_SWITCH_PATCHER" | awk '{print $1}')"
     echo "dawn_worktree_diff_sha256=$dawn_diff"
     echo "dawn_archive_sha256=$(sha256sum "$DAWN_LIB" | awk '{print $1}')"
+    echo "$tint_config"
+    echo "dawn_cmake_cache_sha256=$(sha256sum "$DAWN_BUILD_DIR/CMakeCache.txt" | awk '{print $1}')"
     echo "dawn_abseil_commit=$DAWN_ABSEIL_PIN"
     echo "dawn_abseil_patcher_sha256=$(sha256sum "$DAWN_ABSEIL_PATCHER" | awk '{print $1}')"
     echo "dawn_abseil_diff_sha256=$dawn_abseil_diff"

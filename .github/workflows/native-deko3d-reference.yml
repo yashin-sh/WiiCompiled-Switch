@@ -58,6 +58,7 @@ jobs:
           grep -Fq 'f8c9eef01ffe06334d530393d636d69e2b52744b' scripts/prepare-native-deko3d-deps.sh
           grep -Fq 'https://github.com/averne/libuam.git' scripts/prepare-native-deko3d-deps.sh
           grep -Fq -- '-DDAWN_ENABLE_DEKO3D=ON' scripts/prepare-native-deko3d-deps.sh
+          grep -Fq -- '-DTINT_BUILD_GLSL_WRITER=ON' scripts/prepare-native-deko3d-deps.sh
           grep -Fq -- '--target webgpu_dawn' scripts/prepare-native-deko3d-deps.sh
           grep -Fq 'libuam.a' scripts/prepare-native-deko3d-deps.sh
           grep -Fq 'abseil-nintendo-switch-platform.patch' scripts/prepare-native-deko3d-deps.sh
@@ -121,6 +122,10 @@ jobs:
           grep -Fq 'dawn_switch_patcher_sha256=' \
             .deps/native-deko3d/native-deko3d-toolchain.receipt
           grep -Fq 'dawn_switch_sleep_file=src/dawn/utils/SystemUtils.cpp' \
+            .deps/native-deko3d/native-deko3d-toolchain.receipt
+          grep -Fxq 'dawn_tint_build_glsl_writer=ON' \
+            .deps/native-deko3d/native-deko3d-toolchain.receipt
+          grep -Fxq 'dawn_tint_build_glsl_validator=OFF' \
             .deps/native-deko3d/native-deko3d-toolchain.receipt
           sha256sum \
             .deps/native-deko3d/uam/build-switch/libuam.a \

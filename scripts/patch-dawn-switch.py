@@ -9,6 +9,8 @@ pinned source contracts and fail instead of guessing if those sources move.
 """
 
 import argparse
+import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -74,7 +76,25 @@ void USleep(unsigned int usecs) {
 }
 """
 
-TARGETS = (TINT_TARGET, SYSTEM_TARGET, SLEEP_TARGET)
+UAM_TARGET = Path("src/dawn/native/deko3d/UamCompilerDeko3d.cpp")
+UAM_INCLUDE_UPSTREAM = "#include <mutex>\n#include <vector>\n"
+UAM_INCLUDE_SWITCH = "#include <cstdint>\n#include <mutex>\n#include <vector>\n"
+UAM_UPSTREAM = """    std::vector<uint8_t> bytes;
+    compiler.OutputDkshToMemory(bytes);
+    dksh->assign(reinterpret_cast<const char*>(bytes.data()), bytes.size());
+"""
+UAM_SWITCH = """    // Pinned libuam takes caller-owned memory and aligns absolute pointers
+    // to 256 bytes while serializing DKSH. Its base must have that alignment.
+    const size_t size = compiler.CalculateDkshSize();
+    std::vector<uint8_t> storage(size + 255);
+    const auto aligned = (reinterpret_cast<std::uintptr_t>(storage.data()) + 255) &
+                         ~std::uintptr_t{255};
+    auto* bytes = reinterpret_cast<uint8_t*>(aligned);
+    compiler.OutputDkshToMemory(bytes);
+    dksh->assign(reinterpret_cast<const char*>(bytes), size);
+"""
+
+TARGETS = (TINT_TARGET, SYSTEM_TARGET, SLEEP_TARGET, UAM_TARGET)
 
 
 def fail(message: str) -> None:
@@ -137,6 +157,79 @@ def patch_sleep(root: Path, check_only: bool) -> bool:
     return include_changed or sleep_changed
 
 
+def patch_uam(root: Path, check_only: bool) -> bool:
+    include_changed = patch_exact(
+        root / UAM_TARGET,
+        UAM_INCLUDE_UPSTREAM,
+        UAM_INCLUDE_SWITCH,
+        "pinned UAM serialization include",
+        check_only,
+    )
+    output_changed = patch_exact(
+        root / UAM_TARGET,
+        UAM_UPSTREAM,
+        UAM_SWITCH,
+        "pinned UAM aligned serialization adapter",
+        check_only,
+    )
+    return include_changed or output_changed
+
+
+def base_uam_source(patch: Path) -> str:
+    # This newly introduced file is one complete hunk in the pinned patch.
+    # Its full contents, rather than a few matching markers, remain audited
+    # when excluding it from git's reverse check after applying our adapter.
+    marker = f"diff --git a/{UAM_TARGET} b/{UAM_TARGET}\n"
+    source = patch.read_text(encoding="utf-8")
+    if source.count(marker) != 1:
+        fail("pinned Dawn patch must introduce exactly one UAM compiler file")
+    section = source.split(marker, 1)[1].split("\ndiff --git ", 1)[0]
+    match = re.search(r"^@@ -0,0 \+1,(\d+) @@\n", section, re.MULTILINE)
+    if match is None:
+        fail("pinned Dawn UAM file must be a complete new-file hunk")
+    lines = section[match.end() :].splitlines()
+    if len(lines) != int(match[1]) or any(not line.startswith("+") for line in lines):
+        fail("pinned Dawn UAM file hunk changed")
+    return "".join(line[1:] + "\n" for line in lines)
+
+
+def verify_base_patch(root: Path, patch: Path) -> None:
+    original = base_uam_source(patch)
+    adapted = original
+    for upstream, switch in (
+        (UAM_INCLUDE_UPSTREAM, UAM_INCLUDE_SWITCH),
+        (UAM_UPSTREAM, UAM_SWITCH),
+    ):
+        if adapted.count(upstream) != 1:
+            fail("pinned Dawn patch UAM adapter source contract changed")
+        adapted = adapted.replace(upstream, switch, 1)
+    path = root / UAM_TARGET
+    if not path.is_file() or path.read_text(encoding="utf-8") not in (
+        original,
+        adapted,
+    ):
+        fail("Dawn UAM compiler differs from the complete audited base/adapter file")
+    result = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(root),
+            "apply",
+            "--reverse",
+            "--check",
+            "--exclude=third_party/EGL-Registry/src",
+            "--exclude=third_party/abseil-cpp",
+            f"--exclude={UAM_TARGET}",
+            str(patch),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        fail("pinned Dawn/Deko3D base patch does not reverse cleanly")
+
+
 def verify(root: Path) -> None:
     for target in TARGETS:
         if not (root / target).is_file():
@@ -144,6 +237,7 @@ def verify(root: Path) -> None:
     patch_tint(root, check_only=True)
     patch_system_utils(root, check_only=True)
     patch_sleep(root, check_only=True)
+    patch_uam(root, check_only=True)
 
 
 def self_test() -> None:
@@ -166,13 +260,14 @@ def self_test() -> None:
             SLEEP_TARGET: (
                 SLEEP_INCLUDE_UPSTREAM + "#endif\n\n" + SLEEP_UPSTREAM + "#endif\n"
             ),
+            UAM_TARGET: UAM_INCLUDE_UPSTREAM + UAM_UPSTREAM,
         }
         for target, source in fixtures.items():
             path = root / target
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(source, encoding="utf-8")
         expect_failure(lambda: verify(root))
-        patchers = (patch_tint, patch_system_utils, patch_sleep)
+        patchers = (patch_tint, patch_system_utils, patch_sleep, patch_uam)
         for patcher in patchers:
             assert patcher(root, check_only=False)
         verify(root)
@@ -196,6 +291,36 @@ def self_test() -> None:
         sleep_path.write_bytes(applied[SLEEP_TARGET].replace(b"* 1000", b"* 999"))
         expect_failure(lambda: verify(root))
         sleep_path.write_bytes(applied[SLEEP_TARGET])
+
+        # The adapter touches a file introduced entirely by the base patch.
+        # Verify both complete versions and reject changes elsewhere, retaining
+        # the original reverse-apply contract for all other patch hunks.
+        subprocess.run(
+            ["git", "init", "--quiet", str(root)], check=True, capture_output=True
+        )
+        original_uam = fixtures[UAM_TARGET]
+        base_patch = root / "base.patch"
+        base_patch.write_text(
+            f"diff --git a/{UAM_TARGET} b/{UAM_TARGET}\n"
+            "new file mode 100644\n--- /dev/null\n"
+            f"+++ b/{UAM_TARGET}\n"
+            f"@@ -0,0 +1,{len(original_uam.splitlines())} @@\n"
+            + "".join("+" + line + "\n" for line in original_uam.splitlines())
+            + "diff --git a/audit.txt b/audit.txt\n"
+            "--- a/audit.txt\n+++ b/audit.txt\n@@ -1 +1 @@\n-old\n+new\n",
+            encoding="utf-8",
+        )
+        (root / "audit.txt").write_text("new\n", encoding="utf-8")
+        verify_base_patch(root, base_patch)
+        uam_path = root / UAM_TARGET
+        uam_path.write_text(original_uam, encoding="utf-8")
+        verify_base_patch(root, base_patch)
+        uam_path.write_bytes(applied[UAM_TARGET] + b"// unexpected edit\n")
+        expect_failure(lambda: verify_base_patch(root, base_patch))
+        uam_path.write_bytes(applied[UAM_TARGET])
+        (root / "audit.txt").write_text("unexpected\n", encoding="utf-8")
+        expect_failure(lambda: verify_base_patch(root, base_patch))
+        (root / "audit.txt").write_text("new\n", encoding="utf-8")
 
         # Compile the patched sleep source with strict C++ and a narrow libnx
         # service stub, then verify microsecond-to-nanosecond conversion across
@@ -236,6 +361,52 @@ def self_test() -> None:
             check=True,
         )
         subprocess.run([str(executable)], check=True)
+        # Exercise the adapter against the pinned pointer-based UAM ABI. The
+        # stub requires absolute 256-byte alignment and writes an exact binary
+        # blob, including embedded zeros, so pointer/length/padding regressions
+        # fail independently of the allocation's natural alignment.
+        (root / "uam_test.cpp").write_text(
+            "#include <cassert>\n#include <cstddef>\n#include <cstdint>\n"
+            "#include <string>\n#include <vector>\n"
+            "class DekoCompiler {\npublic:\n"
+            "    size_t CalculateDkshSize() const { return 512; }\n"
+            "    void OutputDkshToMemory(void* mem) const {\n"
+            "        assert((reinterpret_cast<std::uintptr_t>(mem) & 255) == 0);\n"
+            "        auto* output = static_cast<uint8_t*>(mem);\n"
+            "        for (size_t i = 0; i < 512; ++i) output[i] = i % 251;\n"
+            "    }\n};\n"
+            "void Emit(DekoCompiler& compiler, std::string* dksh) {\n"
+            + UAM_SWITCH
+            + "}\nint main() {\n"
+            "    DekoCompiler compiler;\n    std::string dksh;\n"
+            "    for (int repeat = 0; repeat < 16; ++repeat) {\n"
+            "        Emit(compiler, &dksh);\n        assert(dksh.size() == 512);\n"
+            "        for (size_t i = 0; i < dksh.size(); ++i)\n"
+            "            assert(static_cast<uint8_t>(dksh[i]) == i % 251);\n"
+            "    }\n}\n",
+            encoding="utf-8",
+        )
+        subprocess.run(
+            [
+                compiler,
+                "-std=c++20",
+                "-Wall",
+                "-Wextra",
+                "-Werror",
+                "-fsanitize=address,undefined",
+                str(root / "uam_test.cpp"),
+                "-o",
+                str(executable),
+            ],
+            check=True,
+        )
+        subprocess.run(
+            [str(executable)],
+            check=True,
+            # LeakSanitizer cannot inspect threads in some traced runners.
+            # Address/undefined sanitizers still cover the adapter's writes.
+            env={**os.environ, "ASAN_OPTIONS": "detect_leaks=0"},
+        )
     print("Dawn/Tint Switch portability self-test OK")
 
 
@@ -245,6 +416,7 @@ def main() -> None:
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--check", action="store_true")
     mode.add_argument("--self-test", action="store_true")
+    mode.add_argument("--verify-base-patch", type=Path)
     args = parser.parse_args()
 
     if args.self_test:
@@ -256,6 +428,10 @@ def main() -> None:
         parser.error("dawn_root is required unless using --self-test")
 
     root = args.dawn_root.resolve()
+    if args.verify_base_patch is not None:
+        verify_base_patch(root, args.verify_base_patch.resolve())
+        print("Dawn/Deko3D complete base patch contract OK")
+        return
     for target in TARGETS:
         if not (root / target).is_file():
             fail(f"not an initialized pinned Dawn checkout: missing {target}")
@@ -269,6 +445,7 @@ def main() -> None:
         patch_tint(root, check_only=False),
         patch_system_utils(root, check_only=False),
         patch_sleep(root, check_only=False),
+        patch_uam(root, check_only=False),
     ]
     verify(root)
     status = "applied" if any(changed) else "already present"

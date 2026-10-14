@@ -29,6 +29,16 @@ for crash symbolization. Current PR #387 CI is tracked independently; the test
 formatting repair uses CI's clang-format 18. See the
 [candidate report](NATIVE_DEKO3D_CANDIDATE_2026-10-14.md).
 
+Combined corrected candidate `0b4f3c6` rebuilds and passes the same full product
+validation, including a strong 64 KiB exception stack in the exact ELF. Its
+74,444,944-byte NRO has SHA-256
+`556ad379cb9e265277cfd5f498122a18f539527d38bf1b46cca226719c4ad657`.
+Complete SD readback, recorded old-NRO backup/hash/removal and independent final
+inventory verification pass at 21:35:47 UTC. Native config and the extraction
+marker are unchanged, game/NAND data and unrelated applications are preserved.
+The new candidate's console trial remains pending; no corrected menu or race
+result is claimed.
+
 ## 2026-10-14 — First private native Deko3D NRO built and deployed
 
 Candidate `e217a6f` completes fresh PAL translation, all 72 native game-code

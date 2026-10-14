@@ -17,6 +17,8 @@ crash. Retrieved fresh native logs and the exact ELF identify a secondary crash
 inside the undersized exception logger. Next validate the larger exception
 stack and runtime texture/binding/lifetime repairs on the Switch, and obtain the
 original fault if progression still fails.
+Combined corrected candidate `0b4f3c6` passes the full private rebuild and
+verified SD replacement/cleanup; its new console trial is pending.
 Complete a stock-clock Time Trial and a 12-kart race only after menu correctness.
 Compare against NVK and consider PGO only after correctness.
 The earlier NVK frontiers below remain diagnostic evidence for their own candidates.

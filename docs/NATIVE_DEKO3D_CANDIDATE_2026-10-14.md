@@ -114,8 +114,8 @@ NRO bytes:               74444944
 NRO SHA-256:             d52c76be1f0dc7a39d93452d51d7002aae8056b327513d02811abcf4935983d1
 ```
 
-Later test-formatting changes do not alter the product sources. The repaired
-candidate's SD deployment and console execution are pending. The preceding
+This intermediate GPU-runtime build is superseded by the combined runtime and
+exception-stack candidate below. The preceding
 NRO and debug ELF are retained locally and match their recorded complete
 size/SHA-256, allowing fresh crash addresses to be resolved against that build.
 
@@ -148,3 +148,28 @@ contract compiles the complete repaired handler, links against simulated weak
 libnx defaults, verifies the strong stack override and exercises unreadable,
 out-of-range, truncated, cyclic and valid frame chains. The next console trial
 must establish the initial fault or demonstrate corrected progression.
+
+## Combined corrected candidate deployed
+
+```text
+source commit: 0b4f3c6fbe02da1cd8c6fd9b5f03f1c24017afdb
+NRO bytes:     74444944
+NRO SHA-256:   556ad379cb9e265277cfd5f498122a18f539527d38bf1b46cca226719c4ad657
+SD path:       sdmc:/switch/WiiCompiled-Switch-native-deko3d-0b4f3c6.nro
+```
+
+The full private product rebuild and NRO/ELF/NACP/RomFS/source/dependency
+validation pass. The ELF exposes a strong 65,536-byte exception-stack symbol
+and a strong size symbol; the archive audit covers seven authorized product
+files plus the three complete Dawn runtime files. The eight preparation/reuse
+contracts and the production exception-handler and GPU-memory/binding contracts
+pass. CI is tracked independently on the latest published PR HEAD.
+
+Deployment completes at 2026-10-14 21:35:47 UTC. Complete SD size/SHA-256 readback
+matches the new NRO. The old `e217a6f` candidate is copied locally, verified
+against its recorded size/SHA, then removed. An independent directory read
+confirms that only the current project's NRO remains. Before/after readbacks
+verify the existing native configuration and extraction marker are unchanged;
+unrelated entries and game/NAND data are preserved. Cleanup receipts remain
+private and ignored. The new candidate has **not yet been run on the Switch**;
+character selection, a complete Time Trial and a 12-kart race remain required.

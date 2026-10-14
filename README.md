@@ -23,6 +23,9 @@ console trial reaches character selection according to the operator, then shows
 visual corruption and crashes. Retrieved diagnostics expose a recursive fault
 in the crash logger, masking the initial fault; a corrected console trial remains
 required. Complete races, playability and race FPS remain unproven.
+The combined runtime/crash-logger correction `0b4f3c6` now passes a full private
+rebuild and complete SD readback, with the old NRO backed up, verified and removed.
+Its console trial remains pending.
 The user clarified on 2026-10-14 that private builds do not block merging into
 `main`: every published check on the final PR HEAD must be completed and successful.
 Private product builds and Switch measurements remain separate readiness evidence.

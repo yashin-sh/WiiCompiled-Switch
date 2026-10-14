@@ -8,6 +8,7 @@ readonly DEPS_DIR="${MKW_DEKO3D_DEPS_DIR:-$ROOT_DIR/.deps/native-deko3d}"
 readonly WORK_DIR="${MKW_DEKO3D_WORK_DIR:-$DEPS_DIR/driftdroid}"
 readonly BUILD_DIR="${MKW_DEKO3D_BUILD_DIR:-$WORK_DIR/build-switch-release}"
 readonly OUTPUT_DIR="${MKW_DEKO3D_OUTPUT_DIR:-$ROOT_DIR/local-product/native-deko3d}"
+readonly ASSET_DIR="${MKW_LOCAL_ASSET_DIR:-$ROOT_DIR/local-product/Assets}"
 readonly JOBS="${MKW_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}"
 readonly TRANSLATED_JOBS="${MKW_TRANSLATED_COMPILE_JOBS:-2}"
 readonly DEKO3D_DEBUG="${AURORA_SWITCH_DEKO3D_DEBUG:-OFF}"
@@ -19,6 +20,7 @@ readonly UAM_PIN="f8c9eef01ffe06334d530393d636d69e2b52744b"
 readonly DAWN_EXCLUDE_EGL="third_party/EGL-Registry/src"
 readonly DAWN_EXCLUDE_ABSEIL="third_party/abseil-cpp"
 readonly DAWN_ABSEIL_PATCHER="$ROOT_DIR/scripts/patch-dawn-abseil-switch.py"
+readonly DAWN_SWITCH_PATCHER="$ROOT_DIR/scripts/patch-dawn-switch.py"
 
 need() {
     if ! command -v "$1" >/dev/null 2>&1; then
@@ -49,6 +51,32 @@ elif [[ ! -f "$WORK_DIR/generated/build_shards/shards.cmake" ]]; then
     echo "error: MKW_SKIP_TRANSLATE=1 but no prepared translation exists in $WORK_DIR" >&2
     exit 2
 fi
+
+# A cached shard graph is usable only with the same source pin and local input
+# bytes. Parse receipts as data; never execute them as shell source.
+python3 - "$WORK_DIR/.wcs-native-deko3d-provenance" "$REF_PIN" "$ASSET_DIR" "$WORK_DIR/Assets" <<'PY'
+import hashlib
+from pathlib import Path
+import sys
+
+receipt, pin, assets, copied_assets = sys.argv[1:]
+try:
+    entries = {}
+    for line in Path(receipt).read_text().splitlines():
+        key, value = line.split("=", 1)
+        if key in entries:
+            raise ValueError(f"duplicate field: {key}")
+        entries[key] = value
+    if entries.get("reference_commit") != pin:
+        raise ValueError("reference commit differs")
+    for name, key in (("main.dol", "main_dol_sha256"), ("StaticR.rel", "staticr_rel_sha256")):
+        for directory in (assets, copied_assets):
+            digest = hashlib.sha256((Path(directory) / name).read_bytes()).hexdigest()
+            if entries.get(key) != digest:
+                raise ValueError(f"{directory}/{name} differs from translated input")
+except (OSError, ValueError) as error:
+    raise SystemExit(f"error: translation provenance invalid; retranslate: {error}")
+PY
 
 DAWN_SOURCE_DIR="${AURORA_SWITCH_DAWN_SOURCE_DIR:-$DEPS_DIR/dawn}"
 DAWN_BUILD_DIR="${AURORA_SWITCH_DAWN_BUILD_DIR:-$DEPS_DIR/dawn-build-switch}"
@@ -82,7 +110,7 @@ if [[ "$actual_dawn_head" != "$DAWN_BASE_PIN" ]]; then
     echo "error: Dawn base mismatch: expected $DAWN_BASE_PIN, got $actual_dawn_head" >&2
     exit 3
 fi
-if [[ ! -f "$DAWN_PATCH" || ! -f "$AURORA_ABSEIL_PATCH" || ! -f "$DAWN_ABSEIL_PATCHER" ]]; then
+if [[ ! -f "$DAWN_PATCH" || ! -f "$AURORA_ABSEIL_PATCH" || ! -f "$DAWN_ABSEIL_PATCHER" || ! -f "$DAWN_SWITCH_PATCHER" ]]; then
     echo "error: pinned Switch dependency patches/helpers are missing" >&2
     exit 3
 fi
@@ -90,6 +118,7 @@ if ! git -C "$DAWN_SOURCE_DIR" apply --reverse --check "${dawn_patch_args[@]}" "
     echo "error: pinned DriftDroid Switch/Deko3D patch is not exactly applied to Dawn" >&2
     exit 3
 fi
+python3 "$DAWN_SWITCH_PATCHER" "$DAWN_SOURCE_DIR" --check
 
 readonly DAWN_ABSEIL_DIR="$DAWN_SOURCE_DIR/third_party/abseil-cpp"
 if [[ ! -d "$DAWN_ABSEIL_DIR/.git" && ! -f "$DAWN_ABSEIL_DIR/.git" ]]; then
@@ -117,21 +146,29 @@ fi
 
 # Reject every other dirty/moved Dawn submodule. Only the audited four-file
 # libnx portability delta in Dawn's own Abseil is expected.
+dawn_submodule_status="$(git -C "$DAWN_SOURCE_DIR" submodule status --recursive)"
 while IFS= read -r line; do
     [[ -z "$line" ]] && continue
     prefix="${line:0:1}"
     path="$(awk '{print $2}' <<< "$line")"
+    # Dependency preparation deliberately omits these disabled backends. Only
+    # their uninitialized state is permitted; initialized trees remain audited.
+    if [[ "$prefix" == "-" && ( "$path" == "third_party/angle" || "$path" == "third_party/swiftshader" ) ]]; then
+        continue
+    fi
     if [[ "$prefix" =~ [+-U] ]]; then
         echo "error: Dawn submodule revision mismatch: $line" >&2
         exit 3
     fi
-    if [[ "$path" == "$DAWN_EXCLUDE_EGL" ]]; then
-        if ! git -C "$DAWN_SOURCE_DIR/$path" diff --quiet || ! git -C "$DAWN_SOURCE_DIR/$path" diff --cached --quiet; then
-            echo "error: Dawn EGL submodule unexpectedly dirty" >&2
+    if [[ "$path" != "$DAWN_EXCLUDE_ABSEIL" ]]; then
+        if ! git -C "$DAWN_SOURCE_DIR/$path" diff --quiet --ignore-submodules=none || \
+           ! git -C "$DAWN_SOURCE_DIR/$path" diff --cached --quiet --ignore-submodules=none || \
+           [[ -n "$(git -C "$DAWN_SOURCE_DIR/$path" ls-files --others --exclude-standard | head -n 1)" ]]; then
+            echo "error: Dawn submodule unexpectedly dirty: $path" >&2
             exit 3
         fi
     fi
-done < <(git -C "$DAWN_SOURCE_DIR" submodule status)
+done <<< "$dawn_submodule_status"
 
 # The separate DriftDroid Abseil patch is intentionally NOT applied to Dawn's
 # own Abseil submodule. Its relevant Switch portability hunks are mirrored by
@@ -162,6 +199,38 @@ uam_diff_sha256="$(git -C "$UAM_ROOT" diff HEAD --binary | sha256sum | awk '{pri
 dawn_diff_sha256="$(git -C "$DAWN_SOURCE_DIR" diff HEAD --binary -- . ':(exclude)third_party/abseil-cpp' | sha256sum | awk '{print $1}')"
 dawn_abseil_diff_sha256="$(git -C "$DAWN_ABSEIL_DIR" diff HEAD --binary | sha256sum | awk '{print $1}')"
 
+python3 - "$DEP_RECEIPT" \
+    "driftdroid_reference=$REF_PIN" \
+    "dawn_base_commit=$actual_dawn_head" \
+    "dawn_patch_sha256=$(sha256sum "$DAWN_PATCH" | awk '{print $1}')" \
+    "dawn_switch_patcher_sha256=$(sha256sum "$DAWN_SWITCH_PATCHER" | awk '{print $1}')" \
+    "dawn_worktree_diff_sha256=$dawn_diff_sha256" \
+    "dawn_archive_sha256=$(sha256sum "$DAWN_ARCHIVE" | awk '{print $1}')" \
+    "dawn_abseil_commit=$actual_dawn_abseil_head" \
+    "dawn_abseil_patcher_sha256=$(sha256sum "$DAWN_ABSEIL_PATCHER" | awk '{print $1}')" \
+    "dawn_abseil_diff_sha256=$dawn_abseil_diff_sha256" \
+    "aurora_abseil_patch_sha256=$(sha256sum "$AURORA_ABSEIL_PATCH" | awk '{print $1}')" \
+    "uam_commit=$uam_head" \
+    "uam_worktree_diff_sha256=$uam_diff_sha256" \
+    "uam_archive_sha256=$(sha256sum "$UAM_LIB" | awk '{print $1}')" <<'PY'
+from pathlib import Path
+import sys
+
+try:
+    entries = {}
+    for line in Path(sys.argv[1]).read_text().splitlines():
+        key, value = line.split("=", 1)
+        if key in entries:
+            raise ValueError(f"duplicate field: {key}")
+        entries[key] = value
+    for field in sys.argv[2:]:
+        key, expected = field.split("=", 1)
+        if entries.get(key) != expected:
+            raise ValueError(f"{key} differs from built dependency receipt")
+except (OSError, ValueError) as error:
+    raise SystemExit(f"error: dependency provenance invalid; rebuild dependencies: {error}")
+PY
+
 mkdir -p "$BUILD_DIR" "$OUTPUT_DIR"
 
 configure=(
@@ -176,10 +245,8 @@ configure=(
     -DAURORA_SWITCH_DEKO3D_DEBUG="$DEKO3D_DEBUG"
     -DMKW_SWITCH_SECTION_ORDERING=ON
     -DMKW_TRANSLATED_COMPILE_JOBS="$TRANSLATED_JOBS"
+    -DMKW_PGO="$PGO_MODE"
 )
-if [[ -n "$PGO_MODE" ]]; then
-    configure+=("-DMKW_PGO=$PGO_MODE")
-fi
 
 cat <<EOF_CONFIG
 ==> Configuring optimized Switch product
@@ -268,6 +335,7 @@ fi
     echo "dawn_base_commit=$actual_dawn_head"
     echo "dawn_patch_sha256=$(sha256sum "$DAWN_PATCH" | awk '{print $1}')"
     echo "dawn_patch_excluded_gitlinks=$DAWN_EXCLUDE_EGL,$DAWN_EXCLUDE_ABSEIL"
+    echo "dawn_switch_patcher_sha256=$(sha256sum "$DAWN_SWITCH_PATCHER" | awk '{print $1}')"
     echo "dawn_worktree_diff_sha256=$dawn_diff_sha256"
     echo "dawn_archive_sha256=$(sha256sum "$DAWN_ARCHIVE" | awk '{print $1}')"
     echo "dawn_abseil_commit=$actual_dawn_abseil_head"

@@ -45,6 +45,11 @@ patch. `scripts/prepare-native-deko3d-deps.sh` reconstructs this source locally,
 pinned Dawn dependencies, applies only those authorized patches and builds the static
 `libwebgpu_dawn.a` with only the native Deko3D backend enabled.
 
+The strict C++20 Switch build also needs audited portability fixes for Dawn's own pinned
+Abseil, Tint identifier classification and Dawn environment/sleep utilities. Switch sleep uses
+`svcSleepThread` with microseconds widened to 64 bits before conversion to nanoseconds. The
+helper verifies these source changes and records its patcher hash in the dependency receipt.
+
 The missing UAM provenance has also been resolved without inventing a private build recipe.
 `averne/libuam` is a public fork of devkitPro UAM that turns the compiler into a static library
 for Nintendo Switch. We pin it to:
@@ -64,7 +69,9 @@ traced back to the exact graphics toolchain.
 
 ## One-command local candidate
 
-With devkitPro/devkitA64 installed and the user's own PAL inputs already under
+With devkitPro/devkitA64, libnx, release Deko3D and the Switch portlibs required by the pinned
+Aurora provider installed, plus .NET 8, CMake/Ninja, Meson, Python/Mako, Bison and Flex on the
+host, and the user's own PAL inputs already under
 `local-product/Assets/main.dol` and `local-product/Assets/StaticR.rel`, the normal path is:
 
 ```bash
@@ -81,6 +88,13 @@ That command, by default:
 
 Advanced reuse is opt-in with `MKW_SKIP_DEKO3D_DEPS=1` and/or `MKW_SKIP_TRANSLATE=1`; the build
 still refuses unattributed or incorrectly pinned dependencies.
+
+ANGLE and SwiftShader remain uninitialized because their backends are disabled; that explicit
+exception does not permit other missing, moved or dirty dependencies. A custom
+`MKW_DEKO3D_DEPS_DIR` is shared by dependency preparation and translation preparation.
+Reuse checks compare the current dependency sources and archives with their build receipt and
+the translated inputs with their recorded reference/input hashes. Workspace cleanup refuses
+paths that would remove the checkout, inputs or other protected build directories.
 
 ## Why this path
 

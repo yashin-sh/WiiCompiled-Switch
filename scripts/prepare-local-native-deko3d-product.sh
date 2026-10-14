@@ -5,7 +5,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly ROOT_DIR
 readonly REF_DIR="$ROOT_DIR/third_party/DriftDroid"
 readonly REF_PIN="8b33d31016a8b8735fe35b4fb633c491d33774c6"
-readonly WORK_DIR="${MKW_DEKO3D_WORK_DIR:-$ROOT_DIR/.deps/native-deko3d/driftdroid}"
+readonly DEPS_DIR="${MKW_DEKO3D_DEPS_DIR:-$ROOT_DIR/.deps/native-deko3d}"
+readonly WORK_DIR="${MKW_DEKO3D_WORK_DIR:-$DEPS_DIR/driftdroid}"
 readonly ASSET_DIR="${MKW_LOCAL_ASSET_DIR:-$ROOT_DIR/local-product/Assets}"
 readonly JOBS="${MKW_JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 4)}"
 
@@ -20,6 +21,28 @@ need git
 need tar
 need dotnet
 need sha256sum
+need python3
+
+# Resolve aliases before destructive cleanup, and preserve the checkout, inputs
+# and other products even when callers override the workspace location.
+python3 - "$WORK_DIR" "$ROOT_DIR" "$ASSET_DIR" "$REF_DIR" "$DEPS_DIR" \
+    "${MKW_DEKO3D_OUTPUT_DIR:-$ROOT_DIR/local-product/native-deko3d}" <<'PY'
+from pathlib import Path
+import subprocess
+import sys
+
+work, root, assets, reference, deps, output = map(lambda p: Path(p).resolve(), sys.argv[1:])
+for protected in (root, assets, reference, deps, output):
+    if work == protected or work in protected.parents:
+        raise SystemExit(f"error: workspace cleanup would remove protected path: {protected}")
+for protected in (assets, reference):
+    if protected in work.parents:
+        raise SystemExit(f"error: workspace must be separate from protected path: {protected}")
+if root in work.parents:
+    ignored = subprocess.run(["git", "-C", str(root), "check-ignore", "-q", str(work)])
+    if ignored.returncode != 0:
+        raise SystemExit("error: generated workspace inside the repository must be Git-ignored")
+PY
 
 "$ROOT_DIR/scripts/prepare-native-deko3d-reference.sh"
 

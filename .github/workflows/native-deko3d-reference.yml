@@ -12,6 +12,7 @@ on:
       - 'scripts/patch-dawn-switch.py'
       - 'scripts/prepare-local-native-deko3d-product.sh'
       - 'scripts/build-local-native-deko3d.sh'
+      - 'tests/test_native_deko3d_build_scripts.py'
       - 'docs/NATIVE_DEKO3D_SWITCH_PATH_2026-10-12.md'
   workflow_dispatch:
 
@@ -44,6 +45,12 @@ jobs:
       - name: Verify optimized Switch reference contracts
         run: bash scripts/prepare-native-deko3d-reference.sh
 
+      - name: Test strict C++ Switch portability patches
+        run: python3 scripts/patch-dawn-switch.py --self-test
+
+      - name: Test product preparation and reuse guards
+        run: python3 -m unittest discover -s tests -p 'test_native_deko3d_build_scripts.py' -v
+
       - name: Verify reproducible dependency pins
         run: |
           grep -Fq '13abc3bc8ea2d3c2050f9e77a12d012108ceee24' scripts/prepare-native-deko3d-deps.sh
@@ -56,6 +63,7 @@ jobs:
           grep -Fq 'abseil-nintendo-switch-platform.patch' scripts/prepare-native-deko3d-deps.sh
           grep -Fq 'src/tint/utils/text_generator/text_generator.cc' scripts/prepare-native-deko3d-deps.sh
           grep -Fq 'patch-dawn-switch.py' scripts/prepare-native-deko3d-deps.sh
+          grep -Fq 'src/dawn/utils/SystemUtils.cpp' scripts/prepare-native-deko3d-deps.sh
           ! grep -Eq 'aarch64-none-elf-nm.*\|.*grep[[:space:]].*-.*q' scripts/prepare-native-deko3d-deps.sh
 
       - name: Enforce local-only product inputs and outputs
@@ -63,7 +71,8 @@ jobs:
           grep -Fxq '/local-product/' .gitignore
           grep -Fxq '/.deps/' .gitignore
           grep -Fq 'local-product/Assets' scripts/prepare-local-native-deko3d-product.sh
-          grep -Fq '.deps/native-deko3d/driftdroid' scripts/prepare-local-native-deko3d-product.sh
+          grep -Fq 'MKW_DEKO3D_DEPS_DIR:-$ROOT_DIR/.deps/native-deko3d' scripts/prepare-local-native-deko3d-product.sh
+          grep -Fq 'MKW_DEKO3D_WORK_DIR:-$DEPS_DIR/driftdroid' scripts/prepare-local-native-deko3d-product.sh
           grep -Fq 'MKW_SKIP_DEKO3D_DEPS' scripts/build-local-native-deko3d.sh
           grep -Fq 'AURORA_SWITCH_DEKO3D_DEBUG:-OFF' scripts/build-local-native-deko3d.sh
           grep -Fq -- '-DMKW_SWITCH_SECTION_ORDERING=ON' scripts/build-local-native-deko3d.sh
@@ -110,6 +119,8 @@ jobs:
           grep -Fq 'dawn_switch_portability_file=src/tint/utils/text_generator/text_generator.cc' \
             .deps/native-deko3d/native-deko3d-toolchain.receipt
           grep -Fq 'dawn_switch_patcher_sha256=' \
+            .deps/native-deko3d/native-deko3d-toolchain.receipt
+          grep -Fq 'dawn_switch_sleep_file=src/dawn/utils/SystemUtils.cpp' \
             .deps/native-deko3d/native-deko3d-toolchain.receipt
           sha256sum \
             .deps/native-deko3d/uam/build-switch/libuam.a \

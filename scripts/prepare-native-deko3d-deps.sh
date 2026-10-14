@@ -25,6 +25,7 @@ readonly AURORA_ABSEIL_PATCH="$REF_DIR/aurora-main/cmake/patches/abseil-nintendo
 readonly DAWN_ABSEIL_PATCHER="$ROOT_DIR/scripts/patch-dawn-abseil-switch.py"
 readonly DAWN_SWITCH_PATCHER="$ROOT_DIR/scripts/patch-dawn-switch.py"
 readonly DAWN_SWITCH_PORTABILITY_FILE="src/tint/utils/text_generator/text_generator.cc"
+readonly DAWN_SWITCH_SLEEP_FILE="src/dawn/utils/SystemUtils.cpp"
 readonly DAWN_EXCLUDE_EGL="third_party/EGL-Registry/src"
 readonly DAWN_EXCLUDE_ABSEIL="third_party/abseil-cpp"
 
@@ -38,6 +39,53 @@ need() {
 for tool in git cmake ninja meson python3 bison flex sha256sum; do
     need "$tool"
 done
+
+# Resolve aliases before checkout/reset cleanup. Source and build overrides
+# must remain separate from the public checkout, game inputs and products.
+python3 - "$ROOT_DIR" "$REF_DIR" "$DEPS_DIR" "$DAWN_DIR" "$UAM_DIR" \
+    "$DAWN_BUILD_DIR" "$UAM_BUILD_DIR" \
+    "${MKW_LOCAL_ASSET_DIR:-$ROOT_DIR/local-product/Assets}" \
+    "${MKW_DEKO3D_WORK_DIR:-$DEPS_DIR/driftdroid}" \
+    "${MKW_DEKO3D_OUTPUT_DIR:-$ROOT_DIR/local-product/native-deko3d}" <<'PY'
+from pathlib import Path
+import subprocess
+import sys
+
+root, reference, deps, dawn, uam, dawn_build, uam_build, assets, work, output = (
+    Path(p).resolve() for p in sys.argv[1:]
+)
+targets = (dawn, uam, dawn_build, uam_build)
+protected = tuple(path.resolve() for path in (
+    reference, root / "third_party/WiiCompiled", assets, work, output,
+    root / "game", root / "game-data", root / "generated-game",
+    root / "assets-local",
+))
+for target in targets:
+    for path in (root, deps, *protected):
+        if target == path or target in path.parents:
+            raise SystemExit(f"error: dependency cleanup would remove protected path: {path}")
+    for path in protected:
+        if path in target.parents:
+            raise SystemExit(f"error: dependency directory overlaps protected path: {path}")
+for index, left in enumerate(targets):
+    for right in targets[index + 1:]:
+        # libuam deliberately keeps its Meson build in its source checkout.
+        if left == uam and right == uam_build and left in right.parents:
+            continue
+        if left == right or left in right.parents or right in left.parents:
+            raise SystemExit(f"error: dependency source/build directories overlap: {left}, {right}")
+for path in (deps, *targets):
+    if path == root or path in root.parents:
+        raise SystemExit(f"error: dependency directory contains the repository: {path}")
+    if root in path.parents:
+        ignored = subprocess.run(["git", "-C", str(root), "check-ignore", "-q", str(path)])
+        if ignored.returncode != 0:
+            raise SystemExit(f"error: dependency directory inside the repository must be Git-ignored: {path}")
+for path in (dawn, uam):
+    if path.exists() and not (path / ".git").exists():
+        if not path.is_dir() or any(path.iterdir()):
+            raise SystemExit(f"error: refusing to replace an existing non-checkout dependency path: {path}")
+PY
 
 python3 - <<'PY'
 import mako
@@ -149,7 +197,7 @@ assert_dawn_abseil_switch_changes() {
 }
 
 assert_only_dawn_patch_changes() {
-    local changed path allowed abseil_seen=0 switch_portability_seen=0
+    local changed path allowed abseil_seen=0 switch_portability_seen=0 switch_sleep_seen=0
     changed="$( { git -C "$DAWN_DIR" diff --name-only HEAD; git -C "$DAWN_DIR" ls-files --others --exclude-standard; } | sort -u)"
     while IFS= read -r path; do
         [[ -z "$path" ]] && continue
@@ -165,6 +213,9 @@ assert_only_dawn_patch_changes() {
         if [[ "$path" == "$DAWN_SWITCH_PORTABILITY_FILE" ]]; then
             allowed=1
             switch_portability_seen=1
+        elif [[ "$path" == "$DAWN_SWITCH_SLEEP_FILE" ]]; then
+            allowed=1
+            switch_sleep_seen=1
         elif grep -Eq "^(--- a/|\+\+\+ b/)${path//./\.}$" "$DAWN_PATCH"; then
             allowed=1
         fi
@@ -180,6 +231,10 @@ assert_only_dawn_patch_changes() {
     fi
     if ((switch_portability_seen == 0)); then
         echo "error: expected audited Dawn/Tint libnx portability delta is missing" >&2
+        exit 4
+    fi
+    if ((switch_sleep_seen == 0)); then
+        echo "error: expected audited Dawn native libnx sleep delta is missing" >&2
         exit 4
     fi
     assert_dawn_abseil_switch_changes
@@ -258,7 +313,9 @@ fi
 # Horizon thread handles for GetTID, the no-signals pthread path for thread
 # identity, disabling glibc-style ELF dynamic-linker introspection, and using
 # cctz's existing newlib _timezone/tzname fallback on Switch. Pinned Tint also
-# needs one audited strict-C++20 fallback for newlib's hidden isascii extension.
+# needs an audited strict-C++20 fallback for newlib's hidden isascii extension.
+# Dawn also needs its hidden POSIX setenv/unsetenv declarations and a native
+# Horizon sleep path because strict C++20 hides newlib's usleep declaration.
 apply_dawn_patch
 python3 "$DAWN_ABSEIL_PATCHER" "$DAWN_DIR/third_party/abseil-cpp"
 python3 "$DAWN_SWITCH_PATCHER" "$DAWN_DIR"
@@ -327,6 +384,7 @@ dawn_abseil_diff="$(git -C "$DAWN_DIR/third_party/abseil-cpp" diff HEAD --binary
     echo "dawn_patch_sha256=$(sha256sum "$DAWN_PATCH" | awk '{print $1}')"
     echo "dawn_patch_excluded_gitlinks=$DAWN_EXCLUDE_EGL,$DAWN_EXCLUDE_ABSEIL"
     echo "dawn_switch_portability_file=$DAWN_SWITCH_PORTABILITY_FILE"
+    echo "dawn_switch_sleep_file=$DAWN_SWITCH_SLEEP_FILE"
     echo "dawn_switch_patcher_sha256=$(sha256sum "$DAWN_SWITCH_PATCHER" | awk '{print $1}')"
     echo "dawn_worktree_diff_sha256=$dawn_diff"
     echo "dawn_archive_sha256=$(sha256sum "$DAWN_LIB" | awk '{print $1}')"

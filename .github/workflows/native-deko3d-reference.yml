@@ -123,6 +123,8 @@ jobs:
             .deps/native-deko3d/native-deko3d-toolchain.receipt
           grep -Fq 'dawn_switch_sleep_file=src/dawn/utils/SystemUtils.cpp' \
             .deps/native-deko3d/native-deko3d-toolchain.receipt
+          grep -Fq 'dawn_switch_message_file=src/dawn/native/utils/WGPUHelpers.cpp' \
+            .deps/native-deko3d/native-deko3d-toolchain.receipt
           grep -Fxq 'dawn_tint_build_glsl_writer=ON' \
             .deps/native-deko3d/native-deko3d-toolchain.receipt
           grep -Fxq 'dawn_tint_build_glsl_validator=OFF' \

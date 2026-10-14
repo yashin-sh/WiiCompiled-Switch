@@ -94,7 +94,22 @@ UAM_SWITCH = """    // Pinned libuam takes caller-owned memory and aligns absolu
     dksh->assign(reinterpret_cast<const char*>(bytes), size);
 """
 
-TARGETS = (TINT_TARGET, SYSTEM_TARGET, SLEEP_TARGET, UAM_TARGET)
+MESSAGE_TARGET = Path("src/dawn/native/utils/WGPUHelpers.cpp")
+MESSAGE_UPSTREAM = "    return std::string_view(in.data, DAWN_UNSAFE_TODO(strnlen(in.data, in.length)));\n"
+MESSAGE_SWITCH = """#if defined(__SWITCH__)
+    // strnlen() is hidden by strict C++20 in newlib. Stop at the first NUL
+    // or the explicit bound; WGPU_STRLEN also works for terminated strings.
+    size_t length = 0;
+    while (length < in.length && DAWN_UNSAFE_TODO(in.data[length]) != '\\0') {
+        ++length;
+    }
+    return std::string_view(in.data, length);
+#else
+    return std::string_view(in.data, DAWN_UNSAFE_TODO(strnlen(in.data, in.length)));
+#endif
+"""
+
+TARGETS = (TINT_TARGET, SYSTEM_TARGET, SLEEP_TARGET, UAM_TARGET, MESSAGE_TARGET)
 
 
 def fail(message: str) -> None:
@@ -175,6 +190,16 @@ def patch_uam(root: Path, check_only: bool) -> bool:
     return include_changed or output_changed
 
 
+def patch_message(root: Path, check_only: bool) -> bool:
+    return patch_exact(
+        root / MESSAGE_TARGET,
+        MESSAGE_UPSTREAM,
+        MESSAGE_SWITCH,
+        "Switch bounded message normalization",
+        check_only,
+    )
+
+
 def base_uam_source(patch: Path) -> str:
     # This newly introduced file is one complete hunk in the pinned patch.
     # Its full contents, rather than a few matching markers, remain audited
@@ -238,6 +263,7 @@ def verify(root: Path) -> None:
     patch_system_utils(root, check_only=True)
     patch_sleep(root, check_only=True)
     patch_uam(root, check_only=True)
+    patch_message(root, check_only=True)
 
 
 def self_test() -> None:
@@ -261,13 +287,20 @@ def self_test() -> None:
                 SLEEP_INCLUDE_UPSTREAM + "#endif\n\n" + SLEEP_UPSTREAM + "#endif\n"
             ),
             UAM_TARGET: UAM_INCLUDE_UPSTREAM + UAM_UPSTREAM,
+            MESSAGE_TARGET: MESSAGE_UPSTREAM,
         }
         for target, source in fixtures.items():
             path = root / target
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(source, encoding="utf-8")
         expect_failure(lambda: verify(root))
-        patchers = (patch_tint, patch_system_utils, patch_sleep, patch_uam)
+        patchers = (
+            patch_tint,
+            patch_system_utils,
+            patch_sleep,
+            patch_uam,
+            patch_message,
+        )
         for patcher in patchers:
             assert patcher(root, check_only=False)
         verify(root)
@@ -407,6 +440,55 @@ def self_test() -> None:
             # Address/undefined sanitizers still cover the adapter's writes.
             env={**os.environ, "ASAN_OPTIONS": "detect_leaks=0"},
         )
+        # Exercise an exact-size allocation without a trailing NUL under ASan,
+        # plus explicit bounds, embedded NULs, zero length and WGPU_STRLEN.
+        (root / "message_test.cpp").write_text(
+            "#include <cassert>\n#include <cstddef>\n#include <limits>\n"
+            "#include <memory>\n#include <string_view>\n"
+            "#define DAWN_UNSAFE_TODO(value) (value)\n"
+            "struct StringView { const char* data; size_t length;\n"
+            "    bool IsUndefined() const {\n"
+            "        return data == nullptr && length == std::numeric_limits<size_t>::max();\n"
+            "    }\n};\n"
+            "std::string_view NormalizeMessageString(StringView in) {\n"
+            "    if (in.IsUndefined()) return {};\n"
+            + MESSAGE_SWITCH
+            + "}\nint main() {\n"
+            "    constexpr size_t sentinel = std::numeric_limits<size_t>::max();\n"
+            "    assert(NormalizeMessageString({nullptr, sentinel}).empty());\n"
+            "    assert(NormalizeMessageString({nullptr, 0}).empty());\n"
+            '    assert(NormalizeMessageString({"abc", 0}).empty());\n'
+            '    assert(NormalizeMessageString({"abc", 2}) == "ab");\n'
+            '    assert(NormalizeMessageString({"abc", sentinel}) == "abc");\n'
+            '    assert(NormalizeMessageString({"", sentinel}).empty());\n'
+            "    const char embedded[] = {'a', '\\0', 'b'};\n"
+            '    assert(NormalizeMessageString({embedded, 3}) == "a");\n'
+            "    auto bounded = std::make_unique<char[]>(1);\n"
+            "    bounded[0] = 'x';\n"
+            '    assert(NormalizeMessageString({bounded.get(), 1}) == "x");\n'
+            "}\n",
+            encoding="utf-8",
+        )
+        subprocess.run(
+            [
+                compiler,
+                "-std=c++20",
+                "-Wall",
+                "-Wextra",
+                "-Werror",
+                "-D__SWITCH__",
+                "-fsanitize=address,undefined",
+                str(root / "message_test.cpp"),
+                "-o",
+                str(executable),
+            ],
+            check=True,
+        )
+        subprocess.run(
+            [str(executable)],
+            check=True,
+            env={**os.environ, "ASAN_OPTIONS": "detect_leaks=0"},
+        )
     print("Dawn/Tint Switch portability self-test OK")
 
 
@@ -446,6 +528,7 @@ def main() -> None:
         patch_system_utils(root, check_only=False),
         patch_sleep(root, check_only=False),
         patch_uam(root, check_only=False),
+        patch_message(root, check_only=False),
     ]
     verify(root)
     status = "applied" if any(changed) else "already present"

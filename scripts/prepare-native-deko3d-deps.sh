@@ -26,6 +26,7 @@ readonly DAWN_ABSEIL_PATCHER="$ROOT_DIR/scripts/patch-dawn-abseil-switch.py"
 readonly DAWN_SWITCH_PATCHER="$ROOT_DIR/scripts/patch-dawn-switch.py"
 readonly DAWN_SWITCH_PORTABILITY_FILE="src/tint/utils/text_generator/text_generator.cc"
 readonly DAWN_SWITCH_SLEEP_FILE="src/dawn/utils/SystemUtils.cpp"
+readonly DAWN_SWITCH_MESSAGE_FILE="src/dawn/native/utils/WGPUHelpers.cpp"
 readonly DAWN_EXCLUDE_EGL="third_party/EGL-Registry/src"
 readonly DAWN_EXCLUDE_ABSEIL="third_party/abseil-cpp"
 
@@ -197,7 +198,7 @@ assert_dawn_abseil_switch_changes() {
 }
 
 assert_only_dawn_patch_changes() {
-    local changed path allowed abseil_seen=0 switch_portability_seen=0 switch_sleep_seen=0
+    local changed path allowed abseil_seen=0 switch_portability_seen=0 switch_sleep_seen=0 switch_message_seen=0
     changed="$( { git -C "$DAWN_DIR" diff --name-only HEAD; git -C "$DAWN_DIR" ls-files --others --exclude-standard; } | sort -u)"
     while IFS= read -r path; do
         [[ -z "$path" ]] && continue
@@ -216,6 +217,9 @@ assert_only_dawn_patch_changes() {
         elif [[ "$path" == "$DAWN_SWITCH_SLEEP_FILE" ]]; then
             allowed=1
             switch_sleep_seen=1
+        elif [[ "$path" == "$DAWN_SWITCH_MESSAGE_FILE" ]]; then
+            allowed=1
+            switch_message_seen=1
         elif grep -Eq "^(--- a/|\+\+\+ b/)${path//./\.}$" "$DAWN_PATCH"; then
             allowed=1
         fi
@@ -235,6 +239,10 @@ assert_only_dawn_patch_changes() {
     fi
     if ((switch_sleep_seen == 0)); then
         echo "error: expected audited Dawn native libnx sleep delta is missing" >&2
+        exit 4
+    fi
+    if ((switch_message_seen == 0)); then
+        echo "error: expected audited Dawn bounded message normalization delta is missing" >&2
         exit 4
     fi
     assert_dawn_abseil_switch_changes
@@ -431,6 +439,7 @@ dawn_abseil_diff="$(git -C "$DAWN_DIR/third_party/abseil-cpp" diff HEAD --binary
     echo "dawn_patch_excluded_gitlinks=$DAWN_EXCLUDE_EGL,$DAWN_EXCLUDE_ABSEIL"
     echo "dawn_switch_portability_file=$DAWN_SWITCH_PORTABILITY_FILE"
     echo "dawn_switch_sleep_file=$DAWN_SWITCH_SLEEP_FILE"
+    echo "dawn_switch_message_file=$DAWN_SWITCH_MESSAGE_FILE"
     echo "dawn_switch_patcher_sha256=$(sha256sum "$DAWN_SWITCH_PATCHER" | awk '{print $1}')"
     echo "dawn_worktree_diff_sha256=$dawn_diff"
     echo "dawn_archive_sha256=$(sha256sum "$DAWN_LIB" | awk '{print $1}')"

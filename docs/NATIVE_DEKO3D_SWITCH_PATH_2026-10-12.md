@@ -39,10 +39,11 @@ including actual Tint cache values and source/patch/archive hashes.
 | Private PAL translation and complete rendered product build | Not performed here |
 | NRO size/SHA attribution, boot/menu and races on Switch | Not performed here |
 
-PR #386 remains a draft. [AGENTS.md](../AGENTS.md) requires the separate private
-rendered-build gate for renderer changes before merge. A successful public library
-build does not satisfy that requirement. The earlier private builds and hardware
-receipts for NVK candidates cannot be transferred to this Deko3D candidate.
+The user clarified on 2026-10-14 that private builds are not a merge prerequisite.
+[AGENTS.md](../AGENTS.md) requires all published final-HEAD checks to succeed before
+merge. Private builds and hardware receipts establish product readiness separately;
+merging this path does not validate its console behavior. Earlier NVK private-build
+and hardware receipts cannot be transferred to this Deko3D candidate.
 Documentation-only follow-ups must validate their own exact HEAD; the successful
 source commit above is a dated result, not a claim about future commits.
 
@@ -157,8 +158,8 @@ The optimized path must not weaken this repository's validation discipline:
   for diagnosing GPU validation failures;
 - capture/discovery/debug instrumentation stays opt-in and must not be used for release FPS
   measurements;
-- every backend change still needs the private rendered build plus all published exact-HEAD
-  checks before merge;
+- every published final-HEAD check must succeed before merge; private rendered builds
+  and hardware trials establish readiness separately and do not block merge;
 - real hardware evidence must attribute the exact NRO by size and SHA-256;
 - no FPS or playability claim is accepted until measured on this repository's exact candidate.
 

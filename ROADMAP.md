@@ -3,8 +3,9 @@
 ## Current checkpoint — 2026-10-14
 
 The [native Deko3D candidate](docs/NATIVE_DEKO3D_SWITCH_PATH_2026-10-12.md) passes
-its public dependency build and all ten source-commit checks. PR #386 is still a
-draft because its private rendered-build gate is pending.
+its public dependency build and all ten source-commit checks. Merge eligibility
+depends on the complete final-HEAD CI rollup; private builds do not block merge
+under the user's 2026-10-14 clarification.
 
 Next required work is the private PAL translation/product build, exact NRO
 size/SHA attribution, boot/menu verification, a stock-clock Time Trial and a

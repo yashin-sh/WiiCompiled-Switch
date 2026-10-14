@@ -39,12 +39,19 @@ The aggregate job omits only its own currently running check to avoid waiting on
 itself. The merge command includes that check and re-reads the HEAD and all
 contexts immediately before requesting the merge.
 
+## User clarification — 2026-10-14
+
+Private rendered builds are not a prerequisite for merging into `main`. The
+merge condition is the complete successful final-HEAD rollup and the existing
+branch protection rules. Private game builds and attributable console measurements
+remain validation evidence for readiness, hardware behavior and FPS claims.
+
 The eight required Actions checks are `lint`, `gx-contracts`, `nro`,
 `synthetic-fast-track`, `synthetic-bootstrap-prelude`, `synthetic-sequence`,
 `synthetic-replay` and `all-checks-green`. Server-side protection on `main` requires
 all eight, requires an up-to-date branch and applies to administrators. The CLI
-uses `--match-head-commit` and does not bypass protection. Renderer changes still
-need their separate private rendered build before this command is used:
+uses `--match-head-commit` and does not bypass protection. A private rendered
+build is not required before this merge command is used:
 
 ```text
 python3 scripts/github_ci_gate.py --pr <number> --wait --merge --proof /tmp/ci-proof.json
@@ -70,5 +77,6 @@ contracts and artifact checks remain required.
 explains the public Docker Hub cache and its availability limits. Explicitly
 pinning this image keeps CI fail-closed if the cache loses that digest; updating
 the SDK requires a new upstream identity check and complete CI validation.
-The separate private rendered gate still uses its existing offline immutable
-image and cannot be replaced by a successful public container job.
+Private rendered-build validation still uses its existing offline immutable
+image and cannot be claimed from a successful public container job. It is separate
+readiness evidence, not a merge prerequisite.

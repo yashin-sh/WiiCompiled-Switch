@@ -29,6 +29,13 @@ public CI does not build the private RMCP01 rendered target, and a dispatch
 counter alone does not prove that a native bridge executed successfully and
 returned.
 
+## Merge and readiness — user clarification, 2026-10-14
+
+Private rendered builds are not a prerequisite for merging into `main`. All
+published checks on the exact final PR HEAD must succeed before merging. The
+private-build and real-Switch stages below validate readiness and hardware claims
+separately; their absence must not be treated as a merge blocker.
+
 ## Validation ladder
 
 Every blocker-driven change should pass these stages in order:
@@ -77,7 +84,7 @@ Every blocker-driven change should pass these stages in order:
      Nintendo-data-free and exists specifically to catch rendered-only C++
      errors (header collisions, ambiguous overloads, missing declarations,
      signature drift) before merge.
-5. **Private rendered build gate**
+5. **Private rendered-build readiness validation**
    - build `scripts/build-local-rendered-fast-track.sh` successfully from the
      exact candidate revision, or build the same rendered/Discovery CMake
      target directly in the validated prepared tree, recording dependency
@@ -331,7 +338,8 @@ separate host/static evidence and were not exercised by that console run.
 GitHub branch protection on `main` requires all eight Actions checks, a branch
 up to date with `main`, and enforcement for administrators. The aggregate gate
 checks every visible context on the commit, including additional checks. The
-private rendered-build gate remains required for renderer changes. See the
+private rendered build validates readiness separately and does not block merge,
+per the user's 2026-10-14 clarification. See the
 [merge-policy correction and audit](CI_MERGE_POLICY_2026-10-09.md).
 
 

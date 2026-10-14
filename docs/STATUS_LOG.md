@@ -11,7 +11,9 @@ Preparation/reuse guards preserve the local inputs and verify dependency/transla
 
 This is a public library/source checkpoint. No private translated Deko3D product,
 exact NRO, Switch launch, menu or race result is attributed to this commit.
-The private rendered-build gate still blocks merge; PR #386 remains a draft.
+The user clarified on 2026-10-14 that private rendered builds do not block merge.
+PR #386 may merge after every published check on its final HEAD succeeds; private
+product and hardware validation remain pending and are not claimed by that merge.
 See the [native path guide](NATIVE_DEKO3D_SWITCH_PATH_2026-10-12.md).
 
 ## Earlier NVK evidence

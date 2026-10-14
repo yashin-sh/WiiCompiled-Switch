@@ -17,8 +17,10 @@ configuration and provenance. Documentation-only follow-ups must pass their own 
 | Existing Vulkan/NVK diagnostic path | Earlier Switch boot pixels, translated startup and desktop FIFO replay | Later rendering, complete menu/race behavior and performance validation |
 
 No playable WiiCompiled-Switch Deko3D NRO, race FPS or completed hardware gate is claimed.
-PR #386 remains a draft until its private rendered-build requirement is satisfied;
-public CI success alone does not authorize its merge. The NVK diagnostic path remains available.
+The user clarified on 2026-10-14 that private builds do not block merging into
+`main`: every published check on the final PR HEAD must be completed and successful.
+Private product builds and Switch measurements remain separate readiness evidence.
+The NVK diagnostic path remains available.
 
 To prepare the private Deko3D candidate with your own PAL `main.dol` and `StaticR.rel`
 in `local-product/Assets`, follow the prerequisites and receipts in the
@@ -101,6 +103,6 @@ The public output is `WiiCompiled-Switch.nro`; the local rendered output is `Wii
 
 ## Public source and CI
 
-Provide your own legally obtained game dump locally. Keep game data, generated translations, private NROs and raw captures out of Git and public CI. Public CI validates Nintendo-data-free code and probes; game-bound renderer changes also require a private rendered build and attributable hardware evidence. Every published PR check must be green before merging; `main` enforces eight required checks. See [the merge policy](docs/CI_MERGE_POLICY_2026-10-09.md), [validation policy](docs/FAST_TRACK_VALIDATION_POLICY.md) and [legal policy](LEGAL.md). WiiCompiled and derivative code are GPL-3.0 unless stated otherwise.
+Provide your own legally obtained game dump locally. Keep game data, generated translations, private NROs and raw captures out of Git and public CI. Public CI validates Nintendo-data-free code and probes. Every published PR check must be green before merging; private builds and attributable hardware evidence validate product readiness and playability separately and do not block merge; `main` enforces eight required checks. See [the merge policy](docs/CI_MERGE_POLICY_2026-10-09.md), [validation policy](docs/FAST_TRACK_VALIDATION_POLICY.md) and [legal policy](LEGAL.md). WiiCompiled and derivative code are GPL-3.0 unless stated otherwise.
 
 [Roadmap](ROADMAP.md) · [Documentation](docs/README.md) · [Report terminology](docs/REPORT_TERMS.md) · [Build and diagnostics](docs/BUILD.md) · [Desktop replay prototype](docs/DESKTOP_GX_REPLAY.md) · [Status history](docs/STATUS_LOG.md)

@@ -37,7 +37,7 @@ FRAME_READ_GUARD = """        // A corrupt frame chain must not fault again insi
         MemoryInfo frameMemory{};
         u32 framePageInfo = 0;
         if (R_FAILED(svcQueryMemory(&frameMemory, &framePageInfo, fp)) ||
-            (frameMemory.perm & MemPerm_Read) == 0 || fp < frameMemory.addr ||
+            (frameMemory.perm & Perm_R) == 0 || fp < frameMemory.addr ||
             frameMemory.size < 2 * sizeof(u64) ||
             fp - frameMemory.addr > frameMemory.size - 2 * sizeof(u64)) {
             break;

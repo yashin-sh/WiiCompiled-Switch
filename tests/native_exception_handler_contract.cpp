@@ -10,7 +10,7 @@
 using u8 = uint8_t;
 using u32 = uint32_t;
 using u64 = uint64_t;
-enum { MemPerm_Read = 1 };
+enum { Perm_R = 1 };
 struct MemoryInfo {
     u64 addr, size;
     u32 perm;
@@ -26,7 +26,7 @@ struct ThreadExceptionDump {
 #define R_FAILED(result) ((result) != 0)
 std::vector<const char*> lines;
 u64 readableBegin = 0, readableSize = 0;
-u32 readablePermission = MemPerm_Read;
+u32 readablePermission = Perm_R;
 int queryResult = 0, queries = 0;
 int svcQueryMemory(MemoryInfo* info, u32* pageInfo, u64) {
     ++queries;
@@ -89,7 +89,7 @@ int main() {
     queryResult = 0;
     readablePermission = 0;
     Run(0x1000, 0, 1); // Unreadable region.
-    readablePermission = MemPerm_Read;
+    readablePermission = Perm_R;
     Run(readableBegin - 16, 0, 1);            // Before the queried region.
     Run(readableBegin + sizeof(chain), 0, 1); // End of the queried region.
     readableSize = 8;

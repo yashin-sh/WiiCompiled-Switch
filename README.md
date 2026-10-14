@@ -31,6 +31,9 @@ same full private build and verified SD replacement; its console trial is pendin
 Candidate `4792ed9` adds pass-boundary GPU ordering/cache visibility and supersedes
 it after a full private rebuild and verified SD replacement. No fresh console run
 has been observed; the character-selection crash remains unvalidated after repair.
+The latest candidate `c2d6785` also orders direct EFB texture/RAM transfers after
+their GPU producers. Its full private rebuild and verified SD replacement pass;
+corrected character-selection and race execution still require a new Switch trial.
 The user clarified on 2026-10-14 that private builds do not block merging into
 `main`: every published check on the final PR HEAD must be completed and successful.
 Private product builds and Switch measurements remain separate readiness evidence.

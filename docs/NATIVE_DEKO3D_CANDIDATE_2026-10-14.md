@@ -250,7 +250,7 @@ has been observed; character-selection correctness, the initial fault if it
 persists, complete races and performance remain unvalidated.
 
 ```text
-current source: 4792ed92b09fa18d0bbc12a06d64ce0dd63eb8c8
+pass-sync source: 4792ed92b09fa18d0bbc12a06d64ce0dd63eb8c8
 NRO bytes:      74444944
 NRO SHA-256:    166e1336d5321f0186dc7898e06a3c5de09149b6e7e21ac75ea03a103beae055
 SD path:        sdmc:/switch/WiiCompiled-Switch-native-deko3d-4792ed9.nro
@@ -280,3 +280,21 @@ remain the only accepted cache migration inputs.
 These CPU ordering contracts do not establish physical GPU behavior, the cause
 of character-selection failure or performance. Private rebuild/deployment and
 fresh console validation of this change are tracked separately.
+
+The full private native rebuild passes NRO/ELF/packaging/source/dependency
+validation. Candidate `c2d6785` replaces `4792ed9` on SD at
+2026-10-14 22:57:21 UTC (00:57:21 CEST on October 15). Complete new-NRO readback
+matches its recorded size/SHA-256 before the old NRO is backed up, checked against
+its recorded metadata and removed. Independent hashing and a fresh SD inventory
+verify the result; configuration and the extraction marker remain byte-identical.
+The previous NRO and exact ELF are retained locally. Other applications and
+game/NAND data are preserved. This candidate has not been observed running the
+game on Switch; the character-selection failure and complete races remain to be
+validated. Published checks are tracked separately on the final PR HEAD.
+
+```text
+current source: c2d678569067ca8efe4ac0ceefe677a868dc8c91
+NRO bytes:      74444944
+NRO SHA-256:    3daafd3ab5f4c9de7ba5b8b139e3f4bf221ba27591af8c7d1a85d489c40ada40
+SD path:        sdmc:/switch/WiiCompiled-Switch-native-deko3d-c2d6785.nro
+```

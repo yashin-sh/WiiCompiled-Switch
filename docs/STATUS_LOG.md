@@ -1,5 +1,26 @@
 # Status log
 
+## 2026-10-15 — EFB image transfers ordered after GPU producers
+
+Aurora directly copies EFB images to textures and RAM buffers after render work.
+The original Deko3D texture-transfer cases can race those producers or read data
+that remains dirty in cache. Full L2 barriers now precede both transfer layer
+loops after resource initialization. The complete production command regressions
+reproduce the old race and pass after repair, including arrays/3D, origins,
+padded readback rows/images, whole/partial copies, zero sizes and failures.
+Existing runtime regressions and eight build/reuse contracts also pass.
+
+Candidate `c2d6785` passes the full native rebuild and artifact/source/dependency
+validation. Its 74,444,944-byte NRO has SHA-256
+`3daafd3ab5f4c9de7ba5b8b139e3f4bf221ba27591af8c7d1a85d489c40ada40`.
+Complete SD readback, verified older-NRO backup/removal, independent receipt
+checks and a fresh final inventory pass at 00:57:21 CEST. The previous `4792ed9`
+NRO and exact ELF remain retained; configuration, applications and game/NAND
+data are preserved. No new native run is available after the original failure;
+corrected character selection, races and FPS remain unvalidated. PR #387 tracks
+final exact-HEAD CI. See the
+[native candidate report](NATIVE_DEKO3D_CANDIDATE_2026-10-14.md).
+
 ## 2026-10-15 — GPU pass visibility repaired; latest native NRO verified on SD
 
 The original Deko3D recorder starts consecutive render/compute passes without

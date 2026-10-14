@@ -23,6 +23,8 @@ Candidate `c9f7ff3` subsequently replaces it with the GPU-produced depth-buffer
 copy repair, full product validation and verified SD cleanup.
 Candidate `4792ed9` then adds explicit render/compute pass visibility, passing
 production-case regressions, full private rebuild and verified SD replacement.
+Candidate `c2d6785` adds direct EFB transfer ordering after GPU producers, with
+passing production-case regressions, native rebuild and verified SD replacement.
 No fresh native run is available yet; validate this latest candidate.
 Complete a stock-clock Time Trial and a 12-kart race only after menu correctness.
 Compare against NVK and consider PGO only after correctness.

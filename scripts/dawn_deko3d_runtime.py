@@ -118,6 +118,12 @@ BUFFER_COPY_NEW = """                if (source->GetUsage() ==
                                     DkInvalidateFlags_Shader | DkInvalidateFlags_L2Cache);
                 }
 """
+PASS_SYNC = """                // Prior pass/copy writes must be visible before this pass reads them.
+                // Deko3D requires explicit ordering and cache invalidation within a list.
+                dkCmdBufBarrier(cmdBuf, DkBarrier_Full,
+                                DkInvalidateFlags_Image | DkInvalidateFlags_Shader |
+                                    DkInvalidateFlags_L2Cache);
+"""
 
 
 def replace_once(text, before, after):
@@ -141,7 +147,7 @@ def base_source(patch, target):
     return "".join(line[1:] + "\n" for line in lines)
 
 
-def changes(patch=BASE_PATCH, gpu_buffer_copy=True):
+def changes(patch=BASE_PATCH, gpu_buffer_copy=True, pass_sync=True):
     originals = {target: base_source(patch, target) for target in TARGETS}
     fixed = dict(originals)
     cpp, header, commands = TARGETS
@@ -203,15 +209,24 @@ def changes(patch=BASE_PATCH, gpu_buffer_copy=True):
         fixed[commands] = replace_once(
             fixed[commands], BUFFER_COPY_OLD, BUFFER_COPY_NEW
         )
+    if pass_sync:
+        for call in (
+            "                DAWN_TRY(RecordComputePass(cmdBuf));\n",
+            "                DAWN_TRY(RecordRenderPass(cmdBuf, cmd, nextRenderPassNumber));\n",
+        ):
+            fixed[commands] = replace_once(fixed[commands], call, PASS_SYNC + call)
     return {target: (originals[target], fixed[target]) for target in TARGETS}
 
 
 def verify_sources(root, patch=BASE_PATCH, repaired_only=False):
-    previous = changes(patch, gpu_buffer_copy=False)
+    previous = changes(patch, gpu_buffer_copy=False, pass_sync=False)
+    previous_copy = changes(patch, pass_sync=False)
     for target, (original, fixed) in changes(patch).items():
         actual = (root / target).read_text()
         if actual not in (
-            (fixed,) if repaired_only else (original, previous[target][1], fixed)
+            (fixed,)
+            if repaired_only
+            else (original, previous[target][1], previous_copy[target][1], fixed)
         ):
             raise ValueError(f"unattributed Deko3D runtime source: {target}")
 
@@ -251,11 +266,15 @@ def self_test():
         apply(root)
         apply(root)
         apply(root, check_only=True)
-        # Upgrade only the complete previously audited runtime variant.
-        for target, (_, previous) in changes(gpu_buffer_copy=False).items():
-            (root / target).write_text(previous)
-        apply(root)
-        apply(root, check_only=True)
+        # Upgrade only complete previously audited runtime variants.
+        for previous_delta in (
+            changes(gpu_buffer_copy=False, pass_sync=False),
+            changes(pass_sync=False),
+        ):
+            for target, (_, previous) in previous_delta.items():
+                (root / target).write_text(previous)
+            apply(root)
+            apply(root, check_only=True)
         target = root / TARGETS[0]
         target.write_text(target.read_text() + "// unauthorized edit\n")
         try:
@@ -366,6 +385,48 @@ def self_test():
         print("Pinned baseline reproduces stale GPU-produced buffer copy")
         (root / "buffer-copy-production.inc").write_text(copy_production)
         subprocess.run(copy_command, check=True)
+        subprocess.run([str(executable)], check=True)
+        pass_cases = commands[
+            commands.index(
+                "            case Command::BeginComputePass: {"
+            ) : commands.index("            case Command::CopyBufferToBuffer: {")
+        ]
+        pass_production = (
+            "MaybeError Recorder::BeginPass(Command type, Device* cmdBuf) {\n"
+            "    switch (type) {\n"
+            + pass_cases
+            + "default: assert(false); }\n    return {};\n}\n"
+        )
+        pass_command = [
+            compiler,
+            "-std=c++20",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-I",
+            str(root),
+            str(repo / "tests/deko3d_pass_sync_contract.cpp"),
+            "-o",
+            str(executable),
+        ]
+        assert pass_production.count(PASS_SYNC) == 2
+        (root / "pass-sync-production.inc").write_text(
+            pass_production.replace(PASS_SYNC, "")
+        )
+        subprocess.run(pass_command, check=True)
+        baseline = subprocess.run(
+            [str(executable)], capture_output=True, text=True, check=False
+        )
+        if (
+            baseline.returncode == 0
+            or "stale sampled render target" not in baseline.stderr
+        ):
+            raise AssertionError(
+                "baseline pass did not reproduce stale cache data: " + baseline.stderr
+            )
+        print("Pinned baseline reproduces stale sampled render target across passes")
+        (root / "pass-sync-production.inc").write_text(pass_production)
+        subprocess.run(pass_command, check=True)
         subprocess.run([str(executable)], check=True)
     print("Deko3D runtime memory/binding contracts OK")
 

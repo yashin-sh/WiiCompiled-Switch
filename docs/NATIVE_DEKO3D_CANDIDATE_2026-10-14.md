@@ -213,3 +213,27 @@ NRO bytes:      74444944
 NRO SHA-256:    2e8514ee667b37df34948335f052129b891f788e676e02919d15557d18082d5c
 SD path:        sdmc:/switch/WiiCompiled-Switch-native-deko3d-c9f7ff3.nro
 ```
+
+## Visibility between GPU passes
+
+The next source audit finds missing pass-boundary synchronization. GX EFB copies
+sample previously rendered images, and compute passes read earlier GPU writes.
+The original recorder starts those passes without ordering preceding work or
+invalidating sampled-image/shader caches. Deko3D's automatic post-submit cache
+invalidation covers queue flushes, rather than consecutive passes within one
+command list. See its [barrier implementation](https://github.com/devkitPro/deko3d/blob/master/source/maxwell/gpu_base.cpp).
+
+The repair inserts a full GPU barrier with image, shader and L2 cache invalidation
+before each render/compute pass, after lazy resource and attachment initialization.
+This conservative ordering may affect performance; no FPS improvement is claimed.
+The complete production pass-begin cases compile into a contract with deferred
+producers and persistent stale cache entries. The original cases return stale
+data; the repaired cases read the producer's image/storage values and include
+attachment initialization before invalidation. Render, compute and initialization
+failure cases pass. The earlier complete-file runtime variants remain the only
+accepted cache migration inputs.
+
+This contract verifies recorded synchronization and visibility under the CPU
+model. It does not reproduce physical Tegra caches or establish the cause of the
+character-selection crash. Private build, deployment and console validation of
+this change are tracked separately below.

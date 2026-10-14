@@ -17,6 +17,7 @@ on:
       - 'tests/test_native_deko3d_build_scripts.py'
       - 'tests/deko3d_runtime_contract.cpp'
       - 'tests/deko3d_buffer_copy_contract.cpp'
+      - 'tests/deko3d_pass_sync_contract.cpp'
       - 'tests/native_exception_handler_contract.cpp'
       - 'docs/NATIVE_DEKO3D_SWITCH_PATH_2026-10-12.md'
   workflow_dispatch:

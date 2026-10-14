@@ -124,6 +124,10 @@ PASS_SYNC = """                // Prior pass/copy writes must be visible before 
                                 DkInvalidateFlags_Image | DkInvalidateFlags_Shader |
                                     DkInvalidateFlags_L2Cache);
 """
+TRANSFER_SYNC = """                // Transfer reads can race earlier render/compute writes in this list.
+                // Finish producers and flush dirty lines before the copy engine reads.
+                dkCmdBufBarrier(cmdBuf, DkBarrier_Full, DkInvalidateFlags_L2Cache);
+"""
 
 
 def replace_once(text, before, after):
@@ -147,7 +151,7 @@ def base_source(patch, target):
     return "".join(line[1:] + "\n" for line in lines)
 
 
-def changes(patch=BASE_PATCH, gpu_buffer_copy=True, pass_sync=True):
+def changes(patch=BASE_PATCH, gpu_buffer_copy=True, pass_sync=True, transfer_sync=True):
     originals = {target: base_source(patch, target) for target in TARGETS}
     fixed = dict(originals)
     cpp, header, commands = TARGETS
@@ -215,18 +219,39 @@ def changes(patch=BASE_PATCH, gpu_buffer_copy=True, pass_sync=True):
             "                DAWN_TRY(RecordRenderPass(cmdBuf, cmd, nextRenderPassNumber));\n",
         ):
             fixed[commands] = replace_once(fixed[commands], call, PASS_SYNC + call)
+    if transfer_sync:
+        before = """                DAWN_TRY(texture->EnsureSubresourceContentInitialized(range));
+
+                const TypedTexelBlockInfo& blockInfo = GetBlockInfo(src);
+"""
+        fixed[commands] = replace_once(
+            fixed[commands],
+            before,
+            before.replace("\n\n", "\n" + TRANSFER_SYNC + "\n", 1),
+        )
+        before = "                const Origin3D srcOrigin = src.origin.ToOrigin3D();\n"
+        fixed[commands] = replace_once(fixed[commands], before, TRANSFER_SYNC + before)
     return {target: (originals[target], fixed[target]) for target in TARGETS}
 
 
 def verify_sources(root, patch=BASE_PATCH, repaired_only=False):
-    previous = changes(patch, gpu_buffer_copy=False, pass_sync=False)
-    previous_copy = changes(patch, pass_sync=False)
+    previous = changes(
+        patch, gpu_buffer_copy=False, pass_sync=False, transfer_sync=False
+    )
+    previous_copy = changes(patch, pass_sync=False, transfer_sync=False)
+    previous_pass = changes(patch, transfer_sync=False)
     for target, (original, fixed) in changes(patch).items():
         actual = (root / target).read_text()
         if actual not in (
             (fixed,)
             if repaired_only
-            else (original, previous[target][1], previous_copy[target][1], fixed)
+            else (
+                original,
+                previous[target][1],
+                previous_copy[target][1],
+                previous_pass[target][1],
+                fixed,
+            )
         ):
             raise ValueError(f"unattributed Deko3D runtime source: {target}")
 
@@ -268,8 +293,9 @@ def self_test():
         apply(root, check_only=True)
         # Upgrade only complete previously audited runtime variants.
         for previous_delta in (
-            changes(gpu_buffer_copy=False, pass_sync=False),
-            changes(pass_sync=False),
+            changes(gpu_buffer_copy=False, pass_sync=False, transfer_sync=False),
+            changes(pass_sync=False, transfer_sync=False),
+            changes(transfer_sync=False),
         ):
             for target, (_, previous) in previous_delta.items():
                 (root / target).write_text(previous)
@@ -427,6 +453,48 @@ def self_test():
         print("Pinned baseline reproduces stale sampled render target across passes")
         (root / "pass-sync-production.inc").write_text(pass_production)
         subprocess.run(pass_command, check=True)
+        subprocess.run([str(executable)], check=True)
+        transfer_cases = commands[
+            commands.index(
+                "            case Command::CopyTextureToBuffer: {"
+            ) : commands.index("            case Command::ClearBuffer: {")
+        ]
+        transfer_production = (
+            "MaybeError Recorder::RecordCommands(Command type, Device* cmdBuf) {\n"
+            "    do { switch (type) {\n"
+            + transfer_cases
+            + "default: assert(false); } } while (false);\n    return {};\n}\n"
+        )
+        transfer_command = [
+            compiler,
+            "-std=c++20",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-I",
+            str(root),
+            str(repo / "tests/deko3d_texture_copy_contract.cpp"),
+            "-o",
+            str(executable),
+        ]
+        assert transfer_production.count(TRANSFER_SYNC) == 2
+        (root / "texture-copy-production.inc").write_text(
+            transfer_production.replace(TRANSFER_SYNC, "")
+        )
+        subprocess.run(transfer_command, check=True)
+        baseline = subprocess.run(
+            [str(executable)], capture_output=True, text=True, check=False
+        )
+        if (
+            baseline.returncode == 0
+            or "transfer raced its GPU producer" not in baseline.stderr
+        ):
+            raise AssertionError(
+                "baseline transfer did not reproduce producer race: " + baseline.stderr
+            )
+        print("Pinned baseline reproduces render/compute -> image transfer race")
+        (root / "texture-copy-production.inc").write_text(transfer_production)
+        subprocess.run(transfer_command, check=True)
         subprocess.run([str(executable)], check=True)
     print("Deko3D runtime memory/binding contracts OK")
 

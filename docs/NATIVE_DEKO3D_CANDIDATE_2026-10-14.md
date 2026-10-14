@@ -255,3 +255,28 @@ NRO bytes:      74444944
 NRO SHA-256:    166e1336d5321f0186dc7898e06a3c5de09149b6e7e21ac75ea03a103beae055
 SD path:        sdmc:/switch/WiiCompiled-Switch-native-deko3d-4792ed9.nro
 ```
+
+## Render/compute producer ordering before texture transfers
+
+The next audit follows Aurora's direct EFB snapshot/resolve copies in
+`gfx/common.cpp` and synchronous/asynchronous RAM copies in `gfx/efb_ram_copy.cpp`.
+Both texture transfer cases in the original Deko3D command recorder can read an
+image before its preceding render/compute writes complete and reach memory.
+Ordering a later sampling pass does not protect the intervening transfer read.
+The [Deko3D primer](https://github.com/devkitPro/deko3d/blob/master/Primer.md)
+requires explicit dependencies; the [transfer implementation](https://github.com/devkitPro/deko3d/blob/master/source/maxwell/gpu_transfer.cpp)
+does not add a producer barrier for image transfers.
+
+Full barriers with L2 flushing/invalidation now precede `CopyTextureToTexture`
+and `CopyTextureToBuffer`, after source/destination initialization and before
+the layer loop. The regression compiles both complete production command cases,
+using a pending render/compute producer with dirty data and a transfer engine
+reading committed memory. The original case reads the previous contents; the
+repaired case reads the completed producer's data. Array layers, 3D slices,
+partial/whole copies, nonzero origins, padded output rows/images, zero extents
+and source/destination initialization failures pass. Complete audited variants
+remain the only accepted cache migration inputs.
+
+These CPU ordering contracts do not establish physical GPU behavior, the cause
+of character-selection failure or performance. Private rebuild/deployment and
+fresh console validation of this change are tracked separately.

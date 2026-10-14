@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
 """Apply audited link/SQLite fixes only to the private pinned product workspace."""
+
 import argparse
 import hashlib
 import json
-from pathlib import Path
 import subprocess
 import tempfile
+from pathlib import Path
 
 REFERENCE_PIN = "8b33d31016a8b8735fe35b4fb633c491d33774c6"
 SQLITE_ORIGINAL = "9512509b1bccb7461f79bea8aad6280ae4699e925fa4804381b71f59e7efb0c5"
 SQLITE_PATCHED = "3a3e6c80851e2336bd083b32234b0ca06027c72b45bcb3f83f58790bdcb89709"
 SQLITE_PATCH = "3497970385f788566aec180f913b2f43d931fc7a3b55d0fcf0e025dc75c2250a"
-SYMBOL_DECLARATIONS = '''// generated/guest_symbol_table.cpp (or the stub when it is absent): the
+SYMBOL_DECLARATIONS = """// generated/guest_symbol_table.cpp (or the stub when it is absent): the
 // project's function-map names, sorted by address, for crash symbolization.
 extern "C" {
 extern const uint32_t kGuestMapSymbolCount;
 extern const uint32_t kGuestMapSymbolAddresses[];
 extern const char* const kGuestMapSymbolNames[];
 }
-'''
+"""
 SQLITE_OLD_COMMAND = "PATCH_COMMAND patch -p1 -N -r - < ${CMAKE_CURRENT_LIST_DIR}/../cmake/patches/sqlite3-nintendo-switch-platform.patch || ${CMAKE_COMMAND} -E true"
 SQLITE_NEW_COMMAND = '''PATCH_COMMAND "${MKW_NATIVE_DEKO3D_PYTHON}" "${MKW_NATIVE_DEKO3D_PRODUCT_PATCHER}"
         --sqlite sqlite3.c --sqlite-patch
@@ -40,48 +41,80 @@ def product_changes(reference):
     name = "runtime/src/system_bridge.cpp"
     original = (reference / name).read_text()
     patched = replace_once(original, SYMBOL_DECLARATIONS + "\n", "")
-    patched = replace_once(patched, "namespace {\n", SYMBOL_DECLARATIONS + "\nnamespace {\n")
+    patched = replace_once(
+        patched, "namespace {\n", SYMBOL_DECLARATIONS + "\nnamespace {\n"
+    )
     changes[name] = (original, patched)
     name = "aurora-main/lib/webgpu/gpu.cpp"
     original = (reference / name).read_text()
     old_guard = "#if defined(__SWITCH__) || (defined(__ANDROID__) && defined(DAWN_ENABLE_BACKEND_OPENGLES))\n"
     new_guard = "#if (defined(__SWITCH__) || defined(__ANDROID__)) && defined(DAWN_ENABLE_BACKEND_OPENGLES)\n"
     patched = original
-    for suffix in ("#include <dawn/native/OpenGLBackend.h>\n", "    // Dawn's GL backend only offers Compatibility-level adapters, and wants an explicit entry\n"):
+    for suffix in (
+        "#include <dawn/native/OpenGLBackend.h>\n",
+        "    // Dawn's GL backend only offers Compatibility-level adapters, and wants an explicit entry\n",
+    ):
         patched = replace_once(patched, old_guard + suffix, new_guard + suffix)
     changes[name] = (original, patched)
     name = "aurora-main/cmake/AuroraDawnProvider.cmake"
     original = (reference / name).read_text()
     switch, rest = original.split("  return()\nendif ()", 1)
-    switch = replace_once(switch, 'set(DAWN_ENABLE_VULKAN OFF CACHE INTERNAL "")',
-                          'set(DAWN_ENABLE_VULKAN OFF CACHE INTERNAL "" FORCE)')
-    switch = replace_once(switch, 'set(DAWN_ENABLE_OPENGLES ON CACHE INTERNAL "")',
-                          'set(DAWN_ENABLE_OPENGLES OFF CACHE INTERNAL "" FORCE)\n  set(DAWN_ENABLE_DEKO3D ON CACHE INTERNAL "" FORCE)')
+    switch = replace_once(
+        switch,
+        'set(DAWN_ENABLE_VULKAN OFF CACHE INTERNAL "")',
+        'set(DAWN_ENABLE_VULKAN OFF CACHE INTERNAL "" FORCE)',
+    )
+    switch = replace_once(
+        switch,
+        'set(DAWN_ENABLE_OPENGLES ON CACHE INTERNAL "")',
+        'set(DAWN_ENABLE_OPENGLES OFF CACHE INTERNAL "" FORCE)\n  set(DAWN_ENABLE_DEKO3D ON CACHE INTERNAL "" FORCE)',
+    )
     changes[name] = (original, switch + "  return()\nendif ()" + rest)
     name = "aurora-main/cmake/aurora_core.cmake"
     original = (reference / name).read_text()
-    changes[name] = (original, replace_once(original,
-        "    if (DAWN_ENABLE_VULKAN)\n",
-        "    if (DAWN_ENABLE_DEKO3D)\n        target_compile_definitions(aurora_core PRIVATE DAWN_ENABLE_BACKEND_DEKO3D)\n    endif ()\n    if (DAWN_ENABLE_VULKAN)\n"))
+    changes[name] = (
+        original,
+        replace_once(
+            original,
+            "    if (DAWN_ENABLE_VULKAN)\n",
+            "    if (DAWN_ENABLE_DEKO3D)\n        target_compile_definitions(aurora_core PRIVATE DAWN_ENABLE_BACKEND_DEKO3D)\n    endif ()\n    if (DAWN_ENABLE_VULKAN)\n",
+        ),
+    )
     name = "aurora-main/lib/aurora.cpp"
     original = (reference / name).read_text()
-    changes[name] = (original, replace_once(original,
-        "#if defined(__SWITCH__) && defined(DAWN_ENABLE_BACKEND_OPENGLES)\n    // Switch's only backend: Dawn's GLES backend on switch-mesa (deko3d comes later for 60fps).\n    BACKEND_OPENGLES,\n#endif\n",
-        "#if defined(__SWITCH__) && defined(DAWN_ENABLE_BACKEND_DEKO3D)\n    // This Switch archive exposes the native Deko3D backend.\n    BACKEND_DEKO3D,\n#endif\n"))
+    changes[name] = (
+        original,
+        replace_once(
+            original,
+            "#if defined(__SWITCH__) && defined(DAWN_ENABLE_BACKEND_OPENGLES)\n    // Switch's only backend: Dawn's GLES backend on switch-mesa (deko3d comes later for 60fps).\n    BACKEND_OPENGLES,\n#endif\n",
+            "#if defined(__SWITCH__) && defined(DAWN_ENABLE_BACKEND_DEKO3D)\n    // This Switch archive exposes the native Deko3D backend.\n    BACKEND_DEKO3D,\n#endif\n",
+        ),
+    )
     name = "aurora-main/extern/CMakeLists.txt"
     original = (reference / name).read_text()
-    changes[name] = (original, replace_once(original, SQLITE_OLD_COMMAND, SQLITE_NEW_COMMAND))
+    changes[name] = (
+        original,
+        replace_once(original, SQLITE_OLD_COMMAND, SQLITE_NEW_COMMAND),
+    )
     return changes
 
 
 def apply_product(workspace, reference, check=False):
     workspace, reference = workspace.resolve(), reference.resolve()
-    if workspace == reference or workspace in reference.parents or reference in workspace.parents:
+    if (
+        workspace == reference
+        or workspace in reference.parents
+        or reference in workspace.parents
+    ):
         raise ValueError("product workspace must be separate from the pinned reference")
-    pin = subprocess.check_output(["git", "-C", str(reference), "rev-parse", "HEAD"], text=True).strip()
+    pin = subprocess.check_output(
+        ["git", "-C", str(reference), "rev-parse", "HEAD"], text=True
+    ).strip()
     if pin != REFERENCE_PIN:
         raise ValueError("product reference pin mismatch")
-    if subprocess.check_output(["git", "-C", str(reference), "status", "--porcelain"], text=True).strip():
+    if subprocess.check_output(
+        ["git", "-C", str(reference), "status", "--porcelain"], text=True
+    ).strip():
         raise ValueError("product reference must be clean")
     changes = product_changes(reference)
     # Validate every file before writing any; reject edits outside the authorized delta.
@@ -94,17 +127,26 @@ def apply_product(workspace, reference, check=False):
             path = workspace / name
             if path.read_text() != patched:
                 path.write_text(patched)
-        receipt = {"reference_commit": pin, "patcher_sha256": digest(Path(__file__).read_bytes()),
-                   "files": {name: {"original_sha256": digest(original.encode()),
-                                     "patched_sha256": digest(patched.encode())}
-                             for name, (original, patched) in changes.items()}}
-        (workspace / ".wcs-native-deko3d-product-patches.json").write_text(json.dumps(receipt, indent=2) + "\n")
+        receipt = {
+            "reference_commit": pin,
+            "patcher_sha256": digest(Path(__file__).read_bytes()),
+            "files": {
+                name: {
+                    "original_sha256": digest(original.encode()),
+                    "patched_sha256": digest(patched.encode()),
+                }
+                for name, (original, patched) in changes.items()
+            },
+        }
+        (workspace / ".wcs-native-deko3d-product-patches.json").write_text(
+            json.dumps(receipt, indent=2) + "\n"
+        )
 
 
 def sqlite_hunks(patch):
     old, new, hunks, active = [], [], [], False
     for line in patch.splitlines(keepends=True):
-        if line.startswith("@@ ") or line.startswith(("--- ", "+++ ")):
+        if line.startswith(("@@ ", "--- ", "+++ ")):
             if active:
                 hunks.append(("".join(old), "".join(new)))
             old, new = [], []
@@ -131,7 +173,9 @@ def apply_sqlite(source, patch, check=False):
     if actual == SQLITE_PATCHED:
         return
     if actual != SQLITE_ORIGINAL or check:
-        raise ValueError("SQLite source is not the attributed original/patched amalgamation")
+        raise ValueError(
+            "SQLite source is not the attributed original/patched amalgamation"
+        )
     # The reference has malformed unified-diff counts. Match every complete literal
     # hunk exactly, without offsets/fuzz, and pin both complete source hashes.
     text = source_bytes.decode()
@@ -151,10 +195,16 @@ def self_test(reference):
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes((reference / name).read_bytes())
         apply_product(work, reference)
-        hashes = {name: digest((work / name).read_bytes()) for name in product_changes(reference)}
+        hashes = {
+            name: digest((work / name).read_bytes())
+            for name in product_changes(reference)
+        }
         apply_product(work, reference)
         apply_product(work, reference, check=True)
-        assert all(digest((work / name).read_bytes()) == value for name, value in hashes.items())
+        assert all(
+            digest((work / name).read_bytes()) == value
+            for name, value in hashes.items()
+        )
         gpu = work / "aurora-main/lib/webgpu/gpu.cpp"
         gpu.write_text(gpu.read_text() + "// unauthorized change\n")
         before = gpu.read_bytes()
@@ -174,39 +224,97 @@ def self_test(reference):
         # Exercise the actual production declaration placement in a unity-style TU.
         bridge = product_changes(reference)["runtime/src/system_bridge.cpp"][1]
         assert bridge.index(SYMBOL_DECLARATIONS) < bridge.index("namespace {\n")
-        floor = bridge[bridge.index("const char* GuestMapSymbolFloor("):bridge.index("std::optional<uint32_t> ReadGuest32NoThrow(")]
-        symbols = '''extern "C" {
+        floor = bridge[
+            bridge.index("const char* GuestMapSymbolFloor(") : bridge.index(
+                "std::optional<uint32_t> ReadGuest32NoThrow("
+            )
+        ]
+        symbols = """extern "C" {
 extern const uint32_t kGuestMapSymbolCount = 2;
 extern const uint32_t kGuestMapSymbolAddresses[] = {0x1000, 0x2000};
 extern const char* const kGuestMapSymbolNames[] = {"first", "second"};
 }
-'''
+"""
         for order in (0, 1):
             source = work / f"symbols-{order}.cpp"
             declarations = SYMBOL_DECLARATIONS + "namespace {\n" + floor + "}\n"
-            source.write_text("#include <cstdint>\n#include <cassert>\n" + (symbols + declarations if order else declarations + symbols) + '''int main() {
+            source.write_text(
+                "#include <cstdint>\n#include <cassert>\n"
+                + (symbols + declarations if order else declarations + symbols)
+                + """int main() {
 uint32_t start = 0;
 assert(GuestMapSymbolFloor(0xfff, &start) == nullptr);
 assert(GuestMapSymbolFloor(0x1000, &start) == kGuestMapSymbolNames[0] && start == 0x1000);
 assert(GuestMapSymbolFloor(0x2001, &start) == kGuestMapSymbolNames[1] && start == 0x2000);
 assert(GuestMapSymbolFloor(0x12000, &start) == nullptr);
 }
-''')
+"""
+            )
             executable = work / f"symbols-{order}"
-            subprocess.run(["g++", "-std=c++20", "-Wall", "-Wextra", "-Werror", str(source), "-o", str(executable)], check=True)
+            subprocess.run(
+                [
+                    "g++",
+                    "-std=c++20",
+                    "-Wall",
+                    "-Wextra",
+                    "-Werror",
+                    str(source),
+                    "-o",
+                    str(executable),
+                ],
+                check=True,
+            )
             subprocess.run([str(executable)], check=True)
         # Compile the production automatic-backend list in the native and Android modes.
         aurora = product_changes(reference)["aurora-main/lib/aurora.cpp"][1]
-        backend_list = aurora[aurora.index("#ifdef AURORA_ENABLE_GX\nconstexpr std::array PreferredBackendOrder{"):aurora.index("bool g_initialFrame = false;")]
+        backend_list = aurora[
+            aurora.index(
+                "#ifdef AURORA_ENABLE_GX\nconstexpr std::array PreferredBackendOrder{"
+            ) : aurora.index("bool g_initialFrame = false;")
+        ]
         for target, flags, expected in (
-            ("switch", ["-D__SWITCH__", "-DDAWN_ENABLE_BACKEND_DEKO3D"], "static_assert(PreferredBackendOrder.size() == 1 && PreferredBackendOrder[0] == BACKEND_DEKO3D);"),
-            ("android", ["-D__ANDROID__", "-DDAWN_ENABLE_BACKEND_VULKAN", "-DDAWN_ENABLE_BACKEND_OPENGLES"], "static_assert(PreferredBackendOrder.size() == 2 && PreferredBackendOrder[0] == BACKEND_VULKAN && PreferredBackendOrder[1] == BACKEND_OPENGLES);"),
+            (
+                "switch",
+                ["-D__SWITCH__", "-DDAWN_ENABLE_BACKEND_DEKO3D"],
+                "static_assert(PreferredBackendOrder.size() == 1 && PreferredBackendOrder[0] == BACKEND_DEKO3D);",
+            ),
+            (
+                "android",
+                [
+                    "-D__ANDROID__",
+                    "-DDAWN_ENABLE_BACKEND_VULKAN",
+                    "-DDAWN_ENABLE_BACKEND_OPENGLES",
+                ],
+                "static_assert(PreferredBackendOrder.size() == 2 && PreferredBackendOrder[0] == BACKEND_VULKAN && PreferredBackendOrder[1] == BACKEND_OPENGLES);",
+            ),
         ):
             source = work / (target + ".cpp")
-            source.write_text("#include <array>\nenum AuroraBackend {BACKEND_WEBGPU, BACKEND_D3D12, BACKEND_D3D11, BACKEND_METAL, BACKEND_VULKAN, BACKEND_OPENGLES, BACKEND_NULL, BACKEND_DEKO3D};\n" + backend_list + expected + "\nint main() {}\n")
-            subprocess.run(["g++", "-std=c++20", "-DAURORA_ENABLE_GX", *flags, str(source), "-o", str(work / target)], check=True)
-        patch = reference / "aurora-main/cmake/patches/sqlite3-nintendo-switch-platform.patch"
-        assert digest(patch.read_bytes()) == SQLITE_PATCH and len(sqlite_hunks(patch.read_text())) == 3
+            source.write_text(
+                "#include <array>\nenum AuroraBackend {BACKEND_WEBGPU, BACKEND_D3D12, BACKEND_D3D11, BACKEND_METAL, BACKEND_VULKAN, BACKEND_OPENGLES, BACKEND_NULL, BACKEND_DEKO3D};\n"
+                + backend_list
+                + expected
+                + "\nint main() {}\n"
+            )
+            subprocess.run(
+                [
+                    "g++",
+                    "-std=c++20",
+                    "-DAURORA_ENABLE_GX",
+                    *flags,
+                    str(source),
+                    "-o",
+                    str(work / target),
+                ],
+                check=True,
+            )
+        patch = (
+            reference
+            / "aurora-main/cmake/patches/sqlite3-nintendo-switch-platform.patch"
+        )
+        assert (
+            digest(patch.read_bytes()) == SQLITE_PATCH
+            and len(sqlite_hunks(patch.read_text())) == 3
+        )
         invalid = work / "sqlite3.c"
         invalid.write_text("unattributed sqlite source\n")
         try:
@@ -215,12 +323,16 @@ assert(GuestMapSymbolFloor(0x12000, &start) == nullptr);
             pass
         else:
             raise AssertionError("unattributed SQLite source accepted")
-    print("Product patch guards, production C-linkage/unity and automatic-backend tests passed")
+    print(
+        "Product patch guards, production C-linkage/unity and automatic-backend tests passed"
+    )
 
 
 def sqlite_self_test(source, reference):
     """Run the actual pinned SQLite VFS against persistent files and injected read errors."""
-    patch = reference / "aurora-main/cmake/patches/sqlite3-nintendo-switch-platform.patch"
+    patch = (
+        reference / "aurora-main/cmake/patches/sqlite3-nintendo-switch-platform.patch"
+    )
     with tempfile.TemporaryDirectory() as directory:
         work = Path(directory)
         copied = work / "sqlite3.c"
@@ -231,7 +343,7 @@ def sqlite_self_test(source, reference):
         apply_sqlite(copied, patch, check=True)
         assert copied.read_bytes() == before
         (work / "sqlite3.h").write_bytes((source.parent / "sqlite3.h").read_bytes())
-        (work / "test.c").write_text(r'''#include "sqlite3.h"
+        (work / "test.c").write_text(r"""#include "sqlite3.h"
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
@@ -278,22 +390,44 @@ int main(void) {
   sqlite3_close(db);
   return 0;
 }
-''')
+""")
         executable = work / "sqlite-test"
         # Poison unsupported function names: any live ownership reference fails the link.
-        subprocess.run(["cc", "-std=c11", "-D_GNU_SOURCE", "-D__SWITCH__",
-                        "-DSQLITE_MAX_MMAP_SIZE=0", "-DSQLITE_OMIT_WAL", "-DSQLITE_OMIT_LOAD_EXTENSION",
-                        '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"', "-Dfchown=MKW_FORBIDDEN_fchown",
-                        "-Dgeteuid=MKW_FORBIDDEN_geteuid", str(copied), str(work / "test.c"),
-                        "-lpthread", "-lm", "-o", str(executable)], check=True)
+        subprocess.run(
+            [
+                "cc",
+                "-std=c11",
+                "-D_GNU_SOURCE",
+                "-D__SWITCH__",
+                "-DSQLITE_MAX_MMAP_SIZE=0",
+                "-DSQLITE_OMIT_WAL",
+                "-DSQLITE_OMIT_LOAD_EXTENSION",
+                '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"',
+                "-Dfchown=MKW_FORBIDDEN_fchown",
+                "-Dgeteuid=MKW_FORBIDDEN_geteuid",
+                str(copied),
+                str(work / "test.c"),
+                "-lpthread",
+                "-lm",
+                "-o",
+                str(executable),
+            ],
+            check=True,
+        )
         subprocess.run([str(executable)], cwd=work, check=True)
-    print("Pinned SQLite persistence, device paths, EOF/EIO and ownership-link tests passed")
+    print(
+        "Pinned SQLite persistence, device paths, EOF/EIO and ownership-link tests passed"
+    )
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("workspace", nargs="?", type=Path)
-    parser.add_argument("--reference", type=Path, default=Path(__file__).resolve().parents[1] / "third_party/DriftDroid")
+    parser.add_argument(
+        "--reference",
+        type=Path,
+        default=Path(__file__).resolve().parents[1] / "third_party/DriftDroid",
+    )
     parser.add_argument("--sqlite", type=Path)
     parser.add_argument("--sqlite-patch", type=Path)
     parser.add_argument("--check", action="store_true")

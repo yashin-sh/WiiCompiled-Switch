@@ -1,5 +1,19 @@
 # Roadmap
 
+## Current checkpoint — 2026-10-14
+
+The [native Deko3D candidate](docs/NATIVE_DEKO3D_SWITCH_PATH_2026-10-12.md) passes
+its public dependency build and all ten source-commit checks. Merge eligibility
+depends on the complete final-HEAD CI rollup; private builds do not block merge
+under the user's 2026-10-14 clarification.
+
+Next required work is the private PAL translation/product build, exact NRO
+size/SHA attribution, boot/menu verification, a stock-clock Time Trial and a
+12-kart race. Compare against NVK and consider PGO only after correctness.
+The earlier NVK frontiers below remain diagnostic evidence for their own candidates.
+
+## Earlier NVK checkpoints
+
 The NANDGetLength candidate passes its private rendered/Discovery gate and all eight exact-HEAD GitHub checks; PR #383 is merged. Complete SD readback and verified older-NRO cleanup pass. Corrected Netloader execution remains pending. See the [candidate receipt](docs/NAND_GET_LENGTH_2026-10-11.md).
 
 

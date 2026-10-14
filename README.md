@@ -1,5 +1,40 @@
 # WiiCompiled-Switch
 
+Experimental Nintendo Switch homebrew port of [WiiCompiled](https://github.com/patchzyy/Wiicompiled): statically recompile a user-owned Mario Kart Wii dump into a native AArch64 `.nro`, without Dolphin at runtime.
+
+## Current checkpoint — 2026-10-14
+
+The experimental native Deko3D build path in [PR #386](https://github.com/yashin-sh/WiiCompiled-Switch/pull/386)
+passes all **10 published checks** on source commit
+[`42aca1c`](https://github.com/yashin-sh/WiiCompiled-Switch/commit/42aca1c1b9d9667185cc9cd1b2d5f5a971419958).
+The [public dependency build](https://github.com/yashin-sh/WiiCompiled-Switch/actions/runs/38574319340)
+produces pinned UAM and Dawn/Deko3D static archives and verifies their symbols,
+configuration and provenance. Documentation-only follow-ups must pass their own exact-HEAD CI.
+
+| Path | Verified here | Still required |
+| --- | --- | --- |
+| Native Deko3D candidate | Public dependency cross-build, source contracts and preparation/reuse tests | Private PAL translation/product build, exact NRO attribution and Switch execution |
+| Existing Vulkan/NVK diagnostic path | Earlier Switch boot pixels, translated startup and desktop FIFO replay | Later rendering, complete menu/race behavior and performance validation |
+
+No playable WiiCompiled-Switch Deko3D NRO, race FPS or completed hardware gate is claimed.
+The user clarified on 2026-10-14 that private builds do not block merging into
+`main`: every published check on the final PR HEAD must be completed and successful.
+Private product builds and Switch measurements remain separate readiness evidence.
+The NVK diagnostic path remains available.
+
+To prepare the private Deko3D candidate with your own PAL `main.dol` and `StaticR.rel`
+in `local-product/Assets`, follow the prerequisites and receipts in the
+[native Deko3D guide](docs/NATIVE_DEKO3D_SWITCH_PATH_2026-10-12.md):
+
+```bash
+bash scripts/build-local-native-deko3d.sh
+```
+
+The console launcher imports your own PAL ISO/WBFS from SD; the NRO does not bundle game contents.
+See [the status log](docs/STATUS_LOG.md) for dated evidence and remaining gates.
+
+## Earlier NVK checkpoints
+
 Selector candidate `4e5087d` passes its exact-source private rendered gate,
 all eight published exact-HEAD checks and verified LAN deployment. Fresh console
 reports advance beyond the color-selector frontier, record the alpha-selection
@@ -27,9 +62,7 @@ The NANDMove candidate passes its private rendered/Discovery gate and all eight 
 The [fresh NAND save result](docs/HARDWARE_NAND_WRITE_MOVE_2026-10-10.md) verifies 41 reports / 853,191 bytes twice, accepts the complete 29,344-byte write and close/home-query progression, and reaches NANDMove `0x8019BEE8`. The previous candidate is replaced on SD with complete readback and verified older-NRO cleanup. The [bounded move correction](docs/NAND_MOVE_2026-10-10.md) checks both full live paths and preserves pinned destination-directory semantics; its exact candidate launches on 2026-10-11 and durable console results remain pending.
 
 
-Experimental Nintendo Switch homebrew port of [WiiCompiled](https://github.com/patchzyy/Wiicompiled): statically recompile a user-owned Mario Kart Wii dump into a native AArch64 `.nro`, without Dolphin at runtime.
-
-## Status
+## NVK diagnostic status
 
 An opt-in [LAN debug server](docs/DEBUG_SERVER.md) provides live dispatch/status
 logs, report downloads and verified NRO deployment/restart requests. Enable it
@@ -54,7 +87,8 @@ Requires devkitPro (`devkitA64`, `libnx`), GNU Make and a Switch running Atmosph
 ```sh
 git submodule update --init --recursive
 make                                           # Public, Nintendo-data-free probe
-MKW_JOBS=4 bash scripts/build-local-rendered-fast-track.sh  # Local rendered product
+MKW_JOBS=4 bash scripts/build-local-rendered-fast-track.sh  # Local NVK rendered product
+bash scripts/build-local-native-deko3d.sh                  # Experimental private Deko3D product
 ```
 
 The public output is `WiiCompiled-Switch.nro`; the local rendered output is `WiiCompiled-Switch-local-rendered-fast-track.nro`. Launch through hbmenu in application/title-override mode with full memory. The [build guide](docs/BUILD.md) covers the headless control, incremental and Discovery targets, diagnostics and required checks.
@@ -69,6 +103,6 @@ The public output is `WiiCompiled-Switch.nro`; the local rendered output is `Wii
 
 ## Public source and CI
 
-Provide your own legally obtained game dump locally. Keep game data, generated translations, private NROs and raw captures out of Git and public CI. Public CI validates Nintendo-data-free code and probes; game-bound renderer changes also require a private rendered build and attributable hardware evidence. Every published PR check must be green before merging; `main` enforces eight required checks. See [the merge policy](docs/CI_MERGE_POLICY_2026-10-09.md), [validation policy](docs/FAST_TRACK_VALIDATION_POLICY.md) and [legal policy](LEGAL.md). WiiCompiled and derivative code are GPL-3.0 unless stated otherwise.
+Provide your own legally obtained game dump locally. Keep game data, generated translations, private NROs and raw captures out of Git and public CI. Public CI validates Nintendo-data-free code and probes. Every published PR check must be green before merging; private builds and attributable hardware evidence validate product readiness and playability separately and do not block merge; `main` enforces eight required checks. See [the merge policy](docs/CI_MERGE_POLICY_2026-10-09.md), [validation policy](docs/FAST_TRACK_VALIDATION_POLICY.md) and [legal policy](LEGAL.md). WiiCompiled and derivative code are GPL-3.0 unless stated otherwise.
 
 [Roadmap](ROADMAP.md) · [Documentation](docs/README.md) · [Report terminology](docs/REPORT_TERMS.md) · [Build and diagnostics](docs/BUILD.md) · [Desktop replay prototype](docs/DESKTOP_GX_REPLAY.md) · [Status history](docs/STATUS_LOG.md)

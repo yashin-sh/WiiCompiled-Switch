@@ -1,5 +1,23 @@
 # Status log
 
+## 2026-10-14 — Native Deko3D public dependencies validated
+
+PR #386 source commit `42aca1c1b9d9667185cc9cd1b2d5f5a971419958` passes all ten
+published checks, including the [full UAM/Dawn cross-build](https://github.com/yashin-sh/WiiCompiled-Switch/actions/runs/38574319340).
+The complete rollup was checked: ten successful check runs, no extra commit statuses.
+The build repairs cover strict-C++ newlib portability, Tint's required GLSL writer,
+the pinned UAM memory API with 256-byte alignment, and bounded message normalization.
+Preparation/reuse guards preserve the local inputs and verify dependency/translation provenance.
+
+This is a public library/source checkpoint. No private translated Deko3D product,
+exact NRO, Switch launch, menu or race result is attributed to this commit.
+The user clarified on 2026-10-14 that private rendered builds do not block merge.
+PR #386 may merge after every published check on its final HEAD succeeds; private
+product and hardware validation remain pending and are not claimed by that merge.
+See the [native path guide](NATIVE_DEKO3D_SWITCH_PATH_2026-10-12.md).
+
+## Earlier NVK evidence
+
 The user reports visible progress beyond the Wiimote warning to a save-error
 dialogue. The subsequently observed debug session reaches dispatch 827,547 and
 pauses on a 32×32 RGB565 repeat descriptor. The photo establishes visible UI;

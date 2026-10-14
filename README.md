@@ -13,10 +13,13 @@ configuration and provenance. Documentation-only follow-ups must pass their own 
 
 | Path | Verified here | Still required |
 | --- | --- | --- |
-| Native Deko3D candidate | Public dependency cross-build, source contracts and preparation/reuse tests | Private PAL translation/product build, exact NRO attribution and Switch execution |
+| Native Deko3D candidate | Public dependency cross-build, full private PAL product build, exact NRO attribution and verified SD deployment | Switch boot/menu execution, Time Trial and 12-kart race validation |
 | Existing Vulkan/NVK diagnostic path | Earlier Switch boot pixels, translated startup and desktop FIFO replay | Later rendering, complete menu/race behavior and performance validation |
 
-No playable WiiCompiled-Switch Deko3D NRO, race FPS or completed hardware gate is claimed.
+The first private [Deko3D candidate](docs/NATIVE_DEKO3D_CANDIDATE_2026-10-14.md),
+code `e217a6f`, now passes full PAL translation/product build, artifact/provenance
+validation and complete SD readback with verified older-NRO cleanup. It is ready
+for the first console trial. Menu progression, playability and race FPS remain unproven.
 The user clarified on 2026-10-14 that private builds do not block merging into
 `main`: every published check on the final PR HEAD must be completed and successful.
 Private product builds and Switch measurements remain separate readiness evidence.
@@ -30,7 +33,9 @@ in `local-product/Assets`, follow the prerequisites and receipts in the
 bash scripts/build-local-native-deko3d.sh
 ```
 
-The console launcher imports your own PAL ISO/WBFS from SD; the NRO does not bundle game contents.
+The console launcher imports your own PAL ISO/WBFS or uses a verified extracted
+DATA tree. The private NRO embeds locally generated program/data and stays Git-ignored;
+game resources remain on SD.
 See [the status log](docs/STATUS_LOG.md) for dated evidence and remaining gates.
 
 ## Earlier NVK checkpoints

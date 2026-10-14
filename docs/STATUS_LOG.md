@@ -1,5 +1,22 @@
 # Status log
 
+## 2026-10-14 — First private native Deko3D NRO built and deployed
+
+Candidate `e217a6f` completes fresh PAL translation, all 72 native game-code
+blocks and the full Release product link/package. The 74,444,944-byte NRO has
+SHA-256 `82de60349a066efc0193e343907329b9d8dfea222f3bc5b8ed64fd0bfe6f7243`.
+NRO/ELF/NACP/RomFS and source/dependency validation pass; 1,206 archived source
+files match the reference or the six audited product changes. Link repairs and
+real SQLite persistence/error tests are published in PR #387.
+
+Complete SD size/SHA readback passes. The older project NRO is locally backed
+up, verified against its recorded metadata, removed and the final inventory
+contains only the current project candidate. Native config and the verified
+extraction marker pass complete readback. Existing game/NAND files and unrelated
+applications are preserved; products and raw receipts stay private.
+Console launch, menu progression, races and measured FPS remain pending.
+See the [candidate receipt](NATIVE_DEKO3D_CANDIDATE_2026-10-14.md).
+
 ## 2026-10-14 — Native Deko3D public dependencies validated
 
 PR #386 source commit `42aca1c1b9d9667185cc9cd1b2d5f5a971419958` passes all ten

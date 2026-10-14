@@ -1,6 +1,7 @@
 # Documentation index
 
-- [Native Deko3D candidate and public validation](NATIVE_DEKO3D_SWITCH_PATH_2026-10-12.md) — pinned dependencies build successfully; private game build and Switch validation remain pending
+- [First private native Deko3D candidate](NATIVE_DEKO3D_CANDIDATE_2026-10-14.md) — full PAL product build, exact NRO validation and verified SD deployment pass; console execution remains pending
+- [Native Deko3D build path](NATIVE_DEKO3D_SWITCH_PATH_2026-10-12.md) — pinned dependencies, checked product repairs and reproducible build prerequisites
 
 - [Bounded TEV indirect correction](GX_TEV_INDIRECT_2026-10-11.md) — later observed frontier, checked ten-argument ABI and pinned BP contracts; new candidate gates pending
 - [Bounded TEV constant selectors](GX_TEV_KSEL_2026-10-11.md) — exact-candidate gates and verified LAN replacement pass; fresh console reports advance beyond K color to the alpha stage and indirect frontier

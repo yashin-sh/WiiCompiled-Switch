@@ -7,9 +7,13 @@ its public dependency build and all ten source-commit checks. Merge eligibility
 depends on the complete final-HEAD CI rollup; private builds do not block merge
 under the user's 2026-10-14 clarification.
 
-Next required work is the private PAL translation/product build, exact NRO
-size/SHA attribution, boot/menu verification, a stock-clock Time Trial and a
-12-kart race. Compare against NVK and consider PGO only after correctness.
+The first private [native candidate `e217a6f`](docs/NATIVE_DEKO3D_CANDIDATE_2026-10-14.md)
+now passes full PAL translation/product build, exact NRO/provenance validation,
+complete SD readback and verified older-NRO cleanup. Its native profile uses the
+existing verified PAL extraction. Corrected source checks are tracked in PR #387.
+
+Next required work is boot/menu verification, a stock-clock Time Trial and a
+12-kart race on this exact NRO. Compare against NVK and consider PGO only after correctness.
 The earlier NVK frontiers below remain diagnostic evidence for their own candidates.
 
 ## Earlier NVK checkpoints

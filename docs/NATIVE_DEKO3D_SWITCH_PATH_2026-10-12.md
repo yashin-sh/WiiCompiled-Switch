@@ -70,7 +70,9 @@ the final receipt records the patcher, product-delta and SQLite hashes.
 Nintendo-data-free tests exercise unity inclusion order and real SQLite
 create/write/reopen/query behavior with device-prefixed paths, injected EOF/EIO
 and genuine non-EOF errors. Unsupported ownership calls are poisoned at link
-time. Product rebuild and Switch execution are pending at this checkpoint.
+time. The subsequent [private candidate `e217a6f`](NATIVE_DEKO3D_CANDIDATE_2026-10-14.md)
+passes full product build, exact NRO validation and verified SD deployment.
+Console execution, menu and race validation remain pending.
 
 ## Reproducible reference
 

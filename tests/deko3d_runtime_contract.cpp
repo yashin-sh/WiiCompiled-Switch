@@ -76,7 +76,8 @@ T* ToBackend(T* value) {
 }
 struct TextureRef {
     Texture* value;
-    TextureRef(Texture* texture) : value(texture) {}
+    TextureRef(Texture* texture)
+        : value(texture) {}
     Texture* Get() const {
         return value;
     }

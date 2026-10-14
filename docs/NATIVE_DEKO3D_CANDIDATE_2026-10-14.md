@@ -197,3 +197,19 @@ The source audit accepts only complete original, prior audited and new repaired
 files for cache migration. This CPU seam does not validate GPU behavior or prove
 that stale depth caused the reported character-selection crash. A new private
 build and console trial are tracked separately.
+
+The full private rebuild of this repair passes artifact and source/dependency
+validation. Candidate `c9f7ff3` replaces `0b4f3c6` on SD at
+2026-10-14 22:02:07 UTC (00:02:07 CEST on October 15), with complete size/SHA-256
+readback. The previous NRO is backed up and verified against its recorded
+metadata before removal; an independent final inventory contains only the new
+project candidate. Configuration, extraction marker, game/NAND data and unrelated
+applications are preserved. The old NRO and exact debug ELF remain local for
+possible crash attribution. No console execution of this candidate is claimed.
+
+```text
+current source: c9f7ff325b9ad8cb1bc52a6af158f5c45a3f0a40
+NRO bytes:      74444944
+NRO SHA-256:    2e8514ee667b37df34948335f052129b891f788e676e02919d15557d18082d5c
+SD path:        sdmc:/switch/WiiCompiled-Switch-native-deko3d-c9f7ff3.nro
+```

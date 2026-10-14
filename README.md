@@ -26,6 +26,8 @@ required. Complete races, playability and race FPS remain unproven.
 The combined runtime/crash-logger correction `0b4f3c6` now passes a full private
 rebuild and complete SD readback, with the old NRO backed up, verified and removed.
 Its console trial remains pending.
+Candidate `c9f7ff3` supersedes it with ordered GPU depth readback and passes the
+same full private build and verified SD replacement; its console trial is pending.
 The user clarified on 2026-10-14 that private builds do not block merging into
 `main`: every published check on the final PR HEAD must be completed and successful.
 Private product builds and Switch measurements remain separate readiness evidence.

@@ -1,5 +1,26 @@
 # Status log
 
+## 2026-10-15 — Native depth readback corrected and verified on SD
+
+Aurora's Depth Peek dispatch writes a storage buffer on the GPU, then copies it
+to a CPU readback buffer. The original Deko3D command recorder snapshots stale
+CPU bytes before that dispatch executes. A compiled production-command regression
+reproduces the old result and passes with an ordered GPU copy. Producer/L2 and
+copy/completion/shader-cache barriers protect GPU-written buffers; exact
+`MapWrite | CopySrc` staging uploads retain their fast path. Offset, zero-size,
+initialization-failure and producer variants pass, along with the existing GPU
+memory/binding and eight build/reuse contracts.
+
+Candidate `c9f7ff3` passes the full private native rebuild and artifact/source
+validation. Its 74,444,944-byte NRO has SHA-256
+`2e8514ee667b37df34948335f052129b891f788e676e02919d15557d18082d5c`.
+Complete SD readback and independently checked old-NRO backup/hash/removal and
+final inventory pass at 00:02:07 CEST. The previous `0b4f3c6` NRO and exact ELF
+are retained; configuration and game/NAND data are preserved. No new native run
+is available after the original failing `e217a6f` trial; corrected menu/race
+execution remains pending. PR #387 tracks exact-HEAD CI independently. See the
+[native candidate report](NATIVE_DEKO3D_CANDIDATE_2026-10-14.md).
+
 ## 2026-10-14 — Character-selection failure reported; native runtime repairs built
 
 The operator reports character-selection visual corruption followed by a crash

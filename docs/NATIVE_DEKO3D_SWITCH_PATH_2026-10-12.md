@@ -19,6 +19,33 @@ Switch hardware validation. Do not delete the existing path during migration.
 
 This is still **static recompilation**, not Dolphin, an interpreter or a runtime JIT.
 
+## Public validation checkpoint — 2026-10-14
+
+Source commit [`42aca1c`](https://github.com/yashin-sh/WiiCompiled-Switch/commit/42aca1c1b9d9667185cc9cd1b2d5f5a971419958)
+passes all ten published exact-HEAD checks. The complete rollup contains ten successful
+check runs and no additional commit statuses. The repository's paginated
+`all-checks-green` gate also succeeds.
+
+[Dependency workflow run 38574319340](https://github.com/yashin-sh/WiiCompiled-Switch/actions/runs/38574319340)
+completes both `reference-contract` and `public-dependencies`. It builds `libuam.a`
+and `libwebgpu_dawn.a`, verifies Deko3D symbols and writes the dependency receipt,
+including actual Tint cache values and source/patch/archive hashes.
+
+| Validation | Result at this checkpoint |
+| --- | --- |
+| Pinned public UAM/Dawn cross-build | Passed |
+| Strict-C++ portability, aligned UAM serialization and bounded-message tests | Passed |
+| Product preparation/reuse contracts and public runtime/probe checks | Passed |
+| Private PAL translation and complete rendered product build | Not performed here |
+| NRO size/SHA attribution, boot/menu and races on Switch | Not performed here |
+
+PR #386 remains a draft. [AGENTS.md](../AGENTS.md) requires the separate private
+rendered-build gate for renderer changes before merge. A successful public library
+build does not satisfy that requirement. The earlier private builds and hardware
+receipts for NVK candidates cannot be transferred to this Deko3D candidate.
+Documentation-only follow-ups must validate their own exact HEAD; the successful
+source commit above is a dated result, not a claim about future commits.
+
 ## Reproducible reference
 
 `third_party/DriftDroid` is pinned to:

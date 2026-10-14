@@ -6,6 +6,15 @@ For the private generated game product and pinned renderer dependencies, start
 with the [rendered fast-track guide](M3_RMCP01_RENDERED_FAST_TRACK.md). Desktop
 diagnostics have a separate [capture/replay guide](DESKTOP_GX_REPLAY.md).
 
+## Experimental native Deko3D candidate
+
+The [native Deko3D guide](NATIVE_DEKO3D_SWITCH_PATH_2026-10-12.md) describes the
+separate pinned DriftDroid/Aurora/Dawn/UAM toolchain, host/SDK prerequisites,
+local PAL inputs, one-command product build and dependency/NRO receipts.
+Its public dependencies pass a real devkitA64 cross-build. The complete private
+translated product and console behavior remain unverified; the private rendered
+gate still blocks PR #386's merge. The NVK commands below keep their existing scope.
+
 ## Important limitations
 
 ### Graphics

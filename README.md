@@ -13,13 +13,15 @@ configuration and provenance. Documentation-only follow-ups must pass their own 
 
 | Path | Verified here | Still required |
 | --- | --- | --- |
-| Native Deko3D candidate | Public dependency cross-build, full private PAL product build, exact NRO attribution and verified SD deployment | Switch boot/menu execution, Time Trial and 12-kart race validation |
+| Native Deko3D candidate | Public dependency cross-build, full private PAL product build, exact NRO attribution and verified SD deployment; operator reports reaching character selection | Diagnose visual corruption/crash at character selection; validate complete Time Trial and 12-kart race |
 | Existing Vulkan/NVK diagnostic path | Earlier Switch boot pixels, translated startup and desktop FIFO replay | Later rendering, complete menu/race behavior and performance validation |
 
 The first private [Deko3D candidate](docs/NATIVE_DEKO3D_CANDIDATE_2026-10-14.md),
 code `e217a6f`, now passes full PAL translation/product build, artifact/provenance
-validation and complete SD readback with verified older-NRO cleanup. It is ready
-for the first console trial. Menu progression, playability and race FPS remain unproven.
+validation and complete SD readback with verified older-NRO cleanup. The first
+console trial reaches character selection according to the operator, then shows
+visual corruption and crashes. Fresh diagnostics and a corrected console trial
+remain required. Complete races, playability and race FPS remain unproven.
 The user clarified on 2026-10-14 that private builds do not block merging into
 `main`: every published check on the final PR HEAD must be completed and successful.
 Private product builds and Switch measurements remain separate readiness evidence.

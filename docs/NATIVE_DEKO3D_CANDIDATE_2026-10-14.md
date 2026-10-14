@@ -4,7 +4,10 @@ Code candidate [`e217a6f`](https://github.com/yashin-sh/WiiCompiled-Switch/commi
 completes PAL translation, all 72 native game-code blocks, the full Release
 product link and private NRO packaging. It is deployed to the Switch with
 complete size/SHA-256 readback and verified removal of the older project NRO.
-Console execution, boot/menu progression and race performance remain pending.
+The operator subsequently reports reaching character selection, where visual
+bugs begin and the application then crashes. Fresh console diagnostics are not
+yet available; the failure is not symbolized or attributed to a specific
+instruction. Race completion and performance remain unvalidated.
 
 | Evidence | Result |
 | --- | --- |
@@ -15,7 +18,8 @@ Console execution, boot/menu progression and race performance remain pending.
 | Complete SD NRO readback | Passed |
 | Older project NRO backup against recorded size/SHA, removal and final inventory | Passed; one old candidate removed |
 | Native configuration and verified-extraction marker readback | Passed |
-| Real Switch launch, menu, Time Trial, 12-kart race | Pending |
+| Real Switch launch and menu progression | Operator reports reaching character selection, then visual corruption and crash |
+| Complete Time Trial and 12-kart race | Not validated; current candidate fails before a confirmed race |
 | Published checks on the final PR HEAD | Tracked separately in [PR #387](https://github.com/yashin-sh/WiiCompiled-Switch/pull/387) |
 
 ## Exact artifact
@@ -76,3 +80,30 @@ Quit DBI, open hbmenu through application/title override with full memory, launc
 First validate the Wiimote page and actual game menu. Only then run a complete
 stock-clock Time Trial and 12-kart race, retaining attributable timing and fresh
 diagnostics. No playability or measured FPS is claimed by this build/deployment.
+
+## Follow-up after the character-selection crash
+
+An independent audit identifies three defects in the pinned Dawn/Deko3D runtime:
+texture uploads copy caller padding beyond the final required row; changing
+shaders with the same WebGPU pipeline layout can preserve the previous shader's
+combined texture/sampler mapping; descriptor slots can be overwritten while
+older submitted GPU commands still reference them. These defects are not yet
+established as the cause of the reported console crash.
+
+The audited runtime repair repacks only copied texel blocks, reapplies bindings
+on shader changes, and retires image/sampler descriptors behind the submission
+fence. Texture binding invalidates the descriptor cache when slots are reused.
+The complete three runtime files must match the pinned original or the exact
+repair; all other base-patch hunks retain the reverse-apply verification.
+
+The host regression compiles the production methods and reproduces the original
+heap-buffer-overflow under AddressSanitizer. The repaired method passes with
+minimum-size input buffers, padded rows/images, array layers, 3D slices, BC
+formats, stencil and injected upload-allocation failure. Separate contracts
+cover deferred descriptor reuse and shared-layout shader changes. These tests
+do not emulate the Switch GPU. A rebuilt NRO and a new console trial remain
+necessary before claiming a fix for character selection.
+
+The [Deko3D transfer implementation](https://github.com/devkitPro/deko3d/blob/master/source/dk_image.cpp)
+uses byte row and image strides for `DkCopyBuf`, including compressed texel
+blocks; the repair preserves those units while packing the upload.

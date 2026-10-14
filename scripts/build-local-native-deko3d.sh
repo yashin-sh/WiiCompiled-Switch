@@ -21,6 +21,7 @@ readonly DAWN_EXCLUDE_EGL="third_party/EGL-Registry/src"
 readonly DAWN_EXCLUDE_ABSEIL="third_party/abseil-cpp"
 readonly DAWN_ABSEIL_PATCHER="$ROOT_DIR/scripts/patch-dawn-abseil-switch.py"
 readonly DAWN_SWITCH_PATCHER="$ROOT_DIR/scripts/patch-dawn-switch.py"
+readonly DAWN_RUNTIME_PATCHER="$ROOT_DIR/scripts/dawn_deko3d_runtime.py"
 
 need() {
     if ! command -v "$1" >/dev/null 2>&1; then
@@ -200,6 +201,7 @@ python3 - "$DEP_RECEIPT" \
     "dawn_base_commit=$actual_dawn_head" \
     "dawn_patch_sha256=$(sha256sum "$DAWN_PATCH" | awk '{print $1}')" \
     "dawn_switch_patcher_sha256=$(sha256sum "$DAWN_SWITCH_PATCHER" | awk '{print $1}')" \
+    "dawn_runtime_patcher_sha256=$(sha256sum "$DAWN_RUNTIME_PATCHER" | awk '{print $1}')" \
     "dawn_worktree_diff_sha256=$dawn_diff_sha256" \
     "dawn_archive_sha256=$(sha256sum "$DAWN_ARCHIVE" | awk '{print $1}')" \
     "dawn_tint_build_wgsl_reader=ON" \
@@ -350,6 +352,7 @@ fi
     echo "dawn_patch_sha256=$(sha256sum "$DAWN_PATCH" | awk '{print $1}')"
     echo "dawn_patch_excluded_gitlinks=$DAWN_EXCLUDE_EGL,$DAWN_EXCLUDE_ABSEIL"
     echo "dawn_switch_patcher_sha256=$(sha256sum "$DAWN_SWITCH_PATCHER" | awk '{print $1}')"
+    echo "dawn_runtime_patcher_sha256=$(sha256sum "$DAWN_RUNTIME_PATCHER" | awk '{print $1}')"
     echo "dawn_worktree_diff_sha256=$dawn_diff_sha256"
     echo "dawn_archive_sha256=$(sha256sum "$DAWN_ARCHIVE" | awk '{print $1}')"
     echo "dawn_abseil_commit=$actual_dawn_abseil_head"

@@ -10,10 +10,12 @@ on:
       - 'scripts/prepare-native-deko3d-deps.sh'
       - 'scripts/patch-dawn-abseil-switch.py'
       - 'scripts/patch-dawn-switch.py'
+      - 'scripts/dawn_deko3d_runtime.py'
       - 'scripts/patch-native-deko3d-product.py'
       - 'scripts/prepare-local-native-deko3d-product.sh'
       - 'scripts/build-local-native-deko3d.sh'
       - 'tests/test_native_deko3d_build_scripts.py'
+      - 'tests/deko3d_runtime_contract.cpp'
       - 'docs/NATIVE_DEKO3D_SWITCH_PATH_2026-10-12.md'
   workflow_dispatch:
 
@@ -48,6 +50,9 @@ jobs:
 
       - name: Test strict C++ Switch portability patches
         run: python3 scripts/patch-dawn-switch.py --self-test
+
+      - name: Test Deko3D runtime texture bounds and GPU resource lifetimes
+        run: python3 scripts/dawn_deko3d_runtime.py --self-test
 
       - name: Test native product portability and C linkage
         run: python3 scripts/patch-native-deko3d-product.py --self-test

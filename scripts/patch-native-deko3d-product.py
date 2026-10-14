@@ -58,6 +58,16 @@ def product_changes(reference):
     switch = replace_once(switch, 'set(DAWN_ENABLE_OPENGLES ON CACHE INTERNAL "")',
                           'set(DAWN_ENABLE_OPENGLES OFF CACHE INTERNAL "" FORCE)\n  set(DAWN_ENABLE_DEKO3D ON CACHE INTERNAL "" FORCE)')
     changes[name] = (original, switch + "  return()\nendif ()" + rest)
+    name = "aurora-main/cmake/aurora_core.cmake"
+    original = (reference / name).read_text()
+    changes[name] = (original, replace_once(original,
+        "    if (DAWN_ENABLE_VULKAN)\n",
+        "    if (DAWN_ENABLE_DEKO3D)\n        target_compile_definitions(aurora_core PRIVATE DAWN_ENABLE_BACKEND_DEKO3D)\n    endif ()\n    if (DAWN_ENABLE_VULKAN)\n"))
+    name = "aurora-main/lib/aurora.cpp"
+    original = (reference / name).read_text()
+    changes[name] = (original, replace_once(original,
+        "#if defined(__SWITCH__) && defined(DAWN_ENABLE_BACKEND_OPENGLES)\n    // Switch's only backend: Dawn's GLES backend on switch-mesa (deko3d comes later for 60fps).\n    BACKEND_OPENGLES,\n#endif\n",
+        "#if defined(__SWITCH__) && defined(DAWN_ENABLE_BACKEND_DEKO3D)\n    // This Switch archive exposes the native Deko3D backend.\n    BACKEND_DEKO3D,\n#endif\n"))
     name = "aurora-main/extern/CMakeLists.txt"
     original = (reference / name).read_text()
     changes[name] = (original, replace_once(original, SQLITE_OLD_COMMAND, SQLITE_NEW_COMMAND))
@@ -185,6 +195,16 @@ assert(GuestMapSymbolFloor(0x12000, &start) == nullptr);
             executable = work / f"symbols-{order}"
             subprocess.run(["g++", "-std=c++20", "-Wall", "-Wextra", "-Werror", str(source), "-o", str(executable)], check=True)
             subprocess.run([str(executable)], check=True)
+        # Compile the production automatic-backend list in the native and Android modes.
+        aurora = product_changes(reference)["aurora-main/lib/aurora.cpp"][1]
+        backend_list = aurora[aurora.index("#ifdef AURORA_ENABLE_GX\nconstexpr std::array PreferredBackendOrder{"):aurora.index("bool g_initialFrame = false;")]
+        for target, flags, expected in (
+            ("switch", ["-D__SWITCH__", "-DDAWN_ENABLE_BACKEND_DEKO3D"], "static_assert(PreferredBackendOrder.size() == 1 && PreferredBackendOrder[0] == BACKEND_DEKO3D);"),
+            ("android", ["-D__ANDROID__", "-DDAWN_ENABLE_BACKEND_VULKAN", "-DDAWN_ENABLE_BACKEND_OPENGLES"], "static_assert(PreferredBackendOrder.size() == 2 && PreferredBackendOrder[0] == BACKEND_VULKAN && PreferredBackendOrder[1] == BACKEND_OPENGLES);"),
+        ):
+            source = work / (target + ".cpp")
+            source.write_text("#include <array>\nenum AuroraBackend {BACKEND_WEBGPU, BACKEND_D3D12, BACKEND_D3D11, BACKEND_METAL, BACKEND_VULKAN, BACKEND_OPENGLES, BACKEND_NULL, BACKEND_DEKO3D};\n" + backend_list + expected + "\nint main() {}\n")
+            subprocess.run(["g++", "-std=c++20", "-DAURORA_ENABLE_GX", *flags, str(source), "-o", str(work / target)], check=True)
         patch = reference / "aurora-main/cmake/patches/sqlite3-nintendo-switch-platform.patch"
         assert digest(patch.read_bytes()) == SQLITE_PATCH and len(sqlite_hunks(patch.read_text())) == 3
         invalid = work / "sqlite3.c"
@@ -195,7 +215,7 @@ assert(GuestMapSymbolFloor(0x12000, &start) == nullptr);
             pass
         else:
             raise AssertionError("unattributed SQLite source accepted")
-    print("Product patch guards and production C-linkage/unity tests passed")
+    print("Product patch guards, production C-linkage/unity and automatic-backend tests passed")
 
 
 def sqlite_self_test(source, reference):

@@ -56,10 +56,12 @@ OpenGL adapter constructor despite the Deko3D-only Dawn archive, and an unapplie
 SQLite portability patch. The reference SQLite diff has malformed hunk counts;
 its CMake patch command also suppresses patch failures.
 
-`scripts/patch-native-deko3d-product.py` applies a checked four-file delta only
+`scripts/patch-native-deko3d-product.py` applies a checked six-file delta only
 to the private archived product workspace. The reference submodule stays clean.
 It moves diagnostic C declarations to global scope, aligns Aurora's backend
 flags with the native archive, and gates GL adapter options on the GL backend.
+The automatic Switch backend list now advertises Deko3D rather than the disabled
+GLES backend; Android's Vulkan/GLES ordering retains executable coverage.
 SQLite's three existing Switch hunks are applied by complete literal context,
 with pinned original, patch and complete-result SHA-256 checks. Unknown source
 changes stop the build. Preparation and reuse both verify the product delta;

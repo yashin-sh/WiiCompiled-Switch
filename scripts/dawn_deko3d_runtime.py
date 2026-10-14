@@ -94,6 +94,30 @@ COMPATIBLE = """    bool AreLayoutsCompatible() override {
     }
 
 """
+BUFFER_COPY_OLD = """                // The source's CPU view reflects every write recorded before this point only if it
+                // is not written by GPU work in this same pass; Dawn's copy sources are mapped or
+                // staging buffers, so snapshot them here.
+                device->RecordBufferWrite(destination->GetGpuAddr() + copy->destinationOffset,
+                                          source->GetCpuAddr() + copy->sourceOffset, copy->size);
+"""
+BUFFER_COPY_NEW = """                if (source->GetUsage() ==
+                    (wgpu::BufferUsage::MapWrite | wgpu::BufferUsage::CopySrc)) {
+                    // This frontend-restricted staging usage cannot be written by the GPU.
+                    // Retain the fast snapshot path for per-frame vertex/uniform uploads.
+                    device->RecordBufferWrite(destination->GetGpuAddr() + copy->destinationOffset,
+                                              source->GetCpuAddr() + copy->sourceOffset, copy->size);
+                } else {
+                    // Depth Peek copies a compute-written storage buffer in this same list.
+                    // Its CPU contents are still stale while recording: copy on the GPU,
+                    // after all producers finish and flush their dirty cache lines.
+                    dkCmdBufBarrier(cmdBuf, DkBarrier_Primitives, DkInvalidateFlags_L2Cache);
+                    dkCmdBufCopyBuffer(cmdBuf, source->GetGpuAddr() + copy->sourceOffset,
+                                       destination->GetGpuAddr() + copy->destinationOffset,
+                                       static_cast<uint32_t>(copy->size));
+                    dkCmdBufBarrier(cmdBuf, DkBarrier_Full,
+                                    DkInvalidateFlags_Shader | DkInvalidateFlags_L2Cache);
+                }
+"""
 
 
 def replace_once(text, before, after):
@@ -117,7 +141,7 @@ def base_source(patch, target):
     return "".join(line[1:] + "\n" for line in lines)
 
 
-def changes(patch=BASE_PATCH):
+def changes(patch=BASE_PATCH, gpu_buffer_copy=True):
     originals = {target: base_source(patch, target) for target in TARGETS}
     fixed = dict(originals)
     cpp, header, commands = TARGETS
@@ -175,13 +199,20 @@ def changes(patch=BASE_PATCH):
         "        const uint32_t count = mDirtyUnitsEnd - mDirtyUnitsBegin;\n",
         "        // Descriptor slots can be reused after an older fence completes.\n        dkCmdBufBarrier(mCmdBuf, DkBarrier_None, DkInvalidateFlags_Descriptors);\n        const uint32_t count = mDirtyUnitsEnd - mDirtyUnitsBegin;\n",
     )
+    if gpu_buffer_copy:
+        fixed[commands] = replace_once(
+            fixed[commands], BUFFER_COPY_OLD, BUFFER_COPY_NEW
+        )
     return {target: (originals[target], fixed[target]) for target in TARGETS}
 
 
 def verify_sources(root, patch=BASE_PATCH, repaired_only=False):
+    previous = changes(patch, gpu_buffer_copy=False)
     for target, (original, fixed) in changes(patch).items():
         actual = (root / target).read_text()
-        if actual not in ((fixed,) if repaired_only else (original, fixed)):
+        if actual not in (
+            (fixed,) if repaired_only else (original, previous[target][1], fixed)
+        ):
             raise ValueError(f"unattributed Deko3D runtime source: {target}")
 
 
@@ -218,6 +249,11 @@ def self_test():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(original)
         apply(root)
+        apply(root)
+        apply(root, check_only=True)
+        # Upgrade only the complete previously audited runtime variant.
+        for target, (_, previous) in changes(gpu_buffer_copy=False).items():
+            (root / target).write_text(previous)
         apply(root)
         apply(root, check_only=True)
         target = root / TARGETS[0]
@@ -289,6 +325,48 @@ def self_test():
         (root / "production.inc").write_text(production)
         subprocess.run(command, check=True)
         subprocess.run([str(executable)], check=True, env=environment)
+        copy_case = commands[
+            commands.index(
+                "            case Command::CopyBufferToBuffer: {"
+            ) : commands.index("            case Command::CopyBufferToTexture: {")
+        ]
+        copy_production = (
+            "MaybeError RecordCopy(Device* device, CopyBufferToBufferCmd* input) {\n"
+            "    Iterator mCommands{input}; [[maybe_unused]] auto* cmdBuf = device;\n"
+            "    switch (Command::CopyBufferToBuffer) {\n"
+            + copy_case
+            + "default: assert(false); }\n    return {};\n}\n"
+        )
+        copy_command = [
+            compiler,
+            "-std=c++20",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-I",
+            str(root),
+            str(repo / "tests/deko3d_buffer_copy_contract.cpp"),
+            "-o",
+            str(executable),
+        ]
+        (root / "buffer-copy-production.inc").write_text(
+            copy_production.replace(BUFFER_COPY_NEW, BUFFER_COPY_OLD, 1)
+        )
+        subprocess.run(copy_command, check=True)
+        baseline = subprocess.run(
+            [str(executable)], capture_output=True, text=True, check=False
+        )
+        if (
+            baseline.returncode == 0
+            or "stale GPU-produced buffer" not in baseline.stderr
+        ):
+            raise AssertionError(
+                "baseline buffer copy did not reproduce stale data: " + baseline.stderr
+            )
+        print("Pinned baseline reproduces stale GPU-produced buffer copy")
+        (root / "buffer-copy-production.inc").write_text(copy_production)
+        subprocess.run(copy_command, check=True)
+        subprocess.run([str(executable)], check=True)
     print("Deko3D runtime memory/binding contracts OK")
 
 

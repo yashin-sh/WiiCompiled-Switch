@@ -173,3 +173,27 @@ verify the existing native configuration and extraction marker are unchanged;
 unrelated entries and game/NAND data are preserved. Cleanup receipts remain
 private and ignored. The new candidate has **not yet been run on the Switch**;
 character selection, a complete Time Trial and a 12-kart race remain required.
+
+## GPU depth readback repair
+
+The next audit identifies a fourth independent GPU-runtime defect. Aurora's
+`depth_peek.cpp` dispatches a compute shader into a storage buffer, then records
+`CopyBufferToBuffer` into its readback buffer in the same command list. The
+original Deko3D command recorder snapshots the source's CPU bytes before that
+compute work executes, so it copies stale depth values.
+
+The repair uses GPU source/destination addresses for GPU-writable buffers.
+It orders prior producers, flushes dirty L2 cache lines, performs the GPU copy,
+then orders its completion and invalidates shader/L2 caches. The exact frontend
+`MapWrite | CopySrc` staging usage retains the existing snapshot path for vertex
+and uniform uploads; other usages take the ordered GPU path. These barriers
+follow the [Deko3D synchronization implementation](https://github.com/devkitPro/deko3d/blob/master/source/maxwell/gpu_base.cpp).
+
+The regression compiles the complete production copy command case with deferred
+GPU execution. The original case reproduces a stale result; the repaired case
+passes compute/query/write producer variants, source/destination offsets,
+zero-length operations, initialization failures and the retained staging path.
+The source audit accepts only complete original, prior audited and new repaired
+files for cache migration. This CPU seam does not validate GPU behavior or prove
+that stale depth caused the reported character-selection crash. A new private
+build and console trial are tracked separately.

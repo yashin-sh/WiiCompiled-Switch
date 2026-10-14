@@ -208,7 +208,7 @@ applications are preserved. The old NRO and exact debug ELF remain local for
 possible crash attribution. No console execution of this candidate is claimed.
 
 ```text
-current source: c9f7ff325b9ad8cb1bc52a6af158f5c45a3f0a40
+depth-copy source: c9f7ff325b9ad8cb1bc52a6af158f5c45a3f0a40
 NRO bytes:      74444944
 NRO SHA-256:    2e8514ee667b37df34948335f052129b891f788e676e02919d15557d18082d5c
 SD path:        sdmc:/switch/WiiCompiled-Switch-native-deko3d-c9f7ff3.nro
@@ -237,3 +237,21 @@ This contract verifies recorded synchronization and visibility under the CPU
 model. It does not reproduce physical Tegra caches or establish the cause of the
 character-selection crash. Private build, deployment and console validation of
 this change are tracked separately below.
+
+The private native rebuild passes complete artifact/source/dependency validation.
+Candidate `4792ed9` replaces `c9f7ff3` on SD at 2026-10-14 22:32:25 UTC
+(00:32:25 CEST on October 15). Full new-NRO size/SHA-256 readback precedes the
+backup, recorded-metadata verification and removal of the older candidate.
+Independent local hashing and a fresh SD directory inventory verify the result.
+Configuration and the extraction marker pass identical before/after readbacks;
+other applications and game/NAND data are preserved. The previous candidate's
+NRO and exact ELF remain locally retained and verified. No new Switch game run
+has been observed; character-selection correctness, the initial fault if it
+persists, complete races and performance remain unvalidated.
+
+```text
+current source: 4792ed92b09fa18d0bbc12a06d64ce0dd63eb8c8
+NRO bytes:      74444944
+NRO SHA-256:    166e1336d5321f0186dc7898e06a3c5de09149b6e7e21ac75ea03a103beae055
+SD path:        sdmc:/switch/WiiCompiled-Switch-native-deko3d-4792ed9.nro
+```

@@ -28,6 +28,9 @@ rebuild and complete SD readback, with the old NRO backed up, verified and remov
 Its console trial remains pending.
 Candidate `c9f7ff3` supersedes it with ordered GPU depth readback and passes the
 same full private build and verified SD replacement; its console trial is pending.
+Candidate `4792ed9` adds pass-boundary GPU ordering/cache visibility and supersedes
+it after a full private rebuild and verified SD replacement. No fresh console run
+has been observed; the character-selection crash remains unvalidated after repair.
 The user clarified on 2026-10-14 that private builds do not block merging into
 `main`: every published check on the final PR HEAD must be completed and successful.
 Private product builds and Switch measurements remain separate readiness evidence.

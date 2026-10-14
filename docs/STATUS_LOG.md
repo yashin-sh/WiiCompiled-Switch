@@ -1,5 +1,26 @@
 # Status log
 
+## 2026-10-15 — GPU pass visibility repaired; latest native NRO verified on SD
+
+The original Deko3D recorder starts consecutive render/compute passes without
+ordering earlier GPU writes or invalidating sampled-image/shader caches. Full
+barriers now precede each pass, after resource/attachment initialization. The
+compiled production cases fail on stale cached data before the repair and pass
+with it for render/compute reads, lazy clears and initialization failures. This
+CPU contract verifies recording semantics; physical GPU correctness/performance
+still needs a new Switch trial.
+
+Candidate `4792ed9` passes the full native rebuild and artifact/source/dependency
+validation. Its 74,444,944-byte NRO has SHA-256
+`166e1336d5321f0186dc7898e06a3c5de09149b6e7e21ac75ea03a103beae055`.
+Complete SD readback, verified old-NRO backup/removal, independent receipt checks
+and fresh final inventory pass at 00:32:25 CEST. The previous `c9f7ff3` NRO and
+exact ELF are retained; configuration, other applications and game/NAND data are
+preserved. No new game execution appears after the original `e217a6f` failure.
+The character-selection crash, complete races and FPS remain unvalidated. Final
+exact-HEAD CI is tracked in PR #387. See the
+[native candidate report](NATIVE_DEKO3D_CANDIDATE_2026-10-14.md).
+
 ## 2026-10-15 — Native depth readback corrected and verified on SD
 
 Aurora's Depth Peek dispatch writes a storage buffer on the GPU, then copies it

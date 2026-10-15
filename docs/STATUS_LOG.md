@@ -1,5 +1,24 @@
 # Status log
 
+## 2026-10-15 — Kickoff rejection isolated; exact-result diagnostic installed
+
+The attributed `c2d6785-debug` run reports a channel-kickoff failure without a
+GPU error notification. Its argv, complete NRO digest and independently read
+stderr are verified. Deko3D discards the actual libnx result, so the product now
+wraps kickoff solely to log failed return codes and queue counts. A compiled
+linker-wrap contract verifies exactly-once forwarding, unchanged return/state
+and failure-only output; the existing product and eight build/reuse suites pass.
+
+Candidate `c82e03e-debug` passes the full private build and artifact/source audit.
+Actual AArch64 disassembly verifies the wrapper on Deko3D's failing path. Its
+74,473,616-byte NRO has SHA-256
+`cdd6ffd43b1c563fa43c2c35cb1da1da9a242445db1e6e3e51b117268add3489`.
+Complete SD readback, verified old-NRO backup/removal and independent inventory
+checks pass at 07:51:04 CEST. Old exact artifacts and user data are preserved.
+The new trial must capture the system result; no submission recovery, corrected
+gameplay or FPS is claimed. See the
+[hardware report](HARDWARE_NATIVE_DEKO3D_GPU_FAILURE_2026-10-15.md).
+
 ## 2026-10-15 — Fresh native failure attributed to Deko3D GPU submission
 
 The operator reports incorrect output or another crash. Fresh console/root

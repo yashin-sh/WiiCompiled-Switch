@@ -93,3 +93,22 @@ A compiled linker-wrap contract verifies forwarding, return/state preservation,
 success silence and failure-only output. Complete-file audits accept only the
 original, previous audited or new repaired product sources; the reference stays
 unchanged. The next private build and console trial are tracked separately.
+
+The full native rebuild of `c82e03e-debug` passes artifact/source/dependency
+validation. Disassembly confirms that the actual Deko3D `Queue::flush` calls
+the wrapper and that the wrapper calls the real kickoff exactly once.
+
+```text
+source:        c82e03ef642ac6b80b0a4319cc6721e1c315d674
+mode:          AURORA_SWITCH_DEKO3D_DEBUG=ON
+NRO bytes:     74473616
+NRO SHA-256:   cdd6ffd43b1c563fa43c2c35cb1da1da9a242445db1e6e3e51b117268add3489
+SD path:       sdmc:/switch/WiiCompiled-Switch-native-deko3d-c82e03e-debug.nro
+```
+
+Deployment completes at 2026-10-15 05:51:04 UTC (07:51:04 CEST). Full new-NRO
+readback, recorded old-NRO backup verification/removal and a fresh final inventory
+pass. Configuration, extraction marker, other applications and game/NAND data
+remain preserved; the previous diagnostic NRO and exact ELF are retained.
+This adds evidence collection and needs a new trial; it does not repair the
+unidentified submission failure or establish playability/FPS.

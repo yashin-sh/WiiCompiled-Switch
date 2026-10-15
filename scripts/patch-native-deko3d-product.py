@@ -43,6 +43,22 @@ FRAME_READ_GUARD = """        // A corrupt frame chain must not fault again insi
             break;
         }
 """
+SUBMIT_TRACE = """// Deko3D discards the failing kickoff Result before reporting its generic error.
+// Preserve the real return value and log only failures, without retrying submission.
+extern "C" Result __real_nvGpuChannelKickoff(NvGpuChannel* channel);
+extern "C" Result __wrap_nvGpuChannelKickoff(NvGpuChannel* channel) {
+    const u32 queuedEntries = channel->num_entries;
+    const Result rc = __real_nvGpuChannelKickoff(channel);
+    if (R_FAILED(rc)) {
+        std::fprintf(stderr,
+                     "[deko3d-submit] kickoff rc=0x%08x module=%u description=%u entries=%u remaining=%u\\n",
+                     rc, R_MODULE(rc), R_DESCRIPTION(rc), queuedEntries, channel->num_entries);
+        std::fflush(stderr);
+    }
+    return rc;
+}
+
+"""
 
 
 def digest(data):
@@ -55,7 +71,7 @@ def replace_once(source, before, after):
     return source.replace(before, after, 1)
 
 
-def product_changes(reference):
+def product_changes(reference, submit_trace=True):
     changes = {}
     name = "runtime/src/system_bridge.cpp"
     original = (reference / name).read_text()
@@ -120,7 +136,8 @@ def product_changes(reference):
     patched = replace_once(
         original,
         "// hbloader runs every homebrew .nro inside its own process, so an unhandled CPU fault produces\n",
-        EXCEPTION_STACK
+        (SUBMIT_TRACE if submit_trace else "")
+        + EXCEPTION_STACK
         + "// hbloader runs every homebrew .nro inside its own process, so an unhandled CPU fault produces\n",
     )
     patched = replace_once(
@@ -130,6 +147,21 @@ def product_changes(reference):
         + "        const auto* entry = reinterpret_cast<const u64*>(fp);\n",
     )
     changes[name] = (original, patched)
+    name = "runtime/CMakeLists.txt"
+    original = (reference / name).read_text()
+    changes[name] = (
+        original,
+        replace_once(
+            original,
+            "    add_link_options(-Wl,--wrap=__syscall_thread_create)\n",
+            "    add_link_options(-Wl,--wrap=__syscall_thread_create)\n"
+            + (
+                "    add_link_options(-Wl,--wrap=nvGpuChannelKickoff)\n"
+                if submit_trace
+                else ""
+            ),
+        ),
+    )
     return changes
 
 
@@ -151,10 +183,13 @@ def apply_product(workspace, reference, check=False):
     ).strip():
         raise ValueError("product reference must be clean")
     changes = product_changes(reference)
+    previous = product_changes(reference, submit_trace=False)
     # Validate every file before writing any; reject edits outside the authorized delta.
     for name, (original, patched) in changes.items():
         actual = (workspace / name).read_text()
-        if actual not in (original, patched) or (check and actual != patched):
+        if actual not in (original, previous[name][1], patched) or (
+            check and actual != patched
+        ):
             raise ValueError(f"unexpected product source delta: {name}")
     if not check:
         for name, (original, patched) in changes.items():
@@ -260,6 +295,73 @@ def self_test(reference):
         from dawn_deko3d_runtime import method
 
         runtime_main = product_changes(reference)["runtime/src/main.cpp"][1]
+        trace_source = work / "submit-trace.cpp"
+        trace_source.write_text(
+            "#include <cstdint>\n#include <cstdio>\n"
+            "using u32=uint32_t; using Result=uint32_t;\n"
+            "struct NvGpuChannel { u32 num_entries; };\n"
+            "#define R_FAILED(rc) ((rc)!=0)\n"
+            "#define R_MODULE(rc) ((rc)&511u)\n"
+            "#define R_DESCRIPTION(rc) (((rc)>>9)&8191u)\n" + SUBMIT_TRACE
+        )
+        trace_test = work / "submit-trace-test.cpp"
+        trace_test.write_text(
+            """#include <cassert>
+#include <cstdint>
+using Result=uint32_t;
+struct NvGpuChannel { uint32_t num_entries; };
+Result nextResult=0;
+int calls=0;
+extern "C" Result nvGpuChannelKickoff(NvGpuChannel*);
+int main() {
+    for (Result rc : {0u, 0x1234u, 0u, 0x5678u}) {
+        NvGpuChannel channel{17}; nextResult=rc;
+        assert(nvGpuChannelKickoff(&channel)==rc);
+        assert(channel.num_entries==(rc ? 17u : 0u));
+    }
+    assert(calls==4);
+}
+""".replace("#include <cassert>", "#include <cassert>\n#include <initializer_list>")
+        )
+        real_source = work / "submit-real.cpp"
+        real_source.write_text("""#include <cstdint>
+using Result=uint32_t;
+struct NvGpuChannel { uint32_t num_entries; };
+extern Result nextResult;
+extern int calls;
+extern "C" Result nvGpuChannelKickoff(NvGpuChannel* channel) {
+    ++calls;
+    if (!nextResult) channel->num_entries=0;
+    return nextResult;
+}
+""")
+        trace_executable = work / "submit-trace-contract"
+        subprocess.run(
+            [
+                "g++",
+                "-std=c++20",
+                "-Wall",
+                "-Wextra",
+                "-Werror",
+                str(trace_source),
+                str(trace_test),
+                str(real_source),
+                "-Wl,--wrap=nvGpuChannelKickoff",
+                "-o",
+                str(trace_executable),
+            ],
+            check=True,
+        )
+        result = subprocess.run(
+            [str(trace_executable)], capture_output=True, text=True, check=True
+        )
+        assert result.stderr.splitlines() == [
+            "[deko3d-submit] kickoff rc=0x00001234 module=52 description=9 entries=17 remaining=17",
+            "[deko3d-submit] kickoff rc=0x00005678 module=120 description=43 entries=17 remaining=17",
+        ], result.stderr
+        print(
+            "GPU kickoff wrapper forwards once, preserves return/state and logs only failures"
+        )
         (work / "exception-production.inc").write_text(
             EXCEPTION_STACK
             + method(runtime_main, 'extern "C" void __libnx_exception_handler(')

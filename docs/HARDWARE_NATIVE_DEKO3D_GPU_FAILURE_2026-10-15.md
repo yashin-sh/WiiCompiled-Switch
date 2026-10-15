@@ -76,3 +76,20 @@ project candidate remains. Configuration and the extraction marker remain
 byte-identical; other applications and game/NAND data are preserved. Cleanup
 receipts remain private. The diagnostic candidate needs a new console trial to
 capture the detailed Deko3D error; its performance is not measured.
+
+## Debug trial: channel kickoff rejected without a GPU notification
+
+The next independently read console/stderr identifies `c2d6785-debug`. The
+operator sees `dkQueueFlush` and application code `2-0001`; the verified stderr
+reports `gpu channel kickoff failed, but no error was reported`. This selects
+the channel-kickoff failure path rather than a flush of an already failed queue.
+It still omits the `Result` returned by libnx, so it does not prove an invalid
+GPU method, a page fault or memory exhaustion.
+
+The product patch now wraps `nvGpuChannelKickoff` at link time. It logs the exact
+failing result, module/description and queued-entry counts, calls the real
+function once and returns its unchanged result. It adds no retry or recovery.
+A compiled linker-wrap contract verifies forwarding, return/state preservation,
+success silence and failure-only output. Complete-file audits accept only the
+original, previous audited or new repaired product sources; the reference stays
+unchanged. The next private build and console trial are tracked separately.

@@ -1,5 +1,24 @@
 # Status log
 
+## 2026-10-15 — Fresh native failure attributed to Deko3D GPU submission
+
+The operator reports incorrect output or another crash. Fresh console/root
+stdout/stderr and Atmosphere diagnostics pass independent readbacks; argv and
+complete NRO digest identify `c2d6785`. The exact retained ELF places the User
+Break in Deko3D `RaiseError` / `Queue::flush`, through Dawn queue submission and
+Aurora's frame worker. Release Deko3D omits the detailed message, so the precise
+GPU/driver cause remains unknown. All 21 smoke tests pass before the failure;
+complete menus, races and FPS remain unvalidated.
+
+The existing debug build option produces `c2d6785-debug`, with the same repaired
+runtime and message-bearing Deko3D implementation. Its 74,473,616-byte NRO has
+SHA-256 `22c6e15e69677e532a942a25849766145bad4d0458f386aced317ae3b4c1751c`.
+Full build/artifact/source validation and complete SD readback pass at 07:38:01
+CEST. The prior NRO is backed up, checked against recorded metadata and removed;
+the exact ELF is retained, final inventory is verified and existing data remain
+preserved. The debug candidate needs a new test for the detailed GPU error.
+See the [hardware report](HARDWARE_NATIVE_DEKO3D_GPU_FAILURE_2026-10-15.md).
+
 ## 2026-10-15 — EFB image transfers ordered after GPU producers
 
 Aurora directly copies EFB images to textures and RAM buffers after render work.

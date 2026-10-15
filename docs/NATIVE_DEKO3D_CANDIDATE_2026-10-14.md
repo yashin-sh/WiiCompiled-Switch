@@ -298,3 +298,19 @@ NRO bytes:      74444944
 NRO SHA-256:    3daafd3ab5f4c9de7ba5b8b139e3f4bf221ba27591af8c7d1a85d489c40ada40
 SD path:        sdmc:/switch/WiiCompiled-Switch-native-deko3d-c2d6785.nro
 ```
+
+## Fresh console failure and diagnostic replacement — 2026-10-15
+
+The subsequent [attributed console trial](HARDWARE_NATIVE_DEKO3D_GPU_FAILURE_2026-10-15.md)
+still shows incorrect output or crashes. Two independent diagnostic readbacks,
+argv and complete SD NRO readback identify `c2d6785`. Its exact retained ELF
+resolves a Deko3D GPU-queue submission abort on the frame worker. The underlying
+GPU error is not yet established. This supersedes the pending-trial status above.
+
+The same repaired source now has a diagnostic build with
+`AURORA_SWITCH_DEKO3D_DEBUG=ON`, enabling Deko3D's detailed error callback.
+`c2d6785-debug` passes the full native build, artifact/source validation and
+complete SD replacement/cleanup at 07:38:01 CEST. Its 74,473,616-byte NRO has
+SHA-256 `22c6e15e69677e532a942a25849766145bad4d0458f386aced317ae3b4c1751c`.
+The failing release NRO and exact ELF remain retained locally. This diagnostic
+candidate is not claimed to fix the crash or validate gameplay/performance.

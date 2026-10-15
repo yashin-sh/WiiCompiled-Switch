@@ -23,17 +23,13 @@ console trial reaches character selection according to the operator, then shows
 visual corruption and crashes. Retrieved diagnostics expose a recursive fault
 in the crash logger, masking the initial fault; a corrected console trial remains
 required. Complete races, playability and race FPS remain unproven.
-The combined runtime/crash-logger correction `0b4f3c6` now passes a full private
-rebuild and complete SD readback, with the old NRO backed up, verified and removed.
-Its console trial remains pending.
-Candidate `c9f7ff3` supersedes it with ordered GPU depth readback and passes the
-same full private build and verified SD replacement; its console trial is pending.
-Candidate `4792ed9` adds pass-boundary GPU ordering/cache visibility and supersedes
-it after a full private rebuild and verified SD replacement. No fresh console run
-has been observed; the character-selection crash remains unvalidated after repair.
-The latest candidate `c2d6785` also orders direct EFB texture/RAM transfers after
-their GPU producers. Its full private rebuild and verified SD replacement pass;
-corrected character-selection and race execution still require a new Switch trial.
+The runtime/crash-logger, depth-readback, pass-visibility and EFB-transfer repairs
+pass their regressions, full private rebuilds and verified SD replacements.
+A [fresh trial of `c2d6785`](docs/HARDWARE_NATIVE_DEKO3D_GPU_FAILURE_2026-10-15.md)
+still fails: the exact ELF identifies a Deko3D GPU-queue submission abort.
+Diagnostic variant `c2d6785-debug` is now installed with verified full SD readback
+to expose the detailed Deko3D error. Corrected menus, races and FPS remain
+unvalidated.
 The user clarified on 2026-10-14 that private builds do not block merging into
 `main`: every published check on the final PR HEAD must be completed and successful.
 Private product builds and Switch measurements remain separate readiness evidence.

@@ -29,7 +29,9 @@ A [fresh attributed `c2d6785` run](docs/HARDWARE_NATIVE_DEKO3D_GPU_FAILURE_2026-
 still fails in Deko3D `Queue::flush` on the frame worker. The message-bearing
 `c2d6785-debug` trial reports a rejected channel kickoff without a GPU error.
 `c82e03e-debug` passes its build, actual wrapper-link audit and verified SD
-replacement; capture the exact libnx result before choosing a further repair.
+replacement. Its attributed run captures NVIDIA kickoff timeout `0x00000d5c`
+with 256 queued entries. Identify the timeout's workload/driver cause before
+choosing a further repair; the crash and incorrect display remain open.
 Complete a stock-clock Time Trial and a 12-kart race only after menu correctness.
 Compare against NVK and consider PGO only after correctness.
 The earlier NVK frontiers below remain diagnostic evidence for their own candidates.

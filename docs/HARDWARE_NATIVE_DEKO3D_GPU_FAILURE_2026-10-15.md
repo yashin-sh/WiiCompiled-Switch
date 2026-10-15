@@ -112,3 +112,20 @@ pass. Configuration, extraction marker, other applications and game/NAND data
 remain preserved; the previous diagnostic NRO and exact ELF are retained.
 This adds evidence collection and needs a new trial; it does not repair the
 unidentified submission failure or establish playability/FPS.
+
+## Instrumented trial: NVIDIA kickoff timeout
+
+The subsequent `c82e03e-debug` trial fails again. Fresh argv identifies the
+instrumented NRO; independently read logs and complete SD NRO readback match the
+recorded candidate. The wrapper records result **`0x00000d5c`**, module **348**,
+description **6**, with **256 queued entries, 256 remaining** after failure.
+In the exact [libnx 4.12.0 result definitions](https://github.com/switchbrew/libnx/blob/v4.12.0/nx/include/switch/result.h),
+this is `LibnxNvidiaError_Timeout`. The
+[NVIDIA error conversion](https://github.com/switchbrew/libnx/blob/v4.12.0/nx/source/services/nv.c)
+maps the driver's timeout result to that description. The retained exact ELF
+and private receipt remain available for attribution.
+
+This establishes a timeout returned by channel kickoff, without a reported GPU
+error notification. It does not identify the workload or driver condition that
+causes the timeout. The submission failure and incorrect display remain open;
+no recovery, complete race or measured FPS is claimed.

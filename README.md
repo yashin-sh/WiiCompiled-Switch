@@ -29,8 +29,9 @@ A [fresh trial of `c2d6785`](docs/HARDWARE_NATIVE_DEKO3D_GPU_FAILURE_2026-10-15.
 still fails: the exact ELF identifies a Deko3D GPU-queue submission abort.
 The debug trial narrows this to a rejected channel kickoff without a reported
 GPU error. Candidate `c82e03e-debug` is installed with verified full SD readback
-to retain the exact libnx result that Deko3D omits. Corrected menus, races and FPS
-remain unvalidated.
+to retain the exact libnx result that Deko3D omits. Its attributed trial now
+identifies NVIDIA kickoff timeout `0x00000d5c` with 256 queued entries. The cause
+of that timeout, corrected menus, complete races and FPS remain unvalidated.
 The user clarified on 2026-10-14 that private builds do not block merging into
 `main`: every published check on the final PR HEAD must be completed and successful.
 Private product builds and Switch measurements remain separate readiness evidence.

@@ -1,5 +1,17 @@
 # Status log
 
+## 2026-10-15 — Instrumented hardware run establishes NVIDIA kickoff timeout
+
+The fresh `c82e03e-debug` trial still fails. Argv, complete SD NRO digest and
+independent stdout/stderr readbacks identify the exact instrumented candidate.
+Its new trace records `0x00000d5c`, module 348, description 6, with 256 entries
+queued and remaining. The pinned libnx 4.12.0 definitions decode this as
+`LibnxNvidiaError_Timeout`. No GPU error notification accompanies the rejection.
+The exact ELF and raw diagnostics are retained privately. The workload/driver
+condition behind the timeout remains unknown; the crash, visual correctness,
+complete races and FPS remain unvalidated. See the
+[hardware report](HARDWARE_NATIVE_DEKO3D_GPU_FAILURE_2026-10-15.md).
+
 ## 2026-10-15 — Kickoff rejection isolated; exact-result diagnostic installed
 
 The attributed `c2d6785-debug` run reports a channel-kickoff failure without a

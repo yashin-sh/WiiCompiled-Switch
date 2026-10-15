@@ -62,6 +62,8 @@ mkdir -p "$WORK_DIR/Assets"
 cp "$ASSET_DIR/main.dol" "$WORK_DIR/Assets/main.dol"
 cp "$ASSET_DIR/StaticR.rel" "$WORK_DIR/Assets/StaticR.rel"
 
+python3 "$ROOT_DIR/scripts/patch-native-deko3d-product.py" "$WORK_DIR" --reference "$REF_DIR"
+
 project="$WORK_DIR/projects/mkwii/recomp.yml"
 translator_project="$WORK_DIR/translator/src/Translator.Cli/Translator.Cli.csproj"
 translator="$WORK_DIR/translator/src/Translator.Cli/bin/Release/net8.0/Translator.Cli.dll"

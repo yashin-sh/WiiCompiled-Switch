@@ -1,5 +1,174 @@
 # Status log
 
+## 2026-10-15 — Instrumented hardware run establishes NVIDIA kickoff timeout
+
+The fresh `c82e03e-debug` trial still fails. Argv, complete SD NRO digest and
+independent stdout/stderr readbacks identify the exact instrumented candidate.
+Its new trace records `0x00000d5c`, module 348, description 6, with 256 entries
+queued and remaining. The pinned libnx 4.12.0 definitions decode this as
+`LibnxNvidiaError_Timeout`. No GPU error notification accompanies the rejection.
+The exact ELF and raw diagnostics are retained privately. The workload/driver
+condition behind the timeout remains unknown; the crash, visual correctness,
+complete races and FPS remain unvalidated. See the
+[hardware report](HARDWARE_NATIVE_DEKO3D_GPU_FAILURE_2026-10-15.md).
+
+## 2026-10-15 — Kickoff rejection isolated; exact-result diagnostic installed
+
+The attributed `c2d6785-debug` run reports a channel-kickoff failure without a
+GPU error notification. Its argv, complete NRO digest and independently read
+stderr are verified. Deko3D discards the actual libnx result, so the product now
+wraps kickoff solely to log failed return codes and queue counts. A compiled
+linker-wrap contract verifies exactly-once forwarding, unchanged return/state
+and failure-only output; the existing product and eight build/reuse suites pass.
+
+Candidate `c82e03e-debug` passes the full private build and artifact/source audit.
+Actual AArch64 disassembly verifies the wrapper on Deko3D's failing path. Its
+74,473,616-byte NRO has SHA-256
+`cdd6ffd43b1c563fa43c2c35cb1da1da9a242445db1e6e3e51b117268add3489`.
+Complete SD readback, verified old-NRO backup/removal and independent inventory
+checks pass at 07:51:04 CEST. Old exact artifacts and user data are preserved.
+The new trial must capture the system result; no submission recovery, corrected
+gameplay or FPS is claimed. See the
+[hardware report](HARDWARE_NATIVE_DEKO3D_GPU_FAILURE_2026-10-15.md).
+
+## 2026-10-15 — Fresh native failure attributed to Deko3D GPU submission
+
+The operator reports incorrect output or another crash. Fresh console/root
+stdout/stderr and Atmosphere diagnostics pass independent readbacks; argv and
+complete NRO digest identify `c2d6785`. The exact retained ELF places the User
+Break in Deko3D `RaiseError` / `Queue::flush`, through Dawn queue submission and
+Aurora's frame worker. Release Deko3D omits the detailed message, so the precise
+GPU/driver cause remains unknown. All 21 smoke tests pass before the failure;
+complete menus, races and FPS remain unvalidated.
+
+The existing debug build option produces `c2d6785-debug`, with the same repaired
+runtime and message-bearing Deko3D implementation. Its 74,473,616-byte NRO has
+SHA-256 `22c6e15e69677e532a942a25849766145bad4d0458f386aced317ae3b4c1751c`.
+Full build/artifact/source validation and complete SD readback pass at 07:38:01
+CEST. The prior NRO is backed up, checked against recorded metadata and removed;
+the exact ELF is retained, final inventory is verified and existing data remain
+preserved. The debug candidate needs a new test for the detailed GPU error.
+See the [hardware report](HARDWARE_NATIVE_DEKO3D_GPU_FAILURE_2026-10-15.md).
+
+## 2026-10-15 — EFB image transfers ordered after GPU producers
+
+Aurora directly copies EFB images to textures and RAM buffers after render work.
+The original Deko3D texture-transfer cases can race those producers or read data
+that remains dirty in cache. Full L2 barriers now precede both transfer layer
+loops after resource initialization. The complete production command regressions
+reproduce the old race and pass after repair, including arrays/3D, origins,
+padded readback rows/images, whole/partial copies, zero sizes and failures.
+Existing runtime regressions and eight build/reuse contracts also pass.
+
+Candidate `c2d6785` passes the full native rebuild and artifact/source/dependency
+validation. Its 74,444,944-byte NRO has SHA-256
+`3daafd3ab5f4c9de7ba5b8b139e3f4bf221ba27591af8c7d1a85d489c40ada40`.
+Complete SD readback, verified older-NRO backup/removal, independent receipt
+checks and a fresh final inventory pass at 00:57:21 CEST. The previous `4792ed9`
+NRO and exact ELF remain retained; configuration, applications and game/NAND
+data are preserved. No new native run is available after the original failure;
+corrected character selection, races and FPS remain unvalidated. PR #387 tracks
+final exact-HEAD CI. See the
+[native candidate report](NATIVE_DEKO3D_CANDIDATE_2026-10-14.md).
+
+## 2026-10-15 — GPU pass visibility repaired; latest native NRO verified on SD
+
+The original Deko3D recorder starts consecutive render/compute passes without
+ordering earlier GPU writes or invalidating sampled-image/shader caches. Full
+barriers now precede each pass, after resource/attachment initialization. The
+compiled production cases fail on stale cached data before the repair and pass
+with it for render/compute reads, lazy clears and initialization failures. This
+CPU contract verifies recording semantics; physical GPU correctness/performance
+still needs a new Switch trial.
+
+Candidate `4792ed9` passes the full native rebuild and artifact/source/dependency
+validation. Its 74,444,944-byte NRO has SHA-256
+`166e1336d5321f0186dc7898e06a3c5de09149b6e7e21ac75ea03a103beae055`.
+Complete SD readback, verified old-NRO backup/removal, independent receipt checks
+and fresh final inventory pass at 00:32:25 CEST. The previous `c9f7ff3` NRO and
+exact ELF are retained; configuration, other applications and game/NAND data are
+preserved. No new game execution appears after the original `e217a6f` failure.
+The character-selection crash, complete races and FPS remain unvalidated. Final
+exact-HEAD CI is tracked in PR #387. See the
+[native candidate report](NATIVE_DEKO3D_CANDIDATE_2026-10-14.md).
+
+## 2026-10-15 — Native depth readback corrected and verified on SD
+
+Aurora's Depth Peek dispatch writes a storage buffer on the GPU, then copies it
+to a CPU readback buffer. The original Deko3D command recorder snapshots stale
+CPU bytes before that dispatch executes. A compiled production-command regression
+reproduces the old result and passes with an ordered GPU copy. Producer/L2 and
+copy/completion/shader-cache barriers protect GPU-written buffers; exact
+`MapWrite | CopySrc` staging uploads retain their fast path. Offset, zero-size,
+initialization-failure and producer variants pass, along with the existing GPU
+memory/binding and eight build/reuse contracts.
+
+Candidate `c9f7ff3` passes the full private native rebuild and artifact/source
+validation. Its 74,444,944-byte NRO has SHA-256
+`2e8514ee667b37df34948335f052129b891f788e676e02919d15557d18082d5c`.
+Complete SD readback and independently checked old-NRO backup/hash/removal and
+final inventory pass at 00:02:07 CEST. The previous `0b4f3c6` NRO and exact ELF
+are retained; configuration and game/NAND data are preserved. No new native run
+is available after the original failing `e217a6f` trial; corrected menu/race
+execution remains pending. PR #387 tracks exact-HEAD CI independently. See the
+[native candidate report](NATIVE_DEKO3D_CANDIDATE_2026-10-14.md).
+
+## 2026-10-14 — Character-selection failure reported; native runtime repairs built
+
+The operator reports character-selection visual corruption followed by a crash
+on the deployed first native candidate. Fresh native logs and the Atmosphere
+report pass independent readback checks; argv and the complete NRO digest match
+`e217a6f`. Symbolization exposes recursive stdio failure in the exception logger.
+The ELF confirms libnx's weak 1 KiB exception stack. A 64 KiB aligned strong
+override and checked frame reads pass a compiled production-handler/weak-link
+contract; the original game fault remains obscured by that secondary failure.
+A successful complete race is not claimed.
+
+An independent audit identifies texture upload padding overreads, stale combined
+texture/sampler bindings across shared-layout shader changes and premature GPU
+descriptor reuse. The audited runtime patch fixes all three. The production
+upload method reproduces the original heap-buffer-overflow under AddressSanitizer;
+the repaired minimum-buffer/stride/array/3D/BC/stencil cases, allocation failure,
+descriptor lifetime and shader rebinding contracts pass. Existing portability
+and eight preparation/reuse tests pass. Complete-file provenance checks remain
+strict and the reference is unchanged.
+
+The repaired backend and private product rebuild successfully. Source candidate
+`ddc2cd0` produces a 74,444,944-byte NRO with SHA-256
+`d52c76be1f0dc7a39d93452d51d7002aae8056b327513d02811abcf4935983d1`;
+artifact and source/dependency validation pass. New SD deployment and console
+execution are pending. The exact older NRO/debug ELF are retained and verified
+for crash symbolization. Current PR #387 CI is tracked independently; the test
+formatting repair uses CI's clang-format 18. See the
+[candidate report](NATIVE_DEKO3D_CANDIDATE_2026-10-14.md).
+
+Combined corrected candidate `0b4f3c6` rebuilds and passes the same full product
+validation, including a strong 64 KiB exception stack in the exact ELF. Its
+74,444,944-byte NRO has SHA-256
+`556ad379cb9e265277cfd5f498122a18f539527d38bf1b46cca226719c4ad657`.
+Complete SD readback, recorded old-NRO backup/hash/removal and independent final
+inventory verification pass at 21:35:47 UTC. Native config and the extraction
+marker are unchanged, game/NAND data and unrelated applications are preserved.
+The new candidate's console trial remains pending; no corrected menu or race
+result is claimed.
+
+## 2026-10-14 — First private native Deko3D NRO built and deployed
+
+Candidate `e217a6f` completes fresh PAL translation, all 72 native game-code
+blocks and the full Release product link/package. The 74,444,944-byte NRO has
+SHA-256 `82de60349a066efc0193e343907329b9d8dfea222f3bc5b8ed64fd0bfe6f7243`.
+NRO/ELF/NACP/RomFS and source/dependency validation pass; 1,206 archived source
+files match the reference or the six audited product changes. Link repairs and
+real SQLite persistence/error tests are published in PR #387.
+
+Complete SD size/SHA readback passes. The older project NRO is locally backed
+up, verified against its recorded metadata, removed and the final inventory
+contains only the current project candidate. Native config and the verified
+extraction marker pass complete readback. Existing game/NAND files and unrelated
+applications are preserved; products and raw receipts stay private.
+Console launch, menu progression, races and measured FPS remain pending.
+See the [candidate receipt](NATIVE_DEKO3D_CANDIDATE_2026-10-14.md).
+
 ## 2026-10-14 — Native Deko3D public dependencies validated
 
 PR #386 source commit `42aca1c1b9d9667185cc9cd1b2d5f5a971419958` passes all ten

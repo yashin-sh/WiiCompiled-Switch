@@ -7,9 +7,33 @@ its public dependency build and all ten source-commit checks. Merge eligibility
 depends on the complete final-HEAD CI rollup; private builds do not block merge
 under the user's 2026-10-14 clarification.
 
-Next required work is the private PAL translation/product build, exact NRO
-size/SHA attribution, boot/menu verification, a stock-clock Time Trial and a
-12-kart race. Compare against NVK and consider PGO only after correctness.
+The first private [native candidate `e217a6f`](docs/NATIVE_DEKO3D_CANDIDATE_2026-10-14.md)
+now passes full PAL translation/product build, exact NRO/provenance validation,
+complete SD readback and verified older-NRO cleanup. Its native profile uses the
+existing verified PAL extraction. Corrected source checks are tracked in PR #387.
+
+The operator reports visual corruption at character selection followed by a
+crash. Retrieved fresh native logs and the exact ELF identify a secondary crash
+inside the undersized exception logger. Next validate the larger exception
+stack and runtime texture/binding/lifetime repairs on the Switch, and obtain the
+original fault if progression still fails.
+Combined corrected candidate `0b4f3c6` passes the full private rebuild and
+verified SD replacement/cleanup; its new console trial is pending.
+Candidate `c9f7ff3` subsequently replaces it with the GPU-produced depth-buffer
+copy repair, full product validation and verified SD cleanup.
+Candidate `4792ed9` then adds explicit render/compute pass visibility, passing
+production-case regressions, full private rebuild and verified SD replacement.
+Candidate `c2d6785` adds direct EFB transfer ordering after GPU producers, with
+passing production-case regressions, native rebuild and verified SD replacement.
+A [fresh attributed `c2d6785` run](docs/HARDWARE_NATIVE_DEKO3D_GPU_FAILURE_2026-10-15.md)
+still fails in Deko3D `Queue::flush` on the frame worker. The message-bearing
+`c2d6785-debug` trial reports a rejected channel kickoff without a GPU error.
+`c82e03e-debug` passes its build, actual wrapper-link audit and verified SD
+replacement. Its attributed run captures NVIDIA kickoff timeout `0x00000d5c`
+with 256 queued entries. Identify the timeout's workload/driver cause before
+choosing a further repair; the crash and incorrect display remain open.
+Complete a stock-clock Time Trial and a 12-kart race only after menu correctness.
+Compare against NVK and consider PGO only after correctness.
 The earlier NVK frontiers below remain diagnostic evidence for their own candidates.
 
 ## Earlier NVK checkpoints

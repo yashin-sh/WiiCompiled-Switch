@@ -16,6 +16,10 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from dawn_deko3d_runtime import TARGETS as RUNTIME_TARGETS
+from dawn_deko3d_runtime import apply as patch_runtime
+from dawn_deko3d_runtime import verify_sources as verify_runtime_sources
+
 TINT_TARGET = Path("src/tint/utils/text_generator/text_generator.cc")
 TINT_UPSTREAM = "    auto is_ident_char = [](char c) { return std::isalnum(c) || c == '_' || !isascii(c); };\n"
 TINT_SWITCH = """#ifdef __SWITCH__
@@ -219,6 +223,11 @@ def base_uam_source(patch: Path) -> str:
 
 
 def verify_base_patch(root: Path, patch: Path) -> None:
+    verify_runtime_sources(root, patch)
+    verify_portability_base_patch(root, patch)
+
+
+def verify_portability_base_patch(root: Path, patch: Path) -> None:
     original = base_uam_source(patch)
     adapted = original
     for upstream, switch in (
@@ -245,6 +254,7 @@ def verify_base_patch(root: Path, patch: Path) -> None:
             "--exclude=third_party/EGL-Registry/src",
             "--exclude=third_party/abseil-cpp",
             f"--exclude={UAM_TARGET}",
+            *(f"--exclude={target}" for target in RUNTIME_TARGETS),
             str(patch),
         ],
         check=False,
@@ -344,15 +354,21 @@ def self_test() -> None:
             encoding="utf-8",
         )
         (root / "audit.txt").write_text("new\n", encoding="utf-8")
-        verify_base_patch(root, base_patch)
+
+        # The portability fixture has no GPU files; verify its original
+        # UAM/reverse-check contract independently of the full runtime patch.
+        def verify_uam_fixture():
+            verify_portability_base_patch(root, base_patch)
+
+        verify_uam_fixture()
         uam_path = root / UAM_TARGET
         uam_path.write_text(original_uam, encoding="utf-8")
-        verify_base_patch(root, base_patch)
+        verify_uam_fixture()
         uam_path.write_bytes(applied[UAM_TARGET] + b"// unexpected edit\n")
-        expect_failure(lambda: verify_base_patch(root, base_patch))
+        expect_failure(verify_uam_fixture)
         uam_path.write_bytes(applied[UAM_TARGET])
         (root / "audit.txt").write_text("unexpected\n", encoding="utf-8")
-        expect_failure(lambda: verify_base_patch(root, base_patch))
+        expect_failure(verify_uam_fixture)
         (root / "audit.txt").write_text("new\n", encoding="utf-8")
 
         # Compile the patched sleep source with strict C++ and a narrow libnx
@@ -520,6 +536,7 @@ def main() -> None:
 
     if args.check:
         verify(root)
+        patch_runtime(root, check_only=True)
         print("Dawn/Tint Switch portability contract OK")
         return
 
@@ -530,6 +547,7 @@ def main() -> None:
         patch_uam(root, check_only=False),
         patch_message(root, check_only=False),
     ]
+    patch_runtime(root)
     verify(root)
     status = "applied" if any(changed) else "already present"
     print(f"Dawn/Tint Switch portability {status}")

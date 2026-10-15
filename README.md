@@ -13,10 +13,25 @@ configuration and provenance. Documentation-only follow-ups must pass their own 
 
 | Path | Verified here | Still required |
 | --- | --- | --- |
-| Native Deko3D candidate | Public dependency cross-build, source contracts and preparation/reuse tests | Private PAL translation/product build, exact NRO attribution and Switch execution |
+| Native Deko3D candidate | Public dependency cross-build, full private PAL product build, exact NRO attribution and verified SD deployment; operator reports reaching character selection | Diagnose visual corruption/crash at character selection; validate complete Time Trial and 12-kart race |
 | Existing Vulkan/NVK diagnostic path | Earlier Switch boot pixels, translated startup and desktop FIFO replay | Later rendering, complete menu/race behavior and performance validation |
 
-No playable WiiCompiled-Switch Deko3D NRO, race FPS or completed hardware gate is claimed.
+The first private [Deko3D candidate](docs/NATIVE_DEKO3D_CANDIDATE_2026-10-14.md),
+code `e217a6f`, now passes full PAL translation/product build, artifact/provenance
+validation and complete SD readback with verified older-NRO cleanup. The first
+console trial reaches character selection according to the operator, then shows
+visual corruption and crashes. Retrieved diagnostics expose a recursive fault
+in the crash logger, masking the initial fault; a corrected console trial remains
+required. Complete races, playability and race FPS remain unproven.
+The runtime/crash-logger, depth-readback, pass-visibility and EFB-transfer repairs
+pass their regressions, full private rebuilds and verified SD replacements.
+A [fresh trial of `c2d6785`](docs/HARDWARE_NATIVE_DEKO3D_GPU_FAILURE_2026-10-15.md)
+still fails: the exact ELF identifies a Deko3D GPU-queue submission abort.
+The debug trial narrows this to a rejected channel kickoff without a reported
+GPU error. Candidate `c82e03e-debug` is installed with verified full SD readback
+to retain the exact libnx result that Deko3D omits. Its attributed trial now
+identifies NVIDIA kickoff timeout `0x00000d5c` with 256 queued entries. The cause
+of that timeout, corrected menus, complete races and FPS remain unvalidated.
 The user clarified on 2026-10-14 that private builds do not block merging into
 `main`: every published check on the final PR HEAD must be completed and successful.
 Private product builds and Switch measurements remain separate readiness evidence.
@@ -30,7 +45,9 @@ in `local-product/Assets`, follow the prerequisites and receipts in the
 bash scripts/build-local-native-deko3d.sh
 ```
 
-The console launcher imports your own PAL ISO/WBFS from SD; the NRO does not bundle game contents.
+The console launcher imports your own PAL ISO/WBFS or uses a verified extracted
+DATA tree. The private NRO embeds locally generated program/data and stays Git-ignored;
+game resources remain on SD.
 See [the status log](docs/STATUS_LOG.md) for dated evidence and remaining gates.
 
 ## Earlier NVK checkpoints
